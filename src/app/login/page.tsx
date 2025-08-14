@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 export default function LoginPage() {
   return (
     <AuthLayout>
-      <Card className="w-full animate-slide-in-from-bottom">
+      <Card className="w-full animate-slide-in-from-bottom bg-card/75 backdrop-blur-lg">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-headline">Welcome Back</CardTitle>
           <CardDescription>Enter your email and password to sign in.</CardDescription>
