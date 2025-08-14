@@ -19,7 +19,7 @@ export default function LandingPage() {
           </Button>
         </nav>
       </header>
-      <main className="flex-1">
+      <main className="flex-1 flex flex-col justify-center">
         <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center space-y-4 text-center">
