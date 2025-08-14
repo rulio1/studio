@@ -25,31 +25,28 @@ export default function HomePage() {
                 </Avatar>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0 animate-slide-in-from-bottom">
-                <SheetHeader className="sr-only">
-                  <SheetTitle>Menu</SheetTitle>
-                </SheetHeader>
-                <div className="flex flex-col h-full">
-                  <div className="p-4">
-                    <div className="flex items-center justify-between">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src="https://placehold.co/40x40.png" alt="@barbie" />
-                        <AvatarFallback>B</AvatarFallback>
-                      </Avatar>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-5 w-5" />
-                      </Button>
-                    </div>
-                    <div className="mt-4">
-                      <p className="font-bold text-lg">Barbie 🎀</p>
-                      <p className="text-sm text-muted-foreground">@pussypinkprint</p>
-                    </div>
-                    <div className="flex gap-4 mt-2 text-sm">
-                      <p><span className="font-bold">539</span> <span className="text-muted-foreground">Following</span></p>
-                      <p><span className="font-bold">675</span> <span className="text-muted-foreground">Followers</span></p>
-                    </div>
+                <SheetHeader className="p-4 border-b">
+                  <SheetTitle className="sr-only">Menu</SheetTitle>
+                  <div className="flex items-center justify-between">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src="https://placehold.co/40x40.png" alt="@barbie" />
+                      <AvatarFallback>B</AvatarFallback>
+                    </Avatar>
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="h-5 w-5" />
+                    </Button>
                   </div>
-                  <nav className="flex-1 flex flex-col gap-2 p-4">
-                      <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                  <div className="mt-4">
+                    <p className="font-bold text-lg">Barbie 🎀</p>
+                    <p className="text-sm text-muted-foreground">@pussypinkprint</p>
+                  </div>
+                  <div className="flex gap-4 mt-2 text-sm">
+                    <p><span className="font-bold">539</span> <span className="text-muted-foreground">Following</span></p>
+                    <p><span className="font-bold">675</span> <span className="text-muted-foreground">Followers</span></p>
+                  </div>
+                </SheetHeader>
+                <nav className="flex-1 flex flex-col gap-2 p-4">
+                      <Link href="/profile" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <User className="h-6 w-6" /> Profile
                       </Link>
                        <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
@@ -95,7 +92,6 @@ export default function HomePage() {
                           </Button>
                       </div>
                   </div>
-                </div>
               </SheetContent>
             </Sheet>
             <div className="flex-1 flex justify-center">
@@ -209,10 +205,7 @@ export default function HomePage() {
               <Search className="h-7 w-7" />
             </Link>
             <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Users className="h-7 w-7" />
-            </Link>
-             <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <PlayCircle className="h-7 w-7" />
+              <Repeat className="h-7 w-7" />
             </Link>
             <Link href="/notifications" className="flex-1 flex justify-center items-center text-muted-foreground">
               <Bell className="h-7 w-7" />
