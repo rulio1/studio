@@ -26,10 +26,12 @@ export default function HomePage() {
 
       <main className="flex-1 overflow-y-auto">
         <Tabs defaultValue="for-you" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 rounded-none border-b">
-            <TabsTrigger value="for-you">For you</TabsTrigger>
-            <TabsTrigger value="following">Following</TabsTrigger>
-          </TabsList>
+          <div className="border-b">
+            <TabsList className="w-full justify-around rounded-none bg-transparent">
+              <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">For you</TabsTrigger>
+              <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Following</TabsTrigger>
+            </TabsList>
+          </div>
           <TabsContent value="for-you">
             <div className="flow-root">
                 <ul className="divide-y divide-border">
@@ -126,13 +128,7 @@ export default function HomePage() {
               <Search className="h-7 w-7" />
             </Link>
             <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Repeat className="h-7 w-7" />
-            </Link>
-            <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <PlayCircle className="h-7 w-7" />
-            </Link>
-            <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
-                <Bell className="h-7 w-7" />
+              <Bell className="h-7 w-7" />
             </Link>
             <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
               <Mail className="h-7 w-7" />
