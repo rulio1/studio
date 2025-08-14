@@ -25,7 +25,7 @@ export default function HomePage() {
                 </Avatar>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0 animate-slide-in-from-bottom">
-                 <SheetHeader className="sr-only">
+                <SheetHeader className="sr-only">
                   <SheetTitle>Menu</SheetTitle>
                 </SheetHeader>
                 <div className="flex flex-col h-full">
@@ -202,16 +202,16 @@ export default function HomePage() {
 
       <footer className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t">
         <nav className="flex justify-around items-center h-14">
-            <Link href="#" className="flex-1 flex justify-center items-center text-foreground">
+            <Link href="/home" className="flex-1 flex justify-center items-center text-foreground">
               <Home className="h-7 w-7" />
             </Link>
-            <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
+            <Link href="/search" className="flex-1 flex justify-center items-center text-muted-foreground">
               <Search className="h-7 w-7" />
             </Link>
-            <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
+            <Link href="/notifications" className="flex-1 flex justify-center items-center text-muted-foreground">
               <Bell className="h-7 w-7" />
             </Link>
-            <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
+            <Link href="/messages" className="flex-1 flex justify-center items-center text-muted-foreground">
               <Mail className="h-7 w-7" />
             </Link>
         </nav>
@@ -219,5 +219,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    
