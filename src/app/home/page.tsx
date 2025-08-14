@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Bell, Home, Mail, MessageCircle, PlayCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, X } from 'lucide-react';
+import { Bell, Home, Mail, MessageCircle, PlayCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -19,9 +19,9 @@ export default function HomePage() {
           <AvatarFallback>A</AvatarFallback>
         </Avatar>
         <div className="flex-1 flex justify-center">
-            <X className="h-6 w-6" />
+            <Bird className="h-6 w-6" />
         </div>
-        <div className="w-8"></div>
+        <Settings className="h-6 w-6" />
       </header>
 
       <main className="flex-1 overflow-y-auto">
