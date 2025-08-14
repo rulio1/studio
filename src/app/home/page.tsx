@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Home, Mail, MessageCircle, PlayCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon } from 'lucide-react';
 import Image from 'next/image';
@@ -25,6 +25,9 @@ export default function HomePage() {
                 </Avatar>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0 animate-slide-in-from-bottom">
+                 <SheetHeader className="sr-only">
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
                 <div className="flex flex-col h-full">
                   <div className="p-4">
                     <div className="flex items-center justify-between">
@@ -216,3 +219,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
