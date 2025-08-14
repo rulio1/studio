@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Bell, Home, Mail, MessageCircle, PlayCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
+import { Bell, Home, Mail, MessageCircle, PlayCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -15,10 +17,84 @@ export default function HomePage() {
     <div className="flex flex-col h-screen bg-background">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2">
-            <Avatar className="h-8 w-8">
-            <AvatarImage src="https://placehold.co/40x40.png" alt="admin" />
-            <AvatarFallback>A</AvatarFallback>
-            </Avatar>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Avatar className="h-8 w-8 cursor-pointer">
+                  <AvatarImage src="https://placehold.co/40x40.png" alt="admin" />
+                  <AvatarFallback>A</AvatarFallback>
+                </Avatar>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80 p-0 animate-slide-in-from-bottom">
+                <div className="flex flex-col h-full">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src="https://placehold.co/40x40.png" alt="@barbie" />
+                        <AvatarFallback>B</AvatarFallback>
+                      </Avatar>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    <div className="mt-4">
+                      <p className="font-bold text-lg">Barbie 🎀</p>
+                      <p className="text-sm text-muted-foreground">@pussypinkprint</p>
+                    </div>
+                    <div className="flex gap-4 mt-2 text-sm">
+                      <p><span className="font-bold">539</span> <span className="text-muted-foreground">Following</span></p>
+                      <p><span className="font-bold">675</span> <span className="text-muted-foreground">Followers</span></p>
+                    </div>
+                  </div>
+                  <nav className="flex-1 flex flex-col gap-2 p-4">
+                      <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                        <User className="h-6 w-6" /> Profile
+                      </Link>
+                       <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                        <X className="h-6 w-6" /> Premium
+                      </Link>
+                       <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                        <MessageSquare className="h-6 w-6" /> Chat <Badge variant="default" className="ml-auto">BETA</Badge>
+                      </Link>
+                      <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                        <Users className="h-6 w-6" /> Communities
+                      </Link>
+                       <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                        <Bookmark className="h-6 w-6" /> Bookmarks
+                      </Link>
+                       <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                        <Briefcase className="h-6 w-6" /> Jobs
+                      </Link>
+                       <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                        <List className="h-6 w-6" /> Lists
+                      </Link>
+                       <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                        <Radio className="h-6 w-6" /> Spaces
+                      </Link>
+                       <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                        <Banknote className="h-6 w-6" /> Monetization
+                      </Link>
+                  </nav>
+                  <div className="p-4 border-t">
+                     <Link href="#" className="flex items-center gap-4 py-2 font-semibold rounded-md">
+                        <Bot className="h-6 w-6" /> Open Grok
+                      </Link>
+                       <Link href="#" className="flex items-center gap-4 py-2 font-semibold rounded-md">
+                        <Settings className="h-6 w-6" /> Settings and privacy
+                      </Link>
+                  </div>
+                  <div className="p-4 border-t">
+                      <div className="flex justify-between items-center">
+                          <Button variant="ghost" size="icon">
+                            <Sun className="h-6 w-6" />
+                          </Button>
+                           <Button variant="ghost" size="icon">
+                            <Moon className="h-6 w-6" />
+                          </Button>
+                      </div>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
             <div className="flex-1 flex justify-center">
                 <Bird className="h-6 w-6" />
             </div>
