@@ -26,7 +26,7 @@ export default function HomePage() {
 
       <main className="flex-1 overflow-y-auto">
         <Tabs defaultValue="for-you" className="w-full">
-          <div className="border-b">
+          <div className="border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
             <TabsList className="w-full justify-around rounded-none bg-transparent">
               <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">For you</TabsTrigger>
               <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Following</TabsTrigger>
