@@ -66,3 +66,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-in-out;
+  }
+  .animate-slide-in-from-bottom {
+    animation: slide-in-from-bottom 0.5s ease-in-out;
+  }
+}
