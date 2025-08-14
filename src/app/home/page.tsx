@@ -13,26 +13,28 @@ import Link from 'next/link';
 export default function HomePage() {
   return (
     <div className="flex flex-col h-screen bg-background">
-      <header className="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-background/80 backdrop-blur-sm border-b">
-        <Avatar className="h-8 w-8">
-          <AvatarImage src="https://placehold.co/40x40.png" alt="admin" />
-          <AvatarFallback>A</AvatarFallback>
-        </Avatar>
-        <div className="flex-1 flex justify-center">
-            <Bird className="h-6 w-6" />
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
+        <div className="flex items-center justify-between px-4 py-2">
+            <Avatar className="h-8 w-8">
+            <AvatarImage src="https://placehold.co/40x40.png" alt="admin" />
+            <AvatarFallback>A</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 flex justify-center">
+                <Bird className="h-6 w-6" />
+            </div>
+            <Settings className="h-6 w-6" />
         </div>
-        <Settings className="h-6 w-6" />
+        <Tabs defaultValue="for-you" className="w-full">
+            <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
+              <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">For you</TabsTrigger>
+              <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Following</TabsTrigger>
+            </TabsList>
+        </Tabs>
       </header>
 
       <main className="flex-1 overflow-y-auto">
         <Tabs defaultValue="for-you" className="w-full">
-          <div className="border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-            <TabsList className="w-full justify-around rounded-none bg-transparent">
-              <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">For you</TabsTrigger>
-              <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Following</TabsTrigger>
-            </TabsList>
-          </div>
-          <TabsContent value="for-you">
+          <TabsContent value="for-you" className="mt-0">
             <div className="flow-root">
                 <ul className="divide-y divide-border">
                     <li className="p-4">
@@ -111,7 +113,7 @@ export default function HomePage() {
                 </ul>
             </div>
           </TabsContent>
-          <TabsContent value="following">
+          <TabsContent value="following" className="mt-0">
             <div className="p-4 text-center text-muted-foreground">
                 <p>Posts from people you follow will appear here.</p>
             </div>
