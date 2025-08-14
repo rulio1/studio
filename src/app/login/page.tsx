@@ -69,11 +69,13 @@ export default function LoginPage() {
               Sign In
             </Button>
           </CardContent>
-          <CardFooter className="flex justify-center text-sm">
-            <span className="text-muted-foreground">Don't have an account?</span>
-            <Link href="/register" className="ml-1 underline">
-              Sign up
-            </Link>
+          <CardFooter className="flex-col gap-4">
+            <div className="flex justify-center text-sm">
+                <span className="text-muted-foreground">Don't have an account?</span>
+                <Link href="/register" className="ml-1 underline">
+                Sign up
+                </Link>
+            </div>
           </CardFooter>
         </form>
       </Card>
