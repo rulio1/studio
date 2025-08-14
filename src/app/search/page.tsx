@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, Home, Mail, MoreHorizontal, Plus, Search, Settings } from 'lucide-react';
+import { Bell, Home, Mail, MoreHorizontal, PlayCircle, Plus, Search, Settings, Users } from 'lucide-react';
 import Link from 'next/link';
 
 const trends = [
@@ -77,6 +77,12 @@ export default function SearchPage() {
             </Link>
             <Link href="/search" className="flex-1 flex justify-center items-center text-foreground">
               <Search className="h-7 w-7" />
+            </Link>
+             <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
+              <Users className="h-7 w-7" />
+            </Link>
+             <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
+              <PlayCircle className="h-7 w-7" />
             </Link>
             <Link href="/notifications" className="flex-1 flex justify-center items-center text-muted-foreground">
               <Bell className="h-7 w-7" />

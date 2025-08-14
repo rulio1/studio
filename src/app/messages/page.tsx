@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Bell, Home, Mail, Search, Settings } from 'lucide-react';
+import { Bell, Home, Mail, PlayCircle, Search, Settings, Users } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MessagesPage() {
@@ -27,6 +27,12 @@ export default function MessagesPage() {
             </Link>
             <Link href="/search" className="flex-1 flex justify-center items-center text-muted-foreground">
               <Search className="h-7 w-7" />
+            </Link>
+            <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
+              <Users className="h-7 w-7" />
+            </Link>
+             <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
+              <PlayCircle className="h-7 w-7" />
             </Link>
             <Link href="/notifications" className="flex-1 flex justify-center items-center text-muted-foreground">
               <Bell className="h-7 w-7" />
