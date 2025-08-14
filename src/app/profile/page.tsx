@@ -50,7 +50,9 @@ export default function ProfilePage() {
                         <AvatarFallback>B</AvatarFallback>
                     </Avatar>
                 </div>
-                <Button variant="outline" className="rounded-full mt-4 font-bold">Edit profile</Button>
+                <Button variant="outline" className="rounded-full mt-4 font-bold" asChild>
+                  <Link href="/profile/edit">Edit profile</Link>
+                </Button>
             </div>
             <div className="mt-4">
                 <div className="flex items-center gap-2">
