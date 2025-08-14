@@ -19,7 +19,7 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email === 'admin' && password === 'admin') {
+    if (email === 'admin@admin.com' && password === 'admin') {
       router.push('/home');
     } else {
       toast({
