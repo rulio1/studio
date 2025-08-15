@@ -290,7 +290,9 @@ export default function SearchPage() {
                                                 <p className="text-sm text-muted-foreground">{user.handle}</p>
                                             </div>
                                         </div>
-                                        {currentUser?.uid !== user.uid && (
+                                        {currentUser?.uid === user.uid ? (
+                                            <span className="text-sm font-semibold text-muted-foreground">You</span>
+                                        ) : (
                                             <Button variant={isFollowing ? 'secondary' : 'default'} onClick={() => handleFollow(user.uid)}>
                                                 {isFollowing ? 'Following' : 'Follow'}
                                             </Button>
