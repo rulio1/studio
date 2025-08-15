@@ -1,22 +1,23 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Home, Mail, MessageCircle, PlayCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus } from 'lucide-react';
+import { Bell, Home, Mail, MessageCircle, PlayCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Image as ImageIcon, Sparkles, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import PostSkeleton from '@/components/post-skeleton';
 import { useRouter } from 'next/navigation';
+import { generatePost } from '@/ai/flows/post-generator-flow';
 
 
 interface Post {
@@ -76,10 +77,15 @@ const initialPosts: Post[] = [
 export default function HomePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [newPostContent, setNewPostContent] = useState('');
+  const [newPostImage, setNewPostImage] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+
   const { toast } = useToast();
   const router = useRouter();
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
 
   useEffect(() => {
@@ -104,6 +110,14 @@ export default function HomePage() {
     }));
   };
 
+  const resetModal = () => {
+    setNewPostContent('');
+    setNewPostImage(null);
+    setAiPrompt('');
+    setIsGenerating(false);
+    setIsModalOpen(false);
+  }
+
   const handleCreatePost = () => {
     if (!newPostContent.trim()) {
         toast({
@@ -120,6 +134,8 @@ export default function HomePage() {
         handle: '@pussypinkprint',
         time: 'Just now',
         content: newPostContent,
+        image: newPostImage || undefined,
+        imageHint: newPostImage ? 'user upload' : undefined,
         avatar: 'https://placehold.co/40x40.png',
         avatarFallback: 'B',
         comments: 0,
@@ -131,12 +147,40 @@ export default function HomePage() {
     };
 
     setPosts([newPost, ...posts]);
-    setNewPostContent('');
-    setIsModalOpen(false);
+    resetModal();
     toast({
         title: "Post created!",
         description: "Your post has been successfully published.",
     });
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewPostImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleGeneratePost = async () => {
+      if(!aiPrompt.trim()) {
+          toast({ title: "Prompt cannot be empty", variant: "destructive"});
+          return;
+      }
+      setIsGenerating(true);
+      try {
+          const generatedContent = await generatePost(aiPrompt);
+          setNewPostContent(generatedContent);
+          toast({ title: "Post content generated!" });
+      } catch (error) {
+          console.error(error);
+          toast({ title: "Failed to generate post", description: "Please try again.", variant: "destructive" });
+      } finally {
+          setIsGenerating(false);
+      }
   };
 
 
@@ -206,7 +250,7 @@ export default function HomePage() {
                       </Link>
                   </nav>
                   <div className="p-4 border-t">
-                     <Link href="#" className="flex items-center gap-4 py-2 font-semibold rounded-md">
+                     <Link href="/grok" className="flex items-center gap-4 py-2 font-semibold rounded-md">
                         <Bot className="h-6 w-6" /> Open Grok
                       </Link>
                        <Link href="#" className="flex items-center gap-4 py-2 font-semibold rounded-md">
@@ -304,23 +348,59 @@ export default function HomePage() {
         <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
             <DialogTitle>Create Post</DialogTitle>
+             <DialogDescription>
+                What's on your mind? Share it with the world. You can even use AI to generate content for you.
+             </DialogDescription>
             </DialogHeader>
-            <div className="flex gap-4 p-4">
-                <Avatar>
-                    <AvatarImage src="https://placehold.co/40x40.png" alt="@barbie" />
-                    <AvatarFallback>B</AvatarFallback>
-                </Avatar>
-                <div className="w-full">
-                    <Textarea 
-                        placeholder="What's happening?!" 
-                        className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
-                        value={newPostContent}
-                        onChange={(e) => setNewPostContent(e.target.value)}
-                        rows={5}
-                    />
-                    <div className="flex justify-end mt-2 border-t pt-2">
-                        <Button onClick={handleCreatePost} disabled={!newPostContent.trim()}>Post</Button>
+            <div className="flex flex-col gap-4">
+                <div className="flex gap-4">
+                    <Avatar>
+                        <AvatarImage src="https://placehold.co/40x40.png" alt="@barbie" />
+                        <AvatarFallback>B</AvatarFallback>
+                    </Avatar>
+                    <div className="w-full">
+                        <Textarea 
+                            placeholder="What's happening?!" 
+                            className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
+                            value={newPostContent}
+                            onChange={(e) => setNewPostContent(e.target.value)}
+                            rows={5}
+                        />
+                         {newPostImage && (
+                            <div className="mt-4 relative">
+                                <Image src={newPostImage} width={500} height={300} alt="Preview" className="rounded-2xl border" />
+                                <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => setNewPostImage(null)}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        )}
                     </div>
+                </div>
+                <div className="flex flex-col gap-2 p-4 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                         <Sparkles className="h-5 w-5 text-primary" />
+                         <span className="font-semibold">Generate with AI</span>
+                    </div>
+                     <Textarea 
+                        placeholder="e.g., A post about the future of space exploration"
+                        className="text-sm focus-visible:ring-1"
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        rows={2}
+                    />
+                    <Button onClick={handleGeneratePost} disabled={isGenerating || !aiPrompt.trim()} className="self-end">
+                        {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Generate
+                    </Button>
+                </div>
+                <div className="flex justify-between items-center mt-2 border-t pt-4">
+                    <div>
+                         <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                         <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()}>
+                            <ImageIcon className="h-6 w-6 text-primary" />
+                         </Button>
+                    </div>
+                    <Button onClick={handleCreatePost} disabled={!newPostContent.trim()}>Post</Button>
                 </div>
             </div>
         </DialogContent>
@@ -349,3 +429,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
