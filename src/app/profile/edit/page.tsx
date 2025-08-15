@@ -14,34 +14,30 @@ import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
-import { getDownloadURL, ref, uploadString, deleteObject } from 'firebase/storage';
+import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 
-interface ChirpUser {
-    uid: string;
+interface UserFormData {
     displayName: string;
-    handle: string;
-    avatar: string;
-    banner: string;
     bio: string;
     location: string;
+    avatar: string;
+    banner: string;
 }
 
 export default function EditProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
     const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<UserFormData>({
         displayName: '',
         bio: '',
         location: '',
+        avatar: '',
+        banner: '',
     });
-
-    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
     const bannerInputRef = useRef<HTMLInputElement>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -52,15 +48,14 @@ export default function EditProfilePage() {
                 setUser(currentUser);
                 const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
                 if (userDoc.exists()) {
-                    const userData = userDoc.data() as ChirpUser;
-                    setChirpUser(userData);
+                    const userData = userDoc.data();
                     setFormData({
                         displayName: userData.displayName || '',
                         bio: userData.bio || '',
                         location: userData.location || '',
+                        avatar: userData.avatar || '',
+                        banner: userData.banner || '',
                     });
-                    setBannerPreview(userData.banner);
-                    setAvatarPreview(userData.avatar);
                 } else {
                     router.push('/login');
                 }
@@ -81,41 +76,34 @@ export default function EditProfilePage() {
         if (file) {
           const reader = new FileReader();
           reader.onloadend = () => {
-            if (type === 'avatar') {
-                setAvatarPreview(reader.result as string);
-            } else {
-                setBannerPreview(reader.result as string);
-            }
+            setFormData(prev => ({...prev, [type]: reader.result as string}));
           };
           reader.readAsDataURL(file);
         }
     };
 
     const handleSave = async () => {
-        if (!user || !chirpUser) return;
+        if (!user) return;
         setIsSaving(true);
         try {
-            let bannerUrl = chirpUser.banner;
-            let avatarUrl = chirpUser.avatar;
-
-            const userRef = doc(db, 'users', user.uid);
+            let { avatar: avatarUrl, banner: bannerUrl, ...otherData } = formData;
 
             // If banner was changed (it will be a data URL), upload it
-            if (bannerPreview && bannerPreview.startsWith('data:')) {
+            if (bannerUrl && bannerUrl.startsWith('data:')) {
                 const bannerStorageRef = ref(storage, `banners/${user.uid}/${Date.now()}`);
-                const snapshot = await uploadString(bannerStorageRef, bannerPreview, 'data_url');
+                const snapshot = await uploadString(bannerStorageRef, bannerUrl, 'data_url');
                 bannerUrl = await getDownloadURL(snapshot.ref);
             }
 
             // If avatar was changed, upload it
-            if (avatarPreview && avatarPreview.startsWith('data:')) {
+            if (avatarUrl && avatarUrl.startsWith('data:')) {
                 const avatarStorageRef = ref(storage, `avatars/${user.uid}/${Date.now()}`);
-                const snapshot = await uploadString(avatarStorageRef, avatarPreview, 'data_url');
+                const snapshot = await uploadString(avatarStorageRef, avatarUrl, 'data_url');
                 avatarUrl = await getDownloadURL(snapshot.ref);
             }
             
-            await updateDoc(userRef, {
-                ...formData,
+            await updateDoc(doc(db, 'users', user.uid), {
+                ...otherData,
                 banner: bannerUrl,
                 avatar: avatarUrl,
             });
@@ -137,7 +125,7 @@ export default function EditProfilePage() {
         }
     };
     
-    if (isLoading || !chirpUser) {
+    if (isLoading || !formData) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
@@ -159,8 +147,8 @@ export default function EditProfilePage() {
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
             <input type="file" accept="image/*" ref={bannerInputRef} onChange={(e) => handleFileChange(e, 'banner')} className="hidden" />
-            {bannerPreview && <Image
-                src={bannerPreview}
+            {formData.banner && <Image
+                src={formData.banner}
                 alt="Banner"
                 layout="fill"
                 objectFit="cover"
@@ -168,14 +156,13 @@ export default function EditProfilePage() {
             />}
             <div className="absolute top-0 left-0 w-full h-full bg-black/30 flex items-center justify-center gap-2">
                 <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => bannerInputRef.current?.click()}><Camera className="h-5 w-5" /></Button>
-                 {bannerPreview && chirpUser.banner !== bannerPreview && <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => setBannerPreview(chirpUser.banner)}><X className="h-5 w-5" /></Button>}
             </div>
         </div>
         <div className="px-4">
             <div className="-mt-16 relative w-32">
                 <input type="file" accept="image/*" ref={avatarInputRef} onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" />
                 <Avatar className="h-32 w-32 border-4 border-background">
-                    {avatarPreview && <AvatarImage src={avatarPreview} data-ai-hint="pop star" alt={formData.displayName} />}
+                    {formData.avatar && <AvatarImage src={formData.avatar} data-ai-hint="pop star" alt={formData.displayName} />}
                     <AvatarFallback className="text-4xl">{formData.displayName?.[0]}</AvatarFallback>
                 </Avatar>
                 <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity" onClick={() => avatarInputRef.current?.click()}>
