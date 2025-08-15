@@ -462,8 +462,10 @@ export default function ProfilePage() {
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
-                                <p className="mb-2 whitespace-pre-wrap">{post.content}</p>
-                                {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="rounded-2xl border" />}
+                                <div className="mb-2 whitespace-pre-wrap">
+                                    <p>{post.content}</p>
+                                    {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="mt-2 rounded-2xl border" />}
+                                </div>
                                 <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
                                     <button className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></button>
                                     <button onClick={() => handlePostAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}><Repeat className="h-5 w-5 hover:text-green-500 transition-colors" /><span>{post.retweets.length}</span></button>
@@ -660,5 +662,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    

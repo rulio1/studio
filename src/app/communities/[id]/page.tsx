@@ -313,8 +313,10 @@ export default function CommunityDetailPage() {
                                                     <p className="text-muted-foreground">{post.handle} · {post.time}</p>
                                                 </div>
                                             </div>
-                                            <p className="mb-2 whitespace-pre-wrap">{post.content}</p>
-                                            {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="rounded-2xl border" />}
+                                            <div className="mb-2 whitespace-pre-wrap">
+                                                <p>{post.content}</p>
+                                                {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="mt-2 rounded-2xl border" />}
+                                            </div>
                                         </div>
                                     </div>
                                 </li>
