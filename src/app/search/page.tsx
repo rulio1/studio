@@ -90,8 +90,10 @@ export default function SearchPage() {
 
   useEffect(() => {
     fetchTrends();
-    const unsub = fetchNewUsers();
-    return () => unsub();
+    const unsubPromise = fetchNewUsers();
+    return () => {
+      unsubPromise();
+    };
   }, [fetchTrends, fetchNewUsers]);
   
   useEffect(() => {
@@ -306,11 +308,10 @@ export default function SearchPage() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
+       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()}><ArrowLeft /></Button>
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input 
               placeholder="Search" 
               className="w-full rounded-full bg-muted pl-10" 
@@ -325,5 +326,3 @@ export default function SearchPage() {
     </>
   );
 }
-
-    
