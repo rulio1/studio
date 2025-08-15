@@ -11,12 +11,16 @@ import { auth, db, storage } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { ImageIcon, Sparkles, Loader2, X, Plus } from 'lucide-react';
+import { ImageIcon, Sparkles, Loader2, X, Plus, Home, Search, Users, Bell, Mail, Bot, Settings, Bookmark, Radio } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import BottomNavBar from './bottom-nav-bar';
 import React from 'react';
+import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarHeader, SidebarFooter } from './ui/sidebar';
+import Link from 'next/link';
+import { ThemeToggle } from './theme-toggle';
+
 
 interface ChirpUser {
     uid: string;
@@ -33,7 +37,7 @@ interface ChirpUser {
     following: string[];
 }
 
-function ClientUILayout() {
+function CreatePostModal() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPostContent, setNewPostContent] = useState('');
     const [newPostImagePreview, setNewPostImagePreview] = useState<string | null>(null);
@@ -173,10 +177,9 @@ function ClientUILayout() {
     };
 
     return (
-        <>
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                  <DialogTrigger asChild>
-                    <Button className="fixed bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 md:hidden">
+                    <Button className="fixed bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 md:hidden z-50">
                         <Plus className="h-8 w-8" />
                     </Button>
                 </DialogTrigger>
@@ -246,9 +249,81 @@ function ClientUILayout() {
                     ) : <Loader2 className="h-6 w-6 animate-spin mx-auto" />}
                 </DialogContent>
             </Dialog>
-            <BottomNavBar />
-        </>
     );
+}
+
+function DesktopSidebar() {
+    const pathname = usePathname();
+    const router = useRouter();
+    const [user, setUser] = useState<FirebaseUser | null>(null);
+    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            if (currentUser) {
+                setUser(currentUser);
+                const userDocRef = doc(db, "users", currentUser.uid);
+                const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
+                    if (doc.exists()) {
+                        setChirpUser(doc.data() as ChirpUser);
+                    }
+                });
+                return () => unsubscribeUser();
+            }
+        });
+        return () => unsubscribe();
+    }, []);
+
+    if (!user || !chirpUser) {
+        return null;
+    }
+
+    const navItems = [
+        { href: '/home', icon: Home, label: 'Início' },
+        { href: '/search', icon: Search, label: 'Busca' },
+        { href: '/communities', icon: Users, label: 'Comunidades' },
+        { href: '/notifications', icon: Bell, label: 'Notificações' },
+        { href: '/messages', icon: Mail, label: 'Mensagens' },
+        { href: `/profile/${user.uid}`, icon: User, label: 'Perfil' },
+        { href: '/saved', icon: Bookmark, label: 'Itens Salvos' },
+    ];
+
+
+    return (
+        <SidebarProvider defaultOpen={true}>
+            <Sidebar className="border-r" collapsible="icon">
+                <SidebarContent className="p-2">
+                    <SidebarHeader>
+                        <ThemeToggle/>
+                    </SidebarHeader>
+                    <SidebarMenu>
+                    {navItems.map((item) => (
+                        <SidebarMenuItem key={item.href}>
+                             <Link href={item.href} className="w-full">
+                                <SidebarMenuButton tooltip={item.label} isActive={pathname.startsWith(item.href)}>
+                                    <item.icon />
+                                    <span>{item.label}</span>
+                                </SidebarMenuButton>
+                            </Link>
+                        </SidebarMenuItem>
+                    ))}
+                    </SidebarMenu>
+                </SidebarContent>
+                 <SidebarFooter>
+                    <div className="flex items-center gap-2 p-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
+                          <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 overflow-hidden">
+                            <p className="font-bold text-sm truncate">{chirpUser.displayName}</p>
+                            <p className="text-xs text-muted-foreground truncate">{chirpUser.handle}</p>
+                        </div>
+                    </div>
+                </SidebarFooter>
+            </Sidebar>
+        </SidebarProvider>
+    )
 }
 
 
@@ -267,12 +342,20 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
 
     return (
-        <div className="flex flex-col h-screen bg-background relative animate-fade-in">
-            <div className="flex-1 overflow-y-auto pb-24">
-                {children}
-            </div>
+        <div className="flex bg-background relative animate-fade-in">
+             {isClient && <DesktopSidebar />}
+            <main className="flex-1 min-w-0">
+                 <div className="flex-1 pb-24 md:pb-0">
+                    {children}
+                </div>
+            </main>
             
-            {isClient && <ClientUILayout />}
+            {isClient && (
+                <>
+                  <CreatePostModal />
+                  <BottomNavBar />
+                </>
+            )}
         </div>
     );
 }

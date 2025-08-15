@@ -526,7 +526,7 @@ export default function HomePage() {
       </header>
        <main className="flex-1">
         <Tabs defaultValue="for-you" className="w-full" onValueChange={setActiveTab}>
-            <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+            <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-14 bg-background/80 backdrop-blur-sm z-10">
               <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Para você</TabsTrigger>
               <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Seguindo</TabsTrigger>
             </TabsList>
@@ -573,5 +573,3 @@ export default function HomePage() {
     </>
   );
 }
-
-    
