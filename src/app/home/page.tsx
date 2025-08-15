@@ -16,9 +16,10 @@ import PostSkeleton from '@/components/post-skeleton';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
-import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { generatePost } from '@/ai/flows/post-generator-flow';
 
 
 interface Post {
@@ -92,7 +93,7 @@ export default function HomePage() {
   // Fetch all posts for "For you" tab
   useEffect(() => {
     const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(50));
-    const unsubscribePosts = onSnapshot(q, (snapshot) => {
+    const unsubscribePosts = onSnapshot(q, async (snapshot) => {
         const postsData = snapshot.docs.map(doc => {
             const data = doc.data();
             return {
@@ -103,7 +104,32 @@ export default function HomePage() {
                 isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
             } as Post
         });
-        setAllPosts(postsData);
+
+        // Add Grok post
+        try {
+            const grokPostContent = await generatePost("a surprising fact about the universe");
+            const grokPost: Post = {
+                id: 'grok-post-of-the-day',
+                authorId: 'grok-ai',
+                author: 'Grok',
+                handle: '@grok',
+                avatar: 'https://placehold.co/48x48/7c3aed/ffffff.png?text=G',
+                avatarFallback: 'G',
+                content: grokPostContent,
+                time: 'Just now',
+                comments: 42,
+                retweets: [],
+                likes: [],
+                views: 1337,
+                isLiked: false,
+                isRetweeted: false,
+            };
+            setAllPosts([grokPost, ...postsData]);
+        } catch (error) {
+            console.error("Failed to generate Grok post", error);
+            setAllPosts(postsData);
+        }
+        
         setIsLoading(false);
     });
 
@@ -169,6 +195,7 @@ export default function HomePage() {
   };
 
   const handlePostClick = (postId: string) => {
+    if (postId === 'grok-post-of-the-day') return;
     router.push(`/post/${postId}`);
   };
   
@@ -195,13 +222,14 @@ export default function HomePage() {
             {posts.map((post) => (
                 <li key={post.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => handlePostClick(post.id)}>
                     <div className="flex gap-4">
-                        <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
+                        <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); if (post.authorId !== 'grok-ai') router.push(`/profile/${post.authorId}`)}}>
                             <AvatarImage src={post.avatar} alt={post.handle} />
                             <AvatarFallback>{post.avatarFallback}</AvatarFallback>
                         </Avatar>
                         <div className='w-full'>
                         <div className="flex items-center gap-2">
                             <p className="font-bold">{post.author}</p>
+                            {post.authorId === 'grok-ai' && <Badge variant="default" className="bg-purple-500 text-white">AI</Badge>}
                             <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
                         </div>
                         <p className="mb-2">{post.content}</p>
@@ -211,11 +239,11 @@ export default function HomePage() {
                                 <MessageCircle className="h-5 w-5 hover:text-primary transition-colors" />
                                 <span>{post.comments}</span>
                             </div>
-                            <button onClick={() => handlePostAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
+                            <button onClick={() => handlePostAction(post.id, 'retweet')} disabled={post.authorId === 'grok-ai'} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
                                 <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
                                 <span>{post.retweets.length}</span>
                             </button>
-                            <button onClick={() => handlePostAction(post.id, 'like')} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
+                            <button onClick={() => handlePostAction(post.id, 'like')} disabled={post.authorId === 'grok-ai'} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
                                 <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
                                 <span>{post.likes.length}</span>
                             </button>
@@ -238,7 +266,7 @@ export default function HomePage() {
 
   if (isLoading || !user || !chirpUser) {
       return (
-        <div className="flex flex-col h-screen bg-background relative">
+        <div className="flex flex-col h-screen bg-background relative animate-fade-in">
              <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                 <div className="flex items-center justify-between px-4 py-2">
                     <Skeleton className="h-8 w-8 rounded-full" />
@@ -258,7 +286,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background relative">
+    <div className="flex flex-col h-screen bg-background relative animate-fade-in">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2">
             <Sheet>

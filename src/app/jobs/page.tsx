@@ -7,34 +7,54 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Briefcase, MoreHorizontal, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { collection, getDocs, limit, query } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
 
+interface Job {
+    id: string;
+    title: string;
+    company: string;
+    location: string;
+    avatar: string;
+    avatarHint: string;
+}
 
-const recommendedJobs = [
-    {
-        title: 'Senior Frontend Engineer',
-        company: 'Stripe',
-        location: 'Remote',
-        avatar: 'https://placehold.co/48x48.png',
-        avatarHint: 'Stripe logo'
-    },
-    {
-        title: 'Full Stack Developer',
-        company: 'Vercel',
-        location: 'San Francisco, CA',
-        avatar: 'https://placehold.co/48x48.png',
-        avatarHint: 'Vercel logo'
-    },
-     {
-        title: 'Product Designer',
-        company: 'Figma',
-        location: 'New York, NY',
-        avatar: 'https://placehold.co/48x48.png',
-        avatarHint: 'Figma logo'
-    }
-];
+const JobSkeleton = () => (
+    <div className="py-4 flex items-start gap-4">
+        <Skeleton className="h-12 w-12 rounded-lg mt-1" />
+        <div className="flex-1 space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-1/3" />
+        </div>
+        <Skeleton className="h-10 w-24" />
+    </div>
+)
 
 export default function JobsPage() {
     const router = useRouter();
+    const [recommendedJobs, setRecommendedJobs] = useState<Job[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchJobs = async () => {
+            setIsLoading(true);
+            try {
+                const jobsQuery = query(collection(db, 'jobs'), limit(5));
+                const jobsSnapshot = await getDocs(jobsQuery);
+                const jobsData = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+                setRecommendedJobs(jobsData);
+            } catch (error) {
+                console.error("Error fetching jobs: ", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchJobs();
+    }, []);
 
     return (
         <>
@@ -68,20 +88,24 @@ export default function JobsPage() {
                     </CardHeader>
                     <CardContent>
                         <ul className="divide-y divide-border">
-                            {recommendedJobs.map((job, index) => (
-                                <li key={index} className="py-4 flex items-start gap-4">
-                                     <Avatar className="h-12 w-12 rounded-lg mt-1">
-                                        <AvatarImage src={job.avatar} data-ai-hint={job.avatarHint} alt={job.company} />
-                                        <AvatarFallback>{job.company[0]}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1">
-                                        <p className="font-bold text-primary">{job.title}</p>
-                                        <p className="text-sm font-semibold">{job.company}</p>
-                                        <p className="text-sm text-muted-foreground">{job.location}</p>
-                                    </div>
-                                    <Button variant="outline">Apply</Button>
-                                </li>
-                            ))}
+                            {isLoading ? (
+                                [...Array(3)].map((_, i) => <li key={i}><JobSkeleton/></li>)
+                            ) : (
+                                recommendedJobs.map((job) => (
+                                    <li key={job.id} className="py-4 flex items-start gap-4">
+                                         <Avatar className="h-12 w-12 rounded-lg mt-1">
+                                            <AvatarImage src={job.avatar} data-ai-hint={job.avatarHint} alt={job.company} />
+                                            <AvatarFallback>{job.company[0]}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1">
+                                            <p className="font-bold text-primary">{job.title}</p>
+                                            <p className="text-sm font-semibold">{job.company}</p>
+                                            <p className="text-sm text-muted-foreground">{job.location}</p>
+                                        </div>
+                                        <Button variant="outline">Apply</Button>
+                                    </li>
+                                ))
+                            )}
                         </ul>
                     </CardContent>
                 </Card>

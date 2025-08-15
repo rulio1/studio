@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { format, formatDistanceToNow } from 'date-fns';
 import PostSkeleton from '@/components/post-skeleton';
@@ -63,6 +63,7 @@ export default function ProfilePage() {
     const profileId = params.id as string;
 
     const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
     const [profileUser, setProfileUser] = useState<ChirpUser | null>(null);
     const [userPosts, setUserPosts] = useState<Post[]>([]);
     const [likedPosts, setLikedPosts] = useState<Post[]>([]);
@@ -73,9 +74,14 @@ export default function ProfilePage() {
 
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
                 setCurrentUser(user);
+                 const userDocRef = doc(db, "users", user.uid);
+                 const userDoc = await getDoc(userDocRef);
+                 if (userDoc.exists()) {
+                     setChirpUser(userDoc.data() as ChirpUser);
+                 }
             } else {
                 router.push('/login');
             }
@@ -101,7 +107,7 @@ export default function ProfilePage() {
         });
 
         return unsubscribe;
-    }, [profileId, currentUser, router]);
+    }, [profileId, currentUser]);
 
     useEffect(() => {
         const unsub = fetchProfileUser();
@@ -113,8 +119,7 @@ export default function ProfilePage() {
     const fetchUserPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingPosts(true);
-        // The query requires an index. Temporarily removing the orderBy clause to prevent crashes.
-        const q = query(collection(db, "posts"), where("authorId", "==", profileId));
+        const q = query(collection(db, "posts"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
         const posts = snapshot.docs.map(doc => {
              const data = doc.data();
@@ -133,9 +138,7 @@ export default function ProfilePage() {
     const fetchLikedPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingLikes(true);
-        // The query requires an index. Temporarily removing the orderBy clause to prevent crashes.
-        // The user should create the index in their Firebase console.
-        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId));
+        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId), orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
         const posts = snapshot.docs.map(doc => {
             const data = doc.data();
@@ -160,20 +163,38 @@ export default function ProfilePage() {
     }, [profileId, fetchUserPosts, fetchLikedPosts]);
 
     const handleFollow = async () => {
-        if (!currentUser || !profileUser) return;
+        if (!currentUser || !profileUser || !chirpUser) return;
         
+        const batch = writeBatch(db);
+
         const currentUserRef = doc(db, 'users', currentUser.uid);
         const profileUserRef = doc(db, 'users', profileUser.uid);
+        const notificationRef = doc(collection(db, 'notifications'));
 
         if (isFollowing) {
             // Unfollow
-            await updateDoc(currentUserRef, { following: arrayRemove(profileUser.uid) });
-            await updateDoc(profileUserRef, { followers: arrayRemove(currentUser.uid) });
+            batch.update(currentUserRef, { following: arrayRemove(profileUser.uid) });
+            batch.update(profileUserRef, { followers: arrayRemove(currentUser.uid) });
         } else {
             // Follow
-            await updateDoc(currentUserRef, { following: arrayUnion(profileUser.uid) });
-            await updateDoc(profileUserRef, { followers: arrayUnion(currentUser.uid) });
+            batch.update(currentUserRef, { following: arrayUnion(profileUser.uid) });
+            batch.update(profileUserRef, { followers: arrayUnion(currentUser.uid) });
+            batch.set(notificationRef, {
+                toUserId: profileUser.uid,
+                fromUserId: currentUser.uid,
+                fromUser: {
+                    name: chirpUser.displayName,
+                    handle: chirpUser.handle,
+                    avatar: chirpUser.avatar,
+                },
+                type: 'follow',
+                text: 'followed you',
+                createdAt: serverTimestamp(),
+                read: false,
+            });
         }
+        
+        await batch.commit();
     };
 
     const handlePostAction = async (postId: string, action: 'like' | 'retweet') => {
@@ -191,8 +212,24 @@ export default function ProfilePage() {
             await updateDoc(postRef, { [field]: arrayUnion(currentUser.uid) });
         }
 
-        fetchUserPosts();
-        fetchLikedPosts();
+        // Optimistically update UI
+        const updatePosts = (posts: Post[]) => posts.map(p => {
+            if (p.id === postId) {
+                const newFieldVal = isActioned
+                    ? p[field].filter((uid: string) => uid !== currentUser.uid)
+                    : [...p[field], currentUser.uid];
+                return {
+                    ...p,
+                    [field]: newFieldVal,
+                    isLiked: action === 'like' ? !isActioned : p.isLiked,
+                    isRetweeted: action === 'retweet' ? !isActioned : p.isRetweeted,
+                };
+            }
+            return p;
+        });
+
+        setUserPosts(updatePosts(userPosts));
+        setLikedPosts(updatePosts(likedPosts));
     };
 
     const PostList = ({ posts, loading, emptyTitle, emptyDescription }: { posts: Post[], loading: boolean, emptyTitle: string, emptyDescription: string }) => {
@@ -245,7 +282,7 @@ export default function ProfilePage() {
     const isOwnProfile = currentUser?.uid === profileUser.uid;
 
   return (
-    <div className="flex flex-col h-screen bg-background relative">
+    <div className="flex flex-col h-screen bg-background relative animate-fade-in">
       <main className="flex-1 overflow-y-auto pb-20">
         <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm flex items-center gap-4 px-4 py-2 border-b">
              <Button size="icon" variant="ghost" className="rounded-full" onClick={() => router.back()}>
@@ -300,8 +337,8 @@ export default function ProfilePage() {
                 {profileUser.createdAt && <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /><span>Joined {format(profileUser.createdAt.toDate(), 'MMMM yyyy')}</span></div>}
             </div>
              <div className="flex gap-4 mt-4 text-sm">
-                <Link href="#" className="hover:underline"><span className="font-bold text-foreground">{profileUser.following?.length || 0}</span> Following</Link>
-                <Link href="#" className="hover:underline"><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> Followers</Link>
+                <p className="hover:underline cursor-pointer"><span className="font-bold text-foreground">{profileUser.following?.length || 0}</span> Following</p>
+                <p className="hover:underline cursor-pointer"><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> Followers</p>
             </div>
         </div>
 
@@ -340,5 +377,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

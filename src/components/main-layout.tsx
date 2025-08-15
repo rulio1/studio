@@ -2,9 +2,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Search, Repeat, Bell, Mail, Plus, Briefcase, Users, Radio, MessageSquare } from 'lucide-react';
+import { Home, Search, Bell, Mail, Plus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { useState, useRef, useEffect } from 'react';
 import { Textarea } from './ui/textarea';
@@ -35,7 +35,6 @@ interface ChirpUser {
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const router = useRouter();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPostContent, setNewPostContent] = useState('');
@@ -158,15 +157,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     };
 
     // Hide layout on these pages
-    const noLayoutPages = ['/login', '/register', '/', '/post'];
-    if (noLayoutPages.some(page => pathname.startsWith(page) && (page !== '/' || pathname === '/'))) {
+    const noLayoutPages = ['/login', '/register', '/'];
+    if (noLayoutPages.includes(pathname)) {
         return <>{children}</>;
     }
 
 
     return (
         <div className="flex flex-col h-screen bg-background relative">
-            <main className="flex-1 overflow-y-auto pb-14 animate-fade-in">
+            <main className="flex-1 overflow-y-auto pb-14">
                 {children}
             </main>
 
