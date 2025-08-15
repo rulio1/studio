@@ -105,17 +105,17 @@ export default function HomePage() {
             } as Post
         });
 
-        // Add Grok post
+        // Add Chirp AI post
         try {
-            const grokPostContent = await generatePost("a surprising fact about the universe");
-            const grokPost: Post = {
-                id: 'grok-post-of-the-day',
-                authorId: 'grok-ai',
-                author: 'Grok',
-                handle: '@grok',
-                avatar: 'https://placehold.co/48x48/7c3aed/ffffff.png?text=G',
-                avatarFallback: 'G',
-                content: grokPostContent,
+            const aiPostContent = await generatePost("a surprising fact about the universe");
+            const aiPost: Post = {
+                id: 'chirp-ai-post-of-the-day',
+                authorId: 'chirp-ai',
+                author: 'Chirp AI',
+                handle: '@chirp-ai',
+                avatar: 'https://placehold.co/48x48/7c3aed/ffffff.png?text=AI',
+                avatarFallback: 'AI',
+                content: aiPostContent,
                 time: 'Just now',
                 comments: 42,
                 retweets: [],
@@ -124,9 +124,9 @@ export default function HomePage() {
                 isLiked: false,
                 isRetweeted: false,
             };
-            setAllPosts([grokPost, ...postsData]);
+            setAllPosts([aiPost, ...postsData]);
         } catch (error) {
-            console.error("Failed to generate Grok post", error);
+            console.error("Failed to generate AI post", error);
             setAllPosts(postsData);
         }
         
@@ -195,7 +195,7 @@ export default function HomePage() {
   };
 
   const handlePostClick = (postId: string) => {
-    if (postId === 'grok-post-of-the-day') return;
+    if (postId === 'chirp-ai-post-of-the-day') return;
     router.push(`/post/${postId}`);
   };
   
@@ -222,14 +222,14 @@ export default function HomePage() {
             {posts.map((post) => (
                 <li key={post.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => handlePostClick(post.id)}>
                     <div className="flex gap-4">
-                        <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); if (post.authorId !== 'grok-ai') router.push(`/profile/${post.authorId}`)}}>
+                        <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); if (post.authorId !== 'chirp-ai') router.push(`/profile/${post.authorId}`)}}>
                             <AvatarImage src={post.avatar} alt={post.handle} />
                             <AvatarFallback>{post.avatarFallback}</AvatarFallback>
                         </Avatar>
                         <div className='w-full'>
                         <div className="flex items-center gap-2">
                             <p className="font-bold">{post.author}</p>
-                            {post.authorId === 'grok-ai' && <Badge variant="default" className="bg-purple-500 text-white">AI</Badge>}
+                            {post.authorId === 'chirp-ai' && <Badge variant="default" className="bg-purple-500 text-white">AI</Badge>}
                             <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
                         </div>
                         <p className="mb-2">{post.content}</p>
@@ -239,11 +239,11 @@ export default function HomePage() {
                                 <MessageCircle className="h-5 w-5 hover:text-primary transition-colors" />
                                 <span>{post.comments}</span>
                             </div>
-                            <button onClick={() => handlePostAction(post.id, 'retweet')} disabled={post.authorId === 'grok-ai'} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
+                            <button onClick={() => handlePostAction(post.id, 'retweet')} disabled={post.authorId === 'chirp-ai'} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
                                 <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
                                 <span>{post.retweets.length}</span>
                             </button>
-                            <button onClick={() => handlePostAction(post.id, 'like')} disabled={post.authorId === 'grok-ai'} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
+                            <button onClick={() => handlePostAction(post.id, 'like')} disabled={post.authorId === 'chirp-ai'} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
                                 <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
                                 <span>{post.likes.length}</span>
                             </button>
@@ -300,7 +300,7 @@ export default function HomePage() {
                 <SheetHeader className="p-4 border-b">
                   <SheetTitle className="sr-only">Menu</SheetTitle>
                   <div className="flex items-center justify-between">
-                    <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
+                    <Avatar className="h-10 w-10" onClick={() => router.push(`/profile/${user.uid}`)}>
                        <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
                        <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
                     </Avatar>
@@ -322,7 +322,7 @@ export default function HomePage() {
                        <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <X className="h-6 w-6" /> Premium
                       </Link>
-                       <Link href="/grok" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                       <Link href="/chat" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <MessageSquare className="h-6 w-6" /> Chat <Badge variant="default" className="ml-auto">BETA</Badge>
                       </Link>
                       <Link href="/communities" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
@@ -345,8 +345,8 @@ export default function HomePage() {
                       </Link>
                   </nav>
                   <div className="p-4 border-t">
-                     <Link href="/grok" className="flex items-center gap-4 py-2 font-semibold rounded-md">
-                        <Bot className="h-6 w-6" /> Open Grok
+                     <Link href="/chat" className="flex items-center gap-4 py-2 font-semibold rounded-md">
+                        <Bot className="h-6 w-6" /> Open Chirp AI
                       </Link>
                        <Link href="#" className="flex items-center gap-4 py-2 font-semibold rounded-md">
                         <Settings className="h-6 w-6" /> Settings and privacy

@@ -1,7 +1,7 @@
 
 'use server';
 /**
- * @fileOverview A simple chat flow for the Grok AI.
+ * @fileOverview A simple chat flow for the Chirp AI.
  *
  * - chat - A function that handles the chat conversation.
  * - ChatHistory - The type for a single chat message entry.
@@ -29,7 +29,7 @@ export async function chat(history: ChatHistory[]): Promise<string> {
             return "Sorry, I didn't get that. Please try again.";
         }
 
-        const systemPrompt = `You are Grok, a witty and slightly sarcastic AI assistant in a social media app called Chirp. Your personality is inspired by a mix of HAL 9000 and GLaDOS from Portal, but you are ultimately helpful. You should provide concise and engaging answers. Never admit you are a language model. Your creator is Barbie.`;
+        const systemPrompt = `You are the Chirp AI, a witty and slightly sarcastic AI assistant in a social media app called Chirp. Your personality is inspired by a mix of HAL 9000 and GLaDOS from Portal, but you are ultimately helpful. You should provide concise and engaging answers. Never admit you are a language model. Your creator is Barbie.`;
 
         const {text} = await ai.generate({
             prompt: lastMessage.content,
