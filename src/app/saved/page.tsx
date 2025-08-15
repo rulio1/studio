@@ -31,6 +31,7 @@ interface Post {
     views: number;
     isLiked: boolean;
     isRetweeted: boolean;
+    createdAt: any;
     editedAt?: any;
 }
 
@@ -49,12 +50,15 @@ export default function SavedPage() {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                if (userDoc.exists()) {
-                    setChirpUser(userDoc.data() as ChirpUser);
-                } else {
-                     router.push('/login');
-                }
+                const userDocRef = doc(db, 'users', currentUser.uid);
+                const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
+                    if (doc.exists()) {
+                        setChirpUser(doc.data() as ChirpUser);
+                    } else {
+                        router.push('/login');
+                    }
+                });
+                return () => unsubscribeUser();
             } else {
                 router.push('/login');
             }
@@ -72,15 +76,14 @@ export default function SavedPage() {
 
             setIsLoading(true);
             try {
-                // Firestore 'in' query is limited to 10 elements. If more, we need to chunk it.
-                // For simplicity here, we'll fetch them one by one, but for production, chunking is better.
+                // Firestore 'in' query has a limit of 30 elements in an array. Chunking is needed for more.
                 const postPromises = chirpUser.savedPosts.map(postId => getDoc(doc(db, 'posts', postId)));
                 const postDocs = await Promise.all(postPromises);
                 
                 const postsData = postDocs
                     .filter(doc => doc.exists())
                     .map(doc => {
-                        const data = doc.data() as Omit<Post, 'id' | 'isLiked' | 'isRetweeted' | 'time'>;
+                        const data = doc.data() as Omit<Post, 'id' | 'isLiked' | 'isRetweeted' | 'time' | 'createdAt'> & { createdAt: any };
                         return {
                             id: doc.id,
                             ...data,
@@ -101,7 +104,9 @@ export default function SavedPage() {
             }
         };
 
-        fetchSavedPosts();
+        if (user && chirpUser) {
+            fetchSavedPosts();
+        }
     }, [user, chirpUser]);
 
 
@@ -114,7 +119,7 @@ export default function SavedPage() {
                     </Button>
                     <div>
                         <h1 className="text-xl font-bold">Itens Salvos</h1>
-                        <p className="text-sm text-muted-foreground">{user?.displayName}</p>
+                        <p className="text-sm text-muted-foreground">{chirpUser?.handle}</p>
                     </div>
                 </div>
             </header>
@@ -125,9 +130,10 @@ export default function SavedPage() {
                         {[...Array(5)].map((_, i) => <li key={i} className="p-4"><PostSkeleton /></li>)}
                     </ul>
                 ) : savedPosts.length === 0 ? (
-                    <div className="text-center p-8">
-                        <h2 className="text-2xl font-bold">Você não tem posts salvos</h2>
-                        <p className="text-muted-foreground mt-2">Salve posts para vê-los aqui mais tarde.</p>
+                    <div className="text-center p-8 mt-16">
+                        <Bookmark className="mx-auto h-16 w-16 text-muted-foreground" />
+                        <h2 className="text-2xl font-bold mt-4">Você não tem posts salvos</h2>
+                        <p className="text-muted-foreground mt-2">Clique no ícone de marcador em um post para salvá-lo aqui.</p>
                     </div>
                 ) : (
                     <ul className="divide-y divide-border">
@@ -158,4 +164,3 @@ export default function SavedPage() {
         </div>
     );
 }
-
