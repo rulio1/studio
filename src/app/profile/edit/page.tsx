@@ -7,14 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Camera, Loader2 } from 'lucide-react';
+import { Camera, Loader2, X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
-import { getDownloadURL, ref, uploadString } from 'firebase/storage';
+import { getDownloadURL, ref, uploadString, deleteObject } from 'firebase/storage';
 
 interface ChirpUser {
     uid: string;
@@ -34,6 +34,12 @@ export default function EditProfilePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     
+    const [formData, setFormData] = useState({
+        displayName: '',
+        bio: '',
+        location: '',
+    });
+
     const [bannerImage, setBannerImage] = useState<string | null>(null);
     const [avatarImage, setAvatarImage] = useState<string | null>(null);
 
@@ -48,6 +54,11 @@ export default function EditProfilePage() {
                 if (userDoc.exists()) {
                     const userData = userDoc.data() as ChirpUser;
                     setChirpUser(userData);
+                    setFormData({
+                        displayName: userData.displayName || '',
+                        bio: userData.bio || '',
+                        location: userData.location || '',
+                    });
                     setBannerImage(userData.banner);
                     setAvatarImage(userData.avatar);
                 }
@@ -58,6 +69,10 @@ export default function EditProfilePage() {
         });
         return () => unsubscribe();
     }, [router]);
+
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setFormData({ ...formData, [e.target.id]: e.target.value });
+    };
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
         const file = event.target.files?.[0];
@@ -96,9 +111,7 @@ export default function EditProfilePage() {
             }
             
             await updateDoc(userRef, {
-                displayName: chirpUser.displayName,
-                bio: chirpUser.bio,
-                location: chirpUser.location,
+                ...formData,
                 banner: bannerUrl,
                 avatar: avatarUrl,
             });
@@ -108,6 +121,7 @@ export default function EditProfilePage() {
                 description: "Your changes have been successfully saved.",
             });
             router.push(`/profile/${user.uid}`);
+            router.refresh();
 
         } catch (error) {
             console.error("Error saving profile: ", error);
@@ -129,9 +143,11 @@ export default function EditProfilePage() {
     <div className="flex flex-col h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2">
-            <Button variant="ghost" onClick={() => router.back()} disabled={isSaving}>Cancel</Button>
+            <Button variant="ghost" onClick={() => router.back()} disabled={isSaving}>
+                <X className="h-5 w-5" />
+            </Button>
             <h1 className="font-bold text-lg">Edit profile</h1>
-            <Button variant="default" className="rounded-full font-bold px-4" onClick={handleSave} disabled={isSaving}>
+            <Button variant="default" className="rounded-full font-bold px-4 bg-foreground text-background hover:bg-foreground/80" onClick={handleSave} disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save
             </Button>
@@ -139,7 +155,7 @@ export default function EditProfilePage() {
       </header>
 
       <main className="flex-1 overflow-y-auto">
-        <div className="relative h-40 bg-muted">
+        <div className="relative h-48 bg-muted">
             <input type="file" accept="image/*" ref={bannerInputRef} onChange={(e) => handleFileChange(e, 'banner')} className="hidden" />
             {bannerImage && <Image
                 src={bannerImage}
@@ -148,16 +164,17 @@ export default function EditProfilePage() {
                 objectFit="cover"
                 data-ai-hint="concert crowd"
             />}
-            <div className="absolute top-0 left-0 w-full h-full bg-black/30 flex items-center justify-center">
-                <Button variant="ghost" size="icon" className='text-white' onClick={() => bannerInputRef.current?.click()}><Camera className="h-6 w-6" /></Button>
+            <div className="absolute top-0 left-0 w-full h-full bg-black/30 flex items-center justify-center gap-2">
+                <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => bannerInputRef.current?.click()}><Camera className="h-5 w-5" /></Button>
+                 <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => setBannerImage(null)}><X className="h-5 w-5" /></Button>
             </div>
         </div>
         <div className="px-4">
-            <div className="-mt-12 relative w-24">
+            <div className="-mt-16 relative w-32">
                 <input type="file" accept="image/*" ref={avatarInputRef} onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" />
-                <Avatar className="h-24 w-24 border-4 border-background">
-                    {avatarImage && <AvatarImage src={avatarImage} data-ai-hint="pop star" alt={chirpUser.displayName} />}
-                    <AvatarFallback>{chirpUser.displayName?.[0]}</AvatarFallback>
+                <Avatar className="h-32 w-32 border-4 border-background">
+                    {avatarImage && <AvatarImage src={avatarImage} data-ai-hint="pop star" alt={formData.displayName} />}
+                    <AvatarFallback className="text-4xl">{formData.displayName?.[0]}</AvatarFallback>
                 </Avatar>
                 <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
                     <Camera className="h-6 w-6 text-white" />
@@ -165,32 +182,33 @@ export default function EditProfilePage() {
             </div>
         </div>
 
-        <div className="px-4 mt-4 space-y-6">
+        <div className="p-4 mt-4 space-y-8">
             <div className="grid gap-1.5">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="displayName">Name</Label>
                 <Input 
-                    id="name" 
-                    value={chirpUser.displayName} 
-                    onChange={(e) => setChirpUser({...chirpUser, displayName: e.target.value})}
-                    className="border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0" 
+                    id="displayName" 
+                    value={formData.displayName} 
+                    onChange={handleFormChange}
+                    className="text-lg" 
                 />
             </div>
              <div className="grid gap-1.5">
                 <Label htmlFor="bio">Bio</Label>
                 <Textarea 
                     id="bio" 
-                    value={chirpUser.bio} 
-                    onChange={(e) => setChirpUser({...chirpUser, bio: e.target.value})}
-                    className="border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0" 
+                    value={formData.bio} 
+                    onChange={handleFormChange}
+                    rows={3}
+                    className="text-lg"
                 />
             </div>
              <div className="grid gap-1.5">
                 <Label htmlFor="location">Location</Label>
                 <Input 
                     id="location" 
-                    value={chirpUser.location}
-                    onChange={(e) => setChirpUser({...chirpUser, location: e.target.value})} 
-                    className="border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:ring-offset-0" 
+                    value={formData.location}
+                    onChange={handleFormChange}
+                     className="text-lg"
                 />
             </div>
         </div>

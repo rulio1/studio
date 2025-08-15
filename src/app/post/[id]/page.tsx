@@ -10,9 +10,9 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, Upload, MoreHorizontal, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 
 interface Post {
     id: string;
@@ -60,6 +60,7 @@ export default function PostDetailPage() {
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [isReplying, setIsReplying] = useState(false);
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
 
@@ -97,14 +98,14 @@ export default function PostDetailPage() {
             });
 
             // The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chirp-3wj1h/firestore/indexes?create_composite=Ckxwcm9qZWN0cy9jaGlycC0zd2oxaC9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvY29tbWVudHMvaW5kZXhlcy9fEAEaCgoGcG9zdElkEAEaDQoJY3JlYXRlZEF0EAIaDAoIX19uYW1lX18QAg
-            const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId));
+            const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId), orderBy("createdAt", "desc"));
             const unsubscribeComments = onSnapshot(commentsQuery, (snapshot) => {
                 const commentsData = snapshot.docs.map(doc => {
                      const data = doc.data();
                     return {
                         id: doc.id,
                         ...data,
-                        time: data.createdAt ? format(data.createdAt.toDate(), "h:mm a") : '',
+                        time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate()) + ' ago' : 'just now',
                     } as Comment;
                 });
                 setComments(commentsData);
@@ -119,26 +120,32 @@ export default function PostDetailPage() {
     }, [id]);
 
     const handleReply = async () => {
-        if (!newComment.trim() || !user || !chirpUser || !id) return;
+        if (!newComment.trim() || !user || !chirpUser || !id || isReplying) return;
         
-        await addDoc(collection(db, "comments"), {
-            postId: id,
-            authorId: user.uid,
-            author: chirpUser.displayName,
-            handle: chirpUser.handle,
-            avatar: chirpUser.avatar,
-            avatarFallback: chirpUser.displayName[0],
-            content: newComment,
-            createdAt: serverTimestamp(),
-        });
+        setIsReplying(true);
+        try {
+            await addDoc(collection(db, "comments"), {
+                postId: id,
+                authorId: user.uid,
+                author: chirpUser.displayName,
+                handle: chirpUser.handle,
+                avatar: chirpUser.avatar,
+                avatarFallback: chirpUser.displayName[0],
+                content: newComment,
+                createdAt: serverTimestamp(),
+            });
 
-        // Also increment comment count on the post
-        const postRef = doc(db, 'posts', id as string);
-        await updateDoc(postRef, {
-            comments: (post?.comments || 0) + 1
-        });
+            const postRef = doc(db, 'posts', id as string);
+            await updateDoc(postRef, {
+                comments: increment(1)
+            });
 
-        setNewComment('');
+            setNewComment('');
+        } catch (error) {
+            console.error("Error posting reply: ", error);
+        } finally {
+            setIsReplying(false);
+        }
     };
     
     if (isLoading || !post) {
@@ -159,7 +166,7 @@ export default function PostDetailPage() {
             <main className="flex-1 overflow-y-auto">
                 <div className="p-4 border-b">
                     <div className="flex items-center gap-3 mb-4">
-                        <Avatar className="h-12 w-12">
+                        <Avatar className="h-12 w-12 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
                             <AvatarImage src={post.avatar} alt={post.handle} />
                             <AvatarFallback>{post.avatarFallback}</AvatarFallback>
                         </Avatar>
@@ -168,16 +175,16 @@ export default function PostDetailPage() {
                             <p className="text-sm text-muted-foreground">{post.handle}</p>
                         </div>
                     </div>
-                    <p className="text-xl mb-4">{post.content}</p>
+                    <p className="text-xl mb-4 whitespace-pre-wrap">{post.content}</p>
                     {post.image && (
                         <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Post image" className="rounded-2xl border mb-4" />
                     )}
                     <p className="text-sm text-muted-foreground">{post.time}</p>
                     <Separator className="my-4" />
                     <div className="flex gap-4 text-sm text-muted-foreground">
+                        <p><span className="font-bold text-foreground">{post.comments}</span> {post.comments === 1 ? 'Comment' : 'Comments'}</p>
                         <p><span className="font-bold text-foreground">{post.retweets.length}</span> Retweets</p>
                         <p><span className="font-bold text-foreground">{post.likes.length}</span> Likes</p>
-                        <p><span className="font-bold text-foreground">{post.views}</span> Views</p>
                     </div>
                     <Separator className="my-4" />
                     <div className="flex justify-around text-muted-foreground">
@@ -197,12 +204,17 @@ export default function PostDetailPage() {
                         <div className="w-full">
                             <Textarea 
                                 placeholder="Post your reply" 
-                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0"
+                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
+                                rows={2}
+                                disabled={isReplying}
                             />
                             <div className="flex justify-end mt-2 border-t pt-2">
-                                <Button onClick={handleReply} disabled={!newComment.trim()}>Reply</Button>
+                                <Button onClick={handleReply} disabled={!newComment.trim() || isReplying}>
+                                    {isReplying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Reply
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -210,7 +222,7 @@ export default function PostDetailPage() {
 
                 <ul className="divide-y divide-border">
                     {comments.map((comment) => (
-                        <li key={comment.id} className="p-4">
+                        <li key={comment.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
                             <div className="flex gap-4">
                                 <Avatar>
                                     <AvatarImage src={comment.avatar} alt={comment.handle} />
@@ -224,7 +236,7 @@ export default function PostDetailPage() {
                                         </div>
                                          <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
                                     </div>
-                                    <p>{comment.content}</p>
+                                    <p className="whitespace-pre-wrap">{comment.content}</p>
                                 </div>
                             </div>
                         </li>

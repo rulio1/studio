@@ -84,33 +84,36 @@ export default function ProfilePage() {
     }, [router]);
 
     const fetchProfileUser = useCallback(async () => {
-        if (!profileId) return;
+        if (!profileId || !currentUser) return;
         setIsLoading(true);
+        
         const userDocRef = doc(db, 'users', profileId);
-        const userDoc = await getDoc(userDocRef);
-
-        if (userDoc.exists()) {
-            const userData = userDoc.data() as ChirpUser;
-            setProfileUser(userData);
-            if(currentUser){
-                const currentUserDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                setIsFollowing(currentUserDoc.data()?.following?.includes(profileId));
+        const unsubscribe = onSnapshot(userDocRef, (userDoc) => {
+             if (userDoc.exists()) {
+                const userData = userDoc.data() as ChirpUser;
+                setProfileUser(userData);
+                setIsFollowing(userData.followers?.includes(currentUser.uid));
+            } else {
+                console.error("No such user!");
+                // router.push('/home');
             }
-        } else {
-            console.error("No such user!");
-            // router.push('/home');
-        }
-        setIsLoading(false);
-    }, [profileId, currentUser]);
+            setIsLoading(false);
+        });
+
+        return unsubscribe;
+    }, [profileId, currentUser, router]);
 
     useEffect(() => {
-        fetchProfileUser();
+        const unsub = fetchProfileUser();
+        return () => {
+            unsub.then(u => u && u());
+        }
     }, [fetchProfileUser]);
     
     const fetchUserPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingPosts(true);
-        const q = query(collection(db, "posts"), where("authorId", "==", profileId));
+        const q = query(collection(db, "posts"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
         const posts = snapshot.docs.map(doc => {
              const data = doc.data();
@@ -170,8 +173,6 @@ export default function ProfilePage() {
             await updateDoc(currentUserRef, { following: arrayUnion(profileUser.uid) });
             await updateDoc(profileUserRef, { followers: arrayUnion(currentUser.uid) });
         }
-        setIsFollowing(!isFollowing);
-        await fetchProfileUser();
     };
 
     const handlePostAction = async (postId: string, action: 'like' | 'retweet') => {
@@ -180,11 +181,15 @@ export default function ProfilePage() {
         const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId);
         if (!post || !currentUser) return;
 
-        if (action === 'like') {
-            await updateDoc(postRef, {
-                likes: post.isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
-            });
+        const field = action === 'like' ? 'likes' : 'retweets';
+        const isActioned = action === 'like' ? post.isLiked : post.isRetweeted;
+    
+        if(isActioned) {
+            await updateDoc(postRef, { [field]: arrayRemove(currentUser.uid) });
+        } else {
+            await updateDoc(postRef, { [field]: arrayUnion(currentUser.uid) });
         }
+
         fetchUserPosts();
         fetchLikedPosts();
     };
@@ -193,8 +198,8 @@ export default function ProfilePage() {
         if (loading) {
             return (
                 <ul>
-                    <li className="p-4"><PostSkeleton /></li>
-                    <li className="p-4"><PostSkeleton /></li>
+                    <li className="p-4 border-b"><PostSkeleton /></li>
+                    <li className="p-4 border-b"><PostSkeleton /></li>
                 </ul>
             );
         }
@@ -206,7 +211,7 @@ export default function ProfilePage() {
                 {posts.map((post) => (
                     <li key={post.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
                         <div className="flex gap-4">
-                             <Avatar onClick={(e) => {e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
+                             <Avatar className="cursor-pointer" onClick={(e) => {e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
                                 <AvatarImage src={post.avatar} alt={post.handle} />
                                 <AvatarFallback>{post.avatarFallback}</AvatarFallback>
                             </Avatar>
@@ -215,7 +220,7 @@ export default function ProfilePage() {
                                     <p className="font-bold">{post.author}</p>
                                     <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
                                 </div>
-                                <p className="mb-2">{post.content}</p>
+                                <p className="mb-2 whitespace-pre-wrap">{post.content}</p>
                                 {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Post image" className="rounded-2xl border" />}
                                 <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></div>
@@ -241,6 +246,15 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col h-screen bg-background relative">
       <main className="flex-1 overflow-y-auto pb-20">
+        <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm flex items-center gap-4 px-4 py-2 border-b">
+             <Button size="icon" variant="ghost" className="rounded-full" onClick={() => router.back()}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+                <h1 className="text-xl font-bold">{profileUser.displayName}</h1>
+                <p className="text-sm text-muted-foreground">{userPosts.length} posts</p>
+            </div>
+        </header>
         <div className="relative h-48 bg-muted">
           {profileUser.banner && <Image
             src={profileUser.banner}
@@ -249,27 +263,13 @@ export default function ProfilePage() {
             objectFit="cover"
             data-ai-hint="concert crowd"
           />}
-          <div className="absolute top-0 left-0 w-full h-full bg-black/30" />
-          <div className="absolute top-4 left-4">
-            <Button size="icon" variant="ghost" className="rounded-full bg-black/50 text-white hover:bg-black/70 hover:text-white" onClick={() => router.back()}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </div>
-          <div className="absolute top-4 right-4 flex gap-2">
-             <Button size="icon" variant="ghost" className="rounded-full bg-black/50 text-white hover:bg-black/70 hover:text-white">
-              <Search className="h-5 w-5" />
-            </Button>
-             <Button size="icon" variant="ghost" className="rounded-full bg-black/50 text-white hover:bg-black/70 hover:text-white">
-              <MoreHorizontal className="h-5 w-5" />
-            </Button>
-          </div>
         </div>
-        <div className="px-4">
+        <div className="p-4">
             <div className="flex justify-between items-start">
-                <div className="-mt-16">
+                <div className="-mt-20">
                     <Avatar className="h-32 w-32 border-4 border-background">
                         <AvatarImage src={profileUser.avatar} data-ai-hint="pop star" alt={profileUser.displayName} />
-                        <AvatarFallback>{profileUser.displayName[0]}</AvatarFallback>
+                        <AvatarFallback className="text-4xl">{profileUser.displayName?.[0]}</AvatarFallback>
                     </Avatar>
                 </div>
                 {isOwnProfile ? (
@@ -279,6 +279,7 @@ export default function ProfilePage() {
                 ) : (
                     <div className='flex items-center gap-2 mt-4'>
                         <Button variant="ghost" size="icon" className="border rounded-full"><Mail /></Button>
+                        <Button variant="ghost" size="icon" className="border rounded-full"><Bell /></Button>
                         <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={handleFollow}>
                             {isFollowing ? 'Following' : 'Follow'}
                         </Button>
@@ -290,7 +291,7 @@ export default function ProfilePage() {
                     <h1 className="text-2xl font-bold">{profileUser.displayName}</h1>
                 </div>
                 <p className="text-muted-foreground">{profileUser.handle}</p>
-                <p className="mt-2">{profileUser.bio}</p>
+                <p className="mt-2 whitespace-pre-wrap">{profileUser.bio}</p>
             </div>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 text-muted-foreground text-sm">
                 {profileUser.location && <div className="flex items-center gap-2"><MapPin className="h-4 w-4" /><span>{profileUser.location}</span></div>}
@@ -298,16 +299,15 @@ export default function ProfilePage() {
                 {profileUser.createdAt && <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /><span>Joined {format(profileUser.createdAt.toDate(), 'MMMM yyyy')}</span></div>}
             </div>
              <div className="flex gap-4 mt-4 text-sm">
-                <p><span className="font-bold text-foreground">{profileUser.following?.length || 0}</span> Following</p>
-                <p><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> Followers</p>
+                <Link href="#" className="hover:underline"><span className="font-bold text-foreground">{profileUser.following?.length || 0}</span> Following</Link>
+                <Link href="#" className="hover:underline"><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> Followers</Link>
             </div>
         </div>
 
         <Tabs defaultValue="posts" className="w-full mt-4">
-            <TabsList className="w-full justify-start rounded-none bg-transparent border-b px-4 overflow-x-auto no-scrollbar">
+            <TabsList className="w-full justify-around rounded-none bg-transparent border-b px-4">
                 <TabsTrigger value="posts" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Posts</TabsTrigger>
                 <TabsTrigger value="replies" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Replies</TabsTrigger>
-                <TabsTrigger value="highlights" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Highlights</TabsTrigger>
                 <TabsTrigger value="media" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Media</TabsTrigger>
                 <TabsTrigger value="likes" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Likes</TabsTrigger>
             </TabsList>
@@ -323,9 +323,6 @@ export default function ProfilePage() {
             <TabsContent value="replies" className="mt-0">
                 <EmptyState title="No replies yet" description="When someone replies to this user, it will show up here." />
             </TabsContent>
-            <TabsContent value="highlights" className="mt-0">
-                <EmptyState title="No highlights yet" description="This user's highlights will be displayed here." />
-            </TabsContent>
             <TabsContent value="media" className="mt-0">
                  <EmptyState title="No media yet" description="When this user posts photos or videos, they will appear here." />
             </TabsContent>
@@ -334,7 +331,7 @@ export default function ProfilePage() {
                     posts={likedPosts} 
                     loading={isLoadingLikes}
                     emptyTitle="No likes yet" 
-                    description="When this user likes posts, they will appear here."
+                    emptyDescription="When this user likes posts, they will appear here."
                  />
             </TabsContent>
         </Tabs>

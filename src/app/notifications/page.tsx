@@ -4,32 +4,26 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, Home, Mail, MessageCircle, Mic, MoreHorizontal, PlayCircle, Plus, Search, Settings, Star, Video, Users } from 'lucide-react';
+import { Bell, Home, Mail, MessageCircle, Mic, MoreHorizontal, PlayCircle, Plus, Search, Settings, Star, Video, Users, Heart } from 'lucide-react';
 import Link from 'next/link';
 
 const notifications = [
     { 
-        type: 'space', 
-        icon: Mic, 
-        iconColor: 'text-purple-500',
-        avatar: 'https://placehold.co/48x48.png',
-        user: 'Minaj',
-        text: 'is speaking in easyyyyyyyy af',
-        time: '20m',
-        space: {
-            host: 'carm.',
-            title: 'easyyyyyyyy af',
-            listeners: 20
-        }
+        type: 'like', 
+        icon: Heart, 
+        iconColor: 'text-red-500',
+        users: [{ name: 'Taylor Swift', avatar: 'https://placehold.co/48x48.png'}],
+        text: 'liked your post',
+        post: 'Just released a new album! 🚀',
+        time: '2h'
     },
     { 
-        type: 'live', 
-        icon: Video, 
-        iconColor: 'text-pink-500',
-        avatar: 'https://placehold.co/48x48.png',
-        user: 'Paradigma Education',
-        text: 'is LIVE: "Estamos próximos ao TOPO do CICLO? | RANGO CRIPTO #23"',
-        time: '12h'
+        type: 'follow', 
+        icon: Users, 
+        iconColor: 'text-blue-500',
+        users: [{ name: 'Vercel', avatar: 'https://placehold.co/48x48.png'}, { name: 'Next.js', avatar: 'https://placehold.co/48x48.png'}],
+        text: 'followed you',
+        time: '1d'
     },
     { 
         type: 'post', 
@@ -43,8 +37,8 @@ const notifications = [
         type: 'post', 
         icon: Star, 
         iconColor: 'text-purple-500',
-        avatar: 'https://placehold.co/48x48.png',
-        user: 'CHOQUEI',
+        users: [{ name: 'CHOQUEI', avatar: 'https://placehold.co/48x48.png'}],
+        text: '',
         post: '🚨 ATENÇÃO: Felca revela que, por conta das denúncias feitas, agora anda com seguranças e carro blindado. pic.x.com/k3R8YUawpn',
         time: '4d'
     },
@@ -83,71 +77,40 @@ export default function NotificationsPage() {
                                 <item.icon className={`h-6 w-6 ${item.iconColor}`} />
                            </div>
                            <div className="flex-1">
-                               <div className="flex justify-between items-start">
-                                    <div>
-                                        {item.avatar && <Avatar className="h-8 w-8 mb-2">
-                                            <AvatarImage src={item.avatar} alt={item.user} />
-                                            <AvatarFallback>{item.user?.[0]}</AvatarFallback>
-                                        </Avatar>}
-                                        <p className="font-bold">
-                                            {item.user && <span className="mr-1">{item.user}</span>}
-                                            <span className="font-normal text-muted-foreground">{item.text}</span>
-                                        </p>
-                                        {item.post && <p className="text-muted-foreground mt-1">{item.post}</p>}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm text-muted-foreground">{item.time}</span>
-                                        <Button variant="ghost" size="icon" className="h-6 w-6">
-                                            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                                        </Button>
-                                    </div>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm text-muted-foreground">{item.time}</p>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2">
+                                        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                                    </Button>
                                </div>
-
-                                {item.space && (
-                                     <div className="mt-2 p-4 rounded-xl bg-primary/20 border border-primary/50">
-                                         <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-5 w-5">
-                                                    <AvatarImage src="https://placehold.co/20x20.png" alt={item.space.host} />
-                                                    <AvatarFallback>{item.space.host[0]}</AvatarFallback>
-                                                </Avatar>
-                                                <span className="font-semibold text-sm">{item.space.host}</span>
-                                                <span className="text-xs bg-primary/80 text-primary-foreground rounded-sm px-1">Host</span>
-                                            </div>
-                                             <Button variant="ghost" size="icon" className="h-6 w-6">
-                                                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                                            </Button>
-                                         </div>
-                                         <p className="font-bold text-lg">{item.space.title}</p>
-                                         <div className="flex items-center gap-2 mt-4">
-                                            <div className="flex -space-x-2">
-                                                <Avatar className="h-5 w-5 border-2 border-primary/20">
-                                                    <AvatarImage src="https://placehold.co/20x20.png" />
-                                                </Avatar>
-                                                <Avatar className="h-5 w-5 border-2 border-primary/20">
-                                                    <AvatarImage src="https://placehold.co/20x20.png" />
-                                                </Avatar>
-                                                <Avatar className="h-5 w-5 border-2 border-primary/20">
-                                                    <AvatarImage src="https://placehold.co/20x20.png" />
-                                                </Avatar>
-                                            </div>
-                                            <span className="text-sm text-muted-foreground">{item.space.listeners} listening</span>
-                                         </div>
-                                     </div>
-                                )}
+                               <div className="flex items-center gap-2 mb-2">
+                                    {item.users && item.users.map((user, userIndex) => (
+                                        <Avatar key={userIndex} className="h-8 w-8">
+                                            <AvatarImage src={user.avatar} alt={user.name} />
+                                            <AvatarFallback>{user.name[0]}</AvatarFallback>
+                                        </Avatar>
+                                    ))}
+                               </div>
+                                <p className="font-bold">
+                                    {item.users && <span className="mr-1">{item.users.map(u => u.name).join(' & ')}</span>}
+                                    <span className="font-normal text-muted-foreground">{item.text}</span>
+                                </p>
+                                {item.post && <p className="text-muted-foreground mt-1">{item.post}</p>}
                            </div>
                         </li>
                     ))}
                 </ul>
             </TabsContent>
             <TabsContent value="mentions" className="mt-0">
-                <div className="p-4 text-center text-muted-foreground">
-                    <p>No mentions yet.</p>
+                <div className="p-8 text-center text-muted-foreground">
+                    <h3 className="font-bold text-2xl text-foreground">Nothing to see here — yet</h3>
+                    <p>When someone mentions you, you’ll find it here.</p>
                 </div>
             </TabsContent>
             <TabsContent value="verified" className="mt-0">
-                 <div className="p-4 text-center text-muted-foreground">
-                    <p>No notifications from verified accounts yet.</p>
+                 <div className="p-8 text-center text-muted-foreground">
+                    <h3 className="font-bold text-2xl text-foreground">Nothing to see here — yet</h3>
+                    <p>Likes, mentions, Reposts, and a whole lot more — when it comes from a verified account, you’ll find it here.</p>
                 </div>
             </TabsContent>
         </Tabs>
