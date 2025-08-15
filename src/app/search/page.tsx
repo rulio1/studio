@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bell, Home, Mail, MoreHorizontal, PlayCircle, Plus, Search, Settings, Users } from 'lucide-react';
 import Link from 'next/link';
 
-const trends = [
+const initialTrends = [
     { rank: 1, category: "Sports", topic: "Flamengo", posts: "140K" },
     { rank: 2, category: "Sports", topic: "Bruno Henrique", posts: "26.2K" },
     { rank: 3, category: "Sports", topic: "Allan", posts: "24.6K" },
@@ -18,6 +19,16 @@ const trends = [
 ];
 
 export default function SearchPage() {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const trends = useMemo(() => {
+    if (!searchTerm) return initialTrends;
+    return initialTrends.filter(trend => 
+      trend.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      trend.category.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm]);
+
   return (
     <div className="flex flex-col h-screen bg-background relative">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
@@ -28,7 +39,12 @@ export default function SearchPage() {
           </Avatar>
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input placeholder="Search" className="w-full rounded-full bg-muted pl-10" />
+            <Input 
+              placeholder="Search" 
+              className="w-full rounded-full bg-muted pl-10" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
           <Settings className="h-6 w-6" />
         </div>
@@ -62,6 +78,12 @@ export default function SearchPage() {
                     </li>
                 ))}
              </ul>
+              {trends.length === 0 && (
+                <div className="text-center p-8 text-muted-foreground">
+                    <p>No results for &quot;{searchTerm}&quot;</p>
+                    <p className="text-sm mt-2">Try searching for something else.</p>
+                </div>
+              )}
           </TabsContent>
         </Tabs>
       </main>

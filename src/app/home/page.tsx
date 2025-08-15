@@ -1,19 +1,22 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Home, Mail, MessageCircle, PlayCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon } from 'lucide-react';
+import { Bell, Home, Mail, MessageCircle, PlayCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import PostSkeleton from '@/components/post-skeleton';
+import { useRouter } from 'next/navigation';
 
 
 interface Post {
@@ -71,9 +74,21 @@ const initialPosts: Post[] = [
 
 
 export default function HomePage() {
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [newPostContent, setNewPostContent] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const router = useRouter();
+
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        setPosts(initialPosts);
+        setIsLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handlePostAction = (postId: number, action: 'like' | 'retweet') => {
     setPosts(posts.map(p => {
@@ -117,6 +132,7 @@ export default function HomePage() {
 
     setPosts([newPost, ...posts]);
     setNewPostContent('');
+    setIsModalOpen(false);
     toast({
         title: "Post created!",
         description: "Your post has been successfully published.",
@@ -124,8 +140,12 @@ export default function HomePage() {
   };
 
 
+  const handlePostClick = (postId: number) => {
+    router.push(`/post/${postId}`);
+  };
+
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background relative">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2">
             <Sheet>
@@ -211,68 +231,59 @@ export default function HomePage() {
       <main className="flex-1 overflow-y-auto">
         <Tabs defaultValue="for-you" className="w-full">
           <TabsContent value="for-you" className="mt-0">
-             <div className="p-4 border-b">
-                <div className="flex gap-4">
-                    <Avatar>
-                        <AvatarImage src="https://placehold.co/40x40.png" alt="@barbie" />
-                        <AvatarFallback>B</AvatarFallback>
-                    </Avatar>
-                    <div className="w-full">
-                        <Textarea 
-                            placeholder="What's happening?!" 
-                            className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0"
-                            value={newPostContent}
-                            onChange={(e) => setNewPostContent(e.target.value)}
-                        />
-                        <div className="flex justify-end mt-2">
-                            <Button onClick={handleCreatePost} disabled={!newPostContent.trim()}>Post</Button>
-                        </div>
-                    </div>
+             {isLoading ? (
+                 <div className="flow-root">
+                    <ul className="divide-y divide-border">
+                        <li className="p-4"><PostSkeleton /></li>
+                        <li className="p-4"><PostSkeleton /></li>
+                        <li className="p-4"><PostSkeleton /></li>
+                    </ul>
+                 </div>
+             ) : (
+                <div className="flow-root">
+                    <ul className="divide-y divide-border">
+                        {posts.map((post) => (
+                            <li key={post.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => handlePostClick(post.id)}>
+                                <div className="flex gap-4">
+                                    <Avatar>
+                                    <AvatarImage src={post.avatar} alt={post.handle} />
+                                    <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                                    </Avatar>
+                                    <div className='w-full'>
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-bold">{post.author}</p>
+                                        <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
+                                    </div>
+                                    <p className="mb-2">{post.content}</p>
+                                    {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Post image" className="rounded-2xl border" />}
+                                    <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
+                                        <div className="flex items-center gap-1">
+                                            <MessageCircle className="h-5 w-5 hover:text-primary transition-colors" />
+                                            <span>{post.comments}</span>
+                                        </div>
+                                        <button onClick={() => handlePostAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
+                                            <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
+                                            <span>{post.retweets}</span>
+                                        </button>
+                                        <button onClick={() => handlePostAction(post.id, 'like')} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
+                                            <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
+                                            <span>{post.likes}</span>
+                                        </button>
+                                         <div className="flex items-center gap-1">
+                                        <BarChart2 className="h-5 w-5" />
+                                        <span>{post.views}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                        <Upload className="h-5 w-5" />
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
-            </div>
-            <div className="flow-root">
-                <ul className="divide-y divide-border">
-                    {posts.map((post) => (
-                        <li key={post.id} className="p-4 hover:bg-muted/20 transition-colors duration-200">
-                            <div className="flex gap-4">
-                                <Avatar>
-                                <AvatarImage src={post.avatar} alt={post.handle} />
-                                <AvatarFallback>{post.avatarFallback}</AvatarFallback>
-                                </Avatar>
-                                <div className='w-full'>
-                                <div className="flex items-center gap-2">
-                                    <p className="font-bold">{post.author}</p>
-                                    <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
-                                </div>
-                                <p className="mb-2">{post.content}</p>
-                                {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Post image" className="rounded-2xl border" />}
-                                <div className="mt-4 flex justify-between text-muted-foreground pr-4">
-                                    <div className="flex items-center gap-1">
-                                        <MessageCircle className="h-5 w-5 hover:text-primary transition-colors" />
-                                        <span>{post.comments}</span>
-                                    </div>
-                                    <button onClick={() => handlePostAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
-                                        <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
-                                        <span>{post.retweets}</span>
-                                    </button>
-                                    <button onClick={() => handlePostAction(post.id, 'like')} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
-                                        <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
-                                        <span>{post.likes}</span>
-                                    </button>
-                                     <div className="flex items-center gap-1">
-                                    <BarChart2 className="h-5 w-5" />
-                                    <span>{post.views}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                    <Upload className="h-5 w-5" />
-                                    </div>
-                                </div>
-                                </div>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-            </div>
+             )}
           </TabsContent>
           <TabsContent value="following" className="mt-0">
             <div className="p-8 text-center text-muted-foreground">
@@ -283,6 +294,38 @@ export default function HomePage() {
           </TabsContent>
         </Tabs>
       </main>
+      
+       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogTrigger asChild>
+            <Button className="absolute bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90">
+                <Plus className="h-8 w-8" />
+            </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+            <DialogTitle>Create Post</DialogTitle>
+            </DialogHeader>
+            <div className="flex gap-4 p-4">
+                <Avatar>
+                    <AvatarImage src="https://placehold.co/40x40.png" alt="@barbie" />
+                    <AvatarFallback>B</AvatarFallback>
+                </Avatar>
+                <div className="w-full">
+                    <Textarea 
+                        placeholder="What's happening?!" 
+                        className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
+                        value={newPostContent}
+                        onChange={(e) => setNewPostContent(e.target.value)}
+                        rows={5}
+                    />
+                    <div className="flex justify-end mt-2 border-t pt-2">
+                        <Button onClick={handleCreatePost} disabled={!newPostContent.trim()}>Post</Button>
+                    </div>
+                </div>
+            </div>
+        </DialogContent>
+      </Dialog>
+
 
       <footer className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t">
         <nav className="flex justify-around items-center h-14">
