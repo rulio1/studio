@@ -29,10 +29,10 @@ interface Message {
 
 interface Conversation {
     participants: string[];
-    lastMessage: {
+    lastMessage?: {
         senderId: string;
     };
-    lastMessageReadBy: string[];
+    lastMessageReadBy?: string[];
 }
 
 export default function ConversationPage() {
@@ -82,22 +82,25 @@ export default function ConversationPage() {
 
     // Mark messages as read when entering conversation
     useEffect(() => {
-        if (user && conversationId && conversation) {
-            const conversationRef = doc(db, 'conversations', conversationId);
-            
-            // Mark last message as read
-            if (conversation.lastMessage?.senderId !== user.uid) {
-                if (conversation.lastMessageReadBy && !conversation.lastMessageReadBy.includes(user.uid)) {
-                    updateDoc(conversationRef, {
-                        lastMessageReadBy: arrayUnion(user.uid)
-                    });
-                }
+        if (!user || !conversationId || !conversation) return;
+
+        const conversationRef = doc(db, 'conversations', conversationId);
+
+        // Mark last message as read by current user
+        if (conversation.lastMessage?.senderId !== user.uid) {
+            if (conversation.lastMessageReadBy && !conversation.lastMessageReadBy.includes(user.uid)) {
+                updateDoc(conversationRef, {
+                    lastMessageReadBy: arrayUnion(user.uid)
+                });
             }
-            
-            // This overwrites the whole map, which is fine for this use case.
-            // A more complex app might need to use dot notation for a specific field.
-            setDoc(conversationRef, { unreadCounts: { [user.uid]: 0 } }, { merge: true });
         }
+        
+        // Reset unread count for the current user
+        const unreadCountKey = `unreadCounts.${user.uid}`;
+        if (conversation.hasOwnProperty('unreadCounts') && conversation.unreadCounts[user.uid] > 0) {
+            updateDoc(conversationRef, { [unreadCountKey]: 0 });
+        }
+
     }, [user, conversationId, conversation]);
 
 
@@ -247,7 +250,7 @@ export default function ConversationPage() {
                 {messages.map((message, index) => {
                     const isLastMessage = index === messages.length - 1;
                     const isMyMessage = message.senderId === user?.uid;
-                    const isRead = isLastMessage && isMyMessage && conversation?.lastMessageReadBy?.includes(otherUser.uid);
+                    const isRead = isLastMessage && isMyMessage && !!conversation?.lastMessageReadBy?.includes(otherUser.uid);
 
                     return (
                         <div key={message.id}>
