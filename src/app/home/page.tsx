@@ -74,6 +74,7 @@ interface ChirpUser {
     birthDate: Date | null;
     followers: string[];
     following: string[];
+    savedPosts?: string[];
 }
 
 
@@ -100,7 +101,7 @@ export default function HomePage() {
             const userDocRef = doc(db, "users", user.uid);
             const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
                  if(doc.exists()){
-                    setChirpUser(doc.data() as ChirpUser);
+                    setChirpUser({ uid: doc.id, ...doc.data() } as ChirpUser);
                 }
             });
             return () => unsubscribeUser();
@@ -289,6 +290,20 @@ export default function HomePage() {
     }
   };
   
+  const handleSavePost = async (postId: string) => {
+    if (!user) return;
+    const userRef = doc(db, 'users', user.uid);
+    const isSaved = chirpUser?.savedPosts?.includes(postId);
+
+    if (isSaved) {
+        await updateDoc(userRef, { savedPosts: arrayRemove(postId) });
+        toast({ title: 'Post removido dos salvos' });
+    } else {
+        await updateDoc(userRef, { savedPosts: arrayUnion(postId) });
+        toast({ title: 'Post salvo!' });
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut(auth);
     router.push('/login');
@@ -368,9 +383,9 @@ export default function HomePage() {
                                             </DropdownMenuItem>
                                         </>
                                     ) : (
-                                        <DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleSavePost(post.id)}>
                                             <Save className="mr-2 h-4 w-4"/>
-                                            Salvar
+                                            {chirpUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
                                         </DropdownMenuItem>
                                     )}
                                 </DropdownMenuContent>
@@ -466,7 +481,7 @@ export default function HomePage() {
                       <Link href="/communities" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <Users className="h-6 w-6" /> Comunidades
                       </Link>
-                       <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                       <Link href="/saved" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <Bookmark className="h-6 w-6" /> Itens Salvos
                       </Link>
                        <Link href="/spaces" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">

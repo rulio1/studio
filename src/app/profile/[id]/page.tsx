@@ -77,6 +77,7 @@ interface ChirpUser {
     createdAt: any;
     followers: string[];
     following: string[];
+    savedPosts?: string[];
 }
 
 export default function ProfilePage() {
@@ -105,10 +106,11 @@ export default function ProfilePage() {
             if (user) {
                 setCurrentUser(user);
                  const userDocRef = doc(db, "users", user.uid);
-                 const userDoc = await getDoc(userDocRef);
-                 if (userDoc.exists()) {
-                     setChirpUser(userDoc.data() as ChirpUser);
-                 }
+                 onSnapshot(userDocRef, (doc) => {
+                     if (doc.exists()) {
+                         setChirpUser(doc.data() as ChirpUser);
+                     }
+                 });
             } else {
                 router.push('/login');
             }
@@ -278,6 +280,20 @@ export default function ProfilePage() {
         }
     };
 
+    const handleSavePost = async (postId: string) => {
+        if (!currentUser) return;
+        const userRef = doc(db, 'users', currentUser.uid);
+        const isSaved = chirpUser?.savedPosts?.includes(postId);
+
+        if (isSaved) {
+            await updateDoc(userRef, { savedPosts: arrayRemove(postId) });
+            toast({ title: 'Post removido dos salvos' });
+        } else {
+            await updateDoc(userRef, { savedPosts: arrayUnion(postId) });
+            toast({ title: 'Post salvo!' });
+        }
+    };
+
     const handlePostAction = async (postId: string, action: 'like' | 'retweet') => {
         const postRef = doc(db, 'posts', postId);
         const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId);
@@ -340,9 +356,9 @@ export default function ProfilePage() {
                                                     </DropdownMenuItem>
                                                 </>
                                             ) : (
-                                                <DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleSavePost(post.id)}>
                                                     <Save className="mr-2 h-4 w-4"/>
-                                                    Salvar
+                                                    {chirpUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
                                                 </DropdownMenuItem>
                                             )}
                                         </DropdownMenuContent>
