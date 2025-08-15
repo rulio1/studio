@@ -65,8 +65,8 @@ export default function MessagesPage() {
         setIsLoading(true);
         const q = query(
             collection(db, "conversations"), 
-            where("participants", "array-contains", user.uid),
-            orderBy("lastMessage.timestamp", "desc")
+            where("participants", "array-contains", user.uid)
+            // orderBy("lastMessage.timestamp", "desc") // Removed to prevent index error
         );
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
@@ -96,7 +96,14 @@ export default function MessagesPage() {
                 } as Conversation;
             });
             
-            const resolvedConvs = (await Promise.all(convsPromises)).filter(Boolean) as Conversation[];
+            let resolvedConvs = (await Promise.all(convsPromises)).filter(Boolean) as Conversation[];
+            
+            // Sort client-side
+            resolvedConvs.sort((a, b) => {
+                if (!a.lastMessage.timestamp || !b.lastMessage.timestamp) return 0;
+                return b.lastMessage.timestamp.toMillis() - a.lastMessage.timestamp.toMillis();
+            });
+
             setConversations(resolvedConvs);
             setIsLoading(false);
         });
