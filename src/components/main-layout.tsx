@@ -252,10 +252,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 </Dialog>
             )}
 
-            <footer className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t">
-                <nav className="flex justify-around items-center h-14">
+            <footer className="fixed bottom-4 inset-x-0 z-10 flex justify-center">
+                <nav className="flex justify-around items-center h-16 w-[calc(100%-2rem)] max-w-sm bg-background/70 backdrop-blur-lg border rounded-full shadow-lg">
                     {navItems.map((item) => (
-                        <Link key={item.href} href={item.href} className={`flex-1 flex justify-center items-center ${pathname === item.href ? 'text-foreground' : 'text-muted-foreground'}`}>
+                        <Link key={item.href} href={item.href} className={`flex-1 flex justify-center items-center h-full rounded-full transition-colors ${pathname === item.href ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                             <item.icon className="h-7 w-7" />
                         </Link>
                     ))}
@@ -263,4 +263,5 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             </footer>
         </div>
     );
-}
+
+    
