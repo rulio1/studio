@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Image as ImageIcon, Sparkles, Loader2 } from 'lucide-react';
+import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Image as ImageIcon, Sparkles, Loader2, Trash2, Edit, Save } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -16,11 +16,27 @@ import PostSkeleton from '@/components/post-skeleton';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
-import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch, deleteDoc } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generatePost } from '@/ai/flows/post-generator-flow';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 
 interface Post {
@@ -66,6 +82,7 @@ export default function HomePage() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
   const [activeTab, setActiveTab] = useState('for-you');
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -214,6 +231,25 @@ export default function HomePage() {
     }
 };
 
+ const handleDeletePost = async () => {
+    if (!postToDelete) return;
+    try {
+        await deleteDoc(doc(db, "posts", postToDelete));
+        toast({
+            title: "Post apagado",
+            description: "Seu post foi removido.",
+        });
+    } catch (error) {
+        console.error("Erro ao apagar o post: ", error);
+        toast({
+            title: "Erro",
+            description: "Não foi possível apagar o post. Tente novamente.",
+            variant: "destructive",
+        });
+    } finally {
+        setPostToDelete(null);
+    }
+  };
   
   const handleSignOut = async () => {
     await signOut(auth);
@@ -228,7 +264,7 @@ export default function HomePage() {
   const PostList = ({ posts, loading, tab }: { posts: Post[], loading: boolean, tab: 'for-you' | 'following' }) => {
     if (loading) {
         return (
-            <ul className="divide-y divide-border">
+            <ul className="divide-y divide-border border-t">
                 {[...Array(5)].map((_, i) => <li key={i} className="p-4"><PostSkeleton /></li>)}
             </ul>
         );
@@ -237,7 +273,7 @@ export default function HomePage() {
     if (posts.length === 0) {
         if (tab === 'following') {
             return (
-                <div className="p-8 text-center text-muted-foreground">
+                <div className="p-8 text-center text-muted-foreground border-t">
                     <h3 className="text-xl font-bold text-foreground">Sua timeline está um pouco vazia...</h3>
                     <p className="mt-2 mb-4">Encontre pessoas para seguir e veja os posts delas aqui!</p>
                     <Button onClick={() => router.push('/search')}>Encontrar Pessoas</Button>
@@ -245,7 +281,7 @@ export default function HomePage() {
             )
         }
         return (
-             <div className="p-8 text-center text-muted-foreground">
+             <div className="p-8 text-center text-muted-foreground border-t">
                 <h3 className="text-xl font-bold text-foreground">Nada para ver aqui... ainda</h3>
                 <p className="mt-2">Quando posts forem feitos, eles aparecerão aqui.</p>
             </div>
@@ -253,7 +289,7 @@ export default function HomePage() {
     }
 
     return (
-        <ul className="divide-y divide-border">
+        <ul className="divide-y divide-border border-t">
             {posts.map((post) => (
                 <li key={post.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => handlePostClick(post.id)}>
                     <div className="flex gap-4">
@@ -268,10 +304,38 @@ export default function HomePage() {
                             )}
                         </Avatar>
                         <div className='w-full'>
-                        <div className="flex items-center gap-2">
-                            <p className="font-bold">{post.author}</p>
-                            {post.authorId === 'chirp-ai' && <Badge variant="default" className="bg-primary text-primary-foreground">IA</Badge>}
-                            <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <p className="font-bold">{post.author}</p>
+                                {post.authorId === 'chirp-ai' && <Badge variant="default" className="bg-primary text-primary-foreground">IA</Badge>}
+                                <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
+                            </div>
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                                        <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                                    {user?.uid === post.authorId ? (
+                                        <>
+                                            <DropdownMenuItem onClick={() => setPostToDelete(post.id)}>
+                                                <Trash2 className="mr-2 h-4 w-4"/>
+                                                Apagar
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem>
+                                                <Edit className="mr-2 h-4 w-4"/>
+                                                Editar
+                                            </DropdownMenuItem>
+                                        </>
+                                    ) : (
+                                        <DropdownMenuItem>
+                                            <Save className="mr-2 h-4 w-4"/>
+                                            Salvar
+                                        </DropdownMenuItem>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                         <p className="mb-2">{post.content}</p>
                         {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="rounded-2xl border" />}
@@ -316,7 +380,7 @@ export default function HomePage() {
                 </div>
              </header>
              <main className="flex-1 overflow-y-auto">
-                 <ul className="divide-y divide-border">
+                 <ul className="divide-y divide-border border-t">
                     <li className="p-4"><PostSkeleton /></li>
                     <li className="p-4"><PostSkeleton /></li>
                     <li className="p-4"><PostSkeleton /></li>
@@ -399,9 +463,22 @@ export default function HomePage() {
                 <PostList posts={followingPosts} loading={isLoadingFollowing} tab="following" />
             </TabsContent>
         </Tabs>
+        <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Essa ação não pode ser desfeita. Isso excluirá permanentemente
+                    o seu post de nossos servidores.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setPostToDelete(null)}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeletePost}>Continuar</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
 }
-
-    

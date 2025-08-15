@@ -4,17 +4,35 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Upload, Bell } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Upload, Bell, Trash2, Edit, Save } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PostSkeleton from '@/components/post-skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from '@/hooks/use-toast';
+
 
 const EmptyState = ({ title, description }: { title: string, description: string }) => (
     <div className="text-center p-8">
@@ -62,6 +80,7 @@ export default function ProfilePage() {
     const router = useRouter();
     const params = useParams();
     const profileId = params.id as string;
+    const { toast } = useToast();
 
     const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
@@ -72,6 +91,7 @@ export default function ProfilePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingPosts, setIsLoadingPosts] = useState(true);
     const [isLoadingLikes, setIsLoadingLikes] = useState(true);
+    const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
 
     useEffect(() => {
@@ -121,38 +141,40 @@ export default function ProfilePage() {
         if (!profileId) return;
         setIsLoadingPosts(true);
         const q = query(collection(db, "posts"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
-        const posts = snapshot.docs.map(doc => {
-             const data = doc.data();
-             return {
-                id: doc.id,
-                ...data,
-                time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
-                isLiked: data.likes.includes(currentUser?.uid || ''),
-                isRetweeted: data.retweets.includes(currentUser?.uid || ''),
-             } as Post
+        onSnapshot(q, (snapshot) => {
+            const posts = snapshot.docs.map(doc => {
+                 const data = doc.data();
+                 return {
+                    id: doc.id,
+                    ...data,
+                    time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
+                    isLiked: data.likes.includes(currentUser?.uid || ''),
+                    isRetweeted: data.retweets.includes(currentUser?.uid || ''),
+                 } as Post
+            });
+            setUserPosts(posts);
+            setIsLoadingPosts(false);
         });
-        setUserPosts(posts);
-        setIsLoadingPosts(false);
     }, [profileId, currentUser]);
 
     const fetchLikedPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingLikes(true);
         const q = query(collection(db, "posts"), where("likes", "array-contains", profileId), orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
-        const posts = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                ...data,
-                time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
-                isLiked: data.likes.includes(currentUser?.uid || ''),
-                isRetweeted: data.retweets.includes(currentUser?.uid || ''),
-            } as Post
+        onSnapshot(q, (snapshot) => {
+            const posts = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
+                    isLiked: data.likes.includes(currentUser?.uid || ''),
+                    isRetweeted: data.retweets.includes(currentUser?.uid || ''),
+                } as Post
+            });
+            setLikedPosts(posts);
+            setIsLoadingLikes(false);
         });
-        setLikedPosts(posts);
-        setIsLoadingLikes(false);
     }, [profileId, currentUser]);
 
 
@@ -198,8 +220,27 @@ export default function ProfilePage() {
         await batch.commit();
     };
 
+    const handleDeletePost = async () => {
+        if (!postToDelete) return;
+        try {
+            await deleteDoc(doc(db, "posts", postToDelete));
+            toast({
+                title: "Post apagado",
+                description: "Seu post foi removido.",
+            });
+        } catch (error) {
+            console.error("Erro ao apagar o post: ", error);
+            toast({
+                title: "Erro",
+                description: "Não foi possível apagar o post. Tente novamente.",
+                variant: "destructive",
+            });
+        } finally {
+            setPostToDelete(null);
+        }
+    };
+
     const handlePostAction = async (postId: string, action: 'like' | 'retweet') => {
-        // This is a simplified version, ideally you would refetch or update state more granularly
         const postRef = doc(db, 'posts', postId);
         const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId);
         if (!post || !currentUser) return;
@@ -212,25 +253,6 @@ export default function ProfilePage() {
         } else {
             await updateDoc(postRef, { [field]: arrayUnion(currentUser.uid) });
         }
-
-        // Optimistically update UI
-        const updatePosts = (posts: Post[]) => posts.map(p => {
-            if (p.id === postId) {
-                const newFieldVal = isActioned
-                    ? p[field].filter((uid: string) => uid !== currentUser.uid)
-                    : [...p[field], currentUser.uid];
-                return {
-                    ...p,
-                    [field]: newFieldVal,
-                    isLiked: action === 'like' ? !isActioned : p.isLiked,
-                    isRetweeted: action === 'retweet' ? !isActioned : p.isRetweeted,
-                };
-            }
-            return p;
-        });
-
-        setUserPosts(updatePosts(userPosts));
-        setLikedPosts(updatePosts(likedPosts));
     };
 
     const PostList = ({ posts, loading, emptyTitle, emptyDescription }: { posts: Post[], loading: boolean, emptyTitle: string, emptyDescription: string }) => {
@@ -255,14 +277,42 @@ export default function ProfilePage() {
                                 <AvatarFallback>{post.avatarFallback}</AvatarFallback>
                             </Avatar>
                             <div className='w-full'>
-                                <div className="flex items-center gap-2">
-                                    <p className="font-bold">{post.author}</p>
-                                    <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-bold">{post.author}</p>
+                                        <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
+                                    </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                                            {currentUser?.uid === post.authorId ? (
+                                                <>
+                                                    <DropdownMenuItem onClick={() => setPostToDelete(post.id)}>
+                                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                                        Apagar
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem>
+                                                        <Edit className="mr-2 h-4 w-4"/>
+                                                        Editar
+                                                    </DropdownMenuItem>
+                                                </>
+                                            ) : (
+                                                <DropdownMenuItem>
+                                                    <Save className="mr-2 h-4 w-4"/>
+                                                    Salvar
+                                                </DropdownMenuItem>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                                 <p className="mb-2 whitespace-pre-wrap">{post.content}</p>
                                 {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="rounded-2xl border" />}
                                 <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
-                                    <div className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></div>
+                                    <button className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></button>
                                     <button onClick={() => handlePostAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}><Repeat className="h-5 w-5 hover:text-green-500 transition-colors" /><span>{post.retweets.length}</span></button>
                                     <button onClick={() => handlePostAction(post.id, 'like')} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}><Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} /><span>{post.likes.length}</span></button>
                                     <div className="flex items-center gap-1"><BarChart2 className="h-5 w-5" /><span>{post.views}</span></div>
@@ -375,6 +425,21 @@ export default function ProfilePage() {
             </TabsContent>
         </Tabs>
       </main>
+      <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Essa ação não pode ser desfeita. Isso excluirá permanentemente
+                    o seu post de nossos servidores.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setPostToDelete(null)}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeletePost}>Continuar</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
   );
 }

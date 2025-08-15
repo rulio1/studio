@@ -7,13 +7,29 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, Upload, MoreHorizontal, Loader2 } from 'lucide-react';
+import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, Upload, MoreHorizontal, Loader2, Trash2, Edit, Save } from 'lucide-react';
 import Image from 'next/image';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Post {
     id: string;
@@ -65,6 +81,7 @@ export default function PostDetailPage() {
     const [isReplying, setIsReplying] = useState(false);
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -95,6 +112,9 @@ export default function PostDetailPage() {
                         isLiked: postData.likes.includes(auth.currentUser?.uid || ''),
                         isRetweeted: postData.retweets.includes(auth.currentUser?.uid || ''),
                     });
+                } else {
+                    // Post might have been deleted
+                    setPost(null);
                 }
                 setIsLoading(false);
             });
@@ -164,8 +184,42 @@ export default function PostDetailPage() {
         }
     };
 
-    if (isLoading || !post) {
+    const handleDeletePost = async () => {
+        if (!post) return;
+        try {
+            await deleteDoc(doc(db, "posts", post.id));
+            router.push('/home'); // Redirect after deletion
+        } catch (error) {
+            console.error("Error deleting post:", error);
+        } finally {
+            setIsDeleteAlertOpen(false);
+        }
+    };
+
+    if (isLoading) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    }
+    
+    if (!post) {
+         return (
+            <div className="flex flex-col h-screen bg-background">
+                <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
+                    <div className="flex items-center gap-4 px-4 py-2">
+                        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                        <h1 className="text-xl font-bold">Post</h1>
+                    </div>
+                </header>
+                <div className="flex-1 flex items-center justify-center text-center p-8">
+                    <div>
+                        <h2 className="text-2xl font-bold">Post não encontrado</h2>
+                        <p className="text-muted-foreground">Este post pode ter sido excluído.</p>
+                        <Button onClick={() => router.push('/home')} className="mt-4">Voltar para a página inicial</Button>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -181,15 +235,43 @@ export default function PostDetailPage() {
 
             <main className="flex-1 overflow-y-auto">
                 <div className="p-4 border-b">
-                    <div className="flex items-center gap-3 mb-4">
-                        <Avatar className="h-12 w-12 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
-                            <AvatarImage src={post.avatar} alt={post.handle} />
-                            <AvatarFallback>{post.avatarFallback}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <p className="font-bold">{post.author}</p>
-                            <p className="text-sm text-muted-foreground">{post.handle}</p>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
+                            <Avatar className="h-12 w-12">
+                                <AvatarImage src={post.avatar} alt={post.handle} />
+                                <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-bold">{post.author}</p>
+                                <p className="text-sm text-muted-foreground">{post.handle}</p>
+                            </div>
                         </div>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                {user?.uid === post.authorId ? (
+                                    <>
+                                        <DropdownMenuItem onClick={() => setIsDeleteAlertOpen(true)}>
+                                            <Trash2 className="mr-2 h-4 w-4"/>
+                                            Apagar
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem>
+                                            <Edit className="mr-2 h-4 w-4"/>
+                                            Editar
+                                        </DropdownMenuItem>
+                                    </>
+                                ) : (
+                                    <DropdownMenuItem>
+                                        <Save className="mr-2 h-4 w-4"/>
+                                        Salvar
+                                    </DropdownMenuItem>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                     <p className="text-xl mb-4 whitespace-pre-wrap">{post.content}</p>
                     {post.image && (
@@ -198,19 +280,19 @@ export default function PostDetailPage() {
                     <p className="text-sm text-muted-foreground">{post.time}</p>
                     <Separator className="my-4" />
                     <div className="flex justify-around text-muted-foreground">
-                        <Button variant="ghost" size="icon" className="h-9 w-9 flex items-center gap-1">
+                        <Button variant="ghost" size="sm" className="flex items-center gap-2">
                             <MessageCircle className="h-5 w-5" />
                             <span className="text-sm">{post.comments}</span>
                         </Button>
-                        <Button variant="ghost" size="icon" className={`h-9 w-9 flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`} onClick={() => handlePostAction('retweet')}>
+                        <Button variant="ghost" size="sm" className={`flex items-center gap-2 ${post.isRetweeted ? 'text-green-500' : ''}`} onClick={() => handlePostAction('retweet')}>
                             <Repeat className="h-5 w-5" />
                             <span className="text-sm">{post.retweets.length}</span>
                         </Button>
-                        <Button variant="ghost" size="icon" className={`h-9 w-9 flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`} onClick={() => handlePostAction('like')}>
+                        <Button variant="ghost" size="sm" className={`flex items-center gap-2 ${post.isLiked ? 'text-red-500' : ''}`} onClick={() => handlePostAction('like')}>
                              <Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
                             <span className="text-sm">{post.likes.length}</span>
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-9 w-9"><Upload className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="icon"><Upload className="h-5 w-5" /></Button>
                     </div>
                 </div>
                 
@@ -261,6 +343,21 @@ export default function PostDetailPage() {
                         </li>
                     ))}
                 </ul>
+                <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Essa ação não pode ser desfeita. Isso excluirá permanentemente
+                            o seu post de nossos servidores.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeletePost}>Apagar</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </main>
         </div>
     );
