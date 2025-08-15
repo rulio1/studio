@@ -98,13 +98,13 @@ export default function EditProfilePage() {
 
             const userRef = doc(db, 'users', user.uid);
 
-            if (bannerImage && bannerImage !== chirpUser.banner) {
+            if (bannerImage && bannerImage.startsWith('data:')) {
                 const bannerStorageRef = ref(storage, `banners/${user.uid}/${Date.now()}`);
                 const snapshot = await uploadString(bannerStorageRef, bannerImage, 'data_url');
                 bannerUrl = await getDownloadURL(snapshot.ref);
             }
 
-            if (avatarImage && avatarImage !== chirpUser.avatar) {
+            if (avatarImage && avatarImage.startsWith('data:')) {
                 const avatarStorageRef = ref(storage, `avatars/${user.uid}/${Date.now()}`);
                 const snapshot = await uploadString(avatarStorageRef, avatarImage, 'data_url');
                 avatarUrl = await getDownloadURL(snapshot.ref);
