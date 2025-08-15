@@ -20,6 +20,7 @@ import React from 'react';
 import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarHeader, SidebarFooter, SidebarInset } from './ui/sidebar';
 import Link from 'next/link';
 import { ThemeToggle } from './theme-toggle';
+import { Toaster } from './ui/toaster';
 
 
 interface ChirpUser {
@@ -179,7 +180,7 @@ function CreatePostModal() {
     return (
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
-                    <Button className="fixed bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 md:hidden z-50">
+                     <Button className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 md:hidden z-50">
                         <Plus className="h-8 w-8" />
                     </Button>
                 </DialogTrigger>
@@ -339,10 +340,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         return <>{children}</>;
     }
 
-    if (!isClient) {
-        return null;
-    }
-
     return (
         <SidebarProvider>
             <div className="flex min-h-screen">
@@ -352,11 +349,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                         {children}
                     </div>
                 </SidebarInset>
-                <CreatePostModal />
-                <BottomNavBar />
             </div>
+            {isClient && (
+                <>
+                    <CreatePostModal />
+                    <BottomNavBar />
+                    <Toaster />
+                </>
+            )}
         </SidebarProvider>
     );
 }
-
-    
