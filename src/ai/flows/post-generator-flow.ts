@@ -20,9 +20,9 @@ export async function generatePost(prompt: string): Promise<string> {
       },
       async (prompt) => {
         const {text} = await ai.generate({
-          prompt: `You are a creative social media content creator. Write an engaging, short post for a platform called "Chirp" based on the following topic. The post should be concise, under 280 characters, and can include emojis.
+          prompt: `Você é um criador de conteúdo de mídia social criativo. Escreva um post curto e envolvente para uma plataforma chamada "Chirp" com base no seguinte tópico. O post deve ser conciso, com menos de 280 caracteres, e pode incluir emojis. O idioma deve ser português do Brasil.
           
-          Topic: "${prompt}"`,
+          Tópico: "${prompt}"`,
         });
         return text;
       }
@@ -30,5 +30,3 @@ export async function generatePost(prompt: string): Promise<string> {
   
     return generatePostFlow(prompt);
   }
-
-    

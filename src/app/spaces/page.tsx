@@ -4,19 +4,19 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Calendar, Mic, Search, Users } from 'lucide-react';
+import { ArrowLeft, Calendar, Mic, Search, Users, Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const liveSpaces = [
     {
-        title: 'Tech Talks & Chill',
+        title: 'Bate-papo sobre Tech & Chill',
         hosts: [{ name: 'Alex', avatar: 'https://placehold.co/24x24.png' }, { name: 'Ben', avatar: 'https://placehold.co/24x24.png' }],
         listeners: 128,
-        tags: ['Tech', 'Development'],
+        tags: ['Tecnologia', 'Desenvolvimento'],
         color: 'bg-purple-500/20 border-purple-500/50 text-purple-300',
     },
     {
-        title: 'Design Systems Q&A',
+        title: 'Perguntas e Respostas sobre Design Systems',
         hosts: [{ name: 'Casey', avatar: 'https://placehold.co/24x24.png' }],
         listeners: 45,
         tags: ['Design', 'UI/UX'],
@@ -25,8 +25,8 @@ const liveSpaces = [
 ];
 
 const upcomingSpaces = [
-    { title: 'The Future of AI', time: 'Tomorrow at 8:00 PM', tags: ['AI', 'Future Tech'] },
-    { title: 'Marketing Mastermind', time: 'Friday at 10:00 AM', tags: ['Marketing', 'Growth'] },
+    { title: 'O Futuro da IA', time: 'Amanhã às 20:00', tags: ['IA', 'Tecnologia do Futuro'] },
+    { title: 'Mastermind de Marketing', time: 'Sexta-feira às 10:00', tags: ['Marketing', 'Crescimento'] },
 ];
 
 export default function SpacesPage() {
@@ -40,7 +40,7 @@ export default function SpacesPage() {
                     </Button>
                     <div className="relative flex-1 max-w-xs mx-auto">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <input placeholder="Search for Spaces" className="w-full rounded-full bg-muted pl-10 pr-4 py-2 text-sm" />
+                        <input placeholder="Buscar por Spaces" className="w-full rounded-full bg-muted pl-10 pr-4 py-2 text-sm" />
                     </div>
                      <Button variant="ghost" size="icon">
                         <Calendar className="h-5 w-5" />
@@ -49,12 +49,12 @@ export default function SpacesPage() {
             </header>
             <div className="p-4 space-y-8">
                  <div>
-                    <h2 className="text-2xl font-bold mb-4">Happening Now</h2>
+                    <h2 className="text-2xl font-bold mb-4">Acontecendo Agora</h2>
                     <div className="space-y-4">
                         {liveSpaces.map((space, index) => (
                              <Card key={index} className={`${space.color}`}>
                                 <CardContent className="p-4">
-                                    <p className="text-sm">LIVE</p>
+                                    <p className="text-sm">AO VIVO</p>
                                     <h3 className="text-xl font-bold mt-2 text-foreground">{space.title}</h3>
                                      <div className="flex items-center gap-2 mt-4">
                                         <div className="flex -space-x-2">
@@ -65,14 +65,14 @@ export default function SpacesPage() {
                                                 </Avatar>
                                             ))}
                                         </div>
-                                        <span className="text-sm text-foreground truncate">{space.hosts.map(h => h.name).join(', ')} are hosting</span>
+                                        <span className="text-sm text-foreground truncate">{space.hosts.map(h => h.name).join(', ')} estão apresentando</span>
                                     </div>
                                     <div className="flex items-center justify-between mt-4">
                                          <div className="flex items-center gap-2">
                                             <Users className="h-4 w-4" />
-                                            <span className="text-sm">{space.listeners} listening</span>
+                                            <span className="text-sm">{space.listeners} ouvintes</span>
                                         </div>
-                                        <Button size="sm" variant="secondary" className="rounded-full">Listen live</Button>
+                                        <Button size="sm" variant="secondary" className="rounded-full">Ouvir ao vivo</Button>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -81,7 +81,7 @@ export default function SpacesPage() {
                 </div>
 
                 <div>
-                    <h2 className="text-2xl font-bold mb-4">Upcoming Spaces</h2>
+                    <h2 className="text-2xl font-bold mb-4">Próximos Spaces</h2>
                     <div className="space-y-4">
                         {upcomingSpaces.map((space, index) => (
                              <Card key={index} className="bg-muted">
@@ -97,7 +97,7 @@ export default function SpacesPage() {
                                     </div>
                                     <Button variant="outline" size="sm" className="rounded-full">
                                         <Bell className="h-4 w-4 mr-2" />
-                                        Set reminder
+                                        Definir lembrete
                                     </Button>
                                  </CardContent>
                              </Card>
@@ -108,7 +108,7 @@ export default function SpacesPage() {
                 <div className="p-4 sticky bottom-0 left-0 right-0 bg-background">
                     <Button className="w-full rounded-full" size="lg">
                         <Mic className="h-5 w-5 mr-2" />
-                        Start your Space
+                        Inicie seu Space
                     </Button>
                 </div>
             </div>

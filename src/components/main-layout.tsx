@@ -63,11 +63,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
 
     const navItems = [
-        { href: '/home', icon: Home, label: 'Home' },
-        { href: '/search', icon: Search, label: 'Search' },
-        { href: '/communities', icon: Users, label: 'Communities' },
-        { href: '/notifications', icon: Bell, label: 'Notifications' },
-        { href: '/messages', icon: Mail, label: 'Messages' },
+        { href: '/home', icon: Home, label: 'Início' },
+        { href: '/search', icon: Search, label: 'Busca' },
+        { href: '/communities', icon: Users, label: 'Comunidades' },
+        { href: '/notifications', icon: Bell, label: 'Notificações' },
+        { href: '/messages', icon: Mail, label: 'Mensagens' },
     ];
     
     const resetModal = () => {
@@ -81,8 +81,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     const handleCreatePost = async () => {
         if (!newPostContent.trim() || !user || !chirpUser) {
             toast({
-                title: "Post cannot be empty.",
-                description: "Please write something before posting.",
+                title: "O post não pode estar vazio.",
+                description: "Por favor, escreva algo antes de postar.",
                 variant: "destructive",
             });
             return;
@@ -105,7 +105,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 avatarFallback: chirpUser.displayName[0],
                 content: newPostContent,
                 image: imageUrl,
-                imageHint: imageUrl ? 'user upload' : '',
+                imageHint: imageUrl ? 'upload do usuário' : '',
                 createdAt: serverTimestamp(),
                 comments: 0,
                 retweets: [],
@@ -115,12 +115,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
             resetModal();
             toast({
-                title: "Post created!",
-                description: "Your post has been successfully published.",
+                title: "Post criado!",
+                description: "Seu post foi publicado com sucesso.",
             });
         } catch (error) {
             console.error(error);
-            toast({ title: "Failed to create post", description: "Please try again.", variant: "destructive" });
+            toast({ title: "Falha ao criar o post", description: "Por favor, tente novamente.", variant: "destructive" });
         } finally {
             setIsPosting(false);
         }
@@ -140,17 +140,17 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     
     const handleGeneratePost = async () => {
         if(!aiPrompt.trim()) {
-            toast({ title: "Prompt cannot be empty", variant: "destructive"});
+            toast({ title: "O prompt não pode estar vazio", variant: "destructive"});
             return;
         }
         setIsGenerating(true);
         try {
             const generatedContent = await generatePost(aiPrompt);
             setNewPostContent(generatedContent);
-            toast({ title: "Post content generated!" });
+            toast({ title: "Conteúdo do post gerado!" });
         } catch (error) {
             console.error(error);
-            toast({ title: "Failed to generate post", description: "Please try again.", variant: "destructive" });
+            toast({ title: "Falha ao gerar o post", description: "Por favor, tente novamente.", variant: "destructive" });
         } finally {
             setIsGenerating(false);
         }
@@ -177,9 +177,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 </DialogTrigger>
                  <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
-                    <DialogTitle>Create Post</DialogTitle>
+                    <DialogTitle>Criar Post</DialogTitle>
                     <DialogDescription>
-                        What's on your mind? Share it with the world. You can even use AI to generate content for you.
+                        O que você está pensando? Compartilhe com o mundo. Você pode até usar IA para gerar conteúdo.
                     </DialogDescription>
                     </DialogHeader>
                     {chirpUser ? (
@@ -191,7 +191,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                             </Avatar>
                             <div className="w-full">
                                 <Textarea 
-                                    placeholder="What's happening?!" 
+                                    placeholder="O que está acontecendo?!" 
                                     className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
                                     value={newPostContent}
                                     onChange={(e) => setNewPostContent(e.target.value)}
@@ -199,7 +199,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                                 />
                                 {newPostImage && (
                                     <div className="mt-4 relative">
-                                        <Image src={newPostImage} width={500} height={300} alt="Preview" className="rounded-2xl border" />
+                                        <Image src={newPostImage} width={500} height={300} alt="Pré-visualização" className="rounded-2xl border" />
                                         <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => setNewPostImage(null)}>
                                             <X className="h-4 w-4" />
                                         </Button>
@@ -210,10 +210,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                         <div className="flex flex-col gap-2 p-4 border rounded-lg">
                             <div className="flex items-center gap-2">
                                 <Sparkles className="h-5 w-5 text-primary" />
-                                <span className="font-semibold">Generate with AI</span>
+                                <span className="font-semibold">Gerar com IA</span>
                             </div>
                             <Textarea 
-                                placeholder="e.g., A post about the future of space exploration"
+                                placeholder="ex: Um post sobre o futuro da exploração espacial"
                                 className="text-sm focus-visible:ring-1"
                                 value={aiPrompt}
                                 onChange={(e) => setAiPrompt(e.target.value)}
@@ -221,7 +221,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                             />
                             <Button onClick={handleGeneratePost} disabled={isGenerating || !aiPrompt.trim()} className="self-end">
                                 {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Generate
+                                Gerar
                             </Button>
                         </div>
                         <div className="flex justify-between items-center mt-2 border-t pt-4">
@@ -233,7 +233,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                             </div>
                             <Button onClick={handleCreatePost} disabled={!newPostContent.trim() || isPosting}>
                                 {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Post
+                                Postar
                             </Button>
                         </div>
                     </div>

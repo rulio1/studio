@@ -18,6 +18,7 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generatePost } from '@/ai/flows/post-generator-flow';
 
@@ -99,7 +100,7 @@ export default function HomePage() {
             return {
                 id: doc.id,
                 ...data,
-                time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate()) + ' ago' : 'Just now',
+                time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
                 isLiked: data.likes.includes(auth.currentUser?.uid || ''),
                 isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
             } as Post
@@ -107,7 +108,7 @@ export default function HomePage() {
 
         // Add Chirp AI post
         try {
-            const aiPostContent = await generatePost("a surprising fact about the universe");
+            const aiPostContent = await generatePost("um fato surpreendente sobre o universo");
             const aiPost: Post = {
                 id: 'chirp-ai-post-of-the-day',
                 authorId: 'chirp-ai',
@@ -116,7 +117,7 @@ export default function HomePage() {
                 avatar: '', // Will be rendered as fallback
                 avatarFallback: 'AI',
                 content: aiPostContent,
-                time: 'Just now',
+                time: 'Agora mesmo',
                 comments: 42,
                 retweets: [],
                 likes: [],
@@ -157,7 +158,7 @@ export default function HomePage() {
         return {
             id: doc.id,
             ...data,
-            time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate()) + ' ago' : 'Just now',
+            time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
             isLiked: data.likes.includes(auth.currentUser?.uid || ''),
             isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
         } as Post
@@ -237,16 +238,16 @@ export default function HomePage() {
         if (tab === 'following') {
             return (
                 <div className="p-8 text-center text-muted-foreground">
-                    <h3 className="text-xl font-bold text-foreground">Your timeline is a bit empty...</h3>
-                    <p className="mt-2 mb-4">Find people to follow and see their posts here!</p>
-                    <Button onClick={() => router.push('/search')}>Find People</Button>
+                    <h3 className="text-xl font-bold text-foreground">Sua timeline está um pouco vazia...</h3>
+                    <p className="mt-2 mb-4">Encontre pessoas para seguir e veja os posts delas aqui!</p>
+                    <Button onClick={() => router.push('/search')}>Encontrar Pessoas</Button>
                 </div>
             )
         }
         return (
              <div className="p-8 text-center text-muted-foreground">
-                <h3 className="text-xl font-bold text-foreground">Nothing to see here... yet</h3>
-                <p className="mt-2">When posts are made, they'll show up here.</p>
+                <h3 className="text-xl font-bold text-foreground">Nada para ver aqui... ainda</h3>
+                <p className="mt-2">Quando posts forem feitos, eles aparecerão aqui.</p>
             </div>
         )
     }
@@ -269,11 +270,11 @@ export default function HomePage() {
                         <div className='w-full'>
                         <div className="flex items-center gap-2">
                             <p className="font-bold">{post.author}</p>
-                            {post.authorId === 'chirp-ai' && <Badge variant="default" className="bg-primary text-primary-foreground">AI</Badge>}
+                            {post.authorId === 'chirp-ai' && <Badge variant="default" className="bg-primary text-primary-foreground">IA</Badge>}
                             <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
                         </div>
                         <p className="mb-2">{post.content}</p>
-                        {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Post image" className="rounded-2xl border" />}
+                        {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="rounded-2xl border" />}
                         <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center gap-1">
                                 <MessageCircle className="h-5 w-5 hover:text-primary transition-colors" />
@@ -344,20 +345,20 @@ export default function HomePage() {
                        <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
                        <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
                     </Avatar>
-                    <Button variant="outline" onClick={handleSignOut}>Sign Out</Button>
+                    <Button variant="outline" onClick={handleSignOut}>Sair</Button>
                   </div>
                   <div className="mt-4">
                     <p className="font-bold text-lg">{chirpUser.displayName}</p>
                     <p className="text-sm text-muted-foreground">{chirpUser.handle}</p>
                   </div>
                   <div className="flex gap-4 mt-2 text-sm">
-                    <p><span className="font-bold">{chirpUser.following?.length || 0}</span> <span className="text-muted-foreground">Following</span></p>
-                    <p><span className="font-bold">{chirpUser.followers?.length || 0}</span> <span className="text-muted-foreground">Followers</span></p>
+                    <p><span className="font-bold">{chirpUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
+                    <p><span className="font-bold">{chirpUser.followers?.length || 0}</span> <span className="text-muted-foreground">Seguidores</span></p>
                   </div>
                 </SheetHeader>
                 <nav className="flex-1 flex flex-col gap-2 p-4">
                       <Link href={`/profile/${user.uid}`} className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <User className="h-6 w-6" /> Profile
+                        <User className="h-6 w-6" /> Perfil
                       </Link>
                        <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <X className="h-6 w-6" /> Premium
@@ -366,30 +367,30 @@ export default function HomePage() {
                         <MessageSquare className="h-6 w-6" /> Chat <Badge variant="default" className="ml-auto">BETA</Badge>
                       </Link>
                       <Link href="/communities" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <Users className="h-6 w-6" /> Communities
+                        <Users className="h-6 w-6" /> Comunidades
                       </Link>
                        <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <Bookmark className="h-6 w-6" /> Bookmarks
+                        <Bookmark className="h-6 w-6" /> Itens Salvos
                       </Link>
                        <Link href="/jobs" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <Briefcase className="h-6 w-6" /> Jobs
+                        <Briefcase className="h-6 w-6" /> Vagas
                       </Link>
                        <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <List className="h-6 w-6" /> Lists
+                        <List className="h-6 w-6" /> Listas
                       </Link>
                        <Link href="/spaces" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <Radio className="h-6 w-6" /> Spaces
                       </Link>
                        <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <Banknote className="h-6 w-6" /> Monetization
+                        <Banknote className="h-6 w-6" /> Monetização
                       </Link>
                   </nav>
                   <div className="p-4 border-t">
                      <Link href="/chat" className="flex items-center gap-4 py-2 font-semibold rounded-md">
-                        <Bot className="h-6 w-6" /> Open Chirp AI
+                        <Bot className="h-6 w-6" /> Abrir Chirp AI
                       </Link>
                        <Link href="#" className="flex items-center gap-4 py-2 font-semibold rounded-md">
-                        <Settings className="h-6 w-6" /> Settings and privacy
+                        <Settings className="h-6 w-6" /> Configurações e privacidade
                       </Link>
                   </div>
               </SheetContent>
@@ -403,8 +404,8 @@ export default function HomePage() {
        <main className="flex-1 overflow-y-auto">
         <Tabs defaultValue="for-you" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-              <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">For you</TabsTrigger>
-              <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Following</TabsTrigger>
+              <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Para você</TabsTrigger>
+              <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Seguindo</TabsTrigger>
             </TabsList>
             <TabsContent value="for-you" className="mt-0">
                 <PostList posts={allPosts} loading={isLoading} tab="for-you" />
@@ -417,6 +418,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-
-    

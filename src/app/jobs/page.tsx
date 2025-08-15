@@ -47,7 +47,7 @@ export default function JobsPage() {
                 const jobsData = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
                 setRecommendedJobs(jobsData);
             } catch (error) {
-                console.error("Error fetching jobs: ", error);
+                console.error("Erro ao buscar vagas: ", error);
             } finally {
                 setIsLoading(false);
             }
@@ -63,7 +63,7 @@ export default function JobsPage() {
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <h1 className="text-xl font-bold">Jobs</h1>
+                    <h1 className="text-xl font-bold">Vagas</h1>
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" size="icon">
                             <Settings className="h-5 w-5" />
@@ -77,14 +77,14 @@ export default function JobsPage() {
 
             <div className="p-4 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
-                    <Input placeholder="Search jobs" className="col-span-2 sm:col-span-1" />
-                    <Input placeholder="Location" className="col-span-2 sm:col-span-1" />
+                    <Input placeholder="Buscar vagas" className="col-span-2 sm:col-span-1" />
+                    <Input placeholder="Localização" className="col-span-2 sm:col-span-1" />
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Jobs recommended for you</CardTitle>
-                        <CardDescription>Based on your profile and activity</CardDescription>
+                        <CardTitle>Vagas recomendadas para você</CardTitle>
+                        <CardDescription>Com base no seu perfil e atividade</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <ul className="divide-y divide-border">
@@ -102,7 +102,7 @@ export default function JobsPage() {
                                             <p className="text-sm font-semibold">{job.company}</p>
                                             <p className="text-sm text-muted-foreground">{job.location}</p>
                                         </div>
-                                        <Button variant="outline">Apply</Button>
+                                        <Button variant="outline">Aplicar</Button>
                                     </li>
                                 ))
                             )}
@@ -111,7 +111,7 @@ export default function JobsPage() {
                 </Card>
 
                  <div className="text-center">
-                    <Button variant="link">Show all recommendations</Button>
+                    <Button variant="link">Mostrar todas as recomendações</Button>
                  </div>
 
             </div>

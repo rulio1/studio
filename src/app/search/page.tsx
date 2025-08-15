@@ -66,7 +66,7 @@ export default function SearchPage() {
         const trendsData = snapshot.docs.map(doc => doc.data() as Trend);
         setTrends(trendsData);
     } catch (error) {
-        console.error("Error fetching trends:", error);
+        console.error("Erro ao buscar tendências:", error);
     } finally {
         setIsLoading(false);
     }
@@ -80,7 +80,7 @@ export default function SearchPage() {
         setNewUsers(usersData);
         setIsLoading(false);
     }, (error) => {
-        console.error("Error fetching new users:", error);
+        console.error("Erro ao buscar novos usuários:", error);
         setIsLoading(false);
     });
 
@@ -125,7 +125,7 @@ export default function SearchPage() {
               setPosts(postsData);
 
           } catch (error) {
-              console.error("Error searching:", error);
+              console.error("Erro na busca:", error);
           } finally {
             setIsSearching(false);
           }
@@ -227,7 +227,7 @@ export default function SearchPage() {
         return (
             <Tabs defaultValue="top" className="w-full">
                 <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
-                    <TabsTrigger value="top" className="flex-1">Top</TabsTrigger>
+                    <TabsTrigger value="top" className="flex-1">Principais</TabsTrigger>
                     <TabsTrigger value="people" className="flex-1">Pessoas</TabsTrigger>
                     <TabsTrigger value="posts" className="flex-1">Posts</TabsTrigger>
                 </TabsList>

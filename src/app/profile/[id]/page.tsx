@@ -13,6 +13,7 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { format, formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import PostSkeleton from '@/components/post-skeleton';
 
 const EmptyState = ({ title, description }: { title: string, description: string }) => (
@@ -100,7 +101,7 @@ export default function ProfilePage() {
                 setProfileUser(userData);
                 setIsFollowing(userData.followers?.includes(currentUser.uid));
             } else {
-                console.error("No such user!");
+                console.error("Usuário não encontrado!");
                 // router.push('/home');
             }
             setIsLoading(false);
@@ -126,7 +127,7 @@ export default function ProfilePage() {
              return {
                 id: doc.id,
                 ...data,
-                time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate()) + ' ago' : 'Just now',
+                time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
                 isLiked: data.likes.includes(currentUser?.uid || ''),
                 isRetweeted: data.retweets.includes(currentUser?.uid || ''),
              } as Post
@@ -145,7 +146,7 @@ export default function ProfilePage() {
             return {
                 id: doc.id,
                 ...data,
-                time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate()) + ' ago' : 'Just now',
+                time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
                 isLiked: data.likes.includes(currentUser?.uid || ''),
                 isRetweeted: data.retweets.includes(currentUser?.uid || ''),
             } as Post
@@ -188,7 +189,7 @@ export default function ProfilePage() {
                     avatar: chirpUser.avatar,
                 },
                 type: 'follow',
-                text: 'followed you',
+                text: 'seguiu você',
                 createdAt: serverTimestamp(),
                 read: false,
             });
@@ -259,7 +260,7 @@ export default function ProfilePage() {
                                     <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
                                 </div>
                                 <p className="mb-2 whitespace-pre-wrap">{post.content}</p>
-                                {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Post image" className="rounded-2xl border" />}
+                                {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="rounded-2xl border" />}
                                 <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></div>
                                     <button onClick={() => handlePostAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}><Repeat className="h-5 w-5 hover:text-green-500 transition-colors" /><span>{post.retweets.length}</span></button>
@@ -312,14 +313,14 @@ export default function ProfilePage() {
                 </div>
                 {isOwnProfile ? (
                     <Button variant="outline" className="rounded-full mt-4 font-bold" asChild>
-                      <Link href="/profile/edit">Edit profile</Link>
+                      <Link href="/profile/edit">Editar perfil</Link>
                     </Button>
                 ) : (
                     <div className='flex items-center gap-2 mt-4'>
                         <Button variant="ghost" size="icon" className="border rounded-full"><Mail /></Button>
                         <Button variant="ghost" size="icon" className="border rounded-full"><Bell /></Button>
                         <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={handleFollow}>
-                            {isFollowing ? 'Following' : 'Follow'}
+                            {isFollowing ? 'Seguindo' : 'Seguir'}
                         </Button>
                     </div>
                 )}
@@ -333,43 +334,43 @@ export default function ProfilePage() {
             </div>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 text-muted-foreground text-sm">
                 {profileUser.location && <div className="flex items-center gap-2"><MapPin className="h-4 w-4" /><span>{profileUser.location}</span></div>}
-                {profileUser.birthDate && <div className="flex items-center gap-2"><Gift className="h-4 w-4" /><span>Born {format(profileUser.birthDate.toDate(), 'MMMM d, yyyy')}</span></div>}
-                {profileUser.createdAt && <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /><span>Joined {format(profileUser.createdAt.toDate(), 'MMMM yyyy')}</span></div>}
+                {profileUser.birthDate && <div className="flex items-center gap-2"><Gift className="h-4 w-4" /><span>Nascido em {format(profileUser.birthDate.toDate(), 'd de MMMM, yyyy', { locale: ptBR })}</span></div>}
+                {profileUser.createdAt && <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /><span>Ingressou em {format(profileUser.createdAt.toDate(), 'MMMM yyyy', { locale: ptBR })}</span></div>}
             </div>
              <div className="flex gap-4 mt-4 text-sm">
-                <p className="hover:underline cursor-pointer"><span className="font-bold text-foreground">{profileUser.following?.length || 0}</span> Following</p>
-                <p className="hover:underline cursor-pointer"><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> Followers</p>
+                <p className="hover:underline cursor-pointer"><span className="font-bold text-foreground">{profileUser.following?.length || 0}</span> Seguindo</p>
+                <p className="hover:underline cursor-pointer"><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> Seguidores</p>
             </div>
         </div>
 
         <Tabs defaultValue="posts" className="w-full mt-4">
             <TabsList className="w-full justify-around rounded-none bg-transparent border-b px-4">
                 <TabsTrigger value="posts" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Posts</TabsTrigger>
-                <TabsTrigger value="replies" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Replies</TabsTrigger>
-                <TabsTrigger value="media" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Media</TabsTrigger>
-                <TabsTrigger value="likes" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Likes</TabsTrigger>
+                <TabsTrigger value="replies" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Respostas</TabsTrigger>
+                <TabsTrigger value="media" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Mídia</TabsTrigger>
+                <TabsTrigger value="likes" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Curtidas</TabsTrigger>
             </TabsList>
 
              <TabsContent value="posts" className="mt-0">
                 <PostList 
                     posts={userPosts} 
                     loading={isLoadingPosts} 
-                    emptyTitle="No posts yet" 
-                    emptyDescription="When this user posts, they will show up here."
+                    emptyTitle="Nenhum post ainda" 
+                    emptyDescription="Quando este usuário postar, os posts aparecerão aqui."
                 />
             </TabsContent>
             <TabsContent value="replies" className="mt-0">
-                <EmptyState title="No replies yet" description="When someone replies to this user, it will show up here." />
+                <EmptyState title="Nenhuma resposta ainda" description="Quando alguém responder a este usuário, aparecerá aqui." />
             </TabsContent>
             <TabsContent value="media" className="mt-0">
-                 <EmptyState title="No media yet" description="When this user posts photos or videos, they will appear here." />
+                 <EmptyState title="Nenhuma mídia ainda" description="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui." />
             </TabsContent>
             <TabsContent value="likes" className="mt-0">
                  <PostList 
                     posts={likedPosts} 
                     loading={isLoadingLikes}
-                    emptyTitle="No likes yet" 
-                    description="When this user likes posts, they will appear here."
+                    emptyTitle="Nenhuma curtida ainda" 
+                    description="Quando este usuário curtir posts, eles aparecerão aqui."
                  />
             </TabsContent>
         </Tabs>
@@ -377,5 +378,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

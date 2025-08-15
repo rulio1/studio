@@ -11,6 +11,7 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Notification {
     id: string;
@@ -63,7 +64,7 @@ export default function NotificationsPage() {
                 return {
                     id: doc.id,
                     ...data,
-                    time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate()) + ' ago' : 'Just now',
+                    time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
                 } as Notification;
             });
             // Sort client-side as a fallback
@@ -71,7 +72,7 @@ export default function NotificationsPage() {
             setNotifications(notifs);
             setIsLoading(false);
         }, (error) => {
-            console.error("Error fetching notifications:", error);
+            console.error("Erro ao buscar notificações:", error);
             setIsLoading(false);
         });
 
@@ -84,18 +85,18 @@ export default function NotificationsPage() {
         <div className="flex items-center justify-between px-4 py-2 gap-4">
           <Avatar className="h-8 w-8">
             {user ? <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} /> : null}
-            <AvatarFallback>{user?.displayName?.[0] || 'A'}</AvatarFallback>
+            <AvatarFallback>{user?.displayName?.[0] || 'U'}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-center">Notifications</h1>
+            <h1 className="text-xl font-bold text-center">Notificações</h1>
           </div>
           <Settings className="h-6 w-6" />
         </div>
         <Tabs defaultValue="all" className="w-full">
             <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
-              <TabsTrigger value="all" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">All</TabsTrigger>
-              <TabsTrigger value="mentions" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Mentions</TabsTrigger>
-               <TabsTrigger value="verified" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Verified</TabsTrigger>
+              <TabsTrigger value="all" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Todas</TabsTrigger>
+              <TabsTrigger value="mentions" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Menções</TabsTrigger>
+               <TabsTrigger value="verified" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Verificados</TabsTrigger>
             </TabsList>
         </Tabs>
       </header>
@@ -107,8 +108,8 @@ export default function NotificationsPage() {
                 ) : notifications.length === 0 ? (
                      <div className="p-8 text-center text-muted-foreground">
                         <Bell className="mx-auto h-16 w-16 mb-4" />
-                        <h3 className="font-bold text-2xl text-foreground">No notifications yet</h3>
-                        <p>When you have new notifications, they'll show up here.</p>
+                        <h3 className="font-bold text-2xl text-foreground">Nenhuma notificação ainda</h3>
+                        <p>Quando você tiver novas notificações, elas aparecerão aqui.</p>
                     </div>
                 ) : (
                     <ul className="divide-y divide-border">
@@ -141,14 +142,14 @@ export default function NotificationsPage() {
             </TabsContent>
             <TabsContent value="mentions" className="mt-0">
                 <div className="p-8 text-center text-muted-foreground">
-                    <h3 className="font-bold text-2xl text-foreground">Nothing to see here — yet</h3>
-                    <p>When someone mentions you, you’ll find it here.</p>
+                    <h3 className="font-bold text-2xl text-foreground">Nada para ver aqui — ainda</h3>
+                    <p>Quando alguém mencionar você, você encontrará aqui.</p>
                 </div>
             </TabsContent>
             <TabsContent value="verified" className="mt-0">
                  <div className="p-8 text-center text-muted-foreground">
-                    <h3 className="font-bold text-2xl text-foreground">Nothing to see here — yet</h3>
-                    <p>Likes, mentions, Reposts, and a whole lot more — when it comes from a verified account, you’ll find it here.</p>
+                    <h3 className="font-bold text-2xl text-foreground">Nada para ver aqui — ainda</h3>
+                    <p>Curtidas, menções, repostagens e muito mais — quando vier de uma conta verificada, você encontrará aqui.</p>
                 </div>
             </TabsContent>
         </Tabs>

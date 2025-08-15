@@ -19,9 +19,9 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Invalid email address." }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
+  email: z.string().email({ message: "Endereço de e-mail inválido." }),
+  password: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres." }),
 });
 
 export default function RegisterPage() {
@@ -67,18 +67,18 @@ export default function RegisterPage() {
         });
         
         toast({
-        title: "Account Created!",
-        description: "You can now log in with your new account.",
+        title: "Conta Criada!",
+        description: "Agora você pode fazer login com sua nova conta.",
         });
         router.push('/home');
 
     } catch (error: any) {
-      let description = 'An unexpected error occurred.';
+      let description = 'Ocorreu um erro inesperado.';
       if (error.code === 'auth/email-already-in-use') {
-          description = 'This email is already in use. Please try another one.';
+          description = 'Este e-mail já está em uso. Por favor, tente outro.';
       }
       toast({
-        title: "Registration Failed",
+        title: "Falha no Cadastro",
         description,
         variant: "destructive",
       });
@@ -93,8 +93,8 @@ export default function RegisterPage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
             <CardHeader className="space-y-1 text-center">
-              <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
-              <CardDescription>Enter your details below to get started.</CardDescription>
+              <CardTitle className="text-2xl font-headline">Criar uma Conta</CardTitle>
+              <CardDescription>Insira seus dados abaixo para começar.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
               <FormField
@@ -102,9 +102,9 @@ export default function RegisterPage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>Nome</FormLabel>
                     <FormControl>
-                      <Input placeholder="Your Name" {...field} disabled={isLoading} />
+                      <Input placeholder="Seu Nome" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -117,7 +117,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} disabled={isLoading} />
+                      <Input placeholder="nome@exemplo.com" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -128,7 +128,7 @@ export default function RegisterPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>Senha</FormLabel>
                     <FormControl>
                       <Input type="password" {...field} disabled={isLoading} />
                     </FormControl>
@@ -138,13 +138,13 @@ export default function RegisterPage() {
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Account
+                Criar Conta
               </Button>
             </CardContent>
             <CardFooter className="flex justify-center text-sm">
-              <span className="text-muted-foreground">Already have an account?</span>
+              <span className="text-muted-foreground">Já tem uma conta?</span>
               <Link href="/login" className="ml-1 underline">
-                Sign in
+                Entrar
               </Link>
             </CardFooter>
           </form>

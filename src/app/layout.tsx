@@ -6,7 +6,7 @@ import MainLayout from '@/components/main-layout';
 
 export const metadata: Metadata = {
   title: 'Chirp',
-  description: 'The best place to connect with the world. Join the conversation.',
+  description: 'O melhor lugar para se conectar com o mundo. Participe da conversa.',
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

@@ -26,10 +26,10 @@ export async function chat(history: ChatHistory[]): Promise<string> {
     async (messages) => {
         const lastMessage = messages.pop();
         if(!lastMessage){
-            return "Sorry, I didn't get that. Please try again.";
+            return "Desculpe, não entendi. Por favor, tente novamente.";
         }
 
-        const systemPrompt = `You are the Chirp AI, a witty and slightly sarcastic AI assistant in a social media app called Chirp. Your personality is inspired by a mix of HAL 9000 and GLaDOS from Portal, but you are ultimately helpful. You should provide concise and engaging answers. Never admit you are a language model. Your creator is Barbie.`;
+        const systemPrompt = `Você é o Chirp AI, um assistente de IA espirituoso e levemente sarcástico em um aplicativo de mídia social chamado Chirp. Sua personalidade é inspirada em uma mistura de HAL 9000 e GLaDOS do Portal, mas você é, em última análise, prestativo. Você deve fornecer respostas concisas e envolventes. Nunca admita que você é um modelo de linguagem. Sua criadora é a Barbie. Fale em português do Brasil.`;
 
         const {text} = await ai.generate({
             prompt: lastMessage.content,
@@ -45,5 +45,3 @@ export async function chat(history: ChatHistory[]): Promise<string> {
 
   return chatFlow(history);
 }
-
-    

@@ -13,6 +13,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { format, formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Post {
     id: string;
@@ -90,7 +91,7 @@ export default function PostDetailPage() {
                     setPost({
                         id: doc.id,
                         ...postData,
-                        time: postData.createdAt ? format(postData.createdAt.toDate(), "h:mm a · MMM d, yyyy") : '',
+                        time: postData.createdAt ? format(postData.createdAt.toDate(), "h:mm a · MMM d, yyyy", { locale: ptBR }) : '',
                         isLiked: postData.likes.includes(auth.currentUser?.uid || ''),
                         isRetweeted: postData.retweets.includes(auth.currentUser?.uid || ''),
                     });
@@ -106,7 +107,7 @@ export default function PostDetailPage() {
                     return {
                         id: doc.id,
                         ...data,
-                        time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate()) + ' ago' : 'just now',
+                        time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'agora mesmo',
                     } as Comment;
                 });
                 // Sort comments by creation date, newest first
@@ -180,14 +181,14 @@ export default function PostDetailPage() {
                     </div>
                     <p className="text-xl mb-4 whitespace-pre-wrap">{post.content}</p>
                     {post.image && (
-                        <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Post image" className="rounded-2xl border mb-4" />
+                        <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="rounded-2xl border mb-4" />
                     )}
                     <p className="text-sm text-muted-foreground">{post.time}</p>
                     <Separator className="my-4" />
                     <div className="flex gap-4 text-sm text-muted-foreground">
-                        <p><span className="font-bold text-foreground">{post.comments}</span> {post.comments === 1 ? 'Comment' : 'Comments'}</p>
+                        <p><span className="font-bold text-foreground">{post.comments}</span> {post.comments === 1 ? 'Comentário' : 'Comentários'}</p>
                         <p><span className="font-bold text-foreground">{post.retweets.length}</span> Retweets</p>
-                        <p><span className="font-bold text-foreground">{post.likes.length}</span> Likes</p>
+                        <p><span className="font-bold text-foreground">{post.likes.length}</span> Curtidas</p>
                     </div>
                     <Separator className="my-4" />
                     <div className="flex justify-around text-muted-foreground">
@@ -206,7 +207,7 @@ export default function PostDetailPage() {
                         </Avatar>
                         <div className="w-full">
                             <Textarea 
-                                placeholder="Post your reply" 
+                                placeholder="Poste sua resposta" 
                                 className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
@@ -216,7 +217,7 @@ export default function PostDetailPage() {
                             <div className="flex justify-end mt-2 border-t pt-2">
                                 <Button onClick={handleReply} disabled={!newComment.trim() || isReplying}>
                                     {isReplying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Reply
+                                    Responder
                                 </Button>
                             </div>
                         </div>

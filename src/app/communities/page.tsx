@@ -108,7 +108,7 @@ export default function CommunitiesPage() {
             setDiscoverCommunities(discoverData);
 
         } catch (error) {
-            console.error("Error fetching communities: ", error);
+            console.error("Erro ao buscar comunidades: ", error);
         } finally {
             setIsLoading(false);
         }
@@ -145,7 +145,7 @@ export default function CommunitiesPage() {
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <h1 className="text-xl font-bold">Communities</h1>
+                    <h1 className="text-xl font-bold">Comunidades</h1>
                     <div className="flex items-center gap-2">
                          <Button variant="ghost" size="icon">
                             <Search className="h-5 w-5" />
@@ -158,7 +158,7 @@ export default function CommunitiesPage() {
             </header>
 
             <div className="p-4">
-                <h2 className="text-2xl font-bold mb-4">Featured Communities</h2>
+                <h2 className="text-2xl font-bold mb-4">Comunidades em Destaque</h2>
                 {isLoading ? (
                     <div className="grid gap-4 md:grid-cols-2">
                         <CommunityCardSkeleton />
@@ -174,11 +174,11 @@ export default function CommunitiesPage() {
                                 <CardContent className="p-4">
                                     <CardTitle>{community.name}</CardTitle>
                                     <CardDescription>{community.topic}</CardDescription>
-                                    <p className="text-sm text-muted-foreground mt-2">{community.memberCount.toLocaleString()} members</p>
+                                    <p className="text-sm text-muted-foreground mt-2">{community.memberCount.toLocaleString()} membros</p>
                                 </CardContent>
                                 <CardFooter>
                                     <Button className="w-full" variant={community.isJoined ? "secondary" : "default"} onClick={() => handleJoinLeaveCommunity(community.id, !!community.isJoined)}>
-                                        {community.isJoined ? 'Joined' : 'Join'}
+                                        {community.isJoined ? 'Membro' : 'Entrar'}
                                     </Button>
                                 </CardFooter>
                             </Card>
@@ -188,7 +188,7 @@ export default function CommunitiesPage() {
             </div>
 
              <div className="p-4">
-                <h2 className="text-2xl font-bold mb-4">Discover new Communities</h2>
+                <h2 className="text-2xl font-bold mb-4">Descubra novas Comunidades</h2>
                 {isLoading ? (
                     <ul className="divide-y divide-border">
                         {[...Array(3)].map((_, i) => <li key={i}><CommunityListSkeleton /></li>)}
@@ -204,11 +204,11 @@ export default function CommunitiesPage() {
                                 </Avatar>
                                 <div>
                                     <p className="font-bold">{community.name}</p>
-                                    <p className="text-sm text-muted-foreground">{community.memberCount.toLocaleString()} members</p>
+                                    <p className="text-sm text-muted-foreground">{community.memberCount.toLocaleString()} membros</p>
                                 </div>
                             </div>
                             <Button variant={community.isJoined ? "secondary" : "outline"} onClick={() => handleJoinLeaveCommunity(community.id, !!community.isJoined)}>
-                                {community.isJoined ? 'Joined' : 'Join'}
+                                {community.isJoined ? 'Membro' : 'Entrar'}
                             </Button>
                         </li>
                     ))}
@@ -216,7 +216,7 @@ export default function CommunitiesPage() {
                 )}
              </div>
              <div className="p-4 text-center">
-                <Button variant="link">Show more</Button>
+                <Button variant="link">Mostrar mais</Button>
              </div>
         </>
     );

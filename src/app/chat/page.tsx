@@ -44,8 +44,8 @@ export default function ChatPage() {
             const modelMessage: ChatHistory = { role: 'model', content: modelResponse };
             setMessages([...newMessages, modelMessage]);
         } catch (error) {
-            console.error('Error getting response from AI:', error);
-            const errorMessage: ChatHistory = { role: 'model', content: "Oops! Something went wrong. Please try again." };
+            console.error('Erro ao obter resposta da IA:', error);
+            const errorMessage: ChatHistory = { role: 'model', content: "Oops! Algo deu errado. Por favor, tente novamente." };
             setMessages([...newMessages, errorMessage]);
         } finally {
             setIsLoading(false);
@@ -66,7 +66,7 @@ export default function ChatPage() {
                 </Avatar>
                 <div>
                     <h1 className="text-lg font-bold">Chirp AI</h1>
-                    <p className="text-xs text-muted-foreground">AI Assistant</p>
+                    <p className="text-xs text-muted-foreground">Assistente de IA</p>
                 </div>
             </div>
         </div>
@@ -78,8 +78,8 @@ export default function ChatPage() {
                  {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                         <Bot className="h-16 w-16 mb-4" />
-                        <h2 className="text-2xl font-bold text-foreground">Chirp AI is here to help</h2>
-                        <p>Ask me anything, or just say hi!</p>
+                        <h2 className="text-2xl font-bold text-foreground">Chirp AI está aqui para ajudar</h2>
+                        <p>Pergunte-me qualquer coisa, ou apenas diga oi!</p>
                     </div>
                  )}
                 {messages.map((message, index) => (
@@ -115,7 +115,7 @@ export default function ChatPage() {
         <div className="sticky bottom-0 bg-background/80 backdrop-blur-sm p-4 border-t">
             <div className="flex items-center gap-2">
                 <Input 
-                    placeholder="Ask Chirp AI anything..." 
+                    placeholder="Pergunte qualquer coisa ao Chirp AI..." 
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}

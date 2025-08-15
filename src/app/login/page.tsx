@@ -18,8 +18,8 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
-  email: z.string().email({ message: "Invalid email address." }),
-  password: z.string().min(1, { message: "Password is required." }),
+  email: z.string().email({ message: "Endereço de e-mail inválido." }),
+  password: z.string().min(1, { message: "A senha é obrigatória." }),
 });
 
 export default function LoginPage() {
@@ -40,17 +40,17 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({
-        title: 'Login Successful',
-        description: "Welcome back!",
+        title: 'Login bem-sucedido',
+        description: "Bem-vindo de volta!",
       });
       router.push('/home');
     } catch (error: any) {
-        let description = 'An unexpected error occurred.';
+        let description = 'Ocorreu um erro inesperado.';
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            description = 'Invalid email or password.';
+            description = 'E-mail ou senha inválidos.';
         }
       toast({
-        title: 'Login Failed',
+        title: 'Falha no Login',
         description,
         variant: 'destructive',
       });
@@ -65,8 +65,8 @@ export default function LoginPage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
             <CardHeader className="space-y-1 text-center">
-              <CardTitle className="text-2xl font-headline">Welcome Back</CardTitle>
-              <CardDescription>Enter your email and password to sign in.</CardDescription>
+              <CardTitle className="text-2xl font-headline">Bem-vindo de Volta</CardTitle>
+              <CardDescription>Digite seu e-mail e senha para entrar.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
               <FormField
@@ -76,7 +76,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} disabled={isLoading} />
+                      <Input placeholder="nome@exemplo.com" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -88,9 +88,9 @@ export default function LoginPage() {
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center">
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>Senha</FormLabel>
                       <Link href="#" className="ml-auto inline-block text-sm underline">
-                        Forgot password?
+                        Esqueceu a senha?
                       </Link>
                     </div>
                     <FormControl>
@@ -102,14 +102,14 @@ export default function LoginPage() {
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In
+                Entrar
               </Button>
             </CardContent>
             <CardFooter className="flex-col gap-4">
               <div className="flex justify-center text-sm">
-                  <span className="text-muted-foreground">Don't have an account?</span>
+                  <span className="text-muted-foreground">Não tem uma conta?</span>
                   <Link href="/register" className="ml-1 underline">
-                  Sign up
+                  Inscreva-se
                   </Link>
               </div>
             </CardFooter>

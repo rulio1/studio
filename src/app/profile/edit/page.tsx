@@ -117,17 +117,17 @@ export default function EditProfilePage() {
             });
 
             toast({
-                title: "Profile Saved",
-                description: "Your changes have been successfully saved.",
+                title: "Perfil Salvo",
+                description: "Suas alterações foram salvas com sucesso.",
             });
             router.push(`/profile/${user.uid}`);
             router.refresh();
 
         } catch (error) {
-            console.error("Error saving profile: ", error);
+            console.error("Erro ao salvar perfil: ", error);
             toast({
-                title: "Save Failed",
-                description: "Could not save your profile changes. Please try again.",
+                title: "Falha ao Salvar",
+                description: "Não foi possível salvar as alterações do seu perfil. Por favor, tente novamente.",
                 variant: 'destructive'
             });
         } finally {
@@ -146,10 +146,10 @@ export default function EditProfilePage() {
             <Button variant="ghost" onClick={() => router.back()} disabled={isSaving}>
                 <X className="h-5 w-5" />
             </Button>
-            <h1 className="font-bold text-lg">Edit profile</h1>
+            <h1 className="font-bold text-lg">Editar perfil</h1>
             <Button variant="default" className="rounded-full font-bold px-4 bg-foreground text-background hover:bg-foreground/80" onClick={handleSave} disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save
+                Salvar
             </Button>
         </div>
       </header>
@@ -184,7 +184,7 @@ export default function EditProfilePage() {
 
         <div className="p-4 mt-4 space-y-8">
             <div className="grid gap-1.5">
-                <Label htmlFor="displayName">Name</Label>
+                <Label htmlFor="displayName">Nome</Label>
                 <Input 
                     id="displayName" 
                     value={formData.displayName} 
@@ -203,7 +203,7 @@ export default function EditProfilePage() {
                 />
             </div>
              <div className="grid gap-1.5">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="location">Localização</Label>
                 <Input 
                     id="location" 
                     value={formData.location}

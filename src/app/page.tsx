@@ -12,10 +12,10 @@ export default function LandingPage() {
         </Link>
         <nav className="flex items-center gap-2">
           <Button variant="ghost" asChild>
-            <Link href="/login">Login</Link>
+            <Link href="/login">Entrar</Link>
           </Button>
           <Button asChild>
-            <Link href="/register">Sign Up</Link>
+            <Link href="/register">Inscreva-se</Link>
           </Button>
         </nav>
       </header>
@@ -25,15 +25,15 @@ export default function LandingPage() {
             <div className="flex flex-col items-center space-y-4 text-center">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none font-headline">
-                  Join the Conversation on Chirp
+                  Participe da Conversa no Chirp
                 </h1>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                  Discover what's happening in the world and connect with people from all over the globe.
+                  Descubra o que está acontecendo no mundo e conecte-se com pessoas de todos os lugares.
                 </p>
               </div>
               <div className="space-x-4 pt-6">
                 <Button asChild size="lg">
-                  <Link href="/register">Get Started</Link>
+                  <Link href="/register">Comece Agora</Link>
                 </Button>
               </div>
             </div>
@@ -41,7 +41,7 @@ export default function LandingPage() {
         </section>
       </main>
       <footer className="flex items-center justify-center p-4 border-t">
-        <p className="text-xs text-muted-foreground">&copy; 2024 Chirp Inc. All rights reserved.</p>
+        <p className="text-xs text-muted-foreground">&copy; 2024 Chirp Inc. Todos os direitos reservados.</p>
       </footer>
     </div>
   );
