@@ -79,7 +79,7 @@ function ClientUILayout() {
         setShowAiGenerator(false);
     }
 
-    const handleCreatePost = async (communityId: string | null = null) => {
+    const handleCreatePost = async () => {
         if (!newPostContent.trim() || !user || !chirpUser) {
             toast({
                 title: "O post não pode estar vazio.",
@@ -107,7 +107,7 @@ function ClientUILayout() {
                 content: newPostContent,
                 image: imageUrl,
                 imageHint: imageUrl ? 'upload do usuário' : '',
-                communityId: communityId || null,
+                communityId: null,
                 createdAt: serverTimestamp(),
                 comments: 0,
                 retweets: [],
@@ -222,7 +222,7 @@ function ClientUILayout() {
                                     <Sparkles className="h-6 w-6 text-primary" />
                                 </Button>
                             </div>
-                            <Button onClick={() => handleCreatePost()} disabled={!newPostContent.trim() || isPosting}>
+                            <Button onClick={handleCreatePost} disabled={!newPostContent.trim() || isPosting}>
                                 {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Postar
                             </Button>
