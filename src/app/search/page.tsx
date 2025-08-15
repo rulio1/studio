@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +10,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { useDebounce } from 'use-debounce';
+
 
 interface Trend {
   rank: number;
@@ -42,6 +44,7 @@ export default function SearchPage() {
   const [users, setUsers] = useState<UserSearchResult[]>([]);
   const [posts, setPosts] = useState<PostSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
 
   useEffect(() => {
     const fetchTrends = async () => {
@@ -55,15 +58,15 @@ export default function SearchPage() {
     fetchTrends();
   }, []);
 
-  const handleSearch = async (term: string) => {
+  const handleSearch = useCallback(async (term: string) => {
       if (!term.trim()) {
           setUsers([]);
           setPosts([]);
-          setActiveTab('trending');
+          if (activeTab !== 'trending') setActiveTab('trending');
           return;
       }
       setIsLoading(true);
-      setActiveTab('top');
+      if (activeTab === 'trending') setActiveTab('top');
       try {
           const userQuery = query(collection(db, 'users'), where('displayName', '>=', term), where('displayName', '<=', term + '\uf8ff'), limit(5));
           const postQuery = query(collection(db, 'posts'), where('content', '>=', term), where('content', '<=', term + '\uf8ff'), limit(5));
@@ -83,7 +86,12 @@ export default function SearchPage() {
           console.error("Error searching:", error);
       }
       setIsLoading(false);
-  };
+  }, [activeTab]);
+  
+  useEffect(() => {
+      handleSearch(debouncedSearchTerm);
+  }, [debouncedSearchTerm, handleSearch]);
+
 
   const filteredTrends = useMemo(() => {
     if (!searchTerm) return trends;
@@ -134,7 +142,7 @@ export default function SearchPage() {
                             ))}
                         </ul>
                     )}
-                    {users.length === 0 && posts.length === 0 && (
+                    {users.length === 0 && posts.length === 0 && !isLoading && (
                         <div className="text-center p-8 text-muted-foreground">No results for &quot;{searchTerm}&quot;</div>
                     )}
                 </TabsContent>
@@ -196,7 +204,7 @@ export default function SearchPage() {
             <AvatarImage src="https://placehold.co/40x40.png" alt="admin" />
             <AvatarFallback>A</AvatarFallback>
           </Avatar>
-          <form className="flex-1 relative" onSubmit={(e) => { e.preventDefault(); handleSearch(searchTerm); }}>
+          <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input 
               placeholder="Search" 
@@ -204,7 +212,7 @@ export default function SearchPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-          </form>
+          </div>
           <Settings className="h-6 w-6" />
         </div>
         {!searchTerm && (
