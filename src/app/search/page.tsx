@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, Search, Settings, MessageCircle, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Search, Settings, MessageCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { collection, getDocs, query, where, limit, orderBy, doc, updateDoc, arrayUnion, arrayRemove, writeBatch, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
@@ -41,7 +41,7 @@ interface PostSearchResult {
 export default function SearchPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('trending');
+  const [activeTab, setActiveTab] = useState('for-you');
   const [trends, setTrends] = useState<Trend[]>([]);
   const [users, setUsers] = useState<UserSearchResult[]>([]);
   const [newUsers, setNewUsers] = useState<UserSearchResult[]>([]);
@@ -76,35 +76,32 @@ export default function SearchPage() {
   const fetchNewUsers = useCallback(async () => {
     setIsLoading(true);
     const usersQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(10));
-    try {
-        const snapshot = await getDocs(usersQuery);
+    const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
         const usersData = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserSearchResult));
         setNewUsers(usersData);
-    } catch (error) {
-        console.error("Error fetching new users:", error);
-    } finally {
         setIsLoading(false);
-    }
+    }, (error) => {
+        console.error("Error fetching new users:", error);
+        setIsLoading(false);
+    });
+     return unsubscribe;
   }, []);
   
   useEffect(() => {
     fetchTrends();
-    fetchNewUsers();
+    const unsub = fetchNewUsers();
+    return () => unsub();
   }, [fetchTrends, fetchNewUsers]);
   
   useEffect(() => {
-      const handleSearch = async (term: string) => {
+      const performSearch = async (term: string) => {
           if (!term.trim()) {
               setUsers([]);
               setPosts([]);
-              if (activeTab !== 'trending') setActiveTab('trending');
               return;
           }
           setIsSearching(true);
-          if (activeTab === 'trending' || activeTab === 'news' || activeTab === 'for-you' || activeTab === 'new-users') {
-              setActiveTab('top');
-          }
-
+          
           try {
               const userQuery = query(collection(db, 'users'), where('displayName', '>=', term), where('displayName', '<=', term + '\uf8ff'), limit(5));
               const postQuery = query(collection(db, 'posts'), where('content', '>=', term), where('content', '<=', term + '\uf8ff'), limit(5));
@@ -127,8 +124,8 @@ export default function SearchPage() {
           }
       };
 
-      handleSearch(debouncedSearchTerm);
-  }, [debouncedSearchTerm, activeTab]);
+      performSearch(debouncedSearchTerm);
+  }, [debouncedSearchTerm]);
 
   const handleFollow = async (targetUserId: string) => {
       if (!currentUser) return;
@@ -149,17 +146,6 @@ export default function SearchPage() {
       }
       
       await batch.commit();
-
-      // Optimistically update UI
-      setNewUsers(prevUsers => prevUsers.map(user => {
-          if (user.uid === targetUserId) {
-              const newFollowers = isFollowing 
-                  ? user.followers?.filter(uid => uid !== currentUser.uid)
-                  : [...(user.followers || []), currentUser.uid];
-              return { ...user, followers: newFollowers };
-          }
-          return user;
-      }));
   };
 
   const filteredTrends = useMemo(() => {
@@ -171,61 +157,28 @@ export default function SearchPage() {
   }, [searchTerm, trends]);
 
 
-  const renderContent = () => {
-    if (isLoading && !debouncedSearchTerm) {
-      return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  const renderSearchResults = () => {
+    if (isSearching) {
+        return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
-    if (debouncedSearchTerm) {
-        if (isSearching) {
-            return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-        }
+    if (users.length === 0 && posts.length === 0) {
+        return <div className="text-center p-8 text-muted-foreground">No results for &quot;{debouncedSearchTerm}&quot;</div>
+    }
 
-        return (
-             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
-                    <TabsTrigger value="top" className="flex-1">Top</TabsTrigger>
-                    <TabsTrigger value="people" className="flex-1">People</TabsTrigger>
-                    <TabsTrigger value="posts" className="flex-1">Posts</TabsTrigger>
-                </TabsList>
-                <TabsContent value="top">
-                    {users.length === 0 && posts.length === 0 ? (
-                        <div className="text-center p-8 text-muted-foreground">No results for &quot;{debouncedSearchTerm}&quot;</div>
-                    ) : (
-                        <>
-                            {users.length > 0 && (
-                                <div className="border-b">
-                                   {users.map((user) => (
-                                        <div key={user.uid} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
-                                            <div className="flex items-center gap-4">
-                                                <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
-                                                <div>
-                                                    <p className="font-bold">{user.displayName}</p>
-                                                    <p className="text-sm text-muted-foreground">{user.handle}</p>
-                                                    <p className="text-sm mt-1">{user.bio}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                             {posts.length > 0 && (
-                                 <ul className="divide-y divide-border">
-                                    {posts.map((post) => (
-                                        <li key={post.id} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground"><MessageCircle className="h-4 w-4" /> Post from {post.handle}</div>
-                                            <p className="mt-1">{post.content}</p>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </>
-                    )}
-                </TabsContent>
-                <TabsContent value="people">
-                     {users.length > 0 ? (
-                         <ul className="divide-y divide-border">{users.map((user) => (
-                            <li key={user.uid} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
+    return (
+        <Tabs defaultValue="top" className="w-full">
+            <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
+                <TabsTrigger value="top" className="flex-1">Top</TabsTrigger>
+                <TabsTrigger value="people" className="flex-1">People</TabsTrigger>
+                <TabsTrigger value="posts" className="flex-1">Posts</TabsTrigger>
+            </TabsList>
+            <TabsContent value="top">
+                {users.length > 0 && (
+                    <div className="border-b">
+                        <h3 className="font-bold text-xl p-4">People</h3>
+                        {users.map((user) => (
+                            <div key={user.uid} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
                                 <div className="flex items-center gap-4">
                                     <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
                                     <div>
@@ -234,27 +187,54 @@ export default function SearchPage() {
                                         <p className="text-sm mt-1">{user.bio}</p>
                                     </div>
                                 </div>
-                            </li>
-                        ))}</ul>
-                     ) : <div className="text-center p-8 text-muted-foreground">No people found for &quot;{debouncedSearchTerm}&quot;</div>}
-                </TabsContent>
-                <TabsContent value="posts">
-                     {posts.length > 0 ? (
-                         <ul className="divide-y divide-border">{posts.map((post) => (
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {posts.length > 0 && (
+                    <div>
+                        <h3 className="font-bold text-xl p-4">Posts</h3>
+                        <ul className="divide-y divide-border">
+                        {posts.map((post) => (
                             <li key={post.id} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground"><MessageCircle className="h-4 w-4" /> Post from {post.handle}</div>
                                 <p className="mt-1">{post.content}</p>
                             </li>
-                        ))}</ul>
-                     ) : <div className="text-center p-8 text-muted-foreground">No posts found for &quot;{debouncedSearchTerm}&quot;</div>}
-                </TabsContent>
-            </Tabs>
-        )
-    }
+                        ))}
+                    </ul>
+                    </div>
+                )}
+            </TabsContent>
+            <TabsContent value="people">
+                    <ul className="divide-y divide-border">{users.map((user) => (
+                        <li key={user.uid} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
+                            <div className="flex items-center gap-4">
+                                <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
+                                <div>
+                                    <p className="font-bold">{user.displayName}</p>
+                                    <p className="text-sm text-muted-foreground">{user.handle}</p>
+                                    <p className="text-sm mt-1">{user.bio}</p>
+                                </div>
+                            </div>
+                        </li>
+                    ))}</ul>
+            </TabsContent>
+            <TabsContent value="posts">
+                    <ul className="divide-y divide-border">{posts.map((post) => (
+                        <li key={post.id} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground"><MessageCircle className="h-4 w-4" /> Post from {post.handle}</div>
+                            <p className="mt-1">{post.content}</p>
+                        </li>
+                    ))}</ul>
+            </TabsContent>
+        </Tabs>
+    );
+  }
 
+  const renderDefaultContent = () => {
     return (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+            <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10 px-4">
               <TabsTrigger value="for-you" className="flex-1">For you</TabsTrigger>
               <TabsTrigger value="trending" className="flex-1">Trending</TabsTrigger>
               <TabsTrigger value="news" className="flex-1">News</TabsTrigger>
@@ -264,6 +244,9 @@ export default function SearchPage() {
                 <div className="p-8 text-center text-muted-foreground">Personalized content coming soon!</div>
             </TabsContent>
             <TabsContent value="trending" className="mt-0">
+                {isLoading ? (
+                    <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                ): (
                 <ul className="divide-y divide-border">
                 {filteredTrends.map((trend) => (
                     <li key={trend.rank} className="p-4 hover:bg-muted/50 cursor-pointer">
@@ -280,6 +263,7 @@ export default function SearchPage() {
                     </li>
                 ))}
                 </ul>
+                )}
             </TabsContent>
             <TabsContent value="news" className="mt-0">
                  <div className="p-8 text-center text-muted-foreground">News feed coming soon!</div>
@@ -294,7 +278,7 @@ export default function SearchPage() {
                             return (
                                 <li key={user.uid} className="p-4 hover:bg-muted/50">
                                     <div className="flex items-center justify-between gap-4">
-                                        <div className="flex items-center gap-4 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
+                                        <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/profile/${user.uid}`)}>
                                             <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
                                             <div>
                                                 <p className="font-bold">{user.displayName}</p>
@@ -321,10 +305,7 @@ export default function SearchPage() {
     <>
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
-          <Avatar className="h-8 w-8 cursor-pointer" onClick={() => currentUser && router.push(`/profile/${currentUser.uid}`)}>
-            <AvatarImage src={currentUser?.photoURL || ''} alt="user" />
-            <AvatarFallback>{currentUser?.displayName?.[0] || 'A'}</AvatarFallback>
-          </Avatar>
+          <Button variant="ghost" size="icon" onClick={() => router.back()}><ArrowLeft /></Button>
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input 
@@ -336,19 +317,8 @@ export default function SearchPage() {
           </div>
           <Settings className="h-6 w-6" />
         </div>
-        {!searchTerm && (
-            <Tabs defaultValue="trending" className="w-full" onValueChange={setActiveTab}>
-                <TabsList className="w-full justify-start rounded-none bg-transparent border-b px-4 gap-4 overflow-x-auto">
-                    <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent px-0">For You</TabsTrigger>
-                    <TabsTrigger value="trending" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent px-0">Trending</TabsTrigger>
-                    <TabsTrigger value="news" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent px-0">News</TabsTrigger>
-                    <TabsTrigger value="new-users" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent px-0">New Users</TabsTrigger>
-                    <TabsTrigger value="entertainment" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent px-0">Entertainment</TabsTrigger>
-                </TabsList>
-            </Tabs>
-        )}
       </header>
-      {renderContent()}
+      {debouncedSearchTerm ? renderSearchResults() : renderDefaultContent()}
     </>
   );
 }
