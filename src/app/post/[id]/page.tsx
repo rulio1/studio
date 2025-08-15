@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, Upload, MoreHorizontal, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -99,7 +99,6 @@ export default function PostDetailPage() {
                 setIsLoading(false);
             });
 
-            // Fetch comments without ordering, then sort on the client
             const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId));
             const unsubscribeComments = onSnapshot(commentsQuery, (snapshot) => {
                 const commentsData = snapshot.docs.map(doc => {
@@ -110,7 +109,6 @@ export default function PostDetailPage() {
                         time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'agora mesmo',
                     } as Comment;
                 });
-                // Sort comments by creation date, newest first
                 commentsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
                 setComments(commentsData);
             });
@@ -152,6 +150,20 @@ export default function PostDetailPage() {
         }
     };
     
+    const handlePostAction = async (action: 'like' | 'retweet') => {
+        if (!user || !post) return;
+    
+        const postRef = doc(db, "posts", post.id);
+        const field = action === 'like' ? 'likes' : 'retweets';
+        const isActioned = action === 'like' ? post.isLiked : post.isRetweeted;
+    
+        if (isActioned) {
+            await updateDoc(postRef, { [field]: arrayRemove(user.uid) });
+        } else {
+            await updateDoc(postRef, { [field]: arrayUnion(user.uid) });
+        }
+    };
+
     if (isLoading || !post) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
@@ -185,16 +197,19 @@ export default function PostDetailPage() {
                     )}
                     <p className="text-sm text-muted-foreground">{post.time}</p>
                     <Separator className="my-4" />
-                    <div className="flex gap-4 text-sm text-muted-foreground">
-                        <p><span className="font-bold text-foreground">{post.comments}</span> {post.comments === 1 ? 'Comentário' : 'Comentários'}</p>
-                        <p><span className="font-bold text-foreground">{post.retweets.length}</span> Retweets</p>
-                        <p><span className="font-bold text-foreground">{post.likes.length}</span> Curtidas</p>
-                    </div>
-                    <Separator className="my-4" />
                     <div className="flex justify-around text-muted-foreground">
-                        <Button variant="ghost" size="icon" className="h-9 w-9"><MessageCircle className="h-5 w-5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-9 w-9"><Repeat className="h-5 w-5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-9 w-9"><Heart className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 flex items-center gap-1">
+                            <MessageCircle className="h-5 w-5" />
+                            <span className="text-sm">{post.comments}</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" className={`h-9 w-9 flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`} onClick={() => handlePostAction('retweet')}>
+                            <Repeat className="h-5 w-5" />
+                            <span className="text-sm">{post.retweets.length}</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" className={`h-9 w-9 flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`} onClick={() => handlePostAction('like')}>
+                             <Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
+                            <span className="text-sm">{post.likes.length}</span>
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-9 w-9"><Upload className="h-5 w-5" /></Button>
                     </div>
                 </div>
