@@ -390,8 +390,10 @@ export default function HomePage() {
             </div>
             <ThemeToggle />
         </div>
+      </header>
+       <main className="flex-1 overflow-y-auto">
         <Tabs defaultValue="for-you" className="w-full" onValueChange={setActiveTab}>
-            <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
+            <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
               <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">For you</TabsTrigger>
               <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Following</TabsTrigger>
             </TabsList>
@@ -402,7 +404,7 @@ export default function HomePage() {
                 <PostList posts={followingPosts} loading={isLoadingFollowing} />
             </TabsContent>
         </Tabs>
-      </header>
+      </main>
     </div>
   );
 }

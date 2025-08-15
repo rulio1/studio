@@ -164,10 +164,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
 
     return (
-        <div className="flex flex-col h-screen bg-background relative">
-            <main className="flex-1 overflow-y-auto pb-14">
+        <div className="flex flex-col h-screen bg-background relative animate-fade-in">
+            <div className="flex-1 overflow-y-auto">
                 {children}
-            </main>
+            </div>
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
