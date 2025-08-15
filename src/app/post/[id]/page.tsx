@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface Post {
     id: string;
@@ -63,6 +64,7 @@ interface Comment {
     time: string;
     content: string;
     createdAt: any;
+    editedAt?: any;
 }
 
 interface ChirpUser {
@@ -76,6 +78,7 @@ export default function PostDetailPage() {
     const router = useRouter();
     const params = useParams();
     const { id } = params;
+    const { toast } = useToast();
     
     const [post, setPost] = useState<Post | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
@@ -84,10 +87,19 @@ export default function PostDetailPage() {
     const [isReplying, setIsReplying] = useState(false);
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+    
+    // State for post actions
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
+
+    // State for comment actions
+    const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
+    const [editingComment, setEditingComment] = useState<Comment | null>(null);
+    const [editedCommentContent, setEditedCommentContent] = useState('');
+    const [isUpdatingComment, setIsUpdatingComment] = useState(false);
+
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -120,7 +132,6 @@ export default function PostDetailPage() {
                     });
                      setEditedContent(postData.content);
                 } else {
-                    // Post might have been deleted
                     setPost(null);
                 }
                 setIsLoading(false);
@@ -195,9 +206,11 @@ export default function PostDetailPage() {
         if (!post) return;
         try {
             await deleteDoc(doc(db, "posts", post.id));
-            router.push('/home'); // Redirect after deletion
+             toast({ title: 'Post apagado!' });
+            router.push('/home');
         } catch (error) {
             console.error("Error deleting post:", error);
+            toast({ title: 'Erro ao apagar post', variant: 'destructive' });
         } finally {
             setIsDeleteAlertOpen(false);
         }
@@ -213,22 +226,74 @@ export default function PostDetailPage() {
                 editedAt: serverTimestamp()
             });
             setIsEditing(false);
+            toast({ title: 'Post atualizado!' });
         } catch (error) {
             console.error("Erro ao atualizar post:", error);
+            toast({ title: 'Erro ao atualizar post', variant: 'destructive' });
         } finally {
             setIsUpdating(false);
         }
     };
     
     const handleSavePost = async (postId: string) => {
-        if (!user) return;
+        if (!user || !chirpUser) return;
         const userRef = doc(db, 'users', user.uid);
-        const isSaved = chirpUser?.savedPosts?.includes(postId);
+        const isSaved = chirpUser.savedPosts?.includes(postId);
 
-        if (isSaved) {
-            await updateDoc(userRef, { savedPosts: arrayRemove(postId) });
-        } else {
-            await updateDoc(userRef, { savedPosts: arrayUnion(postId) });
+        try {
+            if (isSaved) {
+                await updateDoc(userRef, { savedPosts: arrayRemove(postId) });
+                toast({ title: 'Post removido dos salvos' });
+            } else {
+                await updateDoc(userRef, { savedPosts: arrayUnion(postId) });
+                toast({ title: 'Post salvo!' });
+            }
+        } catch (error) {
+             console.error("Error saving post:", error);
+             toast({ title: 'Erro ao salvar post', variant: 'destructive' });
+        }
+    };
+
+    const handleEditCommentClick = (comment: Comment) => {
+        setEditingComment(comment);
+        setEditedCommentContent(comment.content);
+    };
+
+    const handleUpdateComment = async () => {
+        if (!editingComment || !editedCommentContent.trim()) return;
+        setIsUpdatingComment(true);
+        try {
+            const commentRef = doc(db, "comments", editingComment.id);
+            await updateDoc(commentRef, {
+                content: editedCommentContent,
+                editedAt: serverTimestamp()
+            });
+            setEditingComment(null);
+            toast({ title: 'Comentário atualizado!' });
+        } catch (error) {
+            console.error("Erro ao atualizar comentário:", error);
+            toast({ title: 'Erro ao atualizar comentário', variant: 'destructive' });
+        } finally {
+            setIsUpdatingComment(false);
+        }
+    };
+    
+    const handleDeleteComment = async () => {
+        if (!commentToDelete) return;
+        try {
+            const commentRef = doc(db, "comments", commentToDelete);
+            // Decrement post's comment count
+            if (post) {
+                const postRef = doc(db, 'posts', post.id);
+                await updateDoc(postRef, { comments: increment(-1) });
+            }
+            await deleteDoc(commentRef);
+            toast({ title: 'Comentário apagado!' });
+        } catch (error) {
+            console.error("Error deleting comment:", error);
+             toast({ title: 'Erro ao apagar comentário', variant: 'destructive' });
+        } finally {
+            setCommentToDelete(null);
         }
     };
 
@@ -319,10 +384,10 @@ export default function PostDetailPage() {
                     </div>
                     <Separator className="my-4" />
                     <div className="flex justify-around text-muted-foreground">
-                        <button className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <MessageCircle className="h-5 w-5" />
                             <span>{post.comments}</span>
-                        </button>
+                        </div>
                         <button onClick={() => handlePostAction('retweet')} className={`flex items-center gap-2 ${post.isRetweeted ? 'text-green-500' : ''}`}>
                             <Repeat className="h-5 w-5" />
                             <span>{post.retweets.length}</span>
@@ -362,40 +427,47 @@ export default function PostDetailPage() {
 
                 <ul className="divide-y divide-border">
                     {comments.map((comment) => (
-                        <li key={comment.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
-                            <div className="flex gap-4">
-                                <Avatar>
+                        <li key={comment.id} className="p-4 hover:bg-muted/20 transition-colors duration-200">
+                             <div className="flex gap-4">
+                                <Avatar className="cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
                                     <AvatarImage src={comment.avatar} alt={comment.handle} />
                                     <AvatarFallback>{comment.avatarFallback}</AvatarFallback>
                                 </Avatar>
                                 <div className='w-full'>
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
                                             <p className="font-bold">{comment.author}</p>
-                                            <p className="text-sm text-muted-foreground">{comment.handle} · {comment.time}</p>
+                                            <p className="text-muted-foreground">{comment.handle} · {comment.time}</p>
+                                             {comment.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
                                         </div>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-                                                <DropdownMenuItem>
-                                                    Opção 1
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem>
-                                                    Opção 2
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        {user?.uid === comment.authorId && (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                                                    <DropdownMenuItem onClick={() => setCommentToDelete(comment.id)}>
+                                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                                        Apagar
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleEditCommentClick(comment)}>
+                                                        <Edit className="mr-2 h-4 w-4"/>
+                                                        Editar
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
                                     </div>
-                                    <p className="whitespace-pre-wrap">{comment.content}</p>
+                                    <p className="whitespace-pre-wrap mt-1">{comment.content}</p>
                                 </div>
                             </div>
                         </li>
                     ))}
                 </ul>
+
+                {/* Post Modals */}
                 <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
@@ -428,7 +500,41 @@ export default function PostDetailPage() {
                         </Button>
                     </DialogContent>
                 </Dialog>
+
+                {/* Comment Modals */}
+                <AlertDialog open={!!commentToDelete} onOpenChange={(open) => !open && setCommentToDelete(null)}>
+                     <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Apagar comentário?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                             Essa ação não pode ser desfeita e removerá o comentário permanentemente.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setCommentToDelete(null)}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteComment}>Apagar</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+                <Dialog open={!!editingComment} onOpenChange={(open) => !open && setEditingComment(null)}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Editar Comentário</DialogTitle>
+                        </DialogHeader>
+                        <Textarea 
+                            value={editedCommentContent}
+                            onChange={(e) => setEditedCommentContent(e.target.value)}
+                            rows={5}
+                            className="my-4"
+                        />
+                        <Button onClick={handleUpdateComment} disabled={isUpdatingComment}>
+                            {isUpdatingComment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Salvar Alterações
+                        </Button>
+                    </DialogContent>
+                </Dialog>
             </main>
         </div>
     );
 }
+
