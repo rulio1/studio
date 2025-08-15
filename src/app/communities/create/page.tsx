@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db, storage } from '@/lib/firebase';
 import { addDoc, collection, serverTimestamp, arrayUnion, doc, updateDoc, writeBatch } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadString } from 'firebase/storage';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -25,8 +25,10 @@ export default function CreateCommunityPage() {
 
     const [name, setName] = useState('');
     const [topic, setTopic] = useState('');
-    const [banner, setBanner] = useState<string | null>(null);
-    const [avatar, setAvatar] = useState<string | null>(null);
+    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [bannerFile, setBannerFile] = useState<File | null>(null);
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
     const bannerInputRef = useRef<HTMLInputElement>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -48,9 +50,11 @@ export default function CreateCommunityPage() {
           const reader = new FileReader();
           reader.onloadend = () => {
             if (type === 'avatar') {
-                setAvatar(reader.result as string);
+                setAvatarFile(file);
+                setAvatarPreview(reader.result as string);
             } else {
-                setBanner(reader.result as string);
+                setBannerFile(file);
+                setBannerPreview(reader.result as string);
             }
           };
           reader.readAsDataURL(file);
@@ -69,19 +73,19 @@ export default function CreateCommunityPage() {
         setIsLoading(true);
 
         try {
-            let bannerUrl = banner ? '' : 'https://placehold.co/600x200.png';
-            let avatarUrl = avatar ? '' : `https://placehold.co/128x128.png?text=${name.substring(0,2)}`;
+            let bannerUrl = bannerPreview ? '' : 'https://placehold.co/600x200.png';
+            let avatarUrl = avatarPreview ? '' : `https://placehold.co/128x128.png?text=${name.substring(0,2)}`;
 
-            if (banner) {
-                const bannerRef = ref(storage, `communities/${user.uid}/${Date.now()}_banner`);
-                await uploadString(bannerRef, banner, 'data_url');
-                bannerUrl = await getDownloadURL(bannerRef);
+            if (bannerFile) {
+                const bannerRef = ref(storage, `communities/${user.uid}/${Date.now()}_${bannerFile.name}`);
+                const snapshot = await uploadBytes(bannerRef, bannerFile);
+                bannerUrl = await getDownloadURL(snapshot.ref);
             }
 
-            if (avatar) {
-                const avatarRef = ref(storage, `communities/${user.uid}/${Date.now()}_avatar`);
-                await uploadString(avatarRef, avatar, 'data_url');
-                avatarUrl = await getDownloadURL(avatarRef);
+            if (avatarFile) {
+                const avatarRef = ref(storage, `communities/${user.uid}/${Date.now()}_${avatarFile.name}`);
+                const snapshot = await uploadBytes(avatarRef, avatarFile);
+                avatarUrl = await getDownloadURL(snapshot.ref);
             }
             
             const batch = writeBatch(db);
@@ -137,22 +141,22 @@ export default function CreateCommunityPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
             <input type="file" accept="image/*" ref={bannerInputRef} onChange={(e) => handleFileChange(e, 'banner')} className="hidden" />
-            {banner && <Image
-                src={banner}
+            {bannerPreview && <Image
+                src={bannerPreview}
                 alt="Pré-visualização do Banner"
                 layout="fill"
                 objectFit="cover"
             />}
             <div className="absolute top-0 left-0 w-full h-full bg-black/30 flex items-center justify-center gap-2">
                 <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => bannerInputRef.current?.click()}><Camera className="h-5 w-5" /></Button>
-                 {banner && <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => setBanner(null)}><X className="h-5 w-5" /></Button>}
+                 {bannerPreview && <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => {setBannerPreview(null); setBannerFile(null);}}><X className="h-5 w-5" /></Button>}
             </div>
         </div>
         <div className="px-4">
             <div className="-mt-16 relative w-32">
                 <input type="file" accept="image/*" ref={avatarInputRef} onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" />
                 <Avatar className="h-32 w-32 border-4 border-background">
-                    {avatar && <AvatarImage src={avatar} alt="Pré-visualização do Avatar" />}
+                    {avatarPreview && <AvatarImage src={avatarPreview} alt="Pré-visualização do Avatar" />}
                     <AvatarFallback className="text-4xl">{name ? name.substring(0,2) : <ImageIcon />}</AvatarFallback>
                 </Avatar>
                 <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center cursor-pointer" onClick={() => avatarInputRef.current?.click()}>

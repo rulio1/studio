@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { generatePost } from '@/ai/flows/post-generator-flow';
-import { getDownloadURL, ref, uploadString } from 'firebase/storage';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,7 +82,11 @@ const PostItem = ({ post }: { post: Post }) => {
     
     useEffect(() => {
         if (post.createdAt) {
-          setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+          try {
+            setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+          } catch(e) {
+            setTime('agora')
+          }
         }
     }, [post.createdAt]);
 
@@ -129,6 +133,7 @@ export default function CommunityDetailPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPostContent, setNewPostContent] = useState('');
     const [newPostImagePreview, setNewPostImagePreview] = useState<string | null>(null);
+    const [newPostFile, setNewPostFile] = useState<File | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isPosting, setIsPosting] = useState(false);
     const [aiPrompt, setAiPrompt] = useState('');
@@ -184,7 +189,6 @@ export default function CommunityDetailPage() {
                     isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
                 } as Post;
             });
-             // Sort client-side to avoid needing a composite index
             postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setPosts(postsData);
             setIsLoadingPosts(false);
@@ -221,6 +225,7 @@ export default function CommunityDetailPage() {
     const resetModal = () => {
         setNewPostContent('');
         setNewPostImagePreview(null);
+        setNewPostFile(null);
         setAiPrompt('');
         setIsGenerating(false);
         setIsModalOpen(false);
@@ -228,7 +233,7 @@ export default function CommunityDetailPage() {
     }
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() && !newPostImagePreview) {
+        if (!newPostContent.trim() && !newPostFile) {
              toast({
                 title: "O post não pode estar vazio.",
                 description: "Por favor, escreva algo ou adicione uma imagem antes de postar.",
@@ -241,13 +246,12 @@ export default function CommunityDetailPage() {
 
         try {
             let imageUrl = '';
-            let imageHint = '';
+            let imageHint = 'user upload';
             
-            if (newPostImagePreview) {
-                 const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}`);
-                 await uploadString(imageRef, newPostImagePreview, 'data_url');
-                 imageUrl = await getDownloadURL(imageRef);
-                 imageHint = 'user upload';
+            if (newPostFile) {
+                 const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}_${newPostFile.name}`);
+                 const snapshot = await uploadBytes(imageRef, newPostFile);
+                 imageUrl = await getDownloadURL(snapshot.ref);
             }
 
             await addDoc(collection(db, "posts"), {
@@ -258,7 +262,7 @@ export default function CommunityDetailPage() {
                 avatarFallback: chirpUser.displayName[0],
                 content: newPostContent,
                 image: imageUrl,
-                imageHint: imageHint,
+                imageHint: imageUrl ? imageHint : '',
                 communityId: communityId,
                 createdAt: serverTimestamp(),
                 comments: 0,
@@ -281,6 +285,7 @@ export default function CommunityDetailPage() {
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
+            setNewPostFile(file);
             const reader = new FileReader();
             reader.onloadend = () => setNewPostImagePreview(reader.result as string);
             reader.readAsDataURL(file);
@@ -388,7 +393,7 @@ export default function CommunityDetailPage() {
                                         {newPostImagePreview && (
                                             <div className="mt-4 relative">
                                                 <Image src={newPostImagePreview} width={500} height={300} alt="Pré-visualização" className="rounded-2xl border" />
-                                                <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => {setNewPostImagePreview(null)}}>
+                                                <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => {setNewPostImagePreview(null); setNewPostFile(null)}}>
                                                     <X className="h-4 w-4" />
                                                 </Button>
                                             </div>
@@ -420,7 +425,7 @@ export default function CommunityDetailPage() {
                                             <Sparkles className="h-6 w-6 text-primary" />
                                         </Button>
                                     </div>
-                                    <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !newPostImagePreview) || isPosting}>
+                                    <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !newPostFile) || isPosting}>
                                         {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Postar
                                     </Button>
@@ -433,5 +438,3 @@ export default function CommunityDetailPage() {
         </div>
     );
 }
-
-    
