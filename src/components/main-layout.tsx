@@ -1,8 +1,8 @@
 
 'use client';
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { useState, useRef, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -32,8 +32,7 @@ interface ChirpUser {
     following: string[];
 }
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
-    const pathname = usePathname();
+function ClientUILayout() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPostContent, setNewPostContent] = useState('');
     const [newPostImage, setNewPostImage] = useState<string | null>(null);
@@ -148,17 +147,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         }
     };
 
-    const noLayoutPages = ['/login', '/register', '/'];
-    if (noLayoutPages.includes(pathname)) {
-        return <>{children}</>;
-    }
-
     return (
-        <div className="flex flex-col h-screen bg-background relative animate-fade-in">
-            <div className="flex-1 overflow-y-auto pb-28">
-                {children}
-            </div>
-            
+        <>
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
                     <Button className="absolute bottom-28 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90">
@@ -231,6 +221,32 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 </DialogContent>
             </Dialog>
             <BottomNavBar />
+        </>
+    );
+}
+
+
+export default function MainLayout({ children }: { children: React.ReactNode }) {
+    const pathname = usePathname();
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+
+    const noLayoutPages = ['/login', '/register', '/'];
+    if (noLayoutPages.includes(pathname)) {
+        return <>{children}</>;
+    }
+
+    return (
+        <div className="flex flex-col h-screen bg-background relative animate-fade-in">
+            <div className="flex-1 overflow-y-auto pb-28">
+                {children}
+            </div>
+            
+            {isClient && <ClientUILayout />}
         </div>
     );
 }
