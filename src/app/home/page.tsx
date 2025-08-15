@@ -474,7 +474,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background relative animate-fade-in">
+    <>
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2">
             <Sheet>
@@ -530,7 +530,7 @@ export default function HomePage() {
             <ThemeToggle />
         </div>
       </header>
-       <main className="flex-1 overflow-y-auto">
+       <main className="flex-1">
         <Tabs defaultValue="for-you" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
               <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Para você</TabsTrigger>
@@ -576,6 +576,6 @@ export default function HomePage() {
             </DialogContent>
         </Dialog>
       </main>
-    </div>
+    </>
   );
 }

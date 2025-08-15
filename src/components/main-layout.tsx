@@ -161,7 +161,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
     return (
         <div className="flex flex-col h-screen bg-background relative animate-fade-in">
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto pb-28">
                 {children}
             </div>
             
@@ -169,7 +169,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <>
                     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                         <DialogTrigger asChild>
-                            <Button className="absolute bottom-28 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90">
+                            <Button className="absolute bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90">
                                 <Plus className="h-8 w-8" />
                             </Button>
                         </DialogTrigger>
@@ -244,5 +244,3 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </div>
     );
 }
-
-    

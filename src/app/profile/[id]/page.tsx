@@ -523,8 +523,7 @@ export default function ProfilePage() {
     const isOwnProfile = currentUser?.uid === profileUser.uid;
 
   return (
-    <div className="flex flex-col h-screen bg-background relative animate-fade-in">
-      <main className="flex-1 overflow-y-auto pb-20">
+    <>
         <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm flex items-center gap-4 px-4 py-2 border-b">
              <Button size="icon" variant="ghost" className="rounded-full" onClick={() => router.back()}>
               <ArrowLeft className="h-5 w-5" />
@@ -534,6 +533,7 @@ export default function ProfilePage() {
                 <p className="text-sm text-muted-foreground">{userPosts.length} posts</p>
             </div>
         </header>
+        <main className="flex-1">
         <div className="relative h-48 bg-muted">
           {profileUser.banner && <Image
             src={profileUser.banner}
@@ -657,6 +657,6 @@ export default function ProfilePage() {
                 </Button>
             </DialogContent>
         </Dialog>
-    </div>
+    </>
   );
 }
