@@ -264,7 +264,7 @@ export default function HomePage() {
   const PostList = ({ posts, loading, tab }: { posts: Post[], loading: boolean, tab: 'for-you' | 'following' }) => {
     if (loading) {
         return (
-            <ul className="divide-y divide-border border-t">
+            <ul className="divide-y divide-border">
                 {[...Array(5)].map((_, i) => <li key={i} className="p-4"><PostSkeleton /></li>)}
             </ul>
         );
@@ -289,7 +289,7 @@ export default function HomePage() {
     }
 
     return (
-        <ul className="divide-y divide-border border-t">
+        <ul className="divide-y divide-border">
             {posts.map((post) => (
                 <li key={post.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => handlePostClick(post.id)}>
                     <div className="flex gap-4">
@@ -380,7 +380,7 @@ export default function HomePage() {
                 </div>
              </header>
              <main className="flex-1 overflow-y-auto">
-                 <ul className="divide-y divide-border border-t">
+                 <ul className="divide-y divide-border">
                     <li className="p-4"><PostSkeleton /></li>
                     <li className="p-4"><PostSkeleton /></li>
                     <li className="p-4"><PostSkeleton /></li>
