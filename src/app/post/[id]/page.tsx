@@ -43,6 +43,7 @@ interface Comment {
     handle: string;
     time: string;
     content: string;
+    createdAt: any;
 }
 
 interface ChirpUser {
@@ -97,7 +98,8 @@ export default function PostDetailPage() {
                 setIsLoading(false);
             });
 
-            const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId), orderBy("createdAt", "desc"));
+            // Fetch comments without ordering, then sort on the client
+            const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId));
             const unsubscribeComments = onSnapshot(commentsQuery, (snapshot) => {
                 const commentsData = snapshot.docs.map(doc => {
                      const data = doc.data();
@@ -107,6 +109,8 @@ export default function PostDetailPage() {
                         time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate()) + ' ago' : 'just now',
                     } as Comment;
                 });
+                // Sort comments by creation date, newest first
+                commentsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
                 setComments(commentsData);
             });
 
