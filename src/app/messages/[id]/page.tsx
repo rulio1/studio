@@ -82,12 +82,12 @@ export default function ConversationPage() {
 
     // Mark messages as read when entering conversation
     useEffect(() => {
-        if (user && conversationId) {
+        if (user && conversationId && conversation) {
             const conversationRef = doc(db, 'conversations', conversationId);
             
             // Mark last message as read
-            if (conversation && conversation.lastMessage.senderId !== user.uid) {
-                if (!conversation.lastMessageReadBy.includes(user.uid)) {
+            if (conversation.lastMessage?.senderId !== user.uid) {
+                if (conversation.lastMessageReadBy && !conversation.lastMessageReadBy.includes(user.uid)) {
                     updateDoc(conversationRef, {
                         lastMessageReadBy: arrayUnion(user.uid)
                     });
@@ -247,7 +247,7 @@ export default function ConversationPage() {
                 {messages.map((message, index) => {
                     const isLastMessage = index === messages.length - 1;
                     const isMyMessage = message.senderId === user?.uid;
-                    const isRead = isLastMessage && isMyMessage && conversation?.lastMessageReadBy.includes(otherUser.uid);
+                    const isRead = isLastMessage && isMyMessage && conversation?.lastMessageReadBy?.includes(otherUser.uid);
 
                     return (
                         <div key={message.id}>
