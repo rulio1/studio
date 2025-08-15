@@ -119,7 +119,7 @@ export default function HomePage() {
 
   // Fetch all posts for "For you" tab
   useEffect(() => {
-    const q = query(collection(db, "posts"), where("communityId", "==", null), limit(50));
+    const q = query(collection(db, "posts"), where("communityId", "==", null), orderBy("createdAt", "desc"), limit(50));
     const unsubscribePosts = onSnapshot(q, async (snapshot) => {
         const postsData = snapshot.docs.map(doc => {
             const data = doc.data();
@@ -132,8 +132,6 @@ export default function HomePage() {
             } as Post
         });
 
-        // Sort client-side
-        postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
         setAllPosts(postsData);
         setIsLoading(false);
     });
@@ -319,12 +317,17 @@ export default function HomePage() {
 
   const PostItem = ({ post }: { post: Post }) => {
     const router = useRouter();
-    const [time, setTime] = useState(() => post.createdAt ? format(post.createdAt.toDate(), "h:mm a · MMM d, yyyy", { locale: ptBR }) : 'Agora');
+    const [time, setTime] = useState('');
 
     useEffect(() => {
-        if (post.createdAt) {
-            setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
-        }
+      if (post.createdAt) {
+        setTime(format(post.createdAt.toDate(), "h:mm a · MMM d, yyyy", { locale: ptBR }));
+        // Update to relative time on client-side
+        const timer = setTimeout(() => {
+          setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+        }, 1);
+        return () => clearTimeout(timer);
+      }
     }, [post.createdAt]);
 
     return (

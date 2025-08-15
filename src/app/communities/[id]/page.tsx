@@ -78,11 +78,16 @@ interface ChirpUser {
 
 const PostItem = ({ post }: { post: Post }) => {
     const router = useRouter();
-    const [time, setTime] = useState(() => post.createdAt ? format(post.createdAt.toDate(), "h:mm a · MMM d, yyyy", { locale: ptBR }) : 'Agora');
+    const [time, setTime] = useState('');
     
     useEffect(() => {
         if (post.createdAt) {
+          setTime(format(post.createdAt.toDate(), "h:mm a · MMM d, yyyy", { locale: ptBR }));
+          // Update to relative time on client-side
+          const timer = setTimeout(() => {
             setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+          }, 1);
+          return () => clearTimeout(timer);
         }
     }, [post.createdAt]);
 
@@ -224,7 +229,15 @@ export default function CommunityDetailPage() {
     }
 
     const handleCreatePost = async () => {
-        if ((!newPostContent.trim() && !newPostImage) || !user || !chirpUser) return;
+        if (!newPostContent.trim() && !newPostImage) {
+             toast({
+                title: "O post não pode estar vazio.",
+                description: "Por favor, escreva algo ou adicione uma imagem antes de postar.",
+                variant: "destructive",
+            });
+            return;
+        }
+        if (!user || !chirpUser) return;
         setIsPosting(true);
         try {
             let imageUrl = '';

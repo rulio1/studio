@@ -80,7 +80,7 @@ function ClientUILayout() {
     }
 
     const handleCreatePost = async () => {
-        if ((!newPostContent.trim() && !newPostImage) || !user || !chirpUser) {
+        if (!newPostContent.trim() && !newPostImage) {
             toast({
                 title: "O post não pode estar vazio.",
                 description: "Por favor, escreva algo ou adicione uma imagem antes de postar.",
@@ -88,6 +88,15 @@ function ClientUILayout() {
             });
             return;
         }
+        if (!user || !chirpUser) {
+             toast({
+                title: "Usuário não autenticado.",
+                description: "Por favor, faça login para postar.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         setIsPosting(true);
 
         try {
@@ -107,7 +116,7 @@ function ClientUILayout() {
                 content: newPostContent,
                 image: imageUrl,
                 imageHint: imageUrl ? 'upload do usuário' : '',
-                communityId: null,
+                communityId: null, // Explicitly set to null for main feed posts
                 createdAt: serverTimestamp(),
                 comments: 0,
                 retweets: [],

@@ -40,8 +40,8 @@ export default function EditProfilePage() {
         location: '',
     });
 
-    const [bannerImage, setBannerImage] = useState<string | null>(null);
-    const [avatarImage, setAvatarImage] = useState<string | null>(null);
+    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
     const bannerInputRef = useRef<HTMLInputElement>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -59,8 +59,8 @@ export default function EditProfilePage() {
                         bio: userData.bio || '',
                         location: userData.location || '',
                     });
-                    setBannerImage(userData.banner);
-                    setAvatarImage(userData.avatar);
+                    setBannerPreview(userData.banner);
+                    setAvatarPreview(userData.avatar);
                 } else {
                     router.push('/login');
                 }
@@ -82,9 +82,9 @@ export default function EditProfilePage() {
           const reader = new FileReader();
           reader.onloadend = () => {
             if (type === 'avatar') {
-                setAvatarImage(reader.result as string);
+                setAvatarPreview(reader.result as string);
             } else {
-                setBannerImage(reader.result as string);
+                setBannerPreview(reader.result as string);
             }
           };
           reader.readAsDataURL(file);
@@ -100,17 +100,17 @@ export default function EditProfilePage() {
 
             const userRef = doc(db, 'users', user.uid);
 
-            // Check if banner was changed
-            if (bannerImage && bannerImage.startsWith('data:')) {
+            // If banner was changed (it will be a data URL), upload it
+            if (bannerPreview && bannerPreview.startsWith('data:')) {
                 const bannerStorageRef = ref(storage, `banners/${user.uid}/${Date.now()}`);
-                const snapshot = await uploadString(bannerStorageRef, bannerImage, 'data_url');
+                const snapshot = await uploadString(bannerStorageRef, bannerPreview, 'data_url');
                 bannerUrl = await getDownloadURL(snapshot.ref);
             }
 
-            // Check if avatar was changed
-            if (avatarImage && avatarImage.startsWith('data:')) {
+            // If avatar was changed, upload it
+            if (avatarPreview && avatarPreview.startsWith('data:')) {
                 const avatarStorageRef = ref(storage, `avatars/${user.uid}/${Date.now()}`);
-                const snapshot = await uploadString(avatarStorageRef, avatarImage, 'data_url');
+                const snapshot = await uploadString(avatarStorageRef, avatarPreview, 'data_url');
                 avatarUrl = await getDownloadURL(snapshot.ref);
             }
             
@@ -159,8 +159,8 @@ export default function EditProfilePage() {
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
             <input type="file" accept="image/*" ref={bannerInputRef} onChange={(e) => handleFileChange(e, 'banner')} className="hidden" />
-            {bannerImage && <Image
-                src={bannerImage}
+            {bannerPreview && <Image
+                src={bannerPreview}
                 alt="Banner"
                 layout="fill"
                 objectFit="cover"
@@ -168,14 +168,14 @@ export default function EditProfilePage() {
             />}
             <div className="absolute top-0 left-0 w-full h-full bg-black/30 flex items-center justify-center gap-2">
                 <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => bannerInputRef.current?.click()}><Camera className="h-5 w-5" /></Button>
-                 {bannerImage && chirpUser.banner !== bannerImage && <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => setBannerImage(chirpUser.banner)}><X className="h-5 w-5" /></Button>}
+                 {bannerPreview && chirpUser.banner !== bannerPreview && <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => setBannerPreview(chirpUser.banner)}><X className="h-5 w-5" /></Button>}
             </div>
         </div>
         <div className="px-4">
             <div className="-mt-16 relative w-32">
                 <input type="file" accept="image/*" ref={avatarInputRef} onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" />
                 <Avatar className="h-32 w-32 border-4 border-background">
-                    {avatarImage && <AvatarImage src={avatarImage} data-ai-hint="pop star" alt={formData.displayName} />}
+                    {avatarPreview && <AvatarImage src={avatarPreview} data-ai-hint="pop star" alt={formData.displayName} />}
                     <AvatarFallback className="text-4xl">{formData.displayName?.[0]}</AvatarFallback>
                 </Avatar>
                 <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity" onClick={() => avatarInputRef.current?.click()}>
