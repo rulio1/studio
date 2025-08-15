@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { generatePost } from '@/ai/flows/post-generator-flow';
 import { auth, db, storage } from '@/lib/firebase';
-import { addDoc, collection, doc, getDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { ImageIcon, Sparkles, Loader2, X } from 'lucide-react';
@@ -41,6 +41,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     const [newPostContent, setNewPostContent] = useState('');
     const [newPostImage, setNewPostImage] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isPosting, setIsPosting] = useState(false);
     const [aiPrompt, setAiPrompt] = useState('');
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
@@ -87,35 +88,44 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             });
             return;
         }
+        setIsPosting(true);
 
-        let imageUrl = '';
-        if (newPostImage) {
-            const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}`);
-            const snapshot = await uploadString(imageRef, newPostImage, 'data_url');
-            imageUrl = await getDownloadURL(snapshot.ref);
+        try {
+            let imageUrl = '';
+            if (newPostImage) {
+                const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}`);
+                const snapshot = await uploadString(imageRef, newPostImage, 'data_url');
+                imageUrl = await getDownloadURL(snapshot.ref);
+            }
+
+            await addDoc(collection(db, "posts"), {
+                authorId: user.uid,
+                author: chirpUser.displayName,
+                handle: chirpUser.handle,
+                avatar: chirpUser.avatar,
+                avatarFallback: chirpUser.displayName[0],
+                content: newPostContent,
+                image: imageUrl,
+                imageHint: imageUrl ? 'user upload' : '',
+                createdAt: serverTimestamp(),
+                comments: 0,
+                retweets: [],
+                likes: [],
+                views: 0,
+            });
+
+            resetModal();
+            toast({
+                title: "Post created!",
+                description: "Your post has been successfully published.",
+            });
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Failed to create post", description: "Please try again.", variant: "destructive" });
+        } finally {
+            setIsPosting(false);
         }
 
-        await addDoc(collection(db, "posts"), {
-            authorId: user.uid,
-            author: chirpUser.displayName,
-            handle: chirpUser.handle,
-            avatar: chirpUser.avatar,
-            avatarFallback: chirpUser.displayName[0],
-            content: newPostContent,
-            image: imageUrl,
-            imageHint: imageUrl ? 'user upload' : '',
-            createdAt: new Date(),
-            comments: 0,
-            retweets: [],
-            likes: [],
-            views: 0,
-        });
-
-        resetModal();
-        toast({
-            title: "Post created!",
-            description: "Your post has been successfully published.",
-        });
     };
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,7 +166,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
     return (
         <div className="flex flex-col h-screen bg-background relative">
-            <main className="flex-1 overflow-y-auto pb-14">
+            <main className="flex-1 overflow-y-auto pb-14 animate-fade-in">
                 {children}
             </main>
 
@@ -218,11 +228,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                         <div className="flex justify-between items-center mt-2 border-t pt-4">
                             <div>
                                 <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                                <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()}>
+                                <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
                                     <ImageIcon className="h-6 w-6 text-primary" />
                                 </Button>
                             </div>
-                            <Button onClick={handleCreatePost} disabled={!newPostContent.trim()}>Post</Button>
+                            <Button onClick={handleCreatePost} disabled={!newPostContent.trim() || isPosting}>
+                                {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Post
+                            </Button>
                         </div>
                     </div>
                      ) : <Loader2 className="h-6 w-6 animate-spin mx-auto" />}
