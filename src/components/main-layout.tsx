@@ -44,6 +44,7 @@ function ClientUILayout() {
     
     const { toast } = useToast();
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
      useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -60,6 +61,13 @@ function ClientUILayout() {
         });
         return () => unsubscribe();
     }, []);
+
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        }
+    }, [newPostContent]);
 
     const resetModal = () => {
         setNewPostContent('');
@@ -158,9 +166,6 @@ function ClientUILayout() {
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
                     <DialogTitle>Criar Post</DialogTitle>
-                    <DialogDescription>
-                        O que você está pensando? Compartilhe com o mundo.
-                    </DialogDescription>
                     </DialogHeader>
                     {chirpUser ? (
                     <div className="flex flex-col gap-4">
@@ -171,11 +176,12 @@ function ClientUILayout() {
                             </Avatar>
                             <div className="w-full">
                                 <Textarea 
+                                    ref={textareaRef}
                                     placeholder="O que está acontecendo?!" 
-                                    className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
+                                    className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none overflow-hidden"
                                     value={newPostContent}
                                     onChange={(e) => setNewPostContent(e.target.value)}
-                                    rows={5}
+                                    rows={1}
                                 />
                                 {newPostImage && (
                                     <div className="mt-4 relative">
@@ -250,5 +256,3 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </div>
     );
 }
-
-    
