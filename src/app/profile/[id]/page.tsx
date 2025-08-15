@@ -129,7 +129,9 @@ export default function ProfilePage() {
     const fetchLikedPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingLikes(true);
-        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId), orderBy("createdAt", "desc"));
+        // The query requires an index. Temporarily removing the orderBy clause to prevent crashes.
+        // The user should create the index in their Firebase console.
+        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId));
         const snapshot = await getDocs(q);
         const posts = snapshot.docs.map(doc => {
             const data = doc.data();
