@@ -96,7 +96,8 @@ export default function PostDetailPage() {
                 setIsLoading(false);
             });
 
-            const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId), orderBy("createdAt", "desc"));
+            // The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/chirp-3wj1h/firestore/indexes?create_composite=Ckxwcm9qZWN0cy9jaGlycC0zd2oxaC9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvY29tbWVudHMvaW5kZXhlcy9fEAEaCgoGcG9zdElkEAEaDQoJY3JlYXRlZEF0EAIaDAoIX19uYW1lX18QAg
+            const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId));
             const unsubscribeComments = onSnapshot(commentsQuery, (snapshot) => {
                 const commentsData = snapshot.docs.map(doc => {
                      const data = doc.data();
