@@ -12,11 +12,13 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { generatePost } from '@/ai/flows/post-generator-flow';
 import { auth, db, storage } from '@/lib/firebase';
-import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { ImageIcon, Sparkles, Loader2, X } from 'lucide-react';
 import Image from 'next/image';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 interface ChirpUser {
     uid: string;
@@ -31,6 +33,12 @@ interface ChirpUser {
     birthDate: Date | null;
     followers: string[];
     following: string[];
+    communities?: string[];
+}
+
+interface Community {
+    id: string;
+    name: string;
 }
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -44,6 +52,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     const [aiPrompt, setAiPrompt] = useState('');
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+    const [userCommunities, setUserCommunities] = useState<Community[]>([]);
+    const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null);
     
     const { toast } = useToast();
     const imageInputRef = useRef<HTMLInputElement>(null);
@@ -52,14 +62,34 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-                if(userDoc.exists()){
-                    setChirpUser(userDoc.data() as ChirpUser);
-                }
+                const userDocRef = doc(db, "users", currentUser.uid);
+                const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
+                    if (doc.exists()) {
+                        setChirpUser(doc.data() as ChirpUser);
+                    }
+                });
+                return () => unsubscribeUser();
             }
         });
         return () => unsubscribe();
     }, []);
+
+    useEffect(() => {
+        const fetchCommunities = async () => {
+            if (chirpUser?.communities && chirpUser.communities.length > 0) {
+                 const communitiesQuery = query(collection(db, 'communities'), where('__name__', 'in', chirpUser.communities));
+                const querySnapshot = await getDocs(communitiesQuery);
+                const communities = querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name })) as Community[];
+                setUserCommunities(communities);
+            } else {
+                setUserCommunities([]);
+            }
+        };
+
+        if (isModalOpen) {
+            fetchCommunities();
+        }
+    }, [chirpUser, isModalOpen]);
 
 
     const navItems = [
@@ -76,6 +106,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         setAiPrompt('');
         setIsGenerating(false);
         setIsModalOpen(false);
+        setSelectedCommunity(null);
     }
 
     const handleCreatePost = async () => {
@@ -106,6 +137,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 content: newPostContent,
                 image: imageUrl,
                 imageHint: imageUrl ? 'upload do usuário' : '',
+                communityId: selectedCommunity,
                 createdAt: serverTimestamp(),
                 comments: 0,
                 retweets: [],
@@ -225,11 +257,22 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                             </Button>
                         </div>
                         <div className="flex justify-between items-center mt-2 border-t pt-4">
-                            <div>
+                            <div className="flex items-center gap-2">
                                 <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
                                 <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
                                     <ImageIcon className="h-6 w-6 text-primary" />
                                 </Button>
+                                 <Select onValueChange={setSelectedCommunity} value={selectedCommunity || ''}>
+                                    <SelectTrigger className="w-[180px]">
+                                        <SelectValue placeholder="Postar em..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="null">Meu Perfil</SelectItem>
+                                        {userCommunities.map(community => (
+                                            <SelectItem key={community.id} value={community.id}>{community.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <Button onClick={handleCreatePost} disabled={!newPostContent.trim() || isPosting}>
                                 {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

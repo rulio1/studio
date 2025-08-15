@@ -59,6 +59,7 @@ interface Post {
     isLiked: boolean;
     isRetweeted: boolean;
     editedAt?: any;
+    communityId?: string;
 }
 
 interface ChirpUser {
@@ -117,7 +118,7 @@ export default function HomePage() {
 
   // Fetch all posts for "For you" tab
   useEffect(() => {
-    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(50));
+    const q = query(collection(db, "posts"), where("communityId", "==", null), orderBy("createdAt", "desc"), limit(50));
     const unsubscribePosts = onSnapshot(q, async (snapshot) => {
         const postsData = snapshot.docs.map(doc => {
             const data = doc.data();
