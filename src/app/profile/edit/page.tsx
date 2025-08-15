@@ -15,8 +15,9 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import React from 'react';
 
-interface UserFormData {
+interface UserProfileData {
     displayName: string;
     bio: string;
     location: string;
@@ -31,7 +32,7 @@ export default function EditProfilePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     
-    const [formData, setFormData] = useState<UserFormData>({
+    const [profileData, setProfileData] = useState<UserProfileData>({
         displayName: '',
         bio: '',
         location: '',
@@ -39,9 +40,11 @@ export default function EditProfilePage() {
         banner: '',
     });
 
-    // States for new image files
-    const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null);
-    const [newBannerFile, setNewBannerFile] = useState<File | null>(null);
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [bannerFile, setBannerFile] = useState<File | null>(null);
+    
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
 
 
     const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -54,13 +57,15 @@ export default function EditProfilePage() {
                 const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
-                    setFormData({
+                    setProfileData({
                         displayName: userData.displayName || '',
                         bio: userData.bio || '',
                         location: userData.location || '',
                         avatar: userData.avatar || '',
                         banner: userData.banner || '',
                     });
+                    setAvatarPreview(userData.avatar || null);
+                    setBannerPreview(userData.banner || null);
                 } else {
                     router.push('/login');
                 }
@@ -73,7 +78,7 @@ export default function EditProfilePage() {
     }, [router]);
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setFormData({ ...formData, [e.target.id]: e.target.value });
+        setProfileData({ ...profileData, [e.target.id]: e.target.value });
     };
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
@@ -82,11 +87,11 @@ export default function EditProfilePage() {
           const reader = new FileReader();
           reader.onloadend = () => {
             if (type === 'avatar') {
-                setNewAvatarFile(file);
-                setFormData(prev => ({...prev, avatar: reader.result as string}))
+                setAvatarFile(file);
+                setAvatarPreview(reader.result as string);
             } else {
-                setNewBannerFile(file);
-                setFormData(prev => ({...prev, banner: reader.result as string}))
+                setBannerFile(file);
+                setBannerPreview(reader.result as string);
             }
           };
           reader.readAsDataURL(file);
@@ -97,27 +102,27 @@ export default function EditProfilePage() {
         if (!user) return;
         setIsSaving(true);
         try {
-            let avatarUrl = formData.avatar;
-            let bannerUrl = formData.banner;
+            let newAvatarUrl = profileData.avatar;
+            let newBannerUrl = profileData.banner;
 
-            if (newBannerFile) {
-                const bannerStorageRef = ref(storage, `banners/${user.uid}/${Date.now()}_${newBannerFile.name}`);
-                const snapshot = await uploadBytes(bannerStorageRef, newBannerFile);
-                bannerUrl = await getDownloadURL(snapshot.ref);
+            if (bannerFile) {
+                const bannerStorageRef = ref(storage, `banners/${user.uid}/${Date.now()}_${bannerFile.name}`);
+                await uploadBytes(bannerStorageRef, bannerFile);
+                newBannerUrl = await getDownloadURL(bannerStorageRef);
             }
 
-            if (newAvatarFile) {
-                const avatarStorageRef = ref(storage, `avatars/${user.uid}/${Date.now()}_${newAvatarFile.name}`);
-                const snapshot = await uploadBytes(avatarStorageRef, newAvatarFile);
-                avatarUrl = await getDownloadURL(snapshot.ref);
+            if (avatarFile) {
+                const avatarStorageRef = ref(storage, `avatars/${user.uid}/${Date.now()}_${avatarFile.name}`);
+                await uploadBytes(avatarStorageRef, avatarFile);
+                newAvatarUrl = await getDownloadURL(avatarStorageRef);
             }
             
             await updateDoc(doc(db, 'users', user.uid), {
-                displayName: formData.displayName,
-                bio: formData.bio,
-                location: formData.location,
-                banner: bannerUrl,
-                avatar: avatarUrl,
+                displayName: profileData.displayName,
+                bio: profileData.bio,
+                location: profileData.location,
+                banner: newBannerUrl,
+                avatar: newAvatarUrl,
             });
 
             toast({
@@ -159,8 +164,8 @@ export default function EditProfilePage() {
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
             <input type="file" accept="image/*" ref={bannerInputRef} onChange={(e) => handleFileChange(e, 'banner')} className="hidden" />
-            {formData.banner && <Image
-                src={formData.banner}
+            {bannerPreview && <Image
+                src={bannerPreview}
                 alt="Banner"
                 layout="fill"
                 objectFit="cover"
@@ -174,8 +179,8 @@ export default function EditProfilePage() {
             <div className="-mt-16 relative w-32">
                 <input type="file" accept="image/*" ref={avatarInputRef} onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" />
                 <Avatar className="h-32 w-32 border-4 border-background">
-                    {formData.avatar && <AvatarImage src={formData.avatar} data-ai-hint="pop star" alt={formData.displayName} />}
-                    <AvatarFallback className="text-4xl">{formData.displayName?.[0]}</AvatarFallback>
+                    {avatarPreview && <AvatarImage src={avatarPreview} data-ai-hint="pop star" alt={profileData.displayName} />}
+                    <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>
                 </Avatar>
                 <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity" onClick={() => avatarInputRef.current?.click()}>
                     <Camera className="h-6 w-6 text-white" />
@@ -188,7 +193,7 @@ export default function EditProfilePage() {
                 <Label htmlFor="displayName">Nome</Label>
                 <Input 
                     id="displayName" 
-                    value={formData.displayName} 
+                    value={profileData.displayName} 
                     onChange={handleFormChange}
                     className="text-lg" 
                     disabled={isSaving}
@@ -198,7 +203,7 @@ export default function EditProfilePage() {
                 <Label htmlFor="bio">Bio</Label>
                 <Textarea 
                     id="bio" 
-                    value={formData.bio} 
+                    value={profileData.bio} 
                     onChange={handleFormChange}
                     rows={3}
                     className="text-lg"
@@ -209,7 +214,7 @@ export default function EditProfilePage() {
                 <Label htmlFor="location">Localização</Label>
                 <Input 
                     id="location" 
-                    value={formData.location}
+                    value={profileData.location}
                     onChange={handleFormChange}
                      className="text-lg"
                      disabled={isSaving}

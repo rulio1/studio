@@ -34,6 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import React from 'react';
 
 interface Community {
     id: string;
@@ -250,8 +251,8 @@ export default function CommunityDetailPage() {
             
             if (newPostFile) {
                  const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}_${newPostFile.name}`);
-                 const snapshot = await uploadBytes(imageRef, newPostFile);
-                 imageUrl = await getDownloadURL(snapshot.ref);
+                 await uploadBytes(imageRef, newPostFile);
+                 imageUrl = await getDownloadURL(imageRef);
             }
 
             await addDoc(collection(db, "posts"), {

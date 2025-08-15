@@ -107,8 +107,8 @@ function ClientUILayout() {
 
             if (newPostFile) {
                 const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}_${newPostFile.name}`);
-                const snapshot = await uploadBytes(imageRef, newPostFile);
-                imageUrl = await getDownloadURL(snapshot.ref);
+                await uploadBytes(imageRef, newPostFile);
+                imageUrl = await getDownloadURL(imageRef);
             }
 
             await addDoc(collection(db, "posts"), {

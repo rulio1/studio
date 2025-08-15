@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Camera, Image as ImageIcon, Loader2, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import React from 'react';
 
 
 export default function CreateCommunityPage() {
@@ -73,19 +74,19 @@ export default function CreateCommunityPage() {
         setIsLoading(true);
 
         try {
-            let bannerUrl = bannerPreview ? '' : 'https://placehold.co/600x200.png';
-            let avatarUrl = avatarPreview ? '' : `https://placehold.co/128x128.png?text=${name.substring(0,2)}`;
+            let bannerUrl = 'https://placehold.co/600x200.png';
+            let avatarUrl = `https://placehold.co/128x128.png?text=${name.substring(0,2)}`;
 
             if (bannerFile) {
                 const bannerRef = ref(storage, `communities/${user.uid}/${Date.now()}_${bannerFile.name}`);
-                const snapshot = await uploadBytes(bannerRef, bannerFile);
-                bannerUrl = await getDownloadURL(snapshot.ref);
+                await uploadBytes(bannerRef, bannerFile);
+                bannerUrl = await getDownloadURL(bannerRef);
             }
 
             if (avatarFile) {
                 const avatarRef = ref(storage, `communities/${user.uid}/${Date.now()}_${avatarFile.name}`);
-                const snapshot = await uploadBytes(avatarRef, avatarFile);
-                avatarUrl = await getDownloadURL(snapshot.ref);
+                await uploadBytes(avatarRef, avatarFile);
+                avatarUrl = await getDownloadURL(avatarRef);
             }
             
             const batch = writeBatch(db);
