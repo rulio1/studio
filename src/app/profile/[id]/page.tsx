@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Upload } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Upload, Bell } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -113,7 +113,8 @@ export default function ProfilePage() {
     const fetchUserPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingPosts(true);
-        const q = query(collection(db, "posts"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
+        // The query requires an index. Temporarily removing the orderBy clause to prevent crashes.
+        const q = query(collection(db, "posts"), where("authorId", "==", profileId));
         const snapshot = await getDocs(q);
         const posts = snapshot.docs.map(doc => {
              const data = doc.data();
@@ -331,7 +332,7 @@ export default function ProfilePage() {
                     posts={likedPosts} 
                     loading={isLoadingLikes}
                     emptyTitle="No likes yet" 
-                    emptyDescription="When this user likes posts, they will appear here."
+                    description="When this user likes posts, they will appear here."
                  />
             </TabsContent>
         </Tabs>
@@ -339,3 +340,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
