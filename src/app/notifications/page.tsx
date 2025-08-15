@@ -53,8 +53,8 @@ export default function NotificationsPage() {
         setIsLoading(true);
         const q = query(
             collection(db, "notifications"),
-            where("toUserId", "==", user.uid),
-            orderBy("createdAt", "desc")
+            where("toUserId", "==", user.uid)
+            // orderBy("createdAt", "desc") // Temporarily removed to prevent index error
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -66,6 +66,8 @@ export default function NotificationsPage() {
                     time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate()) + ' ago' : 'Just now',
                 } as Notification;
             });
+            // Sort client-side as a fallback
+            notifs.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setNotifications(notifs);
             setIsLoading(false);
         }, (error) => {
