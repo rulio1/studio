@@ -97,11 +97,12 @@ interface ChirpUser {
 
 const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet') => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void }) => {
     const router = useRouter();
-    const [time, setTime] = useState(() => post.createdAt ? format(post.createdAt.toDate(), "PP") : 'Agora');
+    const [time, setTime] = useState('');
 
     useEffect(() => {
         if (post.createdAt) {
-            setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+            const date = post.createdAt.toDate();
+            setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
         }
     }, [post.createdAt]);
 
@@ -165,11 +166,12 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }:
 
 const ReplyItem = ({ reply }: { reply: Reply }) => {
     const router = useRouter();
-    const [time, setTime] = useState(() => reply.createdAt ? format(reply.createdAt.toDate(), "PP") : 'Agora');
+    const [time, setTime] = useState('');
 
     useEffect(() => {
         if (reply.createdAt) {
-            setTime(formatDistanceToNow(reply.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+            const date = reply.createdAt.toDate();
+            setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
         }
     }, [reply.createdAt]);
 
@@ -266,7 +268,7 @@ export default function ProfilePage() {
     const fetchUserPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingPosts(true);
-        const q = query(collection(db, "posts"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
+        const q = query(collection(db, "posts"), where("authorId", "==", profileId));
         onSnapshot(q, (snapshot) => {
             const posts = snapshot.docs.map(doc => {
                  const data = doc.data();
@@ -278,6 +280,7 @@ export default function ProfilePage() {
                     isRetweeted: data.retweets.includes(currentUser?.uid || ''),
                  } as Post
             });
+            posts.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setUserPosts(posts);
             setIsLoadingPosts(false);
 
@@ -312,7 +315,7 @@ export default function ProfilePage() {
     const fetchLikedPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingLikes(true);
-        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId), orderBy("createdAt", "desc"));
+        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId));
         onSnapshot(q, (snapshot) => {
             const posts = snapshot.docs.map(doc => {
                 const data = doc.data();
@@ -324,6 +327,7 @@ export default function ProfilePage() {
                     isRetweeted: data.retweets.includes(currentUser?.uid || ''),
                 } as Post
             });
+            posts.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setLikedPosts(posts);
             setIsLoadingLikes(false);
         });

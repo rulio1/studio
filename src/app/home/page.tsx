@@ -119,7 +119,7 @@ export default function HomePage() {
 
   // Fetch all posts for "For you" tab
   useEffect(() => {
-    const q = query(collection(db, "posts"), where("communityId", "==", null), orderBy("createdAt", "desc"), limit(50));
+    const q = query(collection(db, "posts"), where("communityId", "==", null), limit(50));
     const unsubscribePosts = onSnapshot(q, async (snapshot) => {
         const postsData = snapshot.docs.map(doc => {
             const data = doc.data();
@@ -131,6 +131,8 @@ export default function HomePage() {
                 isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
             } as Post
         });
+        
+        postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
 
         setAllPosts(postsData);
         setIsLoading(false);
@@ -151,7 +153,6 @@ export default function HomePage() {
     const postsQuery = query(
         collection(db, "posts"), 
         where("authorId", "in", chirpUser.following),
-        orderBy("createdAt", "desc"),
         limit(50)
     );
     const snapshot = await getDocs(postsQuery);
@@ -165,6 +166,7 @@ export default function HomePage() {
             isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
         } as Post
     });
+    postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
     setFollowingPosts(postsData);
     setIsLoadingFollowing(false);
   }, [chirpUser]);
@@ -321,12 +323,8 @@ export default function HomePage() {
 
     useEffect(() => {
       if (post.createdAt) {
-        setTime(format(post.createdAt.toDate(), "h:mm a · MMM d, yyyy", { locale: ptBR }));
-        // Update to relative time on client-side
-        const timer = setTimeout(() => {
-          setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
-        }, 1);
-        return () => clearTimeout(timer);
+        const date = post.createdAt.toDate();
+        setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
       }
     }, [post.createdAt]);
 

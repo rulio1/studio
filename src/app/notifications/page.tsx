@@ -38,7 +38,8 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
     
     useEffect(() => {
         if (notification.createdAt) {
-            setTime(formatDistanceToNow(notification.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+            const date = notification.createdAt.toDate();
+            setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
         }
     }, [notification.createdAt]);
 
@@ -99,7 +100,7 @@ export default function NotificationsPage() {
                     time: '', // will be handled by NotificationItem
                 } as Notification;
             });
-            // Sort client-side as a fallback
+            // Sort client-side
             notifs.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setNotifications(notifs);
             setIsLoading(false);
