@@ -39,6 +39,7 @@ function ClientUILayout() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isPosting, setIsPosting] = useState(false);
     const [aiPrompt, setAiPrompt] = useState('');
+    const [showAiGenerator, setShowAiGenerator] = useState(false);
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
     
@@ -75,6 +76,7 @@ function ClientUILayout() {
         setAiPrompt('');
         setIsGenerating(false);
         setIsModalOpen(false);
+        setShowAiGenerator(false);
     }
 
     const handleCreatePost = async (communityId: string | null = null) => {
@@ -105,7 +107,7 @@ function ClientUILayout() {
                 content: newPostContent,
                 image: imageUrl,
                 imageHint: imageUrl ? 'upload do usuário' : '',
-                communityId: communityId,
+                communityId: communityId || null,
                 createdAt: serverTimestamp(),
                 comments: 0,
                 retweets: [],
@@ -193,28 +195,31 @@ function ClientUILayout() {
                                 )}
                             </div>
                         </div>
-                        <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg">
-                            <div className="flex items-center gap-2">
-                                <Sparkles className="h-5 w-5 text-primary" />
-                                <span className="font-semibold text-sm">Gerar com IA</span>
+
+                        {showAiGenerator && (
+                            <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
+                                <Textarea 
+                                    placeholder="ex: Um post sobre o futuro da exploração espacial"
+                                    className="text-sm focus-visible:ring-1 bg-background"
+                                    value={aiPrompt}
+                                    onChange={(e) => setAiPrompt(e.target.value)}
+                                    rows={2}
+                                />
+                                <Button onClick={handleGeneratePost} disabled={isGenerating || !aiPrompt.trim()} className="self-end" size="sm">
+                                    {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Gerar
+                                </Button>
                             </div>
-                            <Textarea 
-                                placeholder="ex: Um post sobre o futuro da exploração espacial"
-                                className="text-sm focus-visible:ring-1 bg-background"
-                                value={aiPrompt}
-                                onChange={(e) => setAiPrompt(e.target.value)}
-                                rows={2}
-                            />
-                            <Button onClick={handleGeneratePost} disabled={isGenerating || !aiPrompt.trim()} className="self-end" size="sm">
-                                {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Gerar
-                            </Button>
-                        </div>
+                        )}
+
                         <div className="flex justify-between items-center mt-2 border-t pt-4">
                             <div className="flex items-center gap-2">
                                 <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
                                 <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
                                     <ImageIcon className="h-6 w-6 text-primary" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => setShowAiGenerator(!showAiGenerator)} disabled={isPosting}>
+                                    <Sparkles className="h-6 w-6 text-primary" />
                                 </Button>
                             </div>
                             <Button onClick={() => handleCreatePost()} disabled={!newPostContent.trim() || isPosting}>
