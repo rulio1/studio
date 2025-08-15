@@ -46,6 +46,13 @@ export default function ConversationPage() {
             if (currentUser) {
                 setUser(currentUser);
                 try {
+                    const conversationDoc = await getDoc(doc(db, 'conversations', conversationId));
+                    if (!conversationDoc.exists() || !conversationDoc.data().participants.includes(currentUser.uid)) {
+                         setOtherUser(null);
+                         setIsLoading(false);
+                         return;
+                    }
+
                     const otherUserId = conversationId.replace(currentUser.uid, '').replace('_', '');
                     const userDoc = await getDoc(doc(db, 'users', otherUserId));
                     if (userDoc.exists()) {
@@ -53,12 +60,12 @@ export default function ConversationPage() {
                     }
                 } catch (error) {
                     console.error("Erro ao buscar dados do usuário:", error);
+                } finally {
+                    setIsLoading(false);
                 }
             } else {
                 router.push('/login');
             }
-            // We set loading to false after attempting to fetch the user.
-            setIsLoading(false);
         });
         return () => unsubscribe();
     }, [router, conversationId]);
@@ -94,15 +101,16 @@ export default function ConversationPage() {
         
         setIsSending(true);
         try {
+            const conversationRef = doc(db, 'conversations', conversationId);
+            
             // Add message to subcollection
-            await addDoc(collection(db, 'conversations', conversationId, 'messages'), {
+            await addDoc(collection(conversationRef, 'messages'), {
                 senderId: user.uid,
                 text: newMessage,
                 createdAt: serverTimestamp(),
             });
 
             // Update last message in conversation document
-            const conversationRef = doc(db, 'conversations', conversationId);
             await updateDoc(conversationRef, {
                 lastMessage: {
                     text: newMessage,
@@ -129,11 +137,14 @@ export default function ConversationPage() {
                         <Button variant="ghost" size="icon" onClick={() => router.back()}>
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
-                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <div className="flex items-center gap-2">
+                             <Loader2 className="h-6 w-6 animate-spin" />
+                             <h1 className="text-lg font-bold">Carregando...</h1>
+                        </div>
                     </div>
                 </header>
                 <div className="flex-1 flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
             </div>
         );
@@ -147,11 +158,11 @@ export default function ConversationPage() {
                         <Button variant="ghost" size="icon" onClick={() => router.back()}>
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
-                         <h1 className="text-lg font-bold">Conversa</h1>
+                         <h1 className="text-lg font-bold">Conversa não encontrada</h1>
                     </div>
                 </header>
                  <div className="flex-1 flex items-center justify-center text-center p-4">
-                    <p className="text-muted-foreground">Não foi possível carregar os detalhes da conversa. O usuário pode não existir.</p>
+                    <p className="text-muted-foreground">Não foi possível carregar os detalhes da conversa. O usuário pode não existir ou você não tem permissão para vê-la.</p>
                 </div>
             </div>
         );

@@ -66,10 +66,15 @@ export default function MessagesPage() {
         const q = query(
             collection(db, "conversations"), 
             where("participants", "array-contains", user.uid)
-            // orderBy("lastMessage.timestamp", "desc") // Removed to prevent index error
         );
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
+            if (snapshot.empty) {
+                setConversations([]);
+                setIsLoading(false);
+                return;
+            }
+
             const convsPromises = snapshot.docs.map(async (docData) => {
                 const conversationData = docData.data();
                 const otherUserId = conversationData.participants.find((p: string) => p !== user.uid);
@@ -100,8 +105,9 @@ export default function MessagesPage() {
             
             // Sort client-side
             resolvedConvs.sort((a, b) => {
-                if (!a.lastMessage.timestamp || !b.lastMessage.timestamp) return 0;
-                return b.lastMessage.timestamp.toMillis() - a.lastMessage.timestamp.toMillis();
+                const timeA = a.lastMessage?.timestamp?.toMillis() || 0;
+                const timeB = b.lastMessage?.timestamp?.toMillis() || 0;
+                return timeB - timeA;
             });
 
             setConversations(resolvedConvs);
@@ -126,7 +132,7 @@ export default function MessagesPage() {
             <Button variant="ghost" size="icon">
                 <Settings className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" onClick={() => router.push('/search')}>
                 <MailPlus className="h-5 w-5" />
             </Button>
           </div>
@@ -145,10 +151,11 @@ export default function MessagesPage() {
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
         ): conversations.length === 0 ? (
-             <div className="text-center p-8">
+             <div className="text-center p-8 mt-16">
                 <MessageSquare className="mx-auto h-16 w-16 text-muted-foreground" />
                 <h2 className="mt-4 text-2xl font-bold">Sem mensagens ainda</h2>
                 <p className="mt-2 text-muted-foreground">Quando você tiver novas conversas, elas aparecerão aqui.</p>
+                 <Button className="mt-4" onClick={() => router.push('/search')}>Encontrar pessoas</Button>
             </div>
         ) : (
              <ul className="divide-y divide-border">

@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp, deleteDoc, addDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp, deleteDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -284,10 +284,10 @@ export default function ProfilePage() {
             const docSnap = await getDoc(conversationRef);
             
             if (!docSnap.exists()) {
-                await addDoc(collection(db, "conversations"), {
+                 await setDoc(conversationRef, {
                     participants: [currentUser.uid, profileUser.uid],
                     lastMessage: {
-                        text: "Inicie a conversa!",
+                        text: `Iniciou uma conversa`,
                         senderId: null,
                         timestamp: serverTimestamp()
                     }
