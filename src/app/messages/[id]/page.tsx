@@ -47,7 +47,8 @@ export default function ConversationPage() {
                 setUser(currentUser);
                 try {
                     const conversationDoc = await getDoc(doc(db, 'conversations', conversationId));
-                    if (!conversationDoc.exists() || !conversationDoc.data().participants.includes(currentUser.uid)) {
+                    const conversationData = conversationDoc.data();
+                    if (!conversationDoc.exists() || !conversationData?.participants?.includes(currentUser.uid)) {
                          setOtherUser(null);
                          setIsLoading(false);
                          return;
