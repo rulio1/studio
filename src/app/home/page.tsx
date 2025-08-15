@@ -224,7 +224,7 @@ export default function HomePage() {
     router.push(`/post/${postId}`);
   };
   
-  const PostList = ({ posts, loading }: { posts: Post[], loading: boolean }) => {
+  const PostList = ({ posts, loading, tab }: { posts: Post[], loading: boolean, tab: 'for-you' | 'following' }) => {
     if (loading) {
         return (
             <ul className="divide-y divide-border">
@@ -234,6 +234,15 @@ export default function HomePage() {
     }
     
     if (posts.length === 0) {
+        if (tab === 'following') {
+            return (
+                <div className="p-8 text-center text-muted-foreground">
+                    <h3 className="text-xl font-bold text-foreground">Your timeline is a bit empty...</h3>
+                    <p className="mt-2 mb-4">Find people to follow and see their posts here!</p>
+                    <Button onClick={() => router.push('/search')}>Find People</Button>
+                </div>
+            )
+        }
         return (
              <div className="p-8 text-center text-muted-foreground">
                 <h3 className="text-xl font-bold text-foreground">Nothing to see here... yet</h3>
@@ -398,15 +407,16 @@ export default function HomePage() {
               <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Following</TabsTrigger>
             </TabsList>
             <TabsContent value="for-you" className="mt-0">
-                <PostList posts={allPosts} loading={isLoading} />
+                <PostList posts={allPosts} loading={isLoading} tab="for-you" />
             </TabsContent>
             <TabsContent value="following" className="mt-0">
-                <PostList posts={followingPosts} loading={isLoadingFollowing} />
+                <PostList posts={followingPosts} loading={isLoadingFollowing} tab="following" />
             </TabsContent>
         </Tabs>
       </main>
     </div>
   );
 }
+
 
     
