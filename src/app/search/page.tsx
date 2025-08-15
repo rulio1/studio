@@ -41,7 +41,7 @@ interface PostSearchResult {
 export default function SearchPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('for-you');
+  const [activeTab, setActiveTab] = useState('trending');
   const [trends, setTrends] = useState<Trend[]>([]);
   const [users, setUsers] = useState<UserSearchResult[]>([]);
   const [newUsers, setNewUsers] = useState<UserSearchResult[]>([]);
@@ -73,8 +73,9 @@ export default function SearchPage() {
     }
   }, []);
 
-  const fetchNewUsers = useCallback(async () => {
-    setIsLoading(true);
+  useEffect(() => {
+    fetchTrends();
+
     const usersQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(10));
     const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
         const usersData = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserSearchResult));
@@ -84,14 +85,9 @@ export default function SearchPage() {
         console.error("Error fetching new users:", error);
         setIsLoading(false);
     });
-     return unsubscribe;
-  }, []);
-  
-  useEffect(() => {
-    fetchTrends();
-    const unsub = fetchNewUsers();
-    return () => unsub();
-  }, [fetchTrends, fetchNewUsers]);
+
+    return () => unsubscribe();
+  }, [fetchTrends]);
   
   useEffect(() => {
       const performSearch = async (term: string) => {
