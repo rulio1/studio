@@ -38,8 +38,12 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
     
     useEffect(() => {
         if (notification.createdAt) {
-            const date = notification.createdAt.toDate();
-            setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
+            try {
+                const date = notification.createdAt.toDate();
+                setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
+            } catch(e) {
+                setTime('agora');
+            }
         }
     }, [notification.createdAt]);
 

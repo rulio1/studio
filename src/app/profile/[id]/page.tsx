@@ -101,8 +101,11 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }:
 
     useEffect(() => {
         if (post.createdAt) {
-            const date = post.createdAt.toDate();
-            setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
+            try {
+                setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+            } catch (e) {
+                setTime('agora')
+            }
         }
     }, [post.createdAt]);
 
@@ -170,8 +173,11 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
 
     useEffect(() => {
         if (reply.createdAt) {
-            const date = reply.createdAt.toDate();
-            setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
+            try {
+                setTime(formatDistanceToNow(reply.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+            } catch (e) {
+                setTime('agora');
+            }
         }
     }, [reply.createdAt]);
 
@@ -349,7 +355,6 @@ export default function ProfilePage() {
 
         const currentUserRef = doc(db, 'users', currentUser.uid);
         const profileUserRef = doc(db, 'users', profileUser.uid);
-        const notificationRef = doc(collection(db, 'notifications'));
 
         if (isFollowing) {
             // Unfollow
@@ -359,6 +364,8 @@ export default function ProfilePage() {
             // Follow
             batch.update(currentUserRef, { following: arrayUnion(profileUser.uid) });
             batch.update(profileUserRef, { followers: arrayUnion(currentUser.uid) });
+            
+            const notificationRef = doc(collection(db, 'notifications'));
             batch.set(notificationRef, {
                 toUserId: profileUser.uid,
                 fromUserId: currentUser.uid,
@@ -650,7 +657,7 @@ export default function ProfilePage() {
                     loading={isLoadingReplies} 
                     emptyTitle="Nenhuma resposta ainda" 
                     emptyDescription="Quando este usuário responder a outros, suas respostas aparecerão aqui."
-                />
+                 />
             </TabsContent>
             <TabsContent value="media" className="mt-0">
                  <PostList 
