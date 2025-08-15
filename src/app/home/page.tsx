@@ -263,7 +263,7 @@ export default function HomePage() {
         <div className="flex items-center justify-between px-4 py-2">
             <Sheet>
               <SheetTrigger asChild>
-                <Avatar className="h-8 w-8 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
+                <Avatar className="h-8 w-8 cursor-pointer">
                   <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
                   <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
                 </Avatar>
