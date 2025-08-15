@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc } from 'firebase/firestore';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -24,6 +24,7 @@ interface Notification {
     postContent?: string;
     createdAt: any;
     time: string;
+    read: boolean;
 }
 
 const iconMap = {
@@ -48,7 +49,7 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
     }, [notification.createdAt]);
 
     return (
-        <li className="p-4 flex gap-4 hover:bg-muted/50 cursor-pointer">
+        <li className={`p-4 flex gap-4 hover:bg-muted/50 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`}>
         <div className="w-8 flex justify-end">
             <Icon className={`h-6 w-6 ${color}`} />
         </div>
@@ -86,9 +87,27 @@ export default function NotificationsPage() {
         return () => unsubscribeAuth();
     }, []);
 
+    const markNotificationsAsRead = async (userId: string) => {
+        const unreadQuery = query(
+            collection(db, "notifications"),
+            where("toUserId", "==", userId),
+            where("read", "==", false)
+        );
+        const snapshot = await getDocs(unreadQuery);
+        if (snapshot.empty) return;
+
+        const batch = writeBatch(db);
+        snapshot.docs.forEach(doc => {
+            batch.update(doc.ref, { read: true });
+        });
+        await batch.commit();
+    };
+
     useEffect(() => {
         if (!user) return;
         
+        markNotificationsAsRead(user.uid);
+
         setIsLoading(true);
         const q = query(
             collection(db, "notifications"),
