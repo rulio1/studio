@@ -98,12 +98,14 @@ export default function EditProfilePage() {
 
             const userRef = doc(db, 'users', user.uid);
 
+            // Check if banner image was changed by the user
             if (bannerImage && bannerImage !== chirpUser.banner) {
                 const bannerStorageRef = ref(storage, `banners/${user.uid}`);
                 const snapshot = await uploadString(bannerStorageRef, bannerImage, 'data_url');
                 bannerUrl = await getDownloadURL(snapshot.ref);
             }
 
+            // Check if avatar image was changed by the user
             if (avatarImage && avatarImage !== chirpUser.avatar) {
                 const avatarStorageRef = ref(storage, `avatars/${user.uid}`);
                 const snapshot = await uploadString(avatarStorageRef, avatarImage, 'data_url');
@@ -121,8 +123,6 @@ export default function EditProfilePage() {
                 description: "Suas alterações foram salvas com sucesso.",
             });
             router.push(`/profile/${user.uid}`);
-            router.refresh();
-
         } catch (error) {
             console.error("Erro ao salvar perfil: ", error);
             toast({
@@ -166,7 +166,7 @@ export default function EditProfilePage() {
             />}
             <div className="absolute top-0 left-0 w-full h-full bg-black/30 flex items-center justify-center gap-2">
                 <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => bannerInputRef.current?.click()}><Camera className="h-5 w-5" /></Button>
-                 <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => setBannerImage(null)}><X className="h-5 w-5" /></Button>
+                 {bannerImage && chirpUser.banner !== bannerImage && <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => setBannerImage(chirpUser.banner)}><X className="h-5 w-5" /></Button>}
             </div>
         </div>
         <div className="px-4">
@@ -176,7 +176,7 @@ export default function EditProfilePage() {
                     {avatarImage && <AvatarImage src={avatarImage} data-ai-hint="pop star" alt={formData.displayName} />}
                     <AvatarFallback className="text-4xl">{formData.displayName?.[0]}</AvatarFallback>
                 </Avatar>
-                <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
+                <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity" onClick={() => avatarInputRef.current?.click()}>
                     <Camera className="h-6 w-6 text-white" />
                 </div>
             </div>
@@ -190,6 +190,7 @@ export default function EditProfilePage() {
                     value={formData.displayName} 
                     onChange={handleFormChange}
                     className="text-lg" 
+                    disabled={isSaving}
                 />
             </div>
              <div className="grid gap-1.5">
@@ -200,6 +201,7 @@ export default function EditProfilePage() {
                     onChange={handleFormChange}
                     rows={3}
                     className="text-lg"
+                    disabled={isSaving}
                 />
             </div>
              <div className="grid gap-1.5">
@@ -209,6 +211,7 @@ export default function EditProfilePage() {
                     value={formData.location}
                     onChange={handleFormChange}
                      className="text-lg"
+                     disabled={isSaving}
                 />
             </div>
         </div>
