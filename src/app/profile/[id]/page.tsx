@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -63,6 +62,7 @@ interface Post {
     isRetweeted: boolean;
     createdAt: any;
     editedAt?: any;
+    communityId?: string | null;
 }
 
 interface Reply {
@@ -194,7 +194,7 @@ export default function ProfilePage() {
         setIsLoadingReplies(true);
         const q = query(collection(db, "comments"), where("authorId", "==", profileId));
         onSnapshot(q, (snapshot) => {
-            const replies = snapshot.docs.map(doc => {
+            const repliesData = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
                     id: doc.id,
@@ -203,8 +203,8 @@ export default function ProfilePage() {
                 } as Reply;
             });
             // Sort client-side
-            replies.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-            setUserReplies(replies);
+            repliesData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+            setUserReplies(repliesData);
             setIsLoadingReplies(false);
         });
     }, [profileId]);
@@ -272,6 +272,36 @@ export default function ProfilePage() {
         }
         
         await batch.commit();
+    };
+
+    const handleStartConversation = async () => {
+        if (!currentUser || !profileUser || currentUser.uid === profileUser.uid) return;
+
+        const conversationId = [currentUser.uid, profileUser.uid].sort().join('_');
+        const conversationRef = doc(db, "conversations", conversationId);
+        
+        try {
+            const docSnap = await getDoc(conversationRef);
+            
+            if (!docSnap.exists()) {
+                await addDoc(collection(db, "conversations"), {
+                    participants: [currentUser.uid, profileUser.uid],
+                    lastMessage: {
+                        text: "Inicie a conversa!",
+                        senderId: null,
+                        timestamp: serverTimestamp()
+                    }
+                });
+            }
+            router.push(`/messages/${conversationId}`);
+        } catch (error) {
+            console.error("Erro ao iniciar a conversa:", error);
+            toast({
+                title: "Erro",
+                description: "Não foi possível iniciar a conversa.",
+                variant: "destructive",
+            });
+        }
     };
 
     const handleDeletePost = async () => {
@@ -505,7 +535,7 @@ export default function ProfilePage() {
                     </Button>
                 ) : (
                     <div className='flex items-center gap-2 mt-4'>
-                        <Button variant="ghost" size="icon" className="border rounded-full"><Mail /></Button>
+                        <Button variant="ghost" size="icon" className="border rounded-full" onClick={handleStartConversation}><Mail /></Button>
                         <Button variant="ghost" size="icon" className="border rounded-full"><Bell /></Button>
                         <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={handleFollow}>
                             {isFollowing ? 'Seguindo' : 'Seguir'}

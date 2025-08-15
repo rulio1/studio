@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { MailPlus, Search, Settings, Loader2, MessageSquare } from 'lucide-react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc, orderBy } from 'firebase/firestore';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface ChirpUser {
     uid: string;
@@ -22,13 +23,15 @@ interface ChirpUser {
 interface Conversation {
     id: string;
     otherUser: {
+        id: string;
         name: string;
         handle: string;
         avatar: string;
     };
     lastMessage: {
         text: string;
-        timestamp: string;
+        timestamp: any;
+        time: string;
     };
     unreadCount: number;
 }
@@ -52,16 +55,60 @@ export default function MessagesPage() {
             } else {
                 router.push('/login');
             }
-            setIsLoading(false);
         });
         return () => unsubscribe();
     }, [router]);
     
+    useEffect(() => {
+        if (!user) return;
+        
+        setIsLoading(true);
+        const q = query(
+            collection(db, "conversations"), 
+            where("participants", "array-contains", user.uid),
+            orderBy("lastMessage.timestamp", "desc")
+        );
+
+        const unsubscribe = onSnapshot(q, async (snapshot) => {
+            const convsPromises = snapshot.docs.map(async (docData) => {
+                const conversationData = docData.data();
+                const otherUserId = conversationData.participants.find((p: string) => p !== user.uid);
+                
+                if (!otherUserId) return null;
+
+                const userDoc = await getDoc(doc(db, "users", otherUserId));
+                if (!userDoc.exists()) return null;
+                const otherUserData = userDoc.data();
+
+                return {
+                    id: docData.id,
+                    otherUser: {
+                        id: otherUserData.uid,
+                        name: otherUserData.displayName,
+                        handle: otherUserData.handle,
+                        avatar: otherUserData.avatar
+                    },
+                    lastMessage: {
+                        ...conversationData.lastMessage,
+                        time: conversationData.lastMessage.timestamp ? formatDistanceToNow(conversationData.lastMessage.timestamp.toDate(), { addSuffix: true, locale: ptBR }) : ''
+                    },
+                    unreadCount: 0 // Placeholder
+                } as Conversation;
+            });
+            
+            const resolvedConvs = (await Promise.all(convsPromises)).filter(Boolean) as Conversation[];
+            setConversations(resolvedConvs);
+            setIsLoading(false);
+        });
+        
+        return () => unsubscribe();
+    }, [user]);
+  
   return (
     <>
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
-           <Avatar className="h-8 w-8">
+           <Avatar className="h-8 w-8 cursor-pointer" onClick={() => user && router.push(`/profile/${user.uid}`)}>
             {chirpUser && <AvatarImage src={chirpUser.avatar} alt={chirpUser.displayName} />}
             <AvatarFallback>{chirpUser?.displayName?.[0] || 'U'}</AvatarFallback>
           </Avatar>
@@ -98,7 +145,26 @@ export default function MessagesPage() {
             </div>
         ) : (
              <ul className="divide-y divide-border">
-                {/* As conversas reais serão renderizadas aqui em breve */}
+                {conversations.map((convo) => (
+                    <li key={convo.id} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/messages/${convo.id}`)}>
+                        <div className="flex items-center gap-4">
+                            <Avatar className="h-12 w-12">
+                                <AvatarImage src={convo.otherUser.avatar} alt={convo.otherUser.name} />
+                                <AvatarFallback>{convo.otherUser.name[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 overflow-hidden">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-baseline gap-2">
+                                        <p className="font-bold truncate">{convo.otherUser.name}</p>
+                                        <p className="text-sm text-muted-foreground truncate">{convo.otherUser.handle}</p>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground whitespace-nowrap">{convo.lastMessage.time}</p>
+                                </div>
+                                <p className="text-sm text-muted-foreground truncate mt-1">{convo.lastMessage.text}</p>
+                            </div>
+                        </div>
+                    </li>
+                ))}
              </ul>
         )}
     </>
