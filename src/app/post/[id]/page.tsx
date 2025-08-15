@@ -7,29 +7,36 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, Upload, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, Upload, MoreHorizontal, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, arrayUnion } from 'firebase/firestore';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { format } from 'date-fns';
 
 interface Post {
-    id: number;
+    id: string;
+    authorId: string;
     avatar: string;
     avatarFallback: string;
     author: string;
     handle: string;
     time: string;
+    createdAt: any;
     content: string;
     image?: string;
     imageHint?: string;
     comments: number;
-    retweets: number;
-    likes: number;
-    views: string;
+    retweets: string[];
+    likes: string[];
+    views: number;
     isLiked: boolean;
     isRetweeted: boolean;
 }
 
 interface Comment {
-    id: number;
+    id: string;
+    authorId: string;
     avatar: string;
     avatarFallback: string;
     author: string;
@@ -38,61 +45,11 @@ interface Comment {
     content: string;
 }
 
-const initialPosts: Post[] = [
-    {
-        id: 1,
-        avatar: 'https://placehold.co/48x48.png',
-        avatarFallback: 'JD',
-        author: 'Jane Doe',
-        handle: '@jane',
-        time: '2h',
-        content: 'Just discovered this amazing new coffee shop! ☕️ The atmosphere is so cozy and the latte art is on point. Highly recommend!',
-        image: 'https://placehold.co/500x300.png',
-        imageHint: 'coffee shop',
-        comments: 23,
-        retweets: 11,
-        likes: 61,
-        views: '1.2k',
-        isLiked: false,
-        isRetweeted: false,
-    },
-    {
-        id: 2,
-        avatar: 'https://placehold.co/48x48.png',
-        avatarFallback: 'JS',
-        author: 'John Smith',
-        handle: '@john',
-        time: '4h',
-        content: 'Just built a new app with Next.js and Firebase! What a great stack!',
-        comments: 10,
-        retweets: 5,
-        likes: 32,
-        views: '800',
-        isLiked: false,
-        isRetweeted: false,
-    }
-];
-
-const initialComments: Comment[] = [
-    {
-        id: 1,
-        avatar: 'https://placehold.co/48x48.png',
-        avatarFallback: 'T',
-        author: 'Tom',
-        handle: '@tom',
-        time: '1h',
-        content: 'I need to check this place out!',
-    },
-    {
-        id: 2,
-        avatar: 'https://placehold.co/48x48.png',
-        avatarFallback: 'A',
-        author: 'Alice',
-        handle: '@alice',
-        time: '30m',
-        content: 'Looks awesome! Thanks for sharing.',
-    },
-];
+interface ChirpUser {
+    displayName: string;
+    handle: string;
+    avatar: string;
+}
 
 export default function PostDetailPage() {
     const router = useRouter();
@@ -102,36 +59,89 @@ export default function PostDetailPage() {
     const [post, setPost] = useState<Post | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [user, setUser] = useState<FirebaseUser | null>(null);
+    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                setUser(currentUser);
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    setChirpUser(userDoc.data() as ChirpUser);
+                }
+            } else {
+                router.push('/login');
+            }
+        });
+        return () => unsubscribe();
+    }, [router]);
 
     useEffect(() => {
         if (id) {
-            const postId = parseInt(id as string, 10);
-            const foundPost = initialPosts.find(p => p.id === postId);
-            if (foundPost) {
-                setPost(foundPost);
-                // In a real app, you would fetch comments for this post
-                setComments(initialComments);
-            }
+            const postId = id as string;
+            const postRef = doc(db, "posts", postId);
+            const unsubscribePost = onSnapshot(postRef, (doc) => {
+                if (doc.exists()) {
+                    const postData = doc.data() as Omit<Post, 'id' | 'isLiked' | 'isRetweeted' | 'time'>;
+                    setPost({
+                        id: doc.id,
+                        ...postData,
+                        time: postData.createdAt ? format(postData.createdAt.toDate(), "h:mm a · MMM d, yyyy") : '',
+                        isLiked: postData.likes.includes(auth.currentUser?.uid || ''),
+                        isRetweeted: postData.retweets.includes(auth.currentUser?.uid || ''),
+                    });
+                }
+                setIsLoading(false);
+            });
+
+            const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId), orderBy("createdAt", "desc"));
+            const unsubscribeComments = onSnapshot(commentsQuery, (snapshot) => {
+                const commentsData = snapshot.docs.map(doc => {
+                     const data = doc.data();
+                    return {
+                        id: doc.id,
+                        ...data,
+                        time: data.createdAt ? format(data.createdAt.toDate(), "h:mm a") : '',
+                    } as Comment;
+                });
+                setComments(commentsData);
+            });
+
+
+            return () => {
+                unsubscribePost();
+                unsubscribeComments();
+            };
         }
     }, [id]);
 
-    const handleReply = () => {
-        if (!newComment.trim()) return;
-        const reply: Comment = {
-            id: Date.now(),
-            author: 'Barbie 🎀',
-            handle: '@pussypinkprint',
-            avatar: 'https://placehold.co/40x40.png',
-            avatarFallback: 'B',
-            time: 'Just now',
+    const handleReply = async () => {
+        if (!newComment.trim() || !user || !chirpUser || !id) return;
+        
+        await addDoc(collection(db, "comments"), {
+            postId: id,
+            authorId: user.uid,
+            author: chirpUser.displayName,
+            handle: chirpUser.handle,
+            avatar: chirpUser.avatar,
+            avatarFallback: chirpUser.displayName[0],
             content: newComment,
-        };
-        setComments([reply, ...comments]);
+            createdAt: serverTimestamp(),
+        });
+
+        // Also increment comment count on the post
+        const postRef = doc(db, 'posts', id as string);
+        await updateDoc(postRef, {
+            comments: (post?.comments || 0) + 1
+        });
+
         setNewComment('');
     };
     
-    if (!post) {
-        return <div className="flex items-center justify-center h-screen">Post not found.</div>;
+    if (isLoading || !post) {
+        return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
     return (
@@ -164,8 +174,8 @@ export default function PostDetailPage() {
                     <p className="text-sm text-muted-foreground">{post.time}</p>
                     <Separator className="my-4" />
                     <div className="flex gap-4 text-sm text-muted-foreground">
-                        <p><span className="font-bold text-foreground">{post.retweets}</span> Retweets</p>
-                        <p><span className="font-bold text-foreground">{post.likes}</span> Likes</p>
+                        <p><span className="font-bold text-foreground">{post.retweets.length}</span> Retweets</p>
+                        <p><span className="font-bold text-foreground">{post.likes.length}</span> Likes</p>
                         <p><span className="font-bold text-foreground">{post.views}</span> Views</p>
                     </div>
                     <Separator className="my-4" />
@@ -180,8 +190,8 @@ export default function PostDetailPage() {
                 <div className="p-4 border-b">
                      <div className="flex gap-4">
                         <Avatar>
-                            <AvatarImage src="https://placehold.co/40x40.png" alt="@barbie" />
-                            <AvatarFallback>B</AvatarFallback>
+                            <AvatarImage src={chirpUser?.avatar} alt={chirpUser?.handle} />
+                            <AvatarFallback>{chirpUser?.displayName[0]}</AvatarFallback>
                         </Avatar>
                         <div className="w-full">
                             <Textarea 

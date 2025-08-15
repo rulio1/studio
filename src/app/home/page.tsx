@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -18,10 +18,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import PostSkeleton from '@/components/post-skeleton';
 import { useRouter } from 'next/navigation';
 import { generatePost } from '@/ai/flows/post-generator-flow';
+import { auth, db, storage } from '@/lib/firebase';
+import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
+import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { formatDistanceToNow } from 'date-fns';
 
 
 interface Post {
-    id: number;
+    id: string;
+    authorId: string;
     avatar: string;
     avatarFallback: string;
     author: string;
@@ -31,47 +37,27 @@ interface Post {
     image?: string;
     imageHint?: string;
     comments: number;
-    retweets: number;
-    likes: number;
-    views: string;
+    retweets: string[];
+    likes: string[];
+    views: number;
     isLiked: boolean;
     isRetweeted: boolean;
 }
 
-const initialPosts: Post[] = [
-    {
-        id: 1,
-        avatar: 'https://placehold.co/48x48.png',
-        avatarFallback: 'JD',
-        author: 'Jane Doe',
-        handle: '@jane',
-        time: '2h',
-        content: 'Just discovered this amazing new coffee shop! ☕️ The atmosphere is so cozy and the latte art is on point. Highly recommend!',
-        image: 'https://placehold.co/500x300.png',
-        imageHint: 'coffee shop',
-        comments: 23,
-        retweets: 11,
-        likes: 61,
-        views: '1.2k',
-        isLiked: false,
-        isRetweeted: false,
-    },
-    {
-        id: 2,
-        avatar: 'https://placehold.co/48x48.png',
-        avatarFallback: 'JS',
-        author: 'John Smith',
-        handle: '@john',
-        time: '4h',
-        content: 'Just built a new app with Next.js and Firebase! What a great stack!',
-        comments: 10,
-        retweets: 5,
-        likes: 32,
-        views: '800',
-        isLiked: false,
-        isRetweeted: false,
-    }
-];
+interface ChirpUser {
+    uid: string;
+    displayName: string;
+    email: string;
+    handle: string;
+    avatar: string;
+    banner: string;
+    bio: string;
+    location: string;
+    website: string;
+    birthDate: Date | null;
+    followers: string[];
+    following: string[];
+}
 
 
 export default function HomePage() {
@@ -82,32 +68,61 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+
 
   const { toast } = useToast();
   const router = useRouter();
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-
   useEffect(() => {
-    const timer = setTimeout(() => {
-        setPosts(initialPosts);
-        setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            setUser(user);
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if(userDoc.exists()){
+                setChirpUser(userDoc.data() as ChirpUser);
+            }
+        } else {
+            router.push('/login');
+        }
+    });
 
-  const handlePostAction = (postId: number, action: 'like' | 'retweet') => {
-    setPosts(posts.map(p => {
-      if (p.id === postId) {
-        if (action === 'like') {
-          return { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 };
-        }
-        if (action === 'retweet') {
-          return { ...p, isRetweeted: !p.isRetweeted, retweets: p.isRetweeted ? p.retweets - 1 : p.retweets + 1 };
-        }
-      }
-      return p;
-    }));
+    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+    const unsubscribePosts = onSnapshot(q, (snapshot) => {
+        const postsData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate()) + ' ago' : 'Just now',
+                isLiked: data.likes.includes(auth.currentUser?.uid || ''),
+                isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
+            } as Post
+        });
+        setPosts(postsData);
+        setIsLoading(false);
+    });
+
+    return () => {
+        unsubscribeAuth();
+        unsubscribePosts();
+    };
+  }, [router]);
+
+  const handlePostAction = async (postId: string, action: 'like' | 'retweet') => {
+    if(!user) return;
+    const postRef = doc(db, "posts", postId);
+    const field = action === 'like' ? 'likes' : 'retweets';
+    const post = posts.find(p => p.id === postId);
+    if(!post) return;
+
+    if(post[action === 'like' ? 'isLiked' : 'isRetweeted']) {
+        await updateDoc(postRef, { [field]: arrayRemove(user.uid) });
+    } else {
+        await updateDoc(postRef, { [field]: arrayUnion(user.uid) });
+    }
   };
 
   const resetModal = () => {
@@ -118,8 +133,8 @@ export default function HomePage() {
     setIsModalOpen(false);
   }
 
-  const handleCreatePost = () => {
-    if (!newPostContent.trim()) {
+  const handleCreatePost = async () => {
+    if (!newPostContent.trim() || !user || !chirpUser) {
         toast({
             title: "Post cannot be empty.",
             description: "Please write something before posting.",
@@ -128,25 +143,29 @@ export default function HomePage() {
         return;
     }
 
-    const newPost: Post = {
-        id: Date.now(),
-        author: 'Barbie 🎀',
-        handle: '@pussypinkprint',
-        time: 'Just now',
-        content: newPostContent,
-        image: newPostImage || undefined,
-        imageHint: newPostImage ? 'user upload' : undefined,
-        avatar: 'https://placehold.co/40x40.png',
-        avatarFallback: 'B',
-        comments: 0,
-        likes: 0,
-        retweets: 0,
-        views: '0',
-        isLiked: false,
-        isRetweeted: false,
-    };
+    let imageUrl = '';
+    if (newPostImage) {
+        const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}`);
+        const snapshot = await uploadString(imageRef, newPostImage, 'data_url');
+        imageUrl = await getDownloadURL(snapshot.ref);
+    }
 
-    setPosts([newPost, ...posts]);
+    await addDoc(collection(db, "posts"), {
+        authorId: user.uid,
+        author: chirpUser.displayName,
+        handle: chirpUser.handle,
+        avatar: chirpUser.avatar,
+        avatarFallback: chirpUser.displayName[0],
+        content: newPostContent,
+        image: imageUrl,
+        imageHint: imageUrl ? 'user upload' : '',
+        createdAt: new Date(),
+        comments: 0,
+        retweets: [],
+        likes: [],
+        views: 0,
+    });
+
     resetModal();
     toast({
         title: "Post created!",
@@ -183,10 +202,37 @@ export default function HomePage() {
       }
   };
 
+  const handleSignOut = async () => {
+    await signOut(auth);
+    router.push('/login');
+  };
 
-  const handlePostClick = (postId: number) => {
+  const handlePostClick = (postId: string) => {
     router.push(`/post/${postId}`);
   };
+
+  if (isLoading || !user || !chirpUser) {
+      return (
+        <div className="flex flex-col h-screen bg-background relative">
+             <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
+                <div className="flex items-center justify-between px-4 py-2">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Bird className="h-6 w-6" />
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                </div>
+             </header>
+             <main className="flex-1 overflow-y-auto">
+                <div className="flow-root">
+                    <ul className="divide-y divide-border">
+                        <li className="p-4"><PostSkeleton /></li>
+                        <li className="p-4"><PostSkeleton /></li>
+                        <li className="p-4"><PostSkeleton /></li>
+                    </ul>
+                </div>
+             </main>
+        </div>
+      );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-background relative">
@@ -195,8 +241,8 @@ export default function HomePage() {
             <Sheet>
               <SheetTrigger asChild>
                 <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarImage src="https://placehold.co/40x40.png" alt="admin" />
-                  <AvatarFallback>A</AvatarFallback>
+                  <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
+                  <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
                 </Avatar>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0 animate-slide-in-from-bottom">
@@ -204,20 +250,18 @@ export default function HomePage() {
                   <SheetTitle className="sr-only">Menu</SheetTitle>
                   <div className="flex items-center justify-between">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src="https://placehold.co/40x40.png" alt="@barbie" />
-                      <AvatarFallback>B</AvatarFallback>
+                       <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
+                       <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
                     </Avatar>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-5 w-5" />
-                    </Button>
+                    <Button variant="outline" onClick={handleSignOut}>Sign Out</Button>
                   </div>
                   <div className="mt-4">
-                    <p className="font-bold text-lg">Barbie 🎀</p>
-                    <p className="text-sm text-muted-foreground">@pussypinkprint</p>
+                    <p className="font-bold text-lg">{chirpUser.displayName}</p>
+                    <p className="text-sm text-muted-foreground">{chirpUser.handle}</p>
                   </div>
                   <div className="flex gap-4 mt-2 text-sm">
-                    <p><span className="font-bold">539</span> <span className="text-muted-foreground">Following</span></p>
-                    <p><span className="font-bold">675</span> <span className="text-muted-foreground">Followers</span></p>
+                    <p><span className="font-bold">{chirpUser.following?.length || 0}</span> <span className="text-muted-foreground">Following</span></p>
+                    <p><span className="font-bold">{chirpUser.followers?.length || 0}</span> <span className="text-muted-foreground">Followers</span></p>
                   </div>
                 </SheetHeader>
                 <nav className="flex-1 flex flex-col gap-2 p-4">
@@ -227,7 +271,7 @@ export default function HomePage() {
                        <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <X className="h-6 w-6" /> Premium
                       </Link>
-                       <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                       <Link href="/grok" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <MessageSquare className="h-6 w-6" /> Chat <Badge variant="default" className="ml-auto">BETA</Badge>
                       </Link>
                       <Link href="/communities" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
@@ -307,11 +351,11 @@ export default function HomePage() {
                                         </div>
                                         <button onClick={() => handlePostAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
                                             <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
-                                            <span>{post.retweets}</span>
+                                            <span>{post.retweets.length}</span>
                                         </button>
                                         <button onClick={() => handlePostAction(post.id, 'like')} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
                                             <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
-                                            <span>{post.likes}</span>
+                                            <span>{post.likes.length}</span>
                                         </button>
                                          <div className="flex items-center gap-1">
                                         <BarChart2 className="h-5 w-5" />
@@ -355,8 +399,8 @@ export default function HomePage() {
             <div className="flex flex-col gap-4">
                 <div className="flex gap-4">
                     <Avatar>
-                        <AvatarImage src="https://placehold.co/40x40.png" alt="@barbie" />
-                        <AvatarFallback>B</AvatarFallback>
+                        <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
+                        <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
                     </Avatar>
                     <div className="w-full">
                         <Textarea 

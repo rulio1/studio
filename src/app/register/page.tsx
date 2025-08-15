@@ -12,6 +12,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
+import { auth, db } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -22,6 +27,7 @@ const formSchema = z.object({
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -32,14 +38,51 @@ export default function RegisterPage() {
     },
   });
 
-  const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    // For now, just show a toast and redirect to login after "signing up"
-    console.log(values);
-    toast({
-      title: "Account Created!",
-      description: "You can now log in with your new account.",
-    });
-    router.push('/login');
+  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+        const user = userCredential.user;
+
+        await updateProfile(user, {
+            displayName: values.name,
+        });
+
+        await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            displayName: values.name,
+            email: values.email,
+            createdAt: serverTimestamp(),
+            handle: `@${values.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+            avatar: `https://placehold.co/128x128.png?text=${values.name[0]}`,
+            banner: 'https://placehold.co/600x200.png',
+            bio: '',
+            location: '',
+            website: '',
+            birthDate: null,
+            followers: [],
+            following: [],
+        });
+        
+        toast({
+        title: "Account Created!",
+        description: "You can now log in with your new account.",
+        });
+        router.push('/home');
+
+    } catch (error: any) {
+      let description = 'An unexpected error occurred.';
+      if (error.code === 'auth/email-already-in-use') {
+          description = 'This email is already in use. Please try another one.';
+      }
+      toast({
+        title: "Registration Failed",
+        description,
+        variant: "destructive",
+      });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -59,7 +102,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Your Name" {...field} />
+                      <Input placeholder="Your Name" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -72,7 +115,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} />
+                      <Input placeholder="name@example.com" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -85,13 +128,14 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="password" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create Account
               </Button>
             </CardContent>
