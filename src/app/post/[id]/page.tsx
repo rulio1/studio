@@ -97,7 +97,7 @@ export default function PostDetailPage() {
                 setIsLoading(false);
             });
 
-            const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId));
+            const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId), orderBy("createdAt", "asc"));
             const unsubscribeComments = onSnapshot(commentsQuery, (snapshot) => {
                 const commentsData = snapshot.docs.map(doc => {
                      const data = doc.data();

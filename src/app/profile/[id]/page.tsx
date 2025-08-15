@@ -119,7 +119,7 @@ export default function ProfilePage() {
     const fetchUserPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingPosts(true);
-        const q = query(collection(db, "posts"), where("authorId", "==", profileId));
+        const q = query(collection(db, "posts"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
         const posts = snapshot.docs.map(doc => {
              const data = doc.data();
@@ -138,7 +138,7 @@ export default function ProfilePage() {
     const fetchLikedPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingLikes(true);
-        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId));
+        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId), orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
         const posts = snapshot.docs.map(doc => {
             const data = doc.data();
