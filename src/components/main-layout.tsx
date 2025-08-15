@@ -45,12 +45,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     
     const { toast } = useToast();
     const imageInputRef = useRef<HTMLInputElement>(null);
-    
-    const [isClient, setIsClient] = useState(false);
-
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
 
      useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -165,82 +159,78 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 {children}
             </div>
             
-            {isClient && (
-                <>
-                    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="absolute bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90">
-                                <Plus className="h-8 w-8" />
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[600px]">
-                            <DialogHeader>
-                            <DialogTitle>Criar Post</DialogTitle>
-                            <DialogDescription>
-                                O que você está pensando? Compartilhe com o mundo. Você pode até usar IA para gerar conteúdo.
-                            </DialogDescription>
-                            </DialogHeader>
-                            {chirpUser ? (
-                            <div className="flex flex-col gap-4">
-                                <div className="flex gap-4">
-                                    <Avatar>
-                                        <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
-                                        <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="w-full">
-                                        <Textarea 
-                                            placeholder="O que está acontecendo?!" 
-                                            className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
-                                            value={newPostContent}
-                                            onChange={(e) => setNewPostContent(e.target.value)}
-                                            rows={5}
-                                        />
-                                        {newPostImage && (
-                                            <div className="mt-4 relative">
-                                                <Image src={newPostImage} width={500} height={300} alt="Pré-visualização" className="rounded-2xl border" />
-                                                <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => setNewPostImage(null)}>
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="flex flex-col gap-2 p-4 border rounded-lg">
-                                    <div className="flex items-center gap-2">
-                                        <Sparkles className="h-5 w-5 text-primary" />
-                                        <span className="font-semibold">Gerar com IA</span>
-                                    </div>
-                                    <Textarea 
-                                        placeholder="ex: Um post sobre o futuro da exploração espacial"
-                                        className="text-sm focus-visible:ring-1"
-                                        value={aiPrompt}
-                                        onChange={(e) => setAiPrompt(e.target.value)}
-                                        rows={2}
-                                    />
-                                    <Button onClick={handleGeneratePost} disabled={isGenerating || !aiPrompt.trim()} className="self-end">
-                                        {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Gerar
-                                    </Button>
-                                </div>
-                                <div className="flex justify-between items-center mt-2 border-t pt-4">
-                                    <div className="flex items-center gap-2">
-                                        <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                                        <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
-                                            <ImageIcon className="h-6 w-6 text-primary" />
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogTrigger asChild>
+                    <Button className="absolute bottom-28 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90">
+                        <Plus className="h-8 w-8" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                    <DialogTitle>Criar Post</DialogTitle>
+                    <DialogDescription>
+                        O que você está pensando? Compartilhe com o mundo.
+                    </DialogDescription>
+                    </DialogHeader>
+                    {chirpUser ? (
+                    <div className="flex flex-col gap-4">
+                        <div className="flex gap-4">
+                            <Avatar>
+                                <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
+                                <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="w-full">
+                                <Textarea 
+                                    placeholder="O que está acontecendo?!" 
+                                    className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
+                                    value={newPostContent}
+                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    rows={5}
+                                />
+                                {newPostImage && (
+                                    <div className="mt-4 relative">
+                                        <Image src={newPostImage} width={500} height={300} alt="Pré-visualização" className="rounded-2xl border" />
+                                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => setNewPostImage(null)}>
+                                            <X className="h-4 w-4" />
                                         </Button>
                                     </div>
-                                    <Button onClick={() => handleCreatePost(null)} disabled={!newPostContent.trim() || isPosting}>
-                                        {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Postar
-                                    </Button>
-                                </div>
+                                )}
                             </div>
-                            ) : <Loader2 className="h-6 w-6 animate-spin mx-auto" />}
-                        </DialogContent>
-                    </Dialog>
-                    <BottomNavBar />
-                </>
-            )}
+                        </div>
+                        <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg">
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="h-5 w-5 text-primary" />
+                                <span className="font-semibold text-sm">Gerar com IA</span>
+                            </div>
+                            <Textarea 
+                                placeholder="ex: Um post sobre o futuro da exploração espacial"
+                                className="text-sm focus-visible:ring-1 bg-background"
+                                value={aiPrompt}
+                                onChange={(e) => setAiPrompt(e.target.value)}
+                                rows={2}
+                            />
+                            <Button onClick={handleGeneratePost} disabled={isGenerating || !aiPrompt.trim()} className="self-end" size="sm">
+                                {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Gerar
+                            </Button>
+                        </div>
+                        <div className="flex justify-between items-center mt-2 border-t pt-4">
+                            <div className="flex items-center gap-2">
+                                <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                                <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                                    <ImageIcon className="h-6 w-6 text-primary" />
+                                </Button>
+                            </div>
+                            <Button onClick={() => handleCreatePost(null)} disabled={!newPostContent.trim() || isPosting}>
+                                {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Postar
+                            </Button>
+                        </div>
+                    </div>
+                    ) : <Loader2 className="h-6 w-6 animate-spin mx-auto" />}
+                </DialogContent>
+            </Dialog>
+            <BottomNavBar />
         </div>
     );
 }
