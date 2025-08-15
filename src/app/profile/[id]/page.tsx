@@ -110,7 +110,7 @@ export default function ProfilePage() {
     const fetchUserPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingPosts(true);
-        const q = query(collection(db, "posts"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
+        const q = query(collection(db, "posts"), where("authorId", "==", profileId));
         const snapshot = await getDocs(q);
         const posts = snapshot.docs.map(doc => {
              const data = doc.data();
@@ -149,9 +149,11 @@ export default function ProfilePage() {
 
 
     useEffect(() => {
-        fetchUserPosts();
-        fetchLikedPosts();
-    }, [fetchUserPosts, fetchLikedPosts]);
+        if(profileId) {
+            fetchUserPosts();
+            fetchLikedPosts();
+        }
+    }, [profileId, fetchUserPosts, fetchLikedPosts]);
 
     const handleFollow = async () => {
         if (!currentUser || !profileUser) return;
@@ -332,7 +334,7 @@ export default function ProfilePage() {
                     posts={likedPosts} 
                     loading={isLoadingLikes}
                     emptyTitle="No likes yet" 
-                    emptyDescription="When this user likes posts, they will appear here."
+                    description="When this user likes posts, they will appear here."
                  />
             </TabsContent>
         </Tabs>
