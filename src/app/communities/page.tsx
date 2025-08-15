@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Search, Users } from 'lucide-react';
+import { ArrowLeft, PlusSquare, Search, Users } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -153,8 +153,8 @@ export default function CommunitiesPage() {
                          <Button variant="ghost" size="icon">
                             <Search className="h-5 w-5" />
                         </Button>
-                         <Button variant="ghost" size="icon">
-                            <Users className="h-5 w-5" />
+                         <Button variant="ghost" size="icon" onClick={() => router.push('/communities/create')}>
+                            <PlusSquare className="h-5 w-5" />
                         </Button>
                     </div>
                 </div>
