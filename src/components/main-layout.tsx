@@ -35,7 +35,7 @@ interface ChirpUser {
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-
+    const [isClient, setIsClient] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPostContent, setNewPostContent] = useState('');
     const [newPostImage, setNewPostImage] = useState<string | null>(null);
@@ -44,12 +44,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     const [aiPrompt, setAiPrompt] = useState('');
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
-    const [isClient, setIsClient] = useState(false);
     
     const { toast } = useToast();
     const imageInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
+     useEffect(() => {
         setIsClient(true);
     }, []);
 
@@ -182,7 +181,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             {isClient && (
                 <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                     <DialogTrigger asChild>
-                        <Button className="absolute bottom-24 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90">
+                        <Button className="absolute bottom-28 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90">
                             <Plus className="h-8 w-8" />
                         </Button>
                     </DialogTrigger>
