@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, Upload, MoreHorizontal, Loader2, Trash2, Edit, Save } from 'lucide-react';
 import Image from 'next/image';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -160,12 +160,18 @@ export default function PostDetailPage() {
     }, [id]);
 
     const handleReply = async () => {
-        if (!newComment.trim() || !user || !chirpUser || !id || isReplying) return;
+        if (!newComment.trim() || !user || !chirpUser || !post || isReplying) return;
         
         setIsReplying(true);
         try {
-            await addDoc(collection(db, "comments"), {
-                postId: id,
+            const batch = writeBatch(db);
+            const postRef = doc(db, 'posts', post.id);
+            const commentRef = doc(collection(db, "comments"));
+            const notificationRef = doc(collection(db, 'notifications'));
+
+            // Create comment
+            batch.set(commentRef, {
+                 postId: post.id,
                 authorId: user.uid,
                 author: chirpUser.displayName,
                 handle: chirpUser.handle,
@@ -175,11 +181,29 @@ export default function PostDetailPage() {
                 createdAt: serverTimestamp(),
             });
 
-            const postRef = doc(db, 'posts', id as string);
-            await updateDoc(postRef, {
-                comments: increment(1)
-            });
+            // Increment post's comment count
+            batch.update(postRef, { comments: increment(1) });
+            
+            // Create notification if not replying to own post
+            if(user.uid !== post.authorId) {
+                batch.set(notificationRef, {
+                     toUserId: post.authorId,
+                    fromUserId: user.uid,
+                    fromUser: {
+                        name: chirpUser.displayName,
+                        handle: chirpUser.handle,
+                        avatar: chirpUser.avatar,
+                    },
+                    type: 'post',
+                    text: 'respondeu ao seu post',
+                    postContent: post.content.substring(0, 50),
+                    postId: post.id,
+                    createdAt: serverTimestamp(),
+                    read: false,
+                });
+            }
 
+            await batch.commit();
             setNewComment('');
         } catch (error) {
             console.error("Error posting reply: ", error);
@@ -189,7 +213,7 @@ export default function PostDetailPage() {
     };
     
     const handlePostAction = async (action: 'like' | 'retweet') => {
-        if (!user || !post) return;
+        if (!user || !post || !chirpUser) return;
     
         const postRef = doc(db, "posts", post.id);
         const field = action === 'like' ? 'likes' : 'retweets';
@@ -198,7 +222,30 @@ export default function PostDetailPage() {
         if (isActioned) {
             await updateDoc(postRef, { [field]: arrayRemove(user.uid) });
         } else {
-            await updateDoc(postRef, { [field]: arrayUnion(user.uid) });
+             const batch = writeBatch(db);
+             // Add like/retweet
+            batch.update(postRef, { [field]: arrayUnion(user.uid) });
+            
+            // Create notification if not own post
+            if (user.uid !== post.authorId) {
+                const notificationRef = doc(collection(db, 'notifications'));
+                batch.set(notificationRef, {
+                    toUserId: post.authorId,
+                    fromUserId: user.uid,
+                    fromUser: {
+                        name: chirpUser.displayName,
+                        handle: chirpUser.handle,
+                        avatar: chirpUser.avatar,
+                    },
+                    type: action,
+                    text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
+                    postContent: post.content.substring(0, 50),
+                    postId: post.id,
+                    createdAt: serverTimestamp(),
+                    read: false,
+                });
+            }
+            await batch.commit();
         }
     };
 

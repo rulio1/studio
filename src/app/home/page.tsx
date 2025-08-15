@@ -204,7 +204,7 @@ export default function HomePage() {
   }, [activeTab, fetchFollowingPosts]);
 
   const handlePostAction = async (postId: string, action: 'like' | 'retweet') => {
-    if (!user) return;
+    if (!user || !chirpUser) return;
 
     if (postId === 'chirp-ai-post-of-the-day') {
         // Handle AI post interaction locally
@@ -240,7 +240,30 @@ export default function HomePage() {
     if (isActioned) {
         await updateDoc(postRef, { [field]: arrayRemove(user.uid) });
     } else {
-        await updateDoc(postRef, { [field]: arrayUnion(user.uid) });
+        const batch = writeBatch(db);
+        // Add like/retweet
+        batch.update(postRef, { [field]: arrayUnion(user.uid) });
+        
+        // Create notification if not own post
+        if (user.uid !== postToUpdate.authorId) {
+            const notificationRef = doc(collection(db, 'notifications'));
+            batch.set(notificationRef, {
+                toUserId: postToUpdate.authorId,
+                fromUserId: user.uid,
+                fromUser: {
+                    name: chirpUser.displayName,
+                    handle: chirpUser.handle,
+                    avatar: chirpUser.avatar,
+                },
+                type: action,
+                text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
+                postContent: postToUpdate.content.substring(0, 50),
+                postId: postToUpdate.id,
+                createdAt: serverTimestamp(),
+                read: false,
+            });
+        }
+        await batch.commit();
     }
 };
 

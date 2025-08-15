@@ -371,9 +371,10 @@ export default function ProfilePage() {
     };
 
     const handlePostAction = async (postId: string, action: 'like' | 'retweet') => {
+        if (!currentUser || !chirpUser) return;
         const postRef = doc(db, 'posts', postId);
         const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId) || mediaPosts.find(p => p.id === postId);
-        if (!post || !currentUser) return;
+        if (!post) return;
 
         const field = action === 'like' ? 'likes' : 'retweets';
         const isActioned = action === 'like' ? post.isLiked : post.isRetweeted;
@@ -381,7 +382,28 @@ export default function ProfilePage() {
         if(isActioned) {
             await updateDoc(postRef, { [field]: arrayRemove(currentUser.uid) });
         } else {
-            await updateDoc(postRef, { [field]: arrayUnion(currentUser.uid) });
+            const batch = writeBatch(db);
+            batch.update(postRef, { [field]: arrayUnion(currentUser.uid) });
+
+            if (currentUser.uid !== post.authorId) {
+                const notificationRef = doc(collection(db, 'notifications'));
+                batch.set(notificationRef, {
+                    toUserId: post.authorId,
+                    fromUserId: currentUser.uid,
+                    fromUser: {
+                        name: chirpUser.displayName,
+                        handle: chirpUser.handle,
+                        avatar: chirpUser.avatar,
+                    },
+                    type: action,
+                    text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
+                    postContent: post.content.substring(0, 50),
+                    postId: post.id,
+                    createdAt: serverTimestamp(),
+                    read: false,
+                });
+            }
+            await batch.commit();
         }
     };
 
