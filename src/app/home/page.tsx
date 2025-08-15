@@ -113,7 +113,7 @@ export default function HomePage() {
                 authorId: 'chirp-ai',
                 author: 'Chirp AI',
                 handle: '@chirp-ai',
-                avatar: 'https://placehold.co/48x48/7c3aed/ffffff.png?text=AI',
+                avatar: '', // Will be rendered as fallback
                 avatarFallback: 'AI',
                 content: aiPostContent,
                 time: 'Just now',
@@ -173,21 +173,46 @@ export default function HomePage() {
   }, [activeTab, fetchFollowingPosts]);
 
   const handlePostAction = async (postId: string, action: 'like' | 'retweet') => {
-    if(!user) return;
+    if (!user) return;
+
+    if (postId === 'chirp-ai-post-of-the-day') {
+        // Handle AI post interaction locally
+        const updatePosts = (posts: Post[]) => posts.map(p => {
+            if (p.id === postId) {
+                const isActioned = action === 'like' ? p.isLiked : p.isRetweeted;
+                const field = action === 'like' ? 'likes' : 'retweets';
+                const newCount = isActioned ? p[field].length - 1 : p[field].length + 1;
+
+                // This is a dummy update, it won't persist
+                const newFieldArray = isActioned ? [] : [user.uid];
+
+                return {
+                    ...p,
+                    [field]: newFieldArray,
+                    isLiked: action === 'like' ? !isActioned : p.isLiked,
+                    isRetweeted: action === 'retweet' ? !isActioned : p.isRetweeted,
+                };
+            }
+            return p;
+        });
+        setAllPosts(updatePosts(allPosts));
+        return;
+    }
+      
     const postRef = doc(db, "posts", postId);
-    
     const postToUpdate = allPosts.find(p => p.id === postId) || followingPosts.find(p => p.id === postId);
-    if(!postToUpdate) return;
-    
+    if (!postToUpdate) return;
+
     const field = action === 'like' ? 'likes' : 'retweets';
     const isActioned = action === 'like' ? postToUpdate.isLiked : postToUpdate.isRetweeted;
 
-    if(isActioned) {
+    if (isActioned) {
         await updateDoc(postRef, { [field]: arrayRemove(user.uid) });
     } else {
         await updateDoc(postRef, { [field]: arrayUnion(user.uid) });
     }
-  };
+};
+
   
   const handleSignOut = async () => {
     await signOut(auth);
@@ -223,13 +248,19 @@ export default function HomePage() {
                 <li key={post.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => handlePostClick(post.id)}>
                     <div className="flex gap-4">
                         <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); if (post.authorId !== 'chirp-ai') router.push(`/profile/${post.authorId}`)}}>
-                            <AvatarImage src={post.avatar} alt={post.handle} />
-                            <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                            {post.authorId === 'chirp-ai' ? (
+                                <AvatarFallback className="bg-primary text-primary-foreground"><Bird /></AvatarFallback>
+                            ) : (
+                                <>
+                                    <AvatarImage src={post.avatar} alt={post.handle} />
+                                    <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                                </>
+                            )}
                         </Avatar>
                         <div className='w-full'>
                         <div className="flex items-center gap-2">
                             <p className="font-bold">{post.author}</p>
-                            {post.authorId === 'chirp-ai' && <Badge variant="default" className="bg-purple-500 text-white">AI</Badge>}
+                            {post.authorId === 'chirp-ai' && <Badge variant="default" className="bg-primary text-primary-foreground">AI</Badge>}
                             <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
                         </div>
                         <p className="mb-2">{post.content}</p>
@@ -239,11 +270,11 @@ export default function HomePage() {
                                 <MessageCircle className="h-5 w-5 hover:text-primary transition-colors" />
                                 <span>{post.comments}</span>
                             </div>
-                            <button onClick={() => handlePostAction(post.id, 'retweet')} disabled={post.authorId === 'chirp-ai'} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
+                            <button onClick={() => handlePostAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
                                 <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
                                 <span>{post.retweets.length}</span>
                             </button>
-                            <button onClick={() => handlePostAction(post.id, 'like')} disabled={post.authorId === 'chirp-ai'} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
+                            <button onClick={() => handlePostAction(post.id, 'like')} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
                                 <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
                                 <span>{post.likes.length}</span>
                             </button>
@@ -375,3 +406,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
