@@ -10,6 +10,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+const EmptyState = ({ title, description }: { title: string, description: string }) => (
+    <div className="text-center p-8">
+        <h3 className="text-xl font-bold">{title}</h3>
+        <p className="text-muted-foreground mt-2">{description}</p>
+    </div>
+);
+
 export default function ProfilePage() {
     const router = useRouter();
 
@@ -149,6 +156,21 @@ export default function ProfilePage() {
                         </div>
                     </li>
                 </ul>
+            </TabsContent>
+            <TabsContent value="replies" className="mt-0">
+                <EmptyState title="No replies yet" description="When someone replies to this user, it will show up here." />
+            </TabsContent>
+            <TabsContent value="highlights" className="mt-0">
+                <EmptyState title="No highlights yet" description="This user's highlights will be displayed here." />
+            </TabsContent>
+            <TabsContent value="videos" className="mt-0">
+                <EmptyState title="No videos yet" description="When this user posts videos, they will appear here." />
+            </TabsContent>
+            <TabsContent value="photos" className="mt-0">
+                 <EmptyState title="No photos yet" description="When this user posts photos, they will appear here." />
+            </TabsContent>
+            <TabsContent value="articles" className="mt-0">
+                 <EmptyState title="No articles yet" description="When this user posts articles, they will appear here." />
             </TabsContent>
         </Tabs>
 
