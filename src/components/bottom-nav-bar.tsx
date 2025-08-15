@@ -14,6 +14,7 @@ export default function BottomNavBar() {
     const pathname = usePathname();
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [notificationCount, setNotificationCount] = useState(0);
+    const [messageCount, setMessageCount] = useState(0);
 
     const navItems = [
         { href: '/home', icon: Home, label: 'Início' },
@@ -32,15 +33,35 @@ export default function BottomNavBar() {
 
     useEffect(() => {
         if (user) {
-            const q = query(
+            // Notifications listener
+            const notificationsQuery = query(
                 collection(db, "notifications"),
                 where("toUserId", "==", user.uid),
                 where("read", "==", false)
             );
-            const unsubscribe = onSnapshot(q, (snapshot) => {
+            const unsubscribeNotifications = onSnapshot(notificationsQuery, (snapshot) => {
                 setNotificationCount(snapshot.size);
             });
-            return () => unsubscribe();
+
+            // Messages listener
+            const conversationsQuery = query(
+                collection(db, "conversations"),
+                where("participants", "array-contains", user.uid)
+            );
+            const unsubscribeMessages = onSnapshot(conversationsQuery, (snapshot) => {
+                let totalUnread = 0;
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const unread = data.unreadCounts?.[user.uid] || 0;
+                    totalUnread += unread;
+                });
+                setMessageCount(totalUnread);
+            });
+
+            return () => {
+                unsubscribeNotifications();
+                unsubscribeMessages();
+            };
         }
     }, [user]);
 
@@ -53,6 +74,11 @@ export default function BottomNavBar() {
                         {item.label === 'Notificações' && notificationCount > 0 && (
                              <Badge className="absolute top-2 right-4 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs">
                                 {notificationCount}
+                            </Badge>
+                        )}
+                        {item.label === 'Mensagens' && messageCount > 0 && (
+                             <Badge className="absolute top-2 right-4 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs">
+                                {messageCount}
                             </Badge>
                         )}
                     </Link>

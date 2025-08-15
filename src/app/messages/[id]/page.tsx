@@ -10,7 +10,7 @@ import { ArrowLeft, MoreHorizontal, Send, Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, updateDoc, increment, setDoc } from 'firebase/firestore';
 
 
 interface ChirpUser {
@@ -70,6 +70,17 @@ export default function ConversationPage() {
         return () => unsubscribe();
     }, [router, conversationId]);
 
+    // Mark messages as read when entering conversation
+    useEffect(() => {
+        if (user && conversationId) {
+            const conversationRef = doc(db, 'conversations', conversationId);
+            // This overwrites the whole map, which is fine for this use case.
+            // A more complex app might need to use dot notation for a specific field.
+            setDoc(conversationRef, { unreadCounts: { [user.uid]: 0 } }, { merge: true });
+        }
+    }, [user, conversationId]);
+
+
     useEffect(() => {
         if (!conversationId) return;
 
@@ -97,7 +108,7 @@ export default function ConversationPage() {
     }, [messages]);
 
     const handleSendMessage = async () => {
-        if (!newMessage.trim() || !user || isSending) return;
+        if (!newMessage.trim() || !user || isSending || !otherUser) return;
         
         setIsSending(true);
         try {
@@ -110,13 +121,15 @@ export default function ConversationPage() {
                 createdAt: serverTimestamp(),
             });
 
-            // Update last message in conversation document
+            // Update last message and increment unread count for the other user
+            const unreadCountKey = `unreadCounts.${otherUser.uid}`;
             await updateDoc(conversationRef, {
                 lastMessage: {
                     text: newMessage,
                     senderId: user.uid,
                     timestamp: serverTimestamp()
-                }
+                },
+                [unreadCountKey]: increment(1)
             });
 
             setNewMessage('');

@@ -396,6 +396,7 @@ export default function ProfilePage() {
             if (!docSnap.exists()) {
                  await setDoc(conversationRef, {
                     participants: [currentUser.uid, profileUser.uid],
+                    unreadCounts: { [currentUser.uid]: 0, [profileUser.uid]: 0 },
                     lastMessage: {
                         text: `Iniciou uma conversa`,
                         senderId: null,

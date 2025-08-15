@@ -130,7 +130,7 @@ export default function MessagesPage() {
                         ...conversationData.lastMessage,
                         time: '' // Will be handled by ConversationItem
                     },
-                    unreadCount: 0 // Placeholder
+                    unreadCount: conversationData.unreadCounts?.[user.uid] || 0
                 } as Conversation;
             });
             
