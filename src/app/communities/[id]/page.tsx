@@ -118,7 +118,12 @@ export default function CommunityDetailPage() {
                 } as Post;
             });
             // Sort client-side to avoid composite index
-            postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+            postsData.sort((a, b) => {
+                if (a.createdAt && b.createdAt) {
+                    return b.createdAt.toMillis() - a.createdAt.toMillis();
+                }
+                return 0;
+            });
             setPosts(postsData);
             setIsLoadingPosts(false);
         });
