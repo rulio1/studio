@@ -192,7 +192,7 @@ export default function ProfilePage() {
     const fetchUserReplies = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingReplies(true);
-        const q = query(collection(db, "comments"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
+        const q = query(collection(db, "comments"), where("authorId", "==", profileId));
         onSnapshot(q, (snapshot) => {
             const replies = snapshot.docs.map(doc => {
                 const data = doc.data();
@@ -202,6 +202,8 @@ export default function ProfilePage() {
                     time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
                 } as Reply;
             });
+            // Sort client-side
+            replies.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setUserReplies(replies);
             setIsLoadingReplies(false);
         });
@@ -606,4 +608,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
