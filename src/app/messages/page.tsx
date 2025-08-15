@@ -32,12 +32,13 @@ interface Conversation {
         text: string;
         timestamp: any;
         time: string;
+        senderId: string;
     };
     unreadCount: number;
 }
 
 
-const ConversationItem = ({ convo }: { convo: Conversation }) => {
+const ConversationItem = ({ convo, currentUserId }: { convo: Conversation, currentUserId: string | null }) => {
     const router = useRouter();
     const [time, setTime] = useState(() => convo.lastMessage.timestamp ? format(convo.lastMessage.timestamp.toDate(), "PP") : '');
     
@@ -47,8 +48,12 @@ const ConversationItem = ({ convo }: { convo: Conversation }) => {
         }
     }, [convo.lastMessage.timestamp]);
 
+    const isMyMessage = convo.lastMessage.senderId === currentUserId;
+    const isUnread = convo.unreadCount > 0;
+    const messagePreview = `${isMyMessage ? 'Você: ' : ''}${convo.lastMessage.text}`;
+
     return (
-        <li className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/messages/${convo.id}`)}>
+        <li className={`p-4 hover:bg-muted/50 cursor-pointer ${isUnread ? 'bg-primary/5' : ''}`} onClick={() => router.push(`/messages/${convo.id}`)}>
             <div className="flex items-center gap-4">
                 <Avatar className="h-12 w-12">
                     <AvatarImage src={convo.otherUser.avatar} alt={convo.otherUser.name} />
@@ -62,7 +67,14 @@ const ConversationItem = ({ convo }: { convo: Conversation }) => {
                         </div>
                         <p className="text-xs text-muted-foreground whitespace-nowrap">{time}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate mt-1">{convo.lastMessage.text}</p>
+                    <div className="flex justify-between items-center">
+                       <p className={`text-sm mt-1 truncate ${isUnread && !isMyMessage ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
+                           {messagePreview}
+                       </p>
+                       {isUnread && !isMyMessage && (
+                           <div className="w-2.5 h-2.5 bg-primary rounded-full ml-2 flex-shrink-0"></div>
+                       )}
+                    </div>
                 </div>
             </div>
         </li>
@@ -193,7 +205,7 @@ export default function MessagesPage() {
         ) : (
              <ul className="divide-y divide-border">
                 {conversations.map((convo) => (
-                   <ConversationItem key={convo.id} convo={convo} />
+                   <ConversationItem key={convo.id} convo={convo} currentUserId={user?.uid || null}/>
                 ))}
              </ul>
         )}

@@ -10,7 +10,7 @@ import { ArrowLeft, MoreHorizontal, Send, Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, updateDoc, increment, setDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, updateDoc, increment, setDoc, arrayUnion } from 'firebase/firestore';
 
 
 interface ChirpUser {
@@ -27,6 +27,14 @@ interface Message {
     createdAt: any;
 }
 
+interface Conversation {
+    participants: string[];
+    lastMessage: {
+        senderId: string;
+    };
+    lastMessageReadBy: string[];
+}
+
 export default function ConversationPage() {
     const router = useRouter();
     const params = useParams();
@@ -35,6 +43,7 @@ export default function ConversationPage() {
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [otherUser, setOtherUser] = useState<ChirpUser | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
+    const [conversation, setConversation] = useState<Conversation | null>(null);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isSending, setIsSending] = useState(false);
@@ -75,32 +84,56 @@ export default function ConversationPage() {
     useEffect(() => {
         if (user && conversationId) {
             const conversationRef = doc(db, 'conversations', conversationId);
+            
+            // Mark last message as read
+            if (conversation && conversation.lastMessage.senderId !== user.uid) {
+                if (!conversation.lastMessageReadBy.includes(user.uid)) {
+                    updateDoc(conversationRef, {
+                        lastMessageReadBy: arrayUnion(user.uid)
+                    });
+                }
+            }
+            
             // This overwrites the whole map, which is fine for this use case.
             // A more complex app might need to use dot notation for a specific field.
             setDoc(conversationRef, { unreadCounts: { [user.uid]: 0 } }, { merge: true });
         }
-    }, [user, conversationId]);
+    }, [user, conversationId, conversation]);
 
 
     useEffect(() => {
         if (!conversationId) return;
 
         const q = query(collection(db, 'conversations', conversationId, 'messages'), orderBy('createdAt', 'asc'));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+        const unsubscribeMessages = onSnapshot(q, (snapshot) => {
             const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message));
             setMessages(msgs);
         });
 
-        return () => unsubscribe();
+        const conversationRef = doc(db, 'conversations', conversationId);
+        const unsubscribeConversation = onSnapshot(conversationRef, (doc) => {
+            if (doc.exists()) {
+                setConversation(doc.data() as Conversation);
+            }
+        });
+
+
+        return () => {
+            unsubscribeMessages();
+            unsubscribeConversation();
+        };
     }, [conversationId]);
 
 
     const scrollToBottom = () => {
         if (scrollAreaRef.current) {
-            scrollAreaRef.current.scrollTo({
-                top: scrollAreaRef.current.scrollHeight,
-                behavior: 'smooth'
-            });
+            const scrollContainer = scrollAreaRef.current.querySelector('div');
+            if (scrollContainer) {
+                 scrollContainer.scrollTo({
+                    top: scrollContainer.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }
         }
     };
 
@@ -130,6 +163,7 @@ export default function ConversationPage() {
                     senderId: user.uid,
                     timestamp: serverTimestamp()
                 },
+                lastMessageReadBy: [user.uid], // Reset read status, only sender has read it
                 [unreadCountKey]: increment(1)
             });
 
@@ -209,20 +243,33 @@ export default function ConversationPage() {
 
       <main className="flex-1 flex flex-col">
         <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-            <div className="space-y-6">
-                {messages.map((message) => (
-                    <div key={message.id} className={`flex items-start gap-3 ${message.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}>
-                       {message.senderId !== user?.uid && (
-                           <Avatar className="h-8 w-8">
-                               <AvatarImage src={otherUser.avatar} alt={otherUser.displayName} />
-                               <AvatarFallback>{otherUser.displayName[0]}</AvatarFallback>
-                           </Avatar>
-                       )}
-                       <div className={`rounded-lg px-4 py-2 max-w-xs md:max-w-md ${message.senderId === user?.uid ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                           <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                       </div>
-                    </div>
-                ))}
+            <div className="space-y-4">
+                {messages.map((message, index) => {
+                    const isLastMessage = index === messages.length - 1;
+                    const isMyMessage = message.senderId === user?.uid;
+                    const isRead = isLastMessage && isMyMessage && conversation?.lastMessageReadBy.includes(otherUser.uid);
+
+                    return (
+                        <div key={message.id}>
+                            <div className={`flex items-start gap-3 ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
+                            {message.senderId !== user?.uid && (
+                                <Avatar className="h-8 w-8">
+                                    <AvatarImage src={otherUser.avatar} alt={otherUser.displayName} />
+                                    <AvatarFallback>{otherUser.displayName[0]}</AvatarFallback>
+                                </Avatar>
+                            )}
+                            <div className={`rounded-lg px-4 py-2 max-w-xs md:max-w-md ${isMyMessage ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                            </div>
+                            </div>
+                            {isRead && (
+                                <div className="text-right text-xs text-muted-foreground mt-1 pr-2">
+                                    Lida
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
             </div>
         </ScrollArea>
         <div className="sticky bottom-0 bg-background/80 backdrop-blur-sm p-4 border-t">

@@ -401,7 +401,8 @@ export default function ProfilePage() {
                         text: `Iniciou uma conversa`,
                         senderId: null,
                         timestamp: serverTimestamp()
-                    }
+                    },
+                    lastMessageReadBy: [],
                 });
             }
             router.push(`/messages/${conversationId}`);
