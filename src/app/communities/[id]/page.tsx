@@ -82,8 +82,7 @@ const PostItem = ({ post }: { post: Post }) => {
     
     useEffect(() => {
         if (post.createdAt) {
-          const date = post.createdAt.toDate();
-          setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
+          setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
         }
     }, [post.createdAt]);
 
@@ -186,7 +185,7 @@ export default function CommunityDetailPage() {
                     isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
                 } as Post;
             });
-             // Sort client-side
+             // Sort client-side to avoid needing a composite index
             postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setPosts(postsData);
             setIsLoadingPosts(false);
@@ -241,53 +240,44 @@ export default function CommunityDetailPage() {
         }
         if (!user || !chirpUser) return;
         setIsPosting(true);
+
         try {
             let imageUrl = '';
-            if (newPostImage && newPostFile) {
-                const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}`);
-                const fileReader = new FileReader();
-                fileReader.readAsDataURL(newPostFile);
-                fileReader.onload = async (e) => {
-                    const dataUrl = e.target?.result as string;
-                    if (dataUrl) {
-                        const snapshot = await uploadString(imageRef, dataUrl, 'data_url');
-                        imageUrl = await getDownloadURL(snapshot.ref);
-                         await addPostDoc(imageUrl);
-                    }
-                }
-            } else {
-                 await addPostDoc('');
+            let imageHint = '';
+            
+            if (newPostImage) {
+                 const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}`);
+                 const snapshot = await uploadString(imageRef, newPostImage, 'data_url');
+                 imageUrl = await getDownloadURL(snapshot.ref);
+                 imageHint = 'user upload';
             }
-           
+
+            await addDoc(collection(db, "posts"), {
+                authorId: user.uid,
+                author: chirpUser.displayName,
+                handle: chirpUser.handle,
+                avatar: chirpUser.avatar,
+                avatarFallback: chirpUser.displayName[0],
+                content: newPostContent,
+                image: imageUrl,
+                imageHint: imageHint,
+                communityId: communityId,
+                createdAt: serverTimestamp(),
+                comments: 0,
+                retweets: [],
+                likes: [],
+                views: 0,
+            });
+
+            resetModal();
+            toast({ title: "Post criado na comunidade!" });
         } catch (error) {
             console.error(error);
             toast({ title: "Falha ao criar o post", variant: "destructive" });
-             setIsPosting(false);
+        } finally {
+            setIsPosting(false);
         }
     };
-
-    const addPostDoc = async (imageUrl: string) => {
-        if (!user || !chirpUser) return;
-        await addDoc(collection(db, "posts"), {
-            authorId: user.uid,
-            author: chirpUser.displayName,
-            handle: chirpUser.handle,
-            avatar: chirpUser.avatar,
-            avatarFallback: chirpUser.displayName[0],
-            content: newPostContent,
-            image: imageUrl,
-            imageHint: imageUrl ? 'upload do usuário' : '',
-            communityId: communityId,
-            createdAt: serverTimestamp(),
-            comments: 0,
-            retweets: [],
-            likes: [],
-            views: 0,
-        });
-        resetModal();
-        toast({ title: "Post criado na comunidade!" });
-        setIsPosting(false);
-    }
 
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
