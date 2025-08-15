@@ -95,6 +95,105 @@ interface ChirpUser {
     savedPosts?: string[];
 }
 
+const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet') => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void }) => {
+    const router = useRouter();
+    const [time, setTime] = useState(() => post.createdAt ? format(post.createdAt.toDate(), "PP") : 'Agora');
+
+    useEffect(() => {
+        if (post.createdAt) {
+            setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+        }
+    }, [post.createdAt]);
+
+    return (
+        <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
+            <div className="flex gap-4">
+                 <Avatar className="cursor-pointer" onClick={(e) => {e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
+                    <AvatarImage src={post.avatar} alt={post.handle} />
+                    <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                </Avatar>
+                <div className='w-full'>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm">
+                            <p className="font-bold text-base">{post.author}</p>
+                            <p className="text-muted-foreground">{post.handle} · {time}</p>
+                            {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
+                        </div>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                                {user?.uid === post.authorId ? (
+                                    <>
+                                        <DropdownMenuItem onClick={() => onDelete(post.id)}>
+                                            <Trash2 className="mr-2 h-4 w-4"/>
+                                            Apagar
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => onEdit(post)}>
+                                            <Edit className="mr-2 h-4 w-4"/>
+                                            Editar
+                                        </DropdownMenuItem>
+                                    </>
+                                ) : (
+                                    <DropdownMenuItem onClick={() => onSave(post.id)}>
+                                        <Save className="mr-2 h-4 w-4"/>
+                                        {chirpUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
+                                    </DropdownMenuItem>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                    <div className="mb-2 whitespace-pre-wrap">
+                        <p>{post.content}</p>
+                        {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="mt-2 rounded-2xl border" />}
+                    </div>
+                    <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
+                        <button className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></button>
+                        <button onClick={() => onAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}><Repeat className="h-5 w-5 hover:text-green-500 transition-colors" /><span>{post.retweets.length}</span></button>
+                        <button onClick={() => onAction(post.id, 'like')} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}><Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} /><span>{post.likes.length}</span></button>
+                        <div className="flex items-center gap-1"><BarChart2 className="h-5 w-5" /><span>{post.views}</span></div>
+                        <div className="flex items-center gap-1"><Upload className="h-5 w-5" /></div>
+                    </div>
+                </div>
+            </div>
+        </li>
+    )
+}
+
+const ReplyItem = ({ reply }: { reply: Reply }) => {
+    const router = useRouter();
+    const [time, setTime] = useState(() => reply.createdAt ? format(reply.createdAt.toDate(), "PP") : 'Agora');
+
+    useEffect(() => {
+        if (reply.createdAt) {
+            setTime(formatDistanceToNow(reply.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+        }
+    }, [reply.createdAt]);
+
+    return (
+        <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${reply.postId}`)}>
+            <div className="flex gap-4">
+                <Avatar>
+                    <AvatarImage src={reply.avatar} alt={reply.handle} />
+                    <AvatarFallback>{reply.avatarFallback}</AvatarFallback>
+                </Avatar>
+                <div className='w-full'>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm">
+                            <p className="font-bold text-base">{reply.author}</p>
+                            <p className="text-muted-foreground">{reply.handle} · {time}</p>
+                        </div>
+                    </div>
+                    <p className="mb-2 whitespace-pre-wrap">{reply.content}</p>
+                </div>
+            </div>
+        </li>
+    )
+}
+
 export default function ProfilePage() {
     const router = useRouter();
     const params = useParams();
@@ -174,7 +273,7 @@ export default function ProfilePage() {
                  return {
                     id: doc.id,
                     ...data,
-                    time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
+                    time: '', // will be handled by PostItem
                     isLiked: data.likes.includes(currentUser?.uid || ''),
                     isRetweeted: data.retweets.includes(currentUser?.uid || ''),
                  } as Post
@@ -199,7 +298,7 @@ export default function ProfilePage() {
                 return {
                     id: doc.id,
                     ...data,
-                    time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
+                    time: '', // will be handled by ReplyItem
                 } as Reply;
             });
             // Sort client-side
@@ -220,7 +319,7 @@ export default function ProfilePage() {
                 return {
                     id: doc.id,
                     ...data,
-                    time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
+                    time: '', // will be handled by PostItem
                     isLiked: data.likes.includes(currentUser?.uid || ''),
                     isRetweeted: data.retweets.includes(currentUser?.uid || ''),
                 } as Post
@@ -422,60 +521,16 @@ export default function ProfilePage() {
         return (
             <ul className="divide-y divide-border">
                 {posts.map((post) => (
-                    <li key={post.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
-                        <div className="flex gap-4">
-                             <Avatar className="cursor-pointer" onClick={(e) => {e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
-                                <AvatarImage src={post.avatar} alt={post.handle} />
-                                <AvatarFallback>{post.avatarFallback}</AvatarFallback>
-                            </Avatar>
-                            <div className='w-full'>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <p className="font-bold text-base">{post.author}</p>
-                                        <p className="text-muted-foreground">{post.handle} · {post.time}</p>
-                                        {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
-                                    </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-                                            {currentUser?.uid === post.authorId ? (
-                                                <>
-                                                    <DropdownMenuItem onClick={() => setPostToDelete(post.id)}>
-                                                        <Trash2 className="mr-2 h-4 w-4"/>
-                                                        Apagar
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleEditClick(post)}>
-                                                        <Edit className="mr-2 h-4 w-4"/>
-                                                        Editar
-                                                    </DropdownMenuItem>
-                                                </>
-                                            ) : (
-                                                <DropdownMenuItem onClick={() => handleSavePost(post.id)}>
-                                                    <Save className="mr-2 h-4 w-4"/>
-                                                    {chirpUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
-                                                </DropdownMenuItem>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                                <div className="mb-2 whitespace-pre-wrap">
-                                    <p>{post.content}</p>
-                                    {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="mt-2 rounded-2xl border" />}
-                                </div>
-                                <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
-                                    <button className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></button>
-                                    <button onClick={() => handlePostAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}><Repeat className="h-5 w-5 hover:text-green-500 transition-colors" /><span>{post.retweets.length}</span></button>
-                                    <button onClick={() => handlePostAction(post.id, 'like')} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}><Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} /><span>{post.likes.length}</span></button>
-                                    <div className="flex items-center gap-1"><BarChart2 className="h-5 w-5" /><span>{post.views}</span></div>
-                                    <div className="flex items-center gap-1"><Upload className="h-5 w-5" /></div>
-                                </div>
-                            </div>
-                        </div>
-                    </li>
+                    <PostItem 
+                        key={post.id}
+                        post={post}
+                        user={currentUser}
+                        chirpUser={chirpUser}
+                        onAction={handlePostAction}
+                        onDelete={setPostToDelete}
+                        onEdit={handleEditClick}
+                        onSave={handleSavePost}
+                    />
                 ))}
             </ul>
         );
@@ -496,23 +551,7 @@ export default function ProfilePage() {
         return (
             <ul className="divide-y divide-border">
                 {replies.map((reply) => (
-                    <li key={reply.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${reply.postId}`)}>
-                        <div className="flex gap-4">
-                            <Avatar>
-                                <AvatarImage src={reply.avatar} alt={reply.handle} />
-                                <AvatarFallback>{reply.avatarFallback}</AvatarFallback>
-                            </Avatar>
-                            <div className='w-full'>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <p className="font-bold text-base">{reply.author}</p>
-                                        <p className="text-muted-foreground">{reply.handle} · {reply.time}</p>
-                                    </div>
-                                </div>
-                                <p className="mb-2 whitespace-pre-wrap">{reply.content}</p>
-                            </div>
-                        </div>
-                    </li>
+                    <ReplyItem key={reply.id} reply={reply} />
                 ))}
             </ul>
         );

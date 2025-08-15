@@ -10,7 +10,7 @@ import { MailPlus, Search, Settings, Loader2, MessageSquare } from 'lucide-react
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, doc, getDoc, orderBy } from 'firebase/firestore';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface ChirpUser {
@@ -35,6 +35,39 @@ interface Conversation {
     };
     unreadCount: number;
 }
+
+
+const ConversationItem = ({ convo }: { convo: Conversation }) => {
+    const router = useRouter();
+    const [time, setTime] = useState(() => convo.lastMessage.timestamp ? format(convo.lastMessage.timestamp.toDate(), "PP") : '');
+    
+    useEffect(() => {
+        if (convo.lastMessage.timestamp) {
+            setTime(formatDistanceToNow(convo.lastMessage.timestamp.toDate(), { addSuffix: true, locale: ptBR }));
+        }
+    }, [convo.lastMessage.timestamp]);
+
+    return (
+        <li className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/messages/${convo.id}`)}>
+            <div className="flex items-center gap-4">
+                <Avatar className="h-12 w-12">
+                    <AvatarImage src={convo.otherUser.avatar} alt={convo.otherUser.name} />
+                    <AvatarFallback>{convo.otherUser.name[0]}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 overflow-hidden">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-baseline gap-2">
+                            <p className="font-bold truncate">{convo.otherUser.name}</p>
+                            <p className="text-sm text-muted-foreground truncate">{convo.otherUser.handle}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground whitespace-nowrap">{time}</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate mt-1">{convo.lastMessage.text}</p>
+                </div>
+            </div>
+        </li>
+    );
+};
 
 
 export default function MessagesPage() {
@@ -95,7 +128,7 @@ export default function MessagesPage() {
                     },
                     lastMessage: {
                         ...conversationData.lastMessage,
-                        time: conversationData.lastMessage.timestamp ? formatDistanceToNow(conversationData.lastMessage.timestamp.toDate(), { addSuffix: true, locale: ptBR }) : ''
+                        time: '' // Will be handled by ConversationItem
                     },
                     unreadCount: 0 // Placeholder
                 } as Conversation;
@@ -160,24 +193,7 @@ export default function MessagesPage() {
         ) : (
              <ul className="divide-y divide-border">
                 {conversations.map((convo) => (
-                    <li key={convo.id} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/messages/${convo.id}`)}>
-                        <div className="flex items-center gap-4">
-                            <Avatar className="h-12 w-12">
-                                <AvatarImage src={convo.otherUser.avatar} alt={convo.otherUser.name} />
-                                <AvatarFallback>{convo.otherUser.name[0]}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 overflow-hidden">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-baseline gap-2">
-                                        <p className="font-bold truncate">{convo.otherUser.name}</p>
-                                        <p className="text-sm text-muted-foreground truncate">{convo.otherUser.handle}</p>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground whitespace-nowrap">{convo.lastMessage.time}</p>
-                                </div>
-                                <p className="text-sm text-muted-foreground truncate mt-1">{convo.lastMessage.text}</p>
-                            </div>
-                        </div>
-                    </li>
+                   <ConversationItem key={convo.id} convo={convo} />
                 ))}
              </ul>
         )}

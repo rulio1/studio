@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface Notification {
@@ -30,6 +30,39 @@ const iconMap = {
     like: { icon: Heart, color: 'text-red-500' },
     follow: { icon: Users, color: 'text-blue-500' },
     post: { icon: Star, color: 'text-purple-500' },
+};
+
+const NotificationItem = ({ notification }: { notification: Notification }) => {
+    const { icon: Icon, color } = iconMap[notification.type] || iconMap.post;
+    const [time, setTime] = useState(() => notification.createdAt ? format(notification.createdAt.toDate(), "PP") : '');
+    
+    useEffect(() => {
+        if (notification.createdAt) {
+            setTime(formatDistanceToNow(notification.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+        }
+    }, [notification.createdAt]);
+
+    return (
+        <li className="p-4 flex gap-4 hover:bg-muted/50 cursor-pointer">
+        <div className="w-8 flex justify-end">
+            <Icon className={`h-6 w-6 ${color}`} />
+        </div>
+        <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+                <Avatar className="h-8 w-8">
+                    <AvatarImage src={notification.fromUser.avatar} alt={notification.fromUser.name} />
+                    <AvatarFallback>{notification.fromUser.name[0]}</AvatarFallback>
+                </Avatar>
+            </div>
+            <p>
+                <span className="font-bold">{notification.fromUser.name}</span>
+                <span className="font-normal text-muted-foreground"> {notification.text}</span>
+            </p>
+            {notification.postContent && <p className="text-muted-foreground mt-1">{notification.postContent}</p>}
+            <p className="text-sm text-muted-foreground mt-1">{time}</p>
+        </div>
+        </li>
+    );
 };
 
 
@@ -64,7 +97,7 @@ export default function NotificationsPage() {
                 return {
                     id: doc.id,
                     ...data,
-                    time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
+                    time: '', // will be handled by NotificationItem
                 } as Notification;
             });
             // Sort client-side as a fallback
@@ -113,30 +146,9 @@ export default function NotificationsPage() {
                     </div>
                 ) : (
                     <ul className="divide-y divide-border">
-                        {notifications.map((item) => {
-                            const { icon: Icon, color } = iconMap[item.type] || iconMap.post;
-                            return (
-                                <li key={item.id} className="p-4 flex gap-4 hover:bg-muted/50 cursor-pointer">
-                                <div className="w-8 flex justify-end">
-                                    <Icon className={`h-6 w-6 ${color}`} />
-                                </div>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Avatar className="h-8 w-8">
-                                            <AvatarImage src={item.fromUser.avatar} alt={item.fromUser.name} />
-                                            <AvatarFallback>{item.fromUser.name[0]}</AvatarFallback>
-                                        </Avatar>
-                                    </div>
-                                    <p>
-                                        <span className="font-bold">{item.fromUser.name}</span>
-                                        <span className="font-normal text-muted-foreground"> {item.text}</span>
-                                    </p>
-                                    {item.postContent && <p className="text-muted-foreground mt-1">{item.postContent}</p>}
-                                    <p className="text-sm text-muted-foreground mt-1">{item.time}</p>
-                                </div>
-                                </li>
-                            );
-                        })}
+                        {notifications.map((item) => (
+                           <NotificationItem key={item.id} notification={item} />
+                        ))}
                     </ul>
                 )}
             </TabsContent>

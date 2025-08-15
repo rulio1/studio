@@ -9,7 +9,7 @@ import { collection, doc, getDoc, getDocs, query, where, limit, orderBy, updateD
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, Bookmark, MessageCircle, Repeat, Heart, BarChart2, Upload, MoreHorizontal, Save, Trash2, Edit } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Image from 'next/image';
 import PostSkeleton from '@/components/post-skeleton';
@@ -38,6 +38,41 @@ interface Post {
 interface ChirpUser {
     savedPosts?: string[];
 }
+
+const SavedPostItem = ({ post }: { post: Post }) => {
+    const router = useRouter();
+    const [time, setTime] = useState(() => post.createdAt ? format(post.createdAt.toDate(), "PP") : 'Agora');
+
+    useEffect(() => {
+        if (post.createdAt) {
+            setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+        }
+    }, [post.createdAt]);
+    
+    return (
+        <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
+            <div className="flex gap-4">
+                <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
+                    <AvatarImage src={post.avatar} alt={post.handle} />
+                    <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                </Avatar>
+                <div className='w-full'>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm">
+                            <p className="font-bold text-base">{post.author}</p>
+                            <p className="text-muted-foreground">{post.handle} · {time}</p>
+                            {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
+                        </div>
+                    </div>
+                    <div className="mb-2 whitespace-pre-wrap">
+                        <p>{post.content}</p>
+                        {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="mt-2 rounded-2xl border" />}
+                    </div>
+                </div>
+            </div>
+        </li>
+    );
+};
 
 export default function SavedPage() {
     const router = useRouter();
@@ -87,7 +122,7 @@ export default function SavedPage() {
                         return {
                             id: doc.id,
                             ...data,
-                            time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
+                            time: '', // will be set in SavedPostItem
                             isLiked: data.likes.includes(user.uid),
                             isRetweeted: data.retweets.includes(user.uid),
                         } as Post;
@@ -138,27 +173,7 @@ export default function SavedPage() {
                 ) : (
                     <ul className="divide-y divide-border">
                         {savedPosts.map((post) => (
-                           <li key={post.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
-                                <div className="flex gap-4">
-                                    <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
-                                        <AvatarImage src={post.avatar} alt={post.handle} />
-                                        <AvatarFallback>{post.avatarFallback}</AvatarFallback>
-                                    </Avatar>
-                                    <div className='w-full'>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2 text-sm">
-                                                <p className="font-bold text-base">{post.author}</p>
-                                                <p className="text-muted-foreground">{post.handle} · {post.time}</p>
-                                                {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
-                                            </div>
-                                        </div>
-                                        <div className="mb-2 whitespace-pre-wrap">
-                                            <p>{post.content}</p>
-                                            {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="mt-2 rounded-2xl border" />}
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
+                           <SavedPostItem key={post.id} post={post} />
                         ))}
                     </ul>
                 )}

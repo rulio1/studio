@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Upload, Bird, Trash2, Edit, Save, ImageIcon, Sparkles, X } from 'lucide-react';
 import PostSkeleton from '@/components/post-skeleton';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -75,6 +75,41 @@ interface ChirpUser {
     communities?: string[];
     savedPosts?: string[];
 }
+
+const PostItem = ({ post }: { post: Post }) => {
+    const router = useRouter();
+    const [time, setTime] = useState(() => post.createdAt ? format(post.createdAt.toDate(), "h:mm a · MMM d, yyyy", { locale: ptBR }) : 'Agora');
+    
+    useEffect(() => {
+        if (post.createdAt) {
+            setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+        }
+    }, [post.createdAt]);
+
+    return (
+        <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
+            <div className="flex gap-4">
+                <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
+                    <AvatarImage src={post.avatar} alt={post.handle} />
+                    <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                </Avatar>
+                <div className='w-full'>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm">
+                            <p className="font-bold text-base">{post.author}</p>
+                            <p className="text-muted-foreground">{post.handle} · {time}</p>
+                        </div>
+                    </div>
+                    <div className="mb-2 whitespace-pre-wrap">
+                        <p>{post.content}</p>
+                        {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="mt-2 rounded-2xl border" />}
+                    </div>
+                </div>
+            </div>
+        </li>
+    );
+};
+
 
 export default function CommunityDetailPage() {
     const router = useRouter();
@@ -143,7 +178,7 @@ export default function CommunityDetailPage() {
                 return {
                     id: doc.id,
                     ...data,
-                    time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
+                    time: '', // Will be set in PostItem component
                     isLiked: data.likes.includes(auth.currentUser?.uid || ''),
                     isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
                 } as Post;
@@ -189,7 +224,7 @@ export default function CommunityDetailPage() {
     }
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() || !user || !chirpUser) return;
+        if ((!newPostContent.trim() && !newPostImage) || !user || !chirpUser) return;
         setIsPosting(true);
         try {
             let imageUrl = '';
@@ -299,27 +334,7 @@ export default function CommunityDetailPage() {
                     ) : (
                          <ul className="divide-y divide-border">
                             {posts.map((post) => (
-                                <li key={post.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
-                                    {/* Replicating Post structure from home page */}
-                                    <div className="flex gap-4">
-                                        <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
-                                            <AvatarImage src={post.avatar} alt={post.handle} />
-                                            <AvatarFallback>{post.avatarFallback}</AvatarFallback>
-                                        </Avatar>
-                                        <div className='w-full'>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2 text-sm">
-                                                    <p className="font-bold text-base">{post.author}</p>
-                                                    <p className="text-muted-foreground">{post.handle} · {post.time}</p>
-                                                </div>
-                                            </div>
-                                            <div className="mb-2 whitespace-pre-wrap">
-                                                <p>{post.content}</p>
-                                                {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="mt-2 rounded-2xl border" />}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </li>
+                                <PostItem key={post.id} post={post} />
                             ))}
                         </ul>
                     )}
@@ -367,8 +382,11 @@ export default function CommunityDetailPage() {
                                         <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
                                             <ImageIcon className="h-6 w-6 text-primary" />
                                         </Button>
+                                         <Button variant="ghost" size="icon" onClick={handleGeneratePost} disabled={isPosting}>
+                                            <Sparkles className="h-6 w-6 text-primary" />
+                                        </Button>
                                     </div>
-                                    <Button onClick={handleCreatePost} disabled={!newPostContent.trim() || isPosting}>
+                                    <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !newPostImage) || isPosting}>
                                         {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Postar
                                     </Button>

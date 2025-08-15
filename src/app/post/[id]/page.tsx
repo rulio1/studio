@@ -74,6 +74,59 @@ interface ChirpUser {
     savedPosts?: string[];
 }
 
+
+const CommentItem = ({ comment, user, onEdit, onDelete }: { comment: Comment, user: FirebaseUser | null, onEdit: (comment: Comment) => void, onDelete: (id: string) => void }) => {
+    const router = useRouter();
+    const [time, setTime] = useState(() => comment.createdAt ? format(comment.createdAt.toDate(), 'PP') : 'agora');
+
+    useEffect(() => {
+        if (comment.createdAt) {
+            setTime(formatDistanceToNow(comment.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+        }
+    }, [comment.createdAt]);
+
+    return (
+        <li className="p-4 hover:bg-muted/20 transition-colors duration-200">
+             <div className="flex gap-4">
+                <Avatar className="cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
+                    <AvatarImage src={comment.avatar} alt={comment.handle} />
+                    <AvatarFallback>{comment.avatarFallback}</AvatarFallback>
+                </Avatar>
+                <div className='w-full'>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
+                            <p className="font-bold">{comment.author}</p>
+                            <p className="text-muted-foreground">{comment.handle} · {time}</p>
+                             {comment.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
+                        </div>
+                        {user?.uid === comment.authorId && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                                        <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                                    <DropdownMenuItem onClick={() => onDelete(comment.id)}>
+                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                        Apagar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onEdit(comment)}>
+                                        <Edit className="mr-2 h-4 w-4"/>
+                                        Editar
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                    </div>
+                    <p className="whitespace-pre-wrap mt-1">{comment.content}</p>
+                </div>
+            </div>
+        </li>
+    );
+};
+
+
 export default function PostDetailPage() {
     const router = useRouter();
     const params = useParams();
@@ -144,7 +197,7 @@ export default function PostDetailPage() {
                     return {
                         id: doc.id,
                         ...data,
-                        time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'agora mesmo',
+                        time: '', // will be set in CommentItem
                     } as Comment;
                 });
                 commentsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
@@ -474,43 +527,13 @@ export default function PostDetailPage() {
 
                 <ul className="divide-y divide-border">
                     {comments.map((comment) => (
-                        <li key={comment.id} className="p-4 hover:bg-muted/20 transition-colors duration-200">
-                             <div className="flex gap-4">
-                                <Avatar className="cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
-                                    <AvatarImage src={comment.avatar} alt={comment.handle} />
-                                    <AvatarFallback>{comment.avatarFallback}</AvatarFallback>
-                                </Avatar>
-                                <div className='w-full'>
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
-                                            <p className="font-bold">{comment.author}</p>
-                                            <p className="text-muted-foreground">{comment.handle} · {comment.time}</p>
-                                             {comment.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
-                                        </div>
-                                        {user?.uid === comment.authorId && (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-                                                    <DropdownMenuItem onClick={() => setCommentToDelete(comment.id)}>
-                                                        <Trash2 className="mr-2 h-4 w-4"/>
-                                                        Apagar
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleEditCommentClick(comment)}>
-                                                        <Edit className="mr-2 h-4 w-4"/>
-                                                        Editar
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )}
-                                    </div>
-                                    <p className="whitespace-pre-wrap mt-1">{comment.content}</p>
-                                </div>
-                            </div>
-                        </li>
+                        <CommentItem
+                            key={comment.id}
+                            comment={comment}
+                            user={user}
+                            onEdit={handleEditCommentClick}
+                            onDelete={setCommentToDelete}
+                        />
                     ))}
                 </ul>
 
@@ -584,6 +607,3 @@ export default function PostDetailPage() {
         </div>
     );
 }
-
-
-    
