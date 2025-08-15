@@ -136,6 +136,9 @@ export default function HomePage() {
 
         setAllPosts(postsData);
         setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching posts:", error);
+        setIsLoading(false);
     });
 
     return () => unsubscribePosts();
