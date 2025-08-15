@@ -49,7 +49,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     const imageInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-      setIsClient(true);
+        setIsClient(true);
     }, []);
 
      useEffect(() => {
@@ -266,3 +266,4 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     );
 
     
+}
