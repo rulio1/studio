@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -150,11 +150,11 @@ function ClientUILayout() {
     return (
         <>
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogTrigger asChild>
+                 <Dialog.Trigger asChild>
                     <Button className="absolute bottom-28 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90">
                         <Plus className="h-8 w-8" />
                     </Button>
-                </DialogTrigger>
+                </Dialog.Trigger>
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
                     <DialogTitle>Criar Post</DialogTitle>
@@ -250,3 +250,5 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </div>
     );
 }
+
+    
