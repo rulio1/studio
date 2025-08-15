@@ -50,6 +50,7 @@ interface Post {
     views: number;
     isLiked: boolean;
     isRetweeted: boolean;
+    editedAt?: any;
 }
 
 interface Comment {
@@ -207,7 +208,8 @@ export default function PostDetailPage() {
         try {
             const postRef = doc(db, "posts", post.id);
             await updateDoc(postRef, {
-                content: editedContent
+                content: editedContent,
+                editedAt: serverTimestamp()
             });
             setIsEditing(false);
         } catch (error) {
@@ -298,20 +300,23 @@ export default function PostDetailPage() {
                     {post.image && (
                         <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="rounded-2xl border mb-4" />
                     )}
-                    <p className="text-sm text-muted-foreground">{post.time}</p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <p>{post.time}</p>
+                        {post.editedAt && <p className="text-xs">(editado)</p>}
+                    </div>
                     <Separator className="my-4" />
                     <div className="flex justify-around text-muted-foreground">
-                        <div className="flex items-center gap-1">
+                        <button className="flex items-center gap-2">
                             <MessageCircle className="h-5 w-5" />
-                            <span className="text-sm">{post.comments}</span>
-                        </div>
-                        <button onClick={() => handlePostAction('retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
-                            <Repeat className="h-5 w-5" />
-                            <span className="text-sm">{post.retweets.length}</span>
+                            <span>{post.comments}</span>
                         </button>
-                        <button onClick={() => handlePostAction('like')} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
+                        <button onClick={() => handlePostAction('retweet')} className={`flex items-center gap-2 ${post.isRetweeted ? 'text-green-500' : ''}`}>
+                            <Repeat className="h-5 w-5" />
+                            <span>{post.retweets.length}</span>
+                        </button>
+                        <button onClick={() => handlePostAction('like')} className={`flex items-center gap-2 ${post.isLiked ? 'text-red-500' : ''}`}>
                              <Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
-                            <span className="text-sm">{post.likes.length}</span>
+                            <span>{post.likes.length}</span>
                         </button>
                         <Button variant="ghost" size="icon"><Upload className="h-5 w-5" /></Button>
                     </div>

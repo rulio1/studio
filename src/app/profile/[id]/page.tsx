@@ -60,6 +60,7 @@ interface Post {
     views: number;
     isLiked: boolean;
     isRetweeted: boolean;
+    editedAt?: any;
 }
 
 interface ChirpUser {
@@ -256,7 +257,8 @@ export default function ProfilePage() {
         try {
             const postRef = doc(db, "posts", editingPost.id);
             await updateDoc(postRef, {
-                content: editedContent
+                content: editedContent,
+                editedAt: serverTimestamp()
             });
             setEditingPost(null);
             setEditedContent("");
@@ -314,9 +316,10 @@ export default function ProfilePage() {
                             </Avatar>
                             <div className='w-full'>
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <p className="font-bold">{post.author}</p>
-                                        <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <p className="font-bold text-base">{post.author}</p>
+                                        <p className="text-muted-foreground">{post.handle} · {post.time}</p>
+                                        {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
                                     </div>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
