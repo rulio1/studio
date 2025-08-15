@@ -34,7 +34,7 @@ const iconMap = {
 
 const NotificationItem = ({ notification }: { notification: Notification }) => {
     const { icon: Icon, color } = iconMap[notification.type] || iconMap.post;
-    const [time, setTime] = useState(() => notification.createdAt ? format(notification.createdAt.toDate(), "PP") : '');
+    const [time, setTime] = useState('');
     
     useEffect(() => {
         if (notification.createdAt) {
@@ -88,7 +88,6 @@ export default function NotificationsPage() {
         const q = query(
             collection(db, "notifications"),
             where("toUserId", "==", user.uid)
-            // orderBy("createdAt", "desc") // Temporarily removed to prevent index error
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
