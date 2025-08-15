@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -11,8 +12,118 @@ import { Bell, Home, Mail, MessageCircle, PlayCircle, Search, Settings, User, Re
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+
+
+interface Post {
+    id: number;
+    avatar: string;
+    avatarFallback: string;
+    author: string;
+    handle: string;
+    time: string;
+    content: string;
+    image?: string;
+    imageHint?: string;
+    comments: number;
+    retweets: number;
+    likes: number;
+    views: string;
+    isLiked: boolean;
+    isRetweeted: boolean;
+}
+
+const initialPosts: Post[] = [
+    {
+        id: 1,
+        avatar: 'https://placehold.co/48x48.png',
+        avatarFallback: 'JD',
+        author: 'Jane Doe',
+        handle: '@jane',
+        time: '2h',
+        content: 'Just discovered this amazing new coffee shop! ☕️ The atmosphere is so cozy and the latte art is on point. Highly recommend!',
+        image: 'https://placehold.co/500x300.png',
+        imageHint: 'coffee shop',
+        comments: 23,
+        retweets: 11,
+        likes: 61,
+        views: '1.2k',
+        isLiked: false,
+        isRetweeted: false,
+    },
+    {
+        id: 2,
+        avatar: 'https://placehold.co/48x48.png',
+        avatarFallback: 'JS',
+        author: 'John Smith',
+        handle: '@john',
+        time: '4h',
+        content: 'Just built a new app with Next.js and Firebase! What a great stack!',
+        comments: 10,
+        retweets: 5,
+        likes: 32,
+        views: '800',
+        isLiked: false,
+        isRetweeted: false,
+    }
+];
+
 
 export default function HomePage() {
+  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [newPostContent, setNewPostContent] = useState('');
+  const { toast } = useToast();
+
+  const handlePostAction = (postId: number, action: 'like' | 'retweet') => {
+    setPosts(posts.map(p => {
+      if (p.id === postId) {
+        if (action === 'like') {
+          return { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 };
+        }
+        if (action === 'retweet') {
+          return { ...p, isRetweeted: !p.isRetweeted, retweets: p.isRetweeted ? p.retweets - 1 : p.retweets + 1 };
+        }
+      }
+      return p;
+    }));
+  };
+
+  const handleCreatePost = () => {
+    if (!newPostContent.trim()) {
+        toast({
+            title: "Post cannot be empty.",
+            description: "Please write something before posting.",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    const newPost: Post = {
+        id: Date.now(),
+        author: 'Barbie 🎀',
+        handle: '@pussypinkprint',
+        time: 'Just now',
+        content: newPostContent,
+        avatar: 'https://placehold.co/40x40.png',
+        avatarFallback: 'B',
+        comments: 0,
+        likes: 0,
+        retweets: 0,
+        views: '0',
+        isLiked: false,
+        isRetweeted: false,
+    };
+
+    setPosts([newPost, ...posts]);
+    setNewPostContent('');
+    toast({
+        title: "Post created!",
+        description: "Your post has been successfully published.",
+    });
+  };
+
+
   return (
     <div className="flex flex-col h-screen bg-background">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
@@ -100,87 +211,74 @@ export default function HomePage() {
       <main className="flex-1 overflow-y-auto">
         <Tabs defaultValue="for-you" className="w-full">
           <TabsContent value="for-you" className="mt-0">
+             <div className="p-4 border-b">
+                <div className="flex gap-4">
+                    <Avatar>
+                        <AvatarImage src="https://placehold.co/40x40.png" alt="@barbie" />
+                        <AvatarFallback>B</AvatarFallback>
+                    </Avatar>
+                    <div className="w-full">
+                        <Textarea 
+                            placeholder="What's happening?!" 
+                            className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0"
+                            value={newPostContent}
+                            onChange={(e) => setNewPostContent(e.target.value)}
+                        />
+                        <div className="flex justify-end mt-2">
+                            <Button onClick={handleCreatePost} disabled={!newPostContent.trim()}>Post</Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div className="flow-root">
                 <ul className="divide-y divide-border">
-                    <li className="p-4">
-                        <div className="flex gap-4">
-                            <Avatar>
-                            <AvatarImage src="https://placehold.co/48x48.png" alt="@jane" />
-                            <AvatarFallback>JD</AvatarFallback>
-                            </Avatar>
-                            <div>
-                            <div className="flex items-center gap-2">
-                                <p className="font-bold">Jane Doe</p>
-                                <p className="text-sm text-muted-foreground">@jane · 2h</p>
-                            </div>
-                            <p className="mb-2">Just discovered this amazing new coffee shop! ☕️ The atmosphere is so cozy and the latte art is on point. Highly recommend!</p>
-                            <Image src="https://placehold.co/500x300.png" data-ai-hint="coffee shop" width={500} height={300} alt="Coffee shop" className="rounded-2xl border" />
-                            <div className="mt-4 flex justify-between text-muted-foreground pr-4">
-                                <div className="flex items-center gap-1">
-                                <MessageCircle className="h-5 w-5" />
-                                <span>23</span>
+                    {posts.map((post) => (
+                        <li key={post.id} className="p-4 hover:bg-muted/20 transition-colors duration-200">
+                            <div className="flex gap-4">
+                                <Avatar>
+                                <AvatarImage src={post.avatar} alt={post.handle} />
+                                <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                                </Avatar>
+                                <div className='w-full'>
+                                <div className="flex items-center gap-2">
+                                    <p className="font-bold">{post.author}</p>
+                                    <p className="text-sm text-muted-foreground">{post.handle} · {post.time}</p>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                <Repeat className="h-5 w-5" />
-                                <span>11</span>
+                                <p className="mb-2">{post.content}</p>
+                                {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Post image" className="rounded-2xl border" />}
+                                <div className="mt-4 flex justify-between text-muted-foreground pr-4">
+                                    <div className="flex items-center gap-1">
+                                        <MessageCircle className="h-5 w-5 hover:text-primary transition-colors" />
+                                        <span>{post.comments}</span>
+                                    </div>
+                                    <button onClick={() => handlePostAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
+                                        <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
+                                        <span>{post.retweets}</span>
+                                    </button>
+                                    <button onClick={() => handlePostAction(post.id, 'like')} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
+                                        <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
+                                        <span>{post.likes}</span>
+                                    </button>
+                                     <div className="flex items-center gap-1">
+                                    <BarChart2 className="h-5 w-5" />
+                                    <span>{post.views}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                    <Upload className="h-5 w-5" />
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                <Heart className="h-5 w-5" />
-                                <span>61</span>
-                                </div>
-                                 <div className="flex items-center gap-1">
-                                <BarChart2 className="h-5 w-5" />
-                                <span>1.2k</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                <Upload className="h-5 w-5" />
-                                </div>
-                            </div>
-                            </div>
-                        </div>
-                    </li>
-                     <li className="p-4">
-                        <div className="flex gap-4">
-                            <Avatar>
-                            <AvatarImage src="https://placehold.co/48x48.png" alt="@john" />
-                            <AvatarFallback>JD</AvatarFallback>
-                            </Avatar>
-                            <div>
-                            <div className="flex items-center gap-2">
-                                <p className="font-bold">John Smith</p>
-                                <p className="text-sm text-muted-foreground">@john · 4h</p>
-                            </div>
-                            <p className="mb-2">Just built a new app with Next.js and Firebase! What a great stack!</p>
-                            <div className="mt-4 flex justify-between text-muted-foreground pr-4">
-                                <div className="flex items-center gap-1">
-                                <MessageCircle className="h-5 w-5" />
-                                <span>10</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                <Repeat className="h-5 w-5" />
-                                <span>5</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                <Heart className="h-5 w-5" />
-                                <span>32</span>
-                                </div>
-                                 <div className="flex items-center gap-1">
-                                <BarChart2 className="h-5 w-5" />
-                                <span>800</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                <Upload className="h-5 w-5" />
                                 </div>
                             </div>
-                            </div>
-                        </div>
-                    </li>
+                        </li>
+                    ))}
                 </ul>
             </div>
           </TabsContent>
           <TabsContent value="following" className="mt-0">
-            <div className="p-4 text-center text-muted-foreground">
-                <p>Posts from people you follow will appear here.</p>
+            <div className="p-8 text-center text-muted-foreground">
+                <h3 className="text-xl font-bold text-foreground">Be in the know</h3>
+                <p className="mt-2">Following accounts is an easy way to keep up with conversations and topics that interest you.</p>
+                <Button className="mt-4">Find people to follow</Button>
             </div>
           </TabsContent>
         </Tabs>

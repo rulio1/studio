@@ -1,78 +1,108 @@
 
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AuthLayout from '@/components/auth-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useToast } from '@/hooks/use-toast';
+
+const formSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  email: z.string().email({ message: "Invalid email address." }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+});
 
 export default function RegisterPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const router = useRouter();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // For now, just redirect to login after "signing up"
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+    },
+  });
+
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    // For now, just show a toast and redirect to login after "signing up"
+    console.log(values);
+    toast({
+      title: "Account Created!",
+      description: "You can now log in with your new account.",
+    });
     router.push('/login');
   };
 
   return (
     <AuthLayout>
       <Card className="w-full animate-slide-in-from-bottom bg-card/75 backdrop-blur-lg">
-        <form onSubmit={handleSubmit}>
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
-            <CardDescription>Enter your details below to get started.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                placeholder="Your Name"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <CardHeader className="space-y-1 text-center">
+              <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
+              <CardDescription>Enter your details below to get started.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your Name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="name@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <Button type="submit" className="w-full">
-              Create Account
-            </Button>
-          </CardContent>
-          <CardFooter className="flex justify-center text-sm">
-            <span className="text-muted-foreground">Already have an account?</span>
-            <Link href="/login" className="ml-1 underline">
-              Sign in
-            </Link>
-          </CardFooter>
-        </form>
+              <Button type="submit" className="w-full">
+                Create Account
+              </Button>
+            </CardContent>
+            <CardFooter className="flex justify-center text-sm">
+              <span className="text-muted-foreground">Already have an account?</span>
+              <Link href="/login" className="ml-1 underline">
+                Sign in
+              </Link>
+            </CardFooter>
+          </form>
+        </Form>
       </Card>
     </AuthLayout>
   );

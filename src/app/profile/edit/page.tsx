@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import { Camera, ChevronDown, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -14,6 +15,15 @@ import { useRouter } from 'next/navigation';
 
 export default function EditProfilePage() {
     const router = useRouter();
+    const { toast } = useToast();
+
+    const handleSave = () => {
+        toast({
+            title: "Profile Saved",
+            description: "Your changes have been successfully saved.",
+        });
+        router.push('/profile');
+    }
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
@@ -21,7 +31,7 @@ export default function EditProfilePage() {
         <div className="flex items-center justify-between px-4 py-2">
             <Button variant="ghost" onClick={() => router.back()}>Cancel</Button>
             <h1 className="font-bold text-lg">Edit profile</h1>
-            <Button variant="default" className="rounded-full font-bold px-4">Save</Button>
+            <Button variant="default" className="rounded-full font-bold px-4" onClick={handleSave}>Save</Button>
         </div>
       </header>
 
@@ -34,7 +44,9 @@ export default function EditProfilePage() {
             objectFit="cover"
             data-ai-hint="concert crowd"
           />
-          <div className="absolute top-0 left-0 w-full h-full bg-black/30" />
+          <div className="absolute top-0 left-0 w-full h-full bg-black/30 flex items-center justify-center">
+            <Button variant="ghost" size="icon" className='text-white'><Camera className="h-6 w-6" /></Button>
+          </div>
         </div>
         <div className="px-4">
             <div className="-mt-12 relative w-24">
@@ -42,7 +54,7 @@ export default function EditProfilePage() {
                     <AvatarImage src="https://placehold.co/128x128.png" data-ai-hint="pop star" alt="Barbie" />
                     <AvatarFallback>B</AvatarFallback>
                 </Avatar>
-                <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center cursor-pointer">
                     <Camera className="h-6 w-6 text-white" />
                 </div>
             </div>
