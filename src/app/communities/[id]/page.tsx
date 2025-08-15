@@ -44,6 +44,7 @@ interface Post {
     isLiked: boolean;
     isRetweeted: boolean;
     editedAt?: any;
+    createdAt?: any;
 }
 
 
@@ -104,7 +105,7 @@ export default function CommunityDetailPage() {
         if (!communityId) return;
 
         setIsLoadingPosts(true);
-        const postsQuery = query(collection(db, 'posts'), where('communityId', '==', communityId), orderBy('createdAt', 'desc'));
+        const postsQuery = query(collection(db, 'posts'), where('communityId', '==', communityId));
         const unsubscribePosts = onSnapshot(postsQuery, (snapshot) => {
             const postsData = snapshot.docs.map(doc => {
                 const data = doc.data();
@@ -116,6 +117,8 @@ export default function CommunityDetailPage() {
                     isRetweeted: data.retweets.includes(user?.uid || ''),
                 } as Post;
             });
+            // Sort client-side to avoid composite index
+            postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setPosts(postsData);
             setIsLoadingPosts(false);
         });
@@ -239,4 +242,3 @@ export default function CommunityDetailPage() {
         </div>
     );
 }
-
