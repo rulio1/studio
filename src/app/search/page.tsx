@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, Search, Settings, User, MessageCircle, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Search, Settings, MessageCircle, Loader2 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -43,54 +43,63 @@ export default function SearchPage() {
   const [trends, setTrends] = useState<Trend[]>([]);
   const [users, setUsers] = useState<UserSearchResult[]>([]);
   const [posts, setPosts] = useState<PostSearchResult[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
 
   useEffect(() => {
     const fetchTrends = async () => {
         setIsLoading(true);
         const trendsQuery = query(collection(db, 'trends'), orderBy('rank'), limit(10));
-        const snapshot = await getDocs(trendsQuery);
-        const trendsData = snapshot.docs.map(doc => doc.data() as Trend);
-        setTrends(trendsData);
-        setIsLoading(false);
+        try {
+            const snapshot = await getDocs(trendsQuery);
+            const trendsData = snapshot.docs.map(doc => doc.data() as Trend);
+            setTrends(trendsData);
+        } catch (error) {
+            console.error("Error fetching trends:", error);
+            // You might want to set an error state here
+        } finally {
+            setIsLoading(false);
+        }
     };
     fetchTrends();
   }, []);
-
-  const handleSearch = useCallback(async (term: string) => {
-      if (!term.trim()) {
-          setUsers([]);
-          setPosts([]);
-          if (activeTab !== 'trending') setActiveTab('trending');
-          return;
-      }
-      setIsLoading(true);
-      if (activeTab === 'trending') setActiveTab('top');
-      try {
-          const userQuery = query(collection(db, 'users'), where('displayName', '>=', term), where('displayName', '<=', term + '\uf8ff'), limit(5));
-          const postQuery = query(collection(db, 'posts'), where('content', '>=', term), where('content', '<=', term + '\uf8ff'), limit(5));
-
-          const [userSnapshot, postSnapshot] = await Promise.all([
-              getDocs(userQuery),
-              getDocs(postQuery)
-          ]);
-          
-          const usersData = userSnapshot.docs.map(doc => doc.data() as UserSearchResult);
-          const postsData = postSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as PostSearchResult);
-          
-          setUsers(usersData);
-          setPosts(postsData);
-
-      } catch (error) {
-          console.error("Error searching:", error);
-      }
-      setIsLoading(false);
-  }, [activeTab]);
   
   useEffect(() => {
+      const handleSearch = async (term: string) => {
+          if (!term.trim()) {
+              setUsers([]);
+              setPosts([]);
+              if (activeTab !== 'trending') setActiveTab('trending');
+              return;
+          }
+          setIsSearching(true);
+          if (activeTab === 'trending') setActiveTab('top');
+
+          try {
+              const userQuery = query(collection(db, 'users'), where('displayName', '>=', term), where('displayName', '<=', term + '\uf8ff'), limit(5));
+              const postQuery = query(collection(db, 'posts'), where('content', '>=', term), where('content', '<=', term + '\uf8ff'), limit(5));
+
+              const [userSnapshot, postSnapshot] = await Promise.all([
+                  getDocs(userQuery),
+                  getDocs(postQuery)
+              ]);
+              
+              const usersData = userSnapshot.docs.map(doc => doc.data() as UserSearchResult);
+              const postsData = postSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as PostSearchResult);
+              
+              setUsers(usersData);
+              setPosts(postsData);
+
+          } catch (error) {
+              console.error("Error searching:", error);
+          } finally {
+            setIsSearching(false);
+          }
+      };
+
       handleSearch(debouncedSearchTerm);
-  }, [debouncedSearchTerm, handleSearch]);
+  }, [debouncedSearchTerm, activeTab]);
 
 
   const filteredTrends = useMemo(() => {
@@ -107,7 +116,11 @@ export default function SearchPage() {
       return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
-    if (searchTerm && activeTab !== 'trending') {
+    if (debouncedSearchTerm) {
+        if (isSearching) {
+            return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+        }
+
         return (
              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
@@ -116,34 +129,37 @@ export default function SearchPage() {
                     <TabsTrigger value="posts" className="flex-1">Posts</TabsTrigger>
                 </TabsList>
                 <TabsContent value="top">
-                    {users.length > 0 && (
-                        <div className="border-b">
-                           {users.map((user) => (
-                                <div key={user.uid} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
-                                    <div className="flex items-center gap-4">
-                                        <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
-                                        <div>
-                                            <p className="font-bold">{user.displayName}</p>
-                                            <p className="text-sm text-muted-foreground">{user.handle}</p>
-                                            <p className="text-sm mt-1">{user.bio}</p>
+                    {users.length === 0 && posts.length === 0 ? (
+                        <div className="text-center p-8 text-muted-foreground">No results for &quot;{debouncedSearchTerm}&quot;</div>
+                    ) : (
+                        <>
+                            {users.length > 0 && (
+                                <div className="border-b">
+                                   {users.map((user) => (
+                                        <div key={user.uid} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
+                                            <div className="flex items-center gap-4">
+                                                <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
+                                                <div>
+                                                    <p className="font-bold">{user.displayName}</p>
+                                                    <p className="text-sm text-muted-foreground">{user.handle}</p>
+                                                    <p className="text-sm mt-1">{user.bio}</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                     {posts.length > 0 && (
-                         <ul className="divide-y divide-border">
-                            {posts.map((post) => (
-                                <li key={post.id} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground"><MessageCircle className="h-4 w-4" /> Post from {post.handle}</div>
-                                    <p className="mt-1">{post.content}</p>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                    {users.length === 0 && posts.length === 0 && !isLoading && (
-                        <div className="text-center p-8 text-muted-foreground">No results for &quot;{searchTerm}&quot;</div>
+                            )}
+                             {posts.length > 0 && (
+                                 <ul className="divide-y divide-border">
+                                    {posts.map((post) => (
+                                        <li key={post.id} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground"><MessageCircle className="h-4 w-4" /> Post from {post.handle}</div>
+                                            <p className="mt-1">{post.content}</p>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </>
                     )}
                 </TabsContent>
                 <TabsContent value="people">
@@ -160,7 +176,7 @@ export default function SearchPage() {
                                 </div>
                             </li>
                         ))}</ul>
-                     ) : <div className="text-center p-8 text-muted-foreground">No people found for &quot;{searchTerm}&quot;</div>}
+                     ) : <div className="text-center p-8 text-muted-foreground">No people found for &quot;{debouncedSearchTerm}&quot;</div>}
                 </TabsContent>
                 <TabsContent value="posts">
                      {posts.length > 0 ? (
@@ -170,7 +186,7 @@ export default function SearchPage() {
                                 <p className="mt-1">{post.content}</p>
                             </li>
                         ))}</ul>
-                     ) : <div className="text-center p-8 text-muted-foreground">No posts found for &quot;{searchTerm}&quot;</div>}
+                     ) : <div className="text-center p-8 text-muted-foreground">No posts found for &quot;{debouncedSearchTerm}&quot;</div>}
                 </TabsContent>
             </Tabs>
         )
