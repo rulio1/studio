@@ -119,9 +119,10 @@ export default function HomePage() {
 
   // Fetch all posts for "For you" tab
   useEffect(() => {
-    const q = query(collection(db, "posts"), where("communityId", "==", null), limit(50));
+    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(50));
     const unsubscribePosts = onSnapshot(q, async (snapshot) => {
-        const postsData = snapshot.docs.map(doc => {
+        const postsData = snapshot.docs
+          .map(doc => {
             const data = doc.data();
             return {
                 id: doc.id,
@@ -130,10 +131,8 @@ export default function HomePage() {
                 isLiked: data.likes.includes(auth.currentUser?.uid || ''),
                 isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
             } as Post
-        });
+        }).filter(post => !post.communityId); // Filter client-side
         
-        postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-
         setAllPosts(postsData);
         setIsLoading(false);
     }, (error) => {
@@ -156,6 +155,7 @@ export default function HomePage() {
     const postsQuery = query(
         collection(db, "posts"), 
         where("authorId", "in", chirpUser.following),
+        orderBy("createdAt", "desc"),
         limit(50)
     );
     const snapshot = await getDocs(postsQuery);
@@ -169,7 +169,6 @@ export default function HomePage() {
             isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
         } as Post
     });
-    postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
     setFollowingPosts(postsData);
     setIsLoadingFollowing(false);
   }, [chirpUser]);
@@ -574,3 +573,5 @@ export default function HomePage() {
     </>
   );
 }
+
+    
