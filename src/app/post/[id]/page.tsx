@@ -69,6 +69,7 @@ interface ChirpUser {
     displayName: string;
     handle: string;
     avatar: string;
+    savedPosts?: string[];
 }
 
 export default function PostDetailPage() {
@@ -218,6 +219,18 @@ export default function PostDetailPage() {
             setIsUpdating(false);
         }
     };
+    
+    const handleSavePost = async (postId: string) => {
+        if (!user) return;
+        const userRef = doc(db, 'users', user.uid);
+        const isSaved = chirpUser?.savedPosts?.includes(postId);
+
+        if (isSaved) {
+            await updateDoc(userRef, { savedPosts: arrayRemove(postId) });
+        } else {
+            await updateDoc(userRef, { savedPosts: arrayUnion(postId) });
+        }
+    };
 
     if (isLoading) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -271,11 +284,11 @@ export default function PostDetailPage() {
                         </div>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
                                     <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent>
+                            <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
                                 {user?.uid === post.authorId ? (
                                     <>
                                         <DropdownMenuItem onClick={() => setIsDeleteAlertOpen(true)}>
@@ -288,9 +301,9 @@ export default function PostDetailPage() {
                                         </DropdownMenuItem>
                                     </>
                                 ) : (
-                                    <DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleSavePost(post.id)}>
                                         <Save className="mr-2 h-4 w-4"/>
-                                        Salvar
+                                        {chirpUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
                                     </DropdownMenuItem>
                                 )}
                             </DropdownMenuContent>
@@ -361,7 +374,21 @@ export default function PostDetailPage() {
                                             <p className="font-bold">{comment.author}</p>
                                             <p className="text-sm text-muted-foreground">{comment.handle} · {comment.time}</p>
                                         </div>
-                                         <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                                                <DropdownMenuItem>
+                                                    Opção 1
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem>
+                                                    Opção 2
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                     <p className="whitespace-pre-wrap">{comment.content}</p>
                                 </div>
