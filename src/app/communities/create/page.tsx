@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db, storage } from '@/lib/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, arrayUnion, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import Image from 'next/image';
@@ -74,17 +74,20 @@ export default function CreateCommunityPage() {
 
             if (banner) {
                 const bannerRef = ref(storage, `communities/${user.uid}/${Date.now()}_banner`);
-                const snapshot = await uploadString(bannerRef, banner, 'data_url');
-                bannerUrl = await getDownloadURL(snapshot.ref);
+                await uploadString(bannerRef, banner, 'data_url');
+                bannerUrl = await getDownloadURL(bannerRef);
             }
 
             if (avatar) {
                 const avatarRef = ref(storage, `communities/${user.uid}/${Date.now()}_avatar`);
-                const snapshot = await uploadString(avatarRef, avatar, 'data_url');
-                avatarUrl = await getDownloadURL(snapshot.ref);
+                await uploadString(avatarRef, avatar, 'data_url');
+                avatarUrl = await getDownloadURL(avatarRef);
             }
+            
+            const batch = writeBatch(db);
+            const communityRef = doc(collection(db, 'communities'));
 
-            const docRef = await addDoc(collection(db, 'communities'), {
+            batch.set(communityRef, {
                 name,
                 topic,
                 image: bannerUrl,
@@ -95,12 +98,19 @@ export default function CreateCommunityPage() {
                 createdAt: serverTimestamp(),
                 memberCount: 1,
             });
+            
+            const userRef = doc(db, 'users', user.uid);
+            batch.update(userRef, {
+                communities: arrayUnion(communityRef.id)
+            });
+
+            await batch.commit();
 
             toast({
                 title: "Comunidade Criada!",
                 description: `A comunidade "${name}" foi criada com sucesso.`,
             });
-            router.push(`/communities/${docRef.id}`);
+            router.push(`/communities/${communityRef.id}`);
         } catch (error) {
             console.error("Erro ao criar comunidade:", error);
             toast({ title: "Erro", description: "Não foi possível criar a comunidade.", variant: "destructive"});

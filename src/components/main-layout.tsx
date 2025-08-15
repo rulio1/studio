@@ -36,7 +36,6 @@ function ClientUILayout() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPostContent, setNewPostContent] = useState('');
     const [newPostImagePreview, setNewPostImagePreview] = useState<string | null>(null);
-    const [newPostFile, setNewPostFile] = useState<File | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isPosting, setIsPosting] = useState(false);
     const [aiPrompt, setAiPrompt] = useState('');
@@ -74,7 +73,6 @@ function ClientUILayout() {
     const resetModal = () => {
         setNewPostContent('');
         setNewPostImagePreview(null);
-        setNewPostFile(null);
         setAiPrompt('');
         setIsGenerating(false);
         setIsModalOpen(false);
@@ -82,7 +80,7 @@ function ClientUILayout() {
     }
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() && !newPostFile) {
+        if (!newPostContent.trim() && !newPostImagePreview) {
             toast({
                 title: "O post não pode estar vazio.",
                 description: "Por favor, escreva algo ou adicione uma imagem antes de postar.",
@@ -105,7 +103,7 @@ function ClientUILayout() {
             let imageUrl = '';
             let imageHint = '';
 
-            if (newPostFile && newPostImagePreview) {
+            if (newPostImagePreview) {
                 const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}`);
                 await uploadString(imageRef, newPostImagePreview, 'data_url');
                 imageUrl = await getDownloadURL(imageRef);
@@ -145,7 +143,6 @@ function ClientUILayout() {
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            setNewPostFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
                 setNewPostImagePreview(reader.result as string);
@@ -203,7 +200,7 @@ function ClientUILayout() {
                                 {newPostImagePreview && (
                                     <div className="mt-4 relative">
                                         <Image src={newPostImagePreview} width={500} height={300} alt="Pré-visualização" className="rounded-2xl border" />
-                                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => {setNewPostImagePreview(null); setNewPostFile(null)}}>
+                                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => {setNewPostImagePreview(null)}}>
                                             <X className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -237,7 +234,7 @@ function ClientUILayout() {
                                     <Sparkles className="h-6 w-6 text-primary" />
                                 </Button>
                             </div>
-                            <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !newPostFile) || isPosting}>
+                            <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !newPostImagePreview) || isPosting}>
                                 {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Postar
                             </Button>
