@@ -17,7 +17,7 @@ import { Button } from './ui/button';
 import { usePathname, useRouter } from 'next/navigation';
 import BottomNavBar from './bottom-nav-bar';
 import React from 'react';
-import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarHeader, SidebarFooter } from './ui/sidebar';
+import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarHeader, SidebarFooter, SidebarInset } from './ui/sidebar';
 import Link from 'next/link';
 import { ThemeToggle } from './theme-toggle';
 
@@ -178,7 +178,7 @@ function CreatePostModal() {
 
     return (
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                 <DialogTrigger asChild>
+                <DialogTrigger asChild>
                     <Button className="fixed bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 md:hidden z-50">
                         <Plus className="h-8 w-8" />
                     </Button>
@@ -290,39 +290,37 @@ function DesktopSidebar() {
 
 
     return (
-        <SidebarProvider defaultOpen={true}>
-            <Sidebar className="border-r" collapsible="icon">
-                <SidebarContent className="p-2">
-                    <SidebarHeader>
-                        <ThemeToggle/>
-                    </SidebarHeader>
-                    <SidebarMenu>
-                    {navItems.map((item) => (
-                        <SidebarMenuItem key={item.href}>
-                             <Link href={item.href} className="w-full">
-                                <SidebarMenuButton tooltip={item.label} isActive={pathname.startsWith(item.href)}>
-                                    <item.icon />
-                                    <span>{item.label}</span>
-                                </SidebarMenuButton>
-                            </Link>
-                        </SidebarMenuItem>
-                    ))}
-                    </SidebarMenu>
-                </SidebarContent>
-                 <SidebarFooter>
-                    <div className="flex items-center gap-2 p-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
-                          <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 overflow-hidden">
-                            <p className="font-bold text-sm truncate">{chirpUser.displayName}</p>
-                            <p className="text-xs text-muted-foreground truncate">{chirpUser.handle}</p>
-                        </div>
+        <Sidebar className="border-r hidden md:flex" collapsible="icon">
+            <SidebarContent className="p-2">
+                <SidebarHeader>
+                    <ThemeToggle/>
+                </SidebarHeader>
+                <SidebarMenu>
+                {navItems.map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                         <Link href={item.href} className="w-full">
+                            <SidebarMenuButton tooltip={item.label} isActive={pathname.startsWith(item.href)}>
+                                <item.icon />
+                                <span>{item.label}</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                ))}
+                </SidebarMenu>
+            </SidebarContent>
+             <SidebarFooter>
+                <div className="flex items-center gap-2 p-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
+                      <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 overflow-hidden">
+                        <p className="font-bold text-sm truncate">{chirpUser.displayName}</p>
+                        <p className="text-xs text-muted-foreground truncate">{chirpUser.handle}</p>
                     </div>
-                </SidebarFooter>
-            </Sidebar>
-        </SidebarProvider>
+                </div>
+            </SidebarFooter>
+        </Sidebar>
     )
 }
 
@@ -342,20 +340,22 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
 
     return (
-        <div className="flex bg-background relative animate-fade-in">
-             {isClient && <DesktopSidebar />}
-            <main className="flex-1 min-w-0">
-                 <div className="flex-1 pb-24 md:pb-0">
-                    {children}
-                </div>
-            </main>
-            
-            {isClient && (
-                <>
-                  <CreatePostModal />
-                  <BottomNavBar />
-                </>
-            )}
-        </div>
+        <SidebarProvider>
+            <div className="flex bg-background relative animate-fade-in">
+                {isClient && <DesktopSidebar />}
+                <SidebarInset>
+                    <div className="flex-1 pb-24 md:pb-0">
+                        {children}
+                    </div>
+                </SidebarInset>
+                
+                {isClient && (
+                    <>
+                    <CreatePostModal />
+                    <BottomNavBar />
+                    </>
+                )}
+            </div>
+        </SidebarProvider>
     );
 }
