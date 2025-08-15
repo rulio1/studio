@@ -81,7 +81,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         setIsModalOpen(false);
     }
 
-    const handleCreatePost = async () => {
+    const handleCreatePost = async (communityId: string | null = null) => {
         if (!newPostContent.trim() || !user || !chirpUser) {
             toast({
                 title: "O post não pode estar vazio.",
@@ -109,7 +109,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 content: newPostContent,
                 image: imageUrl,
                 imageHint: imageUrl ? 'upload do usuário' : '',
-                communityId: null,
+                communityId: communityId,
                 createdAt: serverTimestamp(),
                 comments: 0,
                 retweets: [],
@@ -235,7 +235,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                                     <ImageIcon className="h-6 w-6 text-primary" />
                                 </Button>
                             </div>
-                            <Button onClick={handleCreatePost} disabled={!newPostContent.trim() || isPosting}>
+                            <Button onClick={() => handleCreatePost(null)} disabled={!newPostContent.trim() || isPosting}>
                                 {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Postar
                             </Button>
@@ -257,3 +257,5 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </div>
     );
 }
+
+    
