@@ -61,6 +61,8 @@ export default function EditProfilePage() {
                     });
                     setBannerImage(userData.banner);
                     setAvatarImage(userData.avatar);
+                } else {
+                    router.push('/login');
                 }
             } else {
                 router.push('/login');
@@ -98,12 +100,14 @@ export default function EditProfilePage() {
 
             const userRef = doc(db, 'users', user.uid);
 
+            // Check if banner was changed
             if (bannerImage && bannerImage.startsWith('data:')) {
                 const bannerStorageRef = ref(storage, `banners/${user.uid}/${Date.now()}`);
                 const snapshot = await uploadString(bannerStorageRef, bannerImage, 'data_url');
                 bannerUrl = await getDownloadURL(snapshot.ref);
             }
 
+            // Check if avatar was changed
             if (avatarImage && avatarImage.startsWith('data:')) {
                 const avatarStorageRef = ref(storage, `avatars/${user.uid}/${Date.now()}`);
                 const snapshot = await uploadString(avatarStorageRef, avatarImage, 'data_url');
