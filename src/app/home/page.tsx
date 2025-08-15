@@ -134,33 +134,7 @@ export default function HomePage() {
 
         // Sort client-side
         postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-
-        // Add Chirp AI post
-        try {
-            const aiPostContent = await generatePost("um fato surpreendente sobre o universo");
-            const aiPost: Post = {
-                id: 'chirp-ai-post-of-the-day',
-                authorId: 'chirp-ai',
-                author: 'Chirp AI',
-                handle: '@chirp-ai',
-                avatar: '', // Will be rendered as fallback
-                avatarFallback: 'AI',
-                content: aiPostContent,
-                time: 'Agora mesmo',
-                comments: 42,
-                retweets: [],
-                likes: [],
-                views: 1337,
-                isLiked: false,
-                isRetweeted: false,
-                createdAt: new Date(),
-            };
-            setAllPosts([aiPost, ...postsData]);
-        } catch (error) {
-            console.error("Failed to generate AI post", error);
-            setAllPosts(postsData);
-        }
-        
+        setAllPosts(postsData);
         setIsLoading(false);
     });
 

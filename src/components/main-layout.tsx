@@ -159,7 +159,7 @@ function ClientUILayout() {
         <>
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                  <DialogTrigger asChild>
-                    <Button className="absolute bottom-28 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90">
+                    <Button className="absolute bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90">
                         <Plus className="h-8 w-8" />
                     </Button>
                 </DialogTrigger>
@@ -217,7 +217,7 @@ function ClientUILayout() {
                                     <ImageIcon className="h-6 w-6 text-primary" />
                                 </Button>
                             </div>
-                            <Button onClick={() => handleCreatePost(null)} disabled={!newPostContent.trim() || isPosting}>
+                            <Button onClick={() => handleCreatePost()} disabled={!newPostContent.trim() || isPosting}>
                                 {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Postar
                             </Button>
@@ -248,7 +248,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
     return (
         <div className="flex flex-col h-screen bg-background relative animate-fade-in">
-            <div className="flex-1 overflow-y-auto pb-28">
+            <div className="flex-1 overflow-y-auto pb-24">
                 {children}
             </div>
             
