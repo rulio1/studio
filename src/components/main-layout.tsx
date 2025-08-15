@@ -327,10 +327,20 @@ function DesktopSidebar() {
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
 
     const noLayoutPages = ['/login', '/register', '/'];
     if (noLayoutPages.includes(pathname)) {
         return <>{children}</>;
+    }
+
+    if (!isClient) {
+        return null;
     }
 
     return (
@@ -348,3 +358,5 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </SidebarProvider>
     );
 }
+
+    
