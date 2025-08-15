@@ -20,8 +20,6 @@ interface UserFormData {
     displayName: string;
     bio: string;
     location: string;
-    avatar: string;
-    banner: string;
 }
 
 export default function EditProfilePage() {
@@ -35,9 +33,16 @@ export default function EditProfilePage() {
         displayName: '',
         bio: '',
         location: '',
-        avatar: '',
-        banner: '',
     });
+
+    // States for image previews
+    const [avatarPreview, setAvatarPreview] = useState<string>('');
+    const [bannerPreview, setBannerPreview] = useState<string>('');
+
+    // States for new image files
+    const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null);
+    const [newBannerFile, setNewBannerFile] = useState<File | null>(null);
+
 
     const bannerInputRef = useRef<HTMLInputElement>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -53,9 +58,9 @@ export default function EditProfilePage() {
                         displayName: userData.displayName || '',
                         bio: userData.bio || '',
                         location: userData.location || '',
-                        avatar: userData.avatar || '',
-                        banner: userData.banner || '',
                     });
+                    setAvatarPreview(userData.avatar || '');
+                    setBannerPreview(userData.banner || '');
                 } else {
                     router.push('/login');
                 }
@@ -76,7 +81,13 @@ export default function EditProfilePage() {
         if (file) {
           const reader = new FileReader();
           reader.onloadend = () => {
-            setFormData(prev => ({...prev, [type]: reader.result as string}));
+            if (type === 'avatar') {
+                setNewAvatarFile(file);
+                setAvatarPreview(reader.result as string);
+            } else {
+                setNewBannerFile(file);
+                setBannerPreview(reader.result as string)
+            }
           };
           reader.readAsDataURL(file);
         }
@@ -86,24 +97,25 @@ export default function EditProfilePage() {
         if (!user) return;
         setIsSaving(true);
         try {
-            let { avatar: avatarUrl, banner: bannerUrl, ...otherData } = formData;
+            let avatarUrl = avatarPreview;
+            let bannerUrl = bannerPreview;
 
-            // If banner was changed (it will be a data URL), upload it
-            if (bannerUrl && bannerUrl.startsWith('data:')) {
+            // If banner was changed, upload it
+            if (newBannerFile) {
                 const bannerStorageRef = ref(storage, `banners/${user.uid}/${Date.now()}`);
-                const snapshot = await uploadString(bannerStorageRef, bannerUrl, 'data_url');
-                bannerUrl = await getDownloadURL(snapshot.ref);
+                await uploadString(bannerStorageRef, bannerPreview, 'data_url');
+                bannerUrl = await getDownloadURL(bannerStorageRef);
             }
 
             // If avatar was changed, upload it
-            if (avatarUrl && avatarUrl.startsWith('data:')) {
+            if (newAvatarFile) {
                 const avatarStorageRef = ref(storage, `avatars/${user.uid}/${Date.now()}`);
-                const snapshot = await uploadString(avatarStorageRef, avatarUrl, 'data_url');
-                avatarUrl = await getDownloadURL(snapshot.ref);
+                await uploadString(avatarStorageRef, avatarPreview, 'data_url');
+                avatarUrl = await getDownloadURL(avatarStorageRef);
             }
             
             await updateDoc(doc(db, 'users', user.uid), {
-                ...otherData,
+                ...formData,
                 banner: bannerUrl,
                 avatar: avatarUrl,
             });
@@ -125,7 +137,7 @@ export default function EditProfilePage() {
         }
     };
     
-    if (isLoading || !formData) {
+    if (isLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
@@ -147,8 +159,8 @@ export default function EditProfilePage() {
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
             <input type="file" accept="image/*" ref={bannerInputRef} onChange={(e) => handleFileChange(e, 'banner')} className="hidden" />
-            {formData.banner && <Image
-                src={formData.banner}
+            {bannerPreview && <Image
+                src={bannerPreview}
                 alt="Banner"
                 layout="fill"
                 objectFit="cover"
@@ -162,7 +174,7 @@ export default function EditProfilePage() {
             <div className="-mt-16 relative w-32">
                 <input type="file" accept="image/*" ref={avatarInputRef} onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" />
                 <Avatar className="h-32 w-32 border-4 border-background">
-                    {formData.avatar && <AvatarImage src={formData.avatar} data-ai-hint="pop star" alt={formData.displayName} />}
+                    {avatarPreview && <AvatarImage src={avatarPreview} data-ai-hint="pop star" alt={formData.displayName} />}
                     <AvatarFallback className="text-4xl">{formData.displayName?.[0]}</AvatarFallback>
                 </Avatar>
                 <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity" onClick={() => avatarInputRef.current?.click()}>

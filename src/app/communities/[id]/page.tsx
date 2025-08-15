@@ -128,7 +128,7 @@ export default function CommunityDetailPage() {
     // Post creation modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPostContent, setNewPostContent] = useState('');
-    const [newPostImage, setNewPostImage] = useState<string | null>(null);
+    const [newPostImagePreview, setNewPostImagePreview] = useState<string | null>(null);
     const [newPostFile, setNewPostFile] = useState<File | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isPosting, setIsPosting] = useState(false);
@@ -221,7 +221,7 @@ export default function CommunityDetailPage() {
 
     const resetModal = () => {
         setNewPostContent('');
-        setNewPostImage(null);
+        setNewPostImagePreview(null);
         setNewPostFile(null);
         setAiPrompt('');
         setIsGenerating(false);
@@ -230,7 +230,7 @@ export default function CommunityDetailPage() {
     }
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() && !newPostImage) {
+        if (!newPostContent.trim() && !newPostFile) {
              toast({
                 title: "O post não pode estar vazio.",
                 description: "Por favor, escreva algo ou adicione uma imagem antes de postar.",
@@ -245,10 +245,10 @@ export default function CommunityDetailPage() {
             let imageUrl = '';
             let imageHint = '';
             
-            if (newPostImage) {
+            if (newPostFile && newPostImagePreview) {
                  const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}`);
-                 const snapshot = await uploadString(imageRef, newPostImage, 'data_url');
-                 imageUrl = await getDownloadURL(snapshot.ref);
+                 await uploadString(imageRef, newPostImagePreview, 'data_url');
+                 imageUrl = await getDownloadURL(imageRef);
                  imageHint = 'user upload';
             }
 
@@ -285,7 +285,7 @@ export default function CommunityDetailPage() {
         if (file) {
             setNewPostFile(file);
             const reader = new FileReader();
-            reader.onloadend = () => setNewPostImage(reader.result as string);
+            reader.onloadend = () => setNewPostImagePreview(reader.result as string);
             reader.readAsDataURL(file);
         }
     };
@@ -388,10 +388,10 @@ export default function CommunityDetailPage() {
                                             onChange={(e) => setNewPostContent(e.target.value)}
                                             rows={5}
                                         />
-                                        {newPostImage && (
+                                        {newPostImagePreview && (
                                             <div className="mt-4 relative">
-                                                <Image src={newPostImage} width={500} height={300} alt="Pré-visualização" className="rounded-2xl border" />
-                                                <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => setNewPostImage(null)}>
+                                                <Image src={newPostImagePreview} width={500} height={300} alt="Pré-visualização" className="rounded-2xl border" />
+                                                <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => {setNewPostImagePreview(null); setNewPostFile(null)}}>
                                                     <X className="h-4 w-4" />
                                                 </Button>
                                             </div>
@@ -423,7 +423,7 @@ export default function CommunityDetailPage() {
                                             <Sparkles className="h-6 w-6 text-primary" />
                                         </Button>
                                     </div>
-                                    <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !newPostImage) || isPosting}>
+                                    <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !newPostFile) || isPosting}>
                                         {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Postar
                                     </Button>
