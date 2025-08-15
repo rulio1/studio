@@ -65,6 +65,19 @@ interface Post {
     editedAt?: any;
 }
 
+interface Reply {
+    id: string;
+    authorId: string;
+    avatar: string;
+    avatarFallback: string;
+    author: string;
+    handle: string;
+    time: string;
+    content: string;
+    createdAt: any;
+    postId: string;
+}
+
 interface ChirpUser {
     uid: string;
     displayName: string;
@@ -92,10 +105,14 @@ export default function ProfilePage() {
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
     const [profileUser, setProfileUser] = useState<ChirpUser | null>(null);
     const [userPosts, setUserPosts] = useState<Post[]>([]);
+    const [userReplies, setUserReplies] = useState<Reply[]>([]);
+    const [mediaPosts, setMediaPosts] = useState<Post[]>([]);
     const [likedPosts, setLikedPosts] = useState<Post[]>([]);
     const [isFollowing, setIsFollowing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+    const [isLoadingReplies, setIsLoadingReplies] = useState(true);
+    const [isLoadingMedia, setIsLoadingMedia] = useState(true);
     const [isLoadingLikes, setIsLoadingLikes] = useState(true);
     const [postToDelete, setPostToDelete] = useState<string | null>(null);
     const [editingPost, setEditingPost] = useState<Post | null>(null);
@@ -164,8 +181,32 @@ export default function ProfilePage() {
             });
             setUserPosts(posts);
             setIsLoadingPosts(false);
+
+            // Filter for media posts client-side
+            setIsLoadingMedia(true);
+            setMediaPosts(posts.filter(p => p.image));
+            setIsLoadingMedia(false);
         });
     }, [profileId, currentUser]);
+
+    const fetchUserReplies = useCallback(async () => {
+        if (!profileId) return;
+        setIsLoadingReplies(true);
+        const q = query(collection(db, "comments"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const replies = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    time: data.createdAt ? formatDistanceToNow(data.createdAt.toDate(), { addSuffix: true, locale: ptBR }) : 'Agora mesmo',
+                } as Reply;
+            });
+            setUserReplies(replies);
+            setIsLoadingReplies(false);
+        });
+    }, [profileId]);
+
 
     const fetchLikedPosts = useCallback(async () => {
         if (!profileId) return;
@@ -191,9 +232,10 @@ export default function ProfilePage() {
     useEffect(() => {
         if(profileId) {
             fetchUserPosts();
+            fetchUserReplies();
             fetchLikedPosts();
         }
-    }, [profileId, fetchUserPosts, fetchLikedPosts]);
+    }, [profileId, fetchUserPosts, fetchLikedPosts, fetchUserReplies]);
 
     const handleFollow = async () => {
         if (!currentUser || !profileUser || !chirpUser) return;
@@ -298,7 +340,7 @@ export default function ProfilePage() {
 
     const handlePostAction = async (postId: string, action: 'like' | 'retweet') => {
         const postRef = doc(db, 'posts', postId);
-        const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId);
+        const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId) || mediaPosts.find(p => p.id === postId);
         if (!post || !currentUser) return;
 
         const field = action === 'like' ? 'likes' : 'retweets';
@@ -375,6 +417,43 @@ export default function ProfilePage() {
                                     <div className="flex items-center gap-1"><BarChart2 className="h-5 w-5" /><span>{post.views}</span></div>
                                     <div className="flex items-center gap-1"><Upload className="h-5 w-5" /></div>
                                 </div>
+                            </div>
+                        </div>
+                    </li>
+                ))}
+            </ul>
+        );
+    };
+
+    const ReplyList = ({ replies, loading, emptyTitle, emptyDescription }: { replies: Reply[], loading: boolean, emptyTitle: string, emptyDescription: string }) => {
+        if (loading) {
+            return (
+                <ul>
+                    <li className="p-4 border-b"><PostSkeleton /></li>
+                    <li className="p-4 border-b"><PostSkeleton /></li>
+                </ul>
+            );
+        }
+        if (replies.length === 0) {
+            return <EmptyState title={emptyTitle} description={emptyDescription} />;
+        }
+        return (
+            <ul className="divide-y divide-border">
+                {replies.map((reply) => (
+                    <li key={reply.id} className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${reply.postId}`)}>
+                        <div className="flex gap-4">
+                            <Avatar>
+                                <AvatarImage src={reply.avatar} alt={reply.handle} />
+                                <AvatarFallback>{reply.avatarFallback}</AvatarFallback>
+                            </Avatar>
+                            <div className='w-full'>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <p className="font-bold text-base">{reply.author}</p>
+                                        <p className="text-muted-foreground">{reply.handle} · {reply.time}</p>
+                                    </div>
+                                </div>
+                                <p className="mb-2 whitespace-pre-wrap">{reply.content}</p>
                             </div>
                         </div>
                     </li>
@@ -467,10 +546,20 @@ export default function ProfilePage() {
                 />
             </TabsContent>
             <TabsContent value="replies" className="mt-0">
-                <EmptyState title="Nenhuma resposta ainda" description="Quando alguém responder a este usuário, aparecerá aqui." />
+                 <ReplyList 
+                    replies={userReplies} 
+                    loading={isLoadingReplies} 
+                    emptyTitle="Nenhuma resposta ainda" 
+                    emptyDescription="Quando este usuário responder a outros, suas respostas aparecerão aqui."
+                />
             </TabsContent>
             <TabsContent value="media" className="mt-0">
-                 <EmptyState title="Nenhuma mídia ainda" description="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui." />
+                 <PostList 
+                    posts={mediaPosts} 
+                    loading={isLoadingMedia}
+                    emptyTitle="Nenhuma mídia ainda" 
+                    emptyDescription="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui."
+                 />
             </TabsContent>
             <TabsContent value="likes" className="mt-0">
                  <PostList 
@@ -517,3 +606,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
