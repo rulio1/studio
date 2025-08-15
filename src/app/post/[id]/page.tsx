@@ -30,6 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Post {
     id: string;
@@ -82,6 +83,9 @@ export default function PostDetailPage() {
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedContent, setEditedContent] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -112,6 +116,7 @@ export default function PostDetailPage() {
                         isLiked: postData.likes.includes(auth.currentUser?.uid || ''),
                         isRetweeted: postData.retweets.includes(auth.currentUser?.uid || ''),
                     });
+                     setEditedContent(postData.content);
                 } else {
                     // Post might have been deleted
                     setPost(null);
@@ -196,6 +201,22 @@ export default function PostDetailPage() {
         }
     };
 
+    const handleUpdatePost = async () => {
+        if (!post || !editedContent.trim()) return;
+        setIsUpdating(true);
+        try {
+            const postRef = doc(db, "posts", post.id);
+            await updateDoc(postRef, {
+                content: editedContent
+            });
+            setIsEditing(false);
+        } catch (error) {
+            console.error("Erro ao atualizar post:", error);
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
     if (isLoading) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
@@ -259,7 +280,7 @@ export default function PostDetailPage() {
                                             <Trash2 className="mr-2 h-4 w-4"/>
                                             Apagar
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setIsEditing(true)}>
                                             <Edit className="mr-2 h-4 w-4"/>
                                             Editar
                                         </DropdownMenuItem>
@@ -280,18 +301,18 @@ export default function PostDetailPage() {
                     <p className="text-sm text-muted-foreground">{post.time}</p>
                     <Separator className="my-4" />
                     <div className="flex justify-around text-muted-foreground">
-                        <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                             <MessageCircle className="h-5 w-5" />
                             <span className="text-sm">{post.comments}</span>
-                        </Button>
-                        <Button variant="ghost" size="sm" className={`flex items-center gap-2 ${post.isRetweeted ? 'text-green-500' : ''}`} onClick={() => handlePostAction('retweet')}>
+                        </div>
+                        <button onClick={() => handlePostAction('retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
                             <Repeat className="h-5 w-5" />
                             <span className="text-sm">{post.retweets.length}</span>
-                        </Button>
-                        <Button variant="ghost" size="sm" className={`flex items-center gap-2 ${post.isLiked ? 'text-red-500' : ''}`} onClick={() => handlePostAction('like')}>
+                        </button>
+                        <button onClick={() => handlePostAction('like')} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
                              <Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
                             <span className="text-sm">{post.likes.length}</span>
-                        </Button>
+                        </button>
                         <Button variant="ghost" size="icon"><Upload className="h-5 w-5" /></Button>
                     </div>
                 </div>
@@ -358,6 +379,23 @@ export default function PostDetailPage() {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+                <Dialog open={isEditing} onOpenChange={setIsEditing}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Editar Post</DialogTitle>
+                        </DialogHeader>
+                        <Textarea 
+                            value={editedContent}
+                            onChange={(e) => setEditedContent(e.target.value)}
+                            rows={5}
+                            className="my-4"
+                        />
+                        <Button onClick={handleUpdatePost} disabled={isUpdating}>
+                            {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Salvar Alterações
+                        </Button>
+                    </DialogContent>
+                </Dialog>
             </main>
         </div>
     );

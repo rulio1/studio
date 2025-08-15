@@ -37,6 +37,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 
 interface Post {
@@ -83,6 +85,9 @@ export default function HomePage() {
   const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
   const [activeTab, setActiveTab] = useState('for-you');
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [editedContent, setEditedContent] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -250,6 +255,37 @@ export default function HomePage() {
         setPostToDelete(null);
     }
   };
+
+  const handleEditClick = (post: Post) => {
+    setEditingPost(post);
+    setEditedContent(post.content);
+  };
+
+  const handleUpdatePost = async () => {
+    if (!editingPost || !editedContent.trim()) return;
+    setIsUpdating(true);
+    try {
+        const postRef = doc(db, "posts", editingPost.id);
+        await updateDoc(postRef, {
+            content: editedContent
+        });
+        setEditingPost(null);
+        setEditedContent("");
+        toast({
+            title: "Post atualizado",
+            description: "Seu post foi atualizado com sucesso.",
+        });
+    } catch (error) {
+        console.error("Erro ao atualizar o post:", error);
+        toast({
+            title: "Erro",
+            description: "Não foi possível atualizar o post.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsUpdating(false);
+    }
+  };
   
   const handleSignOut = async () => {
     await signOut(auth);
@@ -323,7 +359,7 @@ export default function HomePage() {
                                                 <Trash2 className="mr-2 h-4 w-4"/>
                                                 Apagar
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleEditClick(post)}>
                                                 <Edit className="mr-2 h-4 w-4"/>
                                                 Editar
                                             </DropdownMenuItem>
@@ -337,7 +373,7 @@ export default function HomePage() {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
-                        <p className="mb-2">{post.content}</p>
+                        <p className="mb-2 whitespace-pre-wrap">{post.content}</p>
                         {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="rounded-2xl border" />}
                         <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center gap-1">
@@ -478,6 +514,23 @@ export default function HomePage() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+        <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Editar Post</DialogTitle>
+                </DialogHeader>
+                <Textarea 
+                    value={editedContent}
+                    onChange={(e) => setEditedContent(e.target.value)}
+                    rows={5}
+                    className="my-4"
+                />
+                <Button onClick={handleUpdatePost} disabled={isUpdating}>
+                    {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Salvar Alterações
+                </Button>
+            </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
