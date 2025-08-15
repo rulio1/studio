@@ -98,16 +98,16 @@ export default function EditProfilePage() {
 
             const userRef = doc(db, 'users', user.uid);
 
-            // Check if banner image was changed by the user
-            if (bannerImage && bannerImage !== chirpUser.banner) {
-                const bannerStorageRef = ref(storage, `banners/${user.uid}`);
+            // Check if banner image was changed by the user (it will be a data URL)
+            if (bannerImage && bannerImage.startsWith('data:image')) {
+                const bannerStorageRef = ref(storage, `banners/${user.uid}/${Date.now()}`);
                 const snapshot = await uploadString(bannerStorageRef, bannerImage, 'data_url');
                 bannerUrl = await getDownloadURL(snapshot.ref);
             }
 
-            // Check if avatar image was changed by the user
-            if (avatarImage && avatarImage !== chirpUser.avatar) {
-                const avatarStorageRef = ref(storage, `avatars/${user.uid}`);
+            // Check if avatar image was changed by the user (it will be a data URL)
+            if (avatarImage && avatarImage.startsWith('data:image')) {
+                const avatarStorageRef = ref(storage, `avatars/${user.uid}/${Date.now()}`);
                 const snapshot = await uploadString(avatarStorageRef, avatarImage, 'data_url');
                 avatarUrl = await getDownloadURL(snapshot.ref);
             }
