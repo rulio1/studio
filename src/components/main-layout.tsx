@@ -11,7 +11,7 @@ import { auth, db, storage } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { ImageIcon, Sparkles, Loader2, X, Plus, Home, Search, Users, Bell, Mail, Bot, Settings, Bookmark, Radio } from 'lucide-react';
+import { ImageIcon, Sparkles, Loader2, X, Plus, Home, Search, Users, Bell, Mail, Bot, Settings, Bookmark, Radio, User } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
 import { usePathname, useRouter } from 'next/navigation';
