@@ -327,12 +327,6 @@ function DesktopSidebar() {
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const [isClient, setIsClient] = useState(false);
-
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
-
 
     const noLayoutPages = ['/login', '/register', '/'];
     if (noLayoutPages.includes(pathname)) {
@@ -341,20 +335,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
     return (
         <SidebarProvider>
-            <div className="flex bg-background relative animate-fade-in">
-                {isClient && <DesktopSidebar />}
+            <div className="flex min-h-screen">
+                <DesktopSidebar />
                 <SidebarInset>
                     <div className="flex-1 pb-24 md:pb-0">
                         {children}
                     </div>
                 </SidebarInset>
-                
-                {isClient && (
-                    <>
-                    <CreatePostModal />
-                    <BottomNavBar />
-                    </>
-                )}
+                <CreatePostModal />
+                <BottomNavBar />
             </div>
         </SidebarProvider>
     );
