@@ -3,7 +3,6 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -11,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Bell, Home, Mail, MessageCircle, PlayCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function HomePage() {
   return (
@@ -83,14 +83,7 @@ export default function HomePage() {
                       </Link>
                   </div>
                   <div className="p-4 border-t">
-                      <div className="flex justify-between items-center">
-                          <Button variant="ghost" size="icon">
-                            <Sun className="h-6 w-6" />
-                          </Button>
-                           <Button variant="ghost" size="icon">
-                            <Moon className="h-6 w-6" />
-                          </Button>
-                      </div>
+                      <ThemeToggle />
                   </div>
               </SheetContent>
             </Sheet>
