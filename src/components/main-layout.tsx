@@ -176,7 +176,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
-                    <Button className="absolute bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90">
+                    <Button className="absolute bottom-24 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90">
                         <Plus className="h-8 w-8" />
                     </Button>
                 </DialogTrigger>
