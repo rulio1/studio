@@ -16,6 +16,7 @@ import Image from 'next/image';
 import { Button } from './ui/button';
 import { usePathname } from 'next/navigation';
 import BottomNavBar from './bottom-nav-bar';
+import React from 'react';
 
 interface ChirpUser {
     uid: string;
@@ -45,7 +46,7 @@ function ClientUILayout() {
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
     
     const { toast } = useToast();
-    const imageInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = React.useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
      useEffect(() => {
