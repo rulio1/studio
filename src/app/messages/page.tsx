@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Bell, Home, Mail, MailPlus, PlayCircle, Search, Settings, Users } from 'lucide-react';
+import { MailPlus, Search, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 const messages = [
@@ -45,7 +45,7 @@ const messages = [
 
 export default function MessagesPage() {
   return (
-    <div className="flex flex-col h-screen bg-background relative">
+    <>
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
            <Avatar className="h-8 w-8">
@@ -66,60 +66,32 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      <main className="flex-1 overflow-y-auto">
-        <ul className="divide-y divide-border">
-            {messages.map((message) => (
-                <li key={message.id} className="p-4 flex gap-4 hover:bg-muted/50 cursor-pointer">
-                    <div className="relative">
-                       <Avatar className="h-12 w-12">
-                            <AvatarImage src={message.avatars[0]} alt={message.name} />
-                            <AvatarFallback>{message.name[0]}</AvatarFallback>
-                       </Avatar>
-                       {message.unread && (
-                            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                                {message.unread}
-                            </span>
-                        )}
-                    </div>
-                    <div className="flex-1">
-                        <div className="flex items-baseline gap-2">
-                            <p className="font-bold truncate">{message.name}</p>
-                            <p className="text-sm text-muted-foreground truncate">{message.handle}</p>
-                            <p className="text-sm text-muted-foreground">· {message.date}</p>
-                        </div>
-                        <p className="text-muted-foreground">{message.lastMessage}</p>
-                    </div>
-                </li>
-            ))}
-        </ul>
-      </main>
-
-      <Button className="absolute bottom-20 right-4 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90">
-        <MailPlus className="h-7 w-7" />
-      </Button>
-
-      <footer className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t">
-        <nav className="flex justify-around items-center h-14">
-            <Link href="/home" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Home className="h-7 w-7" />
-            </Link>
-            <Link href="/search" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Search className="h-7 w-7" />
-            </Link>
-            <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Users className="h-7 w-7" />
-            </Link>
-             <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <PlayCircle className="h-7 w-7" />
-            </Link>
-            <Link href="/notifications" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Bell className="h-7 w-7" />
-            </Link>
-            <Link href="/messages" className="flex-1 flex justify-center items-center text-foreground">
-              <Mail className="h-7 w-7" />
-            </Link>
-        </nav>
-      </footer>
-    </div>
+      <ul className="divide-y divide-border">
+          {messages.map((message) => (
+              <li key={message.id} className="p-4 flex gap-4 hover:bg-muted/50 cursor-pointer">
+                  <div className="relative">
+                      <Avatar className="h-12 w-12">
+                          <AvatarImage src={message.avatars[0]} alt={message.name} />
+                          <AvatarFallback>{message.name[0]}</AvatarFallback>
+                      </Avatar>
+                      {message.unread && (
+                          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                              {message.unread}
+                          </span>
+                      )}
+                  </div>
+                  <div className="flex-1">
+                      <div className="flex items-baseline gap-2">
+                          <p className="font-bold truncate">{message.name}</p>
+                          <p className="text-sm text-muted-foreground truncate">{message.handle}</p>
+                          <p className="text-sm text-muted-foreground">· {message.date}</p>
+                      </div>
+                      <p className="text-muted-foreground">{message.lastMessage}</p>
+                  </div>
+              </li>
+          ))}
+      </ul>
+      
+    </>
   );
 }

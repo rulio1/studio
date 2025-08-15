@@ -2,12 +2,12 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, Home, Mail, MoreHorizontal, PlayCircle, Plus, Search, Settings, Users } from 'lucide-react';
-import Link from 'next/link';
+import { MoreHorizontal, Search, Settings } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+
 
 const initialTrends = [
     { rank: 1, category: "Sports", topic: "Flamengo", posts: "140K" },
@@ -30,7 +30,7 @@ export default function SearchPage() {
   }, [searchTerm]);
 
   return (
-    <div className="flex flex-col h-screen bg-background relative">
+    <>
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
           <Avatar className="h-8 w-8">
@@ -59,61 +59,32 @@ export default function SearchPage() {
         </Tabs>
       </header>
 
-      <main className="flex-1 overflow-y-auto">
-        <Tabs defaultValue="trending" className="w-full">
-          <TabsContent value="trending" className="mt-0">
-             <ul className="divide-y divide-border">
-                {trends.map((trend) => (
-                    <li key={trend.rank} className="p-4 hover:bg-muted/50 cursor-pointer">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <p className="text-sm text-muted-foreground">{trend.rank} · {trend.category}</p>
-                                <p className="font-bold">{trend.topic}</p>
-                                <p className="text-sm text-muted-foreground">{trend.posts} posts</p>
-                            </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-                            </Button>
-                        </div>
-                    </li>
-                ))}
-             </ul>
-              {trends.length === 0 && (
-                <div className="text-center p-8 text-muted-foreground">
-                    <p>No results for &quot;{searchTerm}&quot;</p>
-                    <p className="text-sm mt-2">Try searching for something else.</p>
-                </div>
-              )}
-          </TabsContent>
-        </Tabs>
-      </main>
-
-      <Button className="absolute bottom-20 right-4 h-14 w-14 rounded-full shadow-lg">
-        <Plus className="h-8 w-8" />
-      </Button>
-
-      <footer className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t">
-        <nav className="flex justify-around items-center h-14">
-            <Link href="/home" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Home className="h-7 w-7" />
-            </Link>
-            <Link href="/search" className="flex-1 flex justify-center items-center text-foreground">
-              <Search className="h-7 w-7" />
-            </Link>
-             <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Users className="h-7 w-7" />
-            </Link>
-             <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <PlayCircle className="h-7 w-7" />
-            </Link>
-            <Link href="/notifications" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Bell className="h-7 w-7" />
-            </Link>
-            <Link href="/messages" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Mail className="h-7 w-7" />
-            </Link>
-        </nav>
-      </footer>
-    </div>
+      <Tabs defaultValue="trending" className="w-full">
+        <TabsContent value="trending" className="mt-0">
+            <ul className="divide-y divide-border">
+              {trends.map((trend) => (
+                  <li key={trend.rank} className="p-4 hover:bg-muted/50 cursor-pointer">
+                      <div className="flex items-start justify-between">
+                          <div>
+                              <p className="text-sm text-muted-foreground">{trend.rank} · {trend.category}</p>
+                              <p className="font-bold">{trend.topic}</p>
+                              <p className="text-sm text-muted-foreground">{trend.posts} posts</p>
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                          </Button>
+                      </div>
+                  </li>
+              ))}
+            </ul>
+            {trends.length === 0 && (
+              <div className="text-center p-8 text-muted-foreground">
+                  <p>No results for &quot;{searchTerm}&quot;</p>
+                  <p className="text-sm mt-2">Try searching for something else.</p>
+              </div>
+            )}
+        </TabsContent>
+      </Tabs>
+    </>
   );
 }

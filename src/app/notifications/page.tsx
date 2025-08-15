@@ -53,7 +53,7 @@ const notifications = [
 
 export default function NotificationsPage() {
   return (
-    <div className="flex flex-col h-screen bg-background relative">
+    <>
        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
           <Avatar className="h-8 w-8">
@@ -74,7 +74,6 @@ export default function NotificationsPage() {
         </Tabs>
       </header>
 
-      <main className="flex-1 overflow-y-auto">
         <Tabs defaultValue="all">
             <TabsContent value="all" className="mt-0">
                 <ul className="divide-y divide-border">
@@ -152,34 +151,6 @@ export default function NotificationsPage() {
                 </div>
             </TabsContent>
         </Tabs>
-      </main>
-
-      <Button className="absolute bottom-20 right-4 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90">
-        <Plus className="h-8 w-8" />
-      </Button>
-
-      <footer className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t">
-        <nav className="flex justify-around items-center h-14">
-            <Link href="/home" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Home className="h-7 w-7" />
-            </Link>
-            <Link href="/search" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Search className="h-7 w-7" />
-            </Link>
-            <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Users className="h-7 w-7" />
-            </Link>
-            <Link href="#" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <PlayCircle className="h-7 w-7" />
-            </Link>
-            <Link href="/notifications" className="flex-1 flex justify-center items-center text-foreground">
-              <Bell className="h-7 w-7" />
-            </Link>
-            <Link href="/messages" className="flex-1 flex justify-center items-center text-muted-foreground">
-              <Mail className="h-7 w-7" />
-            </Link>
-        </nav>
-      </footer>
-    </div>
+    </>
   );
 }

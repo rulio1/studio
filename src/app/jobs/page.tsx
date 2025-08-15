@@ -5,8 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Bell, Briefcase, Home, Mail, MapPin, MoreHorizontal, Search, Settings, Users } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowLeft, Briefcase, MoreHorizontal, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 
@@ -38,7 +37,7 @@ export default function JobsPage() {
     const router = useRouter();
 
     return (
-        <div className="flex flex-col h-screen bg-background">
+        <>
             <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                 <div className="flex items-center justify-between px-4 py-2 gap-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -56,7 +55,7 @@ export default function JobsPage() {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto p-4 space-y-6">
+            <div className="p-4 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                     <Input placeholder="Search jobs" className="col-span-2 sm:col-span-1" />
                     <Input placeholder="Location" className="col-span-2 sm:col-span-1" />
@@ -91,27 +90,7 @@ export default function JobsPage() {
                     <Button variant="link">Show all recommendations</Button>
                  </div>
 
-            </main>
-
-            <footer className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t">
-                <nav className="flex justify-around items-center h-14">
-                    <Link href="/home" className="flex-1 flex justify-center items-center text-muted-foreground">
-                    <Home className="h-7 w-7" />
-                    </Link>
-                    <Link href="/search" className="flex-1 flex justify-center items-center text-muted-foreground">
-                    <Search className="h-7 w-7" />
-                    </Link>
-                    <Link href="/jobs" className="flex-1 flex justify-center items-center text-foreground">
-                        <Briefcase className="h-7 w-7" />
-                    </Link>
-                    <Link href="/notifications" className="flex-1 flex justify-center items-center text-muted-foreground">
-                    <Bell className="h-7 w-7" />
-                    </Link>
-                    <Link href="/messages" className="flex-1 flex justify-center items-center text-muted-foreground">
-                    <Mail className="h-7 w-7" />
-                    </Link>
-                </nav>
-            </footer>
-        </div>
+            </div>
+        </>
     );
 }

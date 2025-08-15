@@ -4,8 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Calendar, Mic, Search, Users, Bell, Mail, Home, Radio, Plus } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowLeft, Calendar, Mic, Search, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const liveSpaces = [
@@ -33,7 +32,7 @@ const upcomingSpaces = [
 export default function SpacesPage() {
     const router = useRouter();
     return (
-        <div className="flex flex-col h-screen bg-background">
+        <>
             <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                  <div className="flex items-center justify-between px-4 py-2">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -48,7 +47,7 @@ export default function SpacesPage() {
                     </Button>
                 </div>
             </header>
-            <main className="flex-1 overflow-y-auto p-4 space-y-8">
+            <div className="p-4 space-y-8">
                  <div>
                     <h2 className="text-2xl font-bold mb-4">Happening Now</h2>
                     <div className="space-y-4">
@@ -105,32 +104,14 @@ export default function SpacesPage() {
                         ))}
                     </div>
                 </div>
-            </main>
-             <div className="p-4 sticky bottom-20">
-                 <Button className="w-full rounded-full" size="lg">
-                    <Mic className="h-5 w-5 mr-2" />
-                    Start your Space
-                </Button>
+
+                <div className="p-4 sticky bottom-0 left-0 right-0 bg-background">
+                    <Button className="w-full rounded-full" size="lg">
+                        <Mic className="h-5 w-5 mr-2" />
+                        Start your Space
+                    </Button>
+                </div>
             </div>
-             <footer className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t">
-                <nav className="flex justify-around items-center h-14">
-                    <Link href="/home" className="flex-1 flex justify-center items-center text-muted-foreground">
-                    <Home className="h-7 w-7" />
-                    </Link>
-                    <Link href="/search" className="flex-1 flex justify-center items-center text-muted-foreground">
-                    <Search className="h-7 w-7" />
-                    </Link>
-                    <Link href="/spaces" className="flex-1 flex justify-center items-center text-foreground">
-                        <Radio className="h-7 w-7" />
-                    </Link>
-                    <Link href="/notifications" className="flex-1 flex justify-center items-center text-muted-foreground">
-                    <Bell className="h-7 w-7" />
-                    </Link>
-                    <Link href="/messages" className="flex-1 flex justify-center items-center text-muted-foreground">
-                    <Mail className="h-7 w-7" />
-                    </Link>
-                </nav>
-            </footer>
-        </div>
+        </>
     )
 }
