@@ -82,15 +82,12 @@ export default function HomePage() {
                         <Settings className="h-6 w-6" /> Settings and privacy
                       </Link>
                   </div>
-                  <div className="p-4 border-t">
-                      <ThemeToggle />
-                  </div>
               </SheetContent>
             </Sheet>
             <div className="flex-1 flex justify-center">
                 <Bird className="h-6 w-6" />
             </div>
-            <Settings className="h-6 w-6" />
+            <ThemeToggle />
         </div>
         <Tabs defaultValue="for-you" className="w-full">
             <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
