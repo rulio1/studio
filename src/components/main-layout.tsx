@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { generatePost } from '@/ai/flows/post-generator-flow';
 import { auth, db, storage } from '@/lib/firebase';
-import { addDoc, collection, doc, getDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, getDocs, query, where, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { ImageIcon, Sparkles, Loader2, X } from 'lucide-react';
@@ -262,7 +262,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                                 <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
                                     <ImageIcon className="h-6 w-6 text-primary" />
                                 </Button>
-                                 <Select onValueChange={setSelectedCommunity} value={selectedCommunity || ''}>
+                                 <Select onValueChange={(value) => setSelectedCommunity(value === 'null' ? null : value)} value={selectedCommunity || 'null'}>
                                     <SelectTrigger className="w-[180px]">
                                         <SelectValue placeholder="Postar em..." />
                                     </SelectTrigger>
