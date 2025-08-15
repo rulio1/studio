@@ -51,6 +51,7 @@ export default function RegisterPage() {
         await setDoc(doc(db, "users", user.uid), {
             uid: user.uid,
             displayName: values.name,
+            searchableDisplayName: values.name.toLowerCase(),
             email: values.email,
             createdAt: serverTimestamp(),
             handle: `@${values.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`,

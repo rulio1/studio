@@ -98,7 +98,8 @@ export default function SearchPage() {
   
   useEffect(() => {
       const performSearch = async (term: string) => {
-          if (!term.trim()) {
+          const formattedTerm = term.trim().toLowerCase();
+          if (!formattedTerm) {
               setUsers([]);
               setPosts([]);
               return;
@@ -106,8 +107,11 @@ export default function SearchPage() {
           setIsSearching(true);
           
           try {
-              const userQuery = query(collection(db, 'users'), where('displayName', '>=', term), where('displayName', '<=', term + '\uf8ff'), limit(5));
-              const postQuery = query(collection(db, 'posts'), where('content', '>=', term), where('content', '<=', term + '\uf8ff'), limit(5));
+              // Search users by searchableDisplayName
+              const userQuery = query(collection(db, 'users'), where('searchableDisplayName', '>=', formattedTerm), where('searchableDisplayName', '<=', formattedTerm + '\uf8ff'), limit(5));
+              
+              // Post search can remain case-sensitive for now or use a similar strategy if needed
+              const postQuery = query(collection(db, 'posts'), where('content', '>=', term.trim()), where('content', '<=', term.trim() + '\uf8ff'), limit(5));
 
               const [userSnapshot, postSnapshot] = await Promise.all([
                   getDocs(userQuery),
@@ -172,6 +176,24 @@ export default function SearchPage() {
 
   const renderUser = (user: UserSearchResult, list: 'newUsers' | 'users') => {
     const isFollowing = user.followers?.includes(currentUser?.uid || '');
+    if (currentUser?.uid === user.uid) {
+        return (
+            <li key={user.uid} className="p-4 hover:bg-muted/50">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/profile/${user.uid}`)}>
+                        <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
+                        <div>
+                            <p className="font-bold">{user.displayName}</p>
+                            <p className="text-sm text-muted-foreground">{user.handle}</p>
+                            <p className="text-sm mt-1">{user.bio}</p>
+                        </div>
+                    </div>
+                    <span className="text-sm font-semibold text-muted-foreground">Você</span>
+                </div>
+            </li>
+        )
+    }
+
     return (
         <li key={user.uid} className="p-4 hover:bg-muted/50">
             <div className="flex items-center justify-between gap-4">
@@ -183,13 +205,9 @@ export default function SearchPage() {
                         <p className="text-sm mt-1">{user.bio}</p>
                     </div>
                 </div>
-                {currentUser?.uid === user.uid ? (
-                    <span className="text-sm font-semibold text-muted-foreground">Você</span>
-                ) : (
-                    <Button variant={isFollowing ? 'secondary' : 'default'} onClick={() => handleFollow(user.uid, list)}>
-                        {isFollowing ? 'Seguindo' : 'Seguir'}
-                    </Button>
-                )}
+                 <Button variant={isFollowing ? 'secondary' : 'default'} onClick={() => handleFollow(user.uid, list)}>
+                    {isFollowing ? 'Seguindo' : 'Seguir'}
+                </Button>
             </div>
         </li>
     );
