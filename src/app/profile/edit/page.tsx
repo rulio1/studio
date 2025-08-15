@@ -21,8 +21,6 @@ interface UserProfileData {
     displayName: string;
     bio: string;
     location: string;
-    avatar: string;
-    banner: string;
 }
 
 export default function EditProfilePage() {
@@ -36,8 +34,6 @@ export default function EditProfilePage() {
         displayName: '',
         bio: '',
         location: '',
-        avatar: '',
-        banner: '',
     });
 
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -45,7 +41,6 @@ export default function EditProfilePage() {
     
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-
 
     const bannerInputRef = useRef<HTMLInputElement>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -61,8 +56,6 @@ export default function EditProfilePage() {
                         displayName: userData.displayName || '',
                         bio: userData.bio || '',
                         location: userData.location || '',
-                        avatar: userData.avatar || '',
-                        banner: userData.banner || '',
                     });
                     setAvatarPreview(userData.avatar || null);
                     setBannerPreview(userData.banner || null);
@@ -102,28 +95,21 @@ export default function EditProfilePage() {
         if (!user) return;
         setIsSaving(true);
         try {
-            let newAvatarUrl = profileData.avatar;
-            let newBannerUrl = profileData.banner;
+            const updateData: { [key: string]: any } = { ...profileData };
 
             if (bannerFile) {
                 const bannerStorageRef = ref(storage, `banners/${user.uid}/${Date.now()}_${bannerFile.name}`);
                 await uploadBytes(bannerStorageRef, bannerFile);
-                newBannerUrl = await getDownloadURL(bannerStorageRef);
+                updateData.banner = await getDownloadURL(bannerStorageRef);
             }
 
             if (avatarFile) {
                 const avatarStorageRef = ref(storage, `avatars/${user.uid}/${Date.now()}_${avatarFile.name}`);
                 await uploadBytes(avatarStorageRef, avatarFile);
-                newAvatarUrl = await getDownloadURL(avatarStorageRef);
+                updateData.avatar = await getDownloadURL(avatarStorageRef);
             }
             
-            await updateDoc(doc(db, 'users', user.uid), {
-                displayName: profileData.displayName,
-                bio: profileData.bio,
-                location: profileData.location,
-                banner: newBannerUrl,
-                avatar: newAvatarUrl,
-            });
+            await updateDoc(doc(db, 'users', user.uid), updateData);
 
             toast({
                 title: "Perfil Salvo",

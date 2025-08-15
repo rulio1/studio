@@ -142,9 +142,14 @@ export default function CreateCommunityPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
             <input type="file" accept="image/*" ref={bannerInputRef} onChange={(e) => handleFileChange(e, 'banner')} className="hidden" />
-            {bannerPreview && <Image
+            {bannerPreview ? <Image
                 src={bannerPreview}
                 alt="Pré-visualização do Banner"
+                layout="fill"
+                objectFit="cover"
+            /> :  <Image
+                src="https://placehold.co/600x200.png"
+                alt="Banner Padrão"
                 layout="fill"
                 objectFit="cover"
             />}
@@ -157,10 +162,10 @@ export default function CreateCommunityPage() {
             <div className="-mt-16 relative w-32">
                 <input type="file" accept="image/*" ref={avatarInputRef} onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" />
                 <Avatar className="h-32 w-32 border-4 border-background">
-                    {avatarPreview && <AvatarImage src={avatarPreview} alt="Pré-visualização do Avatar" />}
+                    <AvatarImage src={avatarPreview || `https://placehold.co/128x128.png?text=${name ? name.substring(0,2) : ''}`} alt="Pré-visualização do Avatar" />
                     <AvatarFallback className="text-4xl">{name ? name.substring(0,2) : <ImageIcon />}</AvatarFallback>
                 </Avatar>
-                <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
+                <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity" onClick={() => avatarInputRef.current?.click()}>
                     <Camera className="h-6 w-6 text-white" />
                 </div>
             </div>
