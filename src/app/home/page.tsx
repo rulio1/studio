@@ -360,29 +360,14 @@ export default function HomePage() {
                       <Link href={`/profile/${user.uid}`} className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <User className="h-6 w-6" /> Perfil
                       </Link>
-                       <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <X className="h-6 w-6" /> Premium
-                      </Link>
-                       <Link href="/chat" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <MessageSquare className="h-6 w-6" /> Chat <Badge variant="default" className="ml-auto">BETA</Badge>
-                      </Link>
                       <Link href="/communities" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <Users className="h-6 w-6" /> Comunidades
                       </Link>
                        <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <Bookmark className="h-6 w-6" /> Itens Salvos
                       </Link>
-                       <Link href="/jobs" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <Briefcase className="h-6 w-6" /> Vagas
-                      </Link>
-                       <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <List className="h-6 w-6" /> Listas
-                      </Link>
                        <Link href="/spaces" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <Radio className="h-6 w-6" /> Spaces
-                      </Link>
-                       <Link href="#" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <Banknote className="h-6 w-6" /> Monetização
+                        <Radio className="h-6 w-6" /> Spaces <Badge variant="secondary" className="ml-auto">em breve</Badge>
                       </Link>
                   </nav>
                   <div className="p-4 border-t">
@@ -418,3 +403,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
