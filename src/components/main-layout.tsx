@@ -80,10 +80,10 @@ function ClientUILayout() {
     }
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() || !user || !chirpUser) {
+        if ((!newPostContent.trim() && !newPostImage) || !user || !chirpUser) {
             toast({
                 title: "O post não pode estar vazio.",
-                description: "Por favor, escreva algo antes de postar.",
+                description: "Por favor, escreva algo ou adicione uma imagem antes de postar.",
                 variant: "destructive",
             });
             return;
@@ -107,7 +107,7 @@ function ClientUILayout() {
                 content: newPostContent,
                 image: imageUrl,
                 imageHint: imageUrl ? 'upload do usuário' : '',
-                communityId: null,
+                communityId: null, // Always null for posts created from the main feed
                 createdAt: serverTimestamp(),
                 comments: 0,
                 retweets: [],
@@ -222,7 +222,7 @@ function ClientUILayout() {
                                     <Sparkles className="h-6 w-6 text-primary" />
                                 </Button>
                             </div>
-                            <Button onClick={handleCreatePost} disabled={!newPostContent.trim() || isPosting}>
+                            <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !newPostImage) || isPosting}>
                                 {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Postar
                             </Button>
