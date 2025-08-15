@@ -82,12 +82,8 @@ const PostItem = ({ post }: { post: Post }) => {
     
     useEffect(() => {
         if (post.createdAt) {
-          setTime(format(post.createdAt.toDate(), "h:mm a · MMM d, yyyy", { locale: ptBR }));
-          // Update to relative time on client-side
-          const timer = setTimeout(() => {
-            setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
-          }, 1);
-          return () => clearTimeout(timer);
+          const date = post.createdAt.toDate();
+          setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
         }
     }, [post.createdAt]);
 
@@ -134,9 +130,11 @@ export default function CommunityDetailPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPostContent, setNewPostContent] = useState('');
     const [newPostImage, setNewPostImage] = useState<string | null>(null);
+    const [newPostFile, setNewPostFile] = useState<File | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isPosting, setIsPosting] = useState(false);
     const [aiPrompt, setAiPrompt] = useState('');
+    const [showAiGenerator, setShowAiGenerator] = useState(false);
     const imageInputRef = React.useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -176,7 +174,7 @@ export default function CommunityDetailPage() {
 
     const fetchCommunityPosts = useCallback(async () => {
         setIsLoadingPosts(true);
-        const q = query(collection(db, "posts"), where("communityId", "==", communityId), orderBy("createdAt", "desc"));
+        const q = query(collection(db, "posts"), where("communityId", "==", communityId));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const postsData = snapshot.docs.map(doc => {
                 const data = doc.data();
@@ -188,6 +186,8 @@ export default function CommunityDetailPage() {
                     isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
                 } as Post;
             });
+             // Sort client-side
+            postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setPosts(postsData);
             setIsLoadingPosts(false);
         });
@@ -223,9 +223,11 @@ export default function CommunityDetailPage() {
     const resetModal = () => {
         setNewPostContent('');
         setNewPostImage(null);
+        setNewPostFile(null);
         setAiPrompt('');
         setIsGenerating(false);
         setIsModalOpen(false);
+        setShowAiGenerator(false);
     }
 
     const handleCreatePost = async () => {
@@ -241,40 +243,57 @@ export default function CommunityDetailPage() {
         setIsPosting(true);
         try {
             let imageUrl = '';
-            if (newPostImage) {
+            if (newPostImage && newPostFile) {
                 const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}`);
-                const snapshot = await uploadString(imageRef, newPostImage, 'data_url');
-                imageUrl = await getDownloadURL(snapshot.ref);
+                const fileReader = new FileReader();
+                fileReader.readAsDataURL(newPostFile);
+                fileReader.onload = async (e) => {
+                    const dataUrl = e.target?.result as string;
+                    if (dataUrl) {
+                        const snapshot = await uploadString(imageRef, dataUrl, 'data_url');
+                        imageUrl = await getDownloadURL(snapshot.ref);
+                         await addPostDoc(imageUrl);
+                    }
+                }
+            } else {
+                 await addPostDoc('');
             }
-            await addDoc(collection(db, "posts"), {
-                authorId: user.uid,
-                author: chirpUser.displayName,
-                handle: chirpUser.handle,
-                avatar: chirpUser.avatar,
-                avatarFallback: chirpUser.displayName[0],
-                content: newPostContent,
-                image: imageUrl,
-                imageHint: imageUrl ? 'upload do usuário' : '',
-                communityId: communityId,
-                createdAt: serverTimestamp(),
-                comments: 0,
-                retweets: [],
-                likes: [],
-                views: 0,
-            });
-            resetModal();
-            toast({ title: "Post criado na comunidade!" });
+           
         } catch (error) {
             console.error(error);
             toast({ title: "Falha ao criar o post", variant: "destructive" });
-        } finally {
-            setIsPosting(false);
+             setIsPosting(false);
         }
     };
+
+    const addPostDoc = async (imageUrl: string) => {
+        if (!user || !chirpUser) return;
+        await addDoc(collection(db, "posts"), {
+            authorId: user.uid,
+            author: chirpUser.displayName,
+            handle: chirpUser.handle,
+            avatar: chirpUser.avatar,
+            avatarFallback: chirpUser.displayName[0],
+            content: newPostContent,
+            image: imageUrl,
+            imageHint: imageUrl ? 'upload do usuário' : '',
+            communityId: communityId,
+            createdAt: serverTimestamp(),
+            comments: 0,
+            retweets: [],
+            likes: [],
+            views: 0,
+        });
+        resetModal();
+        toast({ title: "Post criado na comunidade!" });
+        setIsPosting(false);
+    }
+
 
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
+            setNewPostFile(file);
             const reader = new FileReader();
             reader.onloadend = () => setNewPostImage(reader.result as string);
             reader.readAsDataURL(file);
@@ -389,13 +408,28 @@ export default function CommunityDetailPage() {
                                         )}
                                     </div>
                                 </div>
+                                 {showAiGenerator && (
+                                    <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
+                                        <Textarea 
+                                            placeholder="ex: Um post sobre o futuro da exploração espacial"
+                                            className="text-sm focus-visible:ring-1 bg-background"
+                                            value={aiPrompt}
+                                            onChange={(e) => setAiPrompt(e.target.value)}
+                                            rows={2}
+                                        />
+                                        <Button onClick={handleGeneratePost} disabled={isGenerating || !aiPrompt.trim()} className="self-end" size="sm">
+                                            {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Gerar
+                                        </Button>
+                                    </div>
+                                )}
                                 <div className="flex justify-between items-center mt-2 border-t pt-4">
                                     <div className="flex items-center gap-2">
                                         <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
                                         <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
                                             <ImageIcon className="h-6 w-6 text-primary" />
                                         </Button>
-                                         <Button variant="ghost" size="icon" onClick={handleGeneratePost} disabled={isPosting}>
+                                        <Button variant="ghost" size="icon" onClick={() => setShowAiGenerator(!showAiGenerator)} disabled={isPosting}>
                                             <Sparkles className="h-6 w-6 text-primary" />
                                         </Button>
                                     </div>
@@ -412,3 +446,5 @@ export default function CommunityDetailPage() {
         </div>
     );
 }
+
+    
