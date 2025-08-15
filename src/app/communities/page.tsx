@@ -7,21 +7,28 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { ArrowLeft, Search, Users } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { collection, getDocs, limit, query } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useEffect, useState, useCallback } from 'react';
+import { collection, getDocs, limit, query, doc, getDoc, updateDoc, arrayUnion, arrayRemove, writeBatch, increment } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
 
 interface Community {
     id: string;
     name: string;
     topic: string;
-    members: number;
+    memberCount: number;
     image: string;
     imageHint: string;
     avatar?: string;
     avatarHint?: string;
+    isJoined?: boolean;
+}
+
+interface ChirpUser {
+    uid: string;
+    communities?: string[];
 }
 
 const CommunityCardSkeleton = () => (
@@ -54,34 +61,82 @@ export default function CommunitiesPage() {
     const [featuredCommunities, setFeaturedCommunities] = useState<Community[]>([]);
     const [discoverCommunities, setDiscoverCommunities] = useState<Community[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [user, setUser] = useState<FirebaseUser | null>(null);
+    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+
+     useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                setUser(currentUser);
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    setChirpUser({ uid: userDoc.id, ...userDoc.data() } as ChirpUser);
+                }
+            } else {
+                router.push('/login');
+            }
+        });
+        return () => unsubscribe();
+    }, [router]);
+
+    const fetchCommunities = useCallback(async () => {
+        if (!chirpUser) return;
+        setIsLoading(true);
+        try {
+            const featuredQuery = query(collection(db, 'communities'), limit(2));
+            const discoverQuery = query(collection(db, 'communities'), limit(5));
+
+            const [featuredSnapshot, discoverSnapshot] = await Promise.all([
+                getDocs(featuredQuery),
+                getDocs(discoverQuery)
+            ]);
+
+            const userCommunityIds = new Set(chirpUser.communities || []);
+
+            const featuredData = featuredSnapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data(),
+                isJoined: userCommunityIds.has(doc.id)
+            } as Community));
+            const discoverData = discoverSnapshot.docs.map(doc => ({ 
+                id: doc.id, 
+                ...doc.data(),
+                isJoined: userCommunityIds.has(doc.id)
+            } as Community));
+            
+            setFeaturedCommunities(featuredData);
+            setDiscoverCommunities(discoverData);
+
+        } catch (error) {
+            console.error("Error fetching communities: ", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [chirpUser]);
 
     useEffect(() => {
-        const fetchCommunities = async () => {
-            setIsLoading(true);
-            try {
-                const featuredQuery = query(collection(db, 'communities'), limit(2));
-                const discoverQuery = query(collection(db, 'communities'), limit(5));
-
-                const [featuredSnapshot, discoverSnapshot] = await Promise.all([
-                    getDocs(featuredQuery),
-                    getDocs(discoverQuery)
-                ]);
-
-                const featuredData = featuredSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Community));
-                const discoverData = discoverSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Community));
-                
-                setFeaturedCommunities(featuredData);
-                setDiscoverCommunities(discoverData);
-
-            } catch (error) {
-                console.error("Error fetching communities: ", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchCommunities();
-    }, []);
+    }, [fetchCommunities]);
+    
+    const handleJoinLeaveCommunity = async (communityId: string, isJoined: boolean) => {
+        if (!user) return;
+
+        const batch = writeBatch(db);
+        const userRef = doc(db, 'users', user.uid);
+        const communityRef = doc(db, 'communities', communityId);
+
+        if (isJoined) {
+            batch.update(userRef, { communities: arrayRemove(communityId) });
+            batch.update(communityRef, { memberCount: increment(-1) });
+        } else {
+            batch.update(userRef, { communities: arrayUnion(communityId) });
+            batch.update(communityRef, { memberCount: increment(1) });
+        }
+
+        await batch.commit();
+        // Refetch communities to update UI state
+        fetchCommunities(); 
+    };
 
     return (
         <>
@@ -119,10 +174,12 @@ export default function CommunitiesPage() {
                                 <CardContent className="p-4">
                                     <CardTitle>{community.name}</CardTitle>
                                     <CardDescription>{community.topic}</CardDescription>
-                                    <p className="text-sm text-muted-foreground mt-2">{community.members.toLocaleString()} members</p>
+                                    <p className="text-sm text-muted-foreground mt-2">{community.memberCount.toLocaleString()} members</p>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button className="w-full">Join</Button>
+                                    <Button className="w-full" variant={community.isJoined ? "secondary" : "default"} onClick={() => handleJoinLeaveCommunity(community.id, !!community.isJoined)}>
+                                        {community.isJoined ? 'Joined' : 'Join'}
+                                    </Button>
                                 </CardFooter>
                             </Card>
                         ))}
@@ -147,10 +204,12 @@ export default function CommunitiesPage() {
                                 </Avatar>
                                 <div>
                                     <p className="font-bold">{community.name}</p>
-                                    <p className="text-sm text-muted-foreground">{community.members.toLocaleString()} members</p>
+                                    <p className="text-sm text-muted-foreground">{community.memberCount.toLocaleString()} members</p>
                                 </div>
                             </div>
-                            <Button variant="outline">Join</Button>
+                            <Button variant={community.isJoined ? "secondary" : "outline"} onClick={() => handleJoinLeaveCommunity(community.id, !!community.isJoined)}>
+                                {community.isJoined ? 'Joined' : 'Join'}
+                            </Button>
                         </li>
                     ))}
                  </ul>

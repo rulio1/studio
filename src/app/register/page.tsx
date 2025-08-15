@@ -62,6 +62,7 @@ export default function RegisterPage() {
             birthDate: null,
             followers: [],
             following: [],
+            communities: [],
         });
         
         toast({
