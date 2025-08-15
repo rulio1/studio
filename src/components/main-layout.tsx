@@ -107,7 +107,7 @@ function ClientUILayout() {
                 content: newPostContent,
                 image: imageUrl,
                 imageHint: imageUrl ? 'upload do usuário' : '',
-                communityId: null, // Always null for posts created from the main feed
+                communityId: null,
                 createdAt: serverTimestamp(),
                 comments: 0,
                 retweets: [],
