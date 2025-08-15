@@ -58,6 +58,7 @@ interface Post {
     views: number;
     isLiked: boolean;
     isRetweeted: boolean;
+    createdAt: any;
     editedAt?: any;
     communityId?: string;
 }
@@ -118,7 +119,7 @@ export default function HomePage() {
 
   // Fetch all posts for "For you" tab
   useEffect(() => {
-    const q = query(collection(db, "posts"), where("communityId", "==", null), orderBy("createdAt", "desc"), limit(50));
+    const q = query(collection(db, "posts"), where("communityId", "==", null), limit(50));
     const unsubscribePosts = onSnapshot(q, async (snapshot) => {
         const postsData = snapshot.docs.map(doc => {
             const data = doc.data();
@@ -130,6 +131,9 @@ export default function HomePage() {
                 isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
             } as Post
         });
+
+        // Sort client-side
+        postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
 
         // Add Chirp AI post
         try {
@@ -149,6 +153,7 @@ export default function HomePage() {
                 views: 1337,
                 isLiked: false,
                 isRetweeted: false,
+                createdAt: new Date(),
             };
             setAllPosts([aiPost, ...postsData]);
         } catch (error) {
