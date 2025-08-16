@@ -1,26 +1,28 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Image as ImageIcon, Sparkles, Loader2, Trash2, Edit, Save } from 'lucide-react';
+import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Image as ImageIcon, Sparkles, Loader2, Trash2, Edit, Save, ImageUp } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useToast } from '@/hooks/use-toast';
 import PostSkeleton from '@/components/post-skeleton';
 import { useRouter } from 'next/navigation';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch, deleteDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generatePost } from '@/ai/flows/post-generator-flow';
+import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +41,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import React from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { dataURItoFile } from '@/lib/utils';
 
 
 interface Post {
@@ -80,6 +85,238 @@ interface ChirpUser {
 }
 
 
+function CreatePostModal({ user, chirpUser }: { user: FirebaseUser, chirpUser: ChirpUser }) {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [newPostContent, setNewPostContent] = useState('');
+    const [newPostImagePreview, setNewPostImagePreview] = useState<string | null>(null);
+    const [newPostFile, setNewPostFile] = useState<File | null>(null);
+    const [isPosting, setIsPosting] = useState(false);
+    
+    // AI Generators State
+    const [showAiTextGenerator, setShowAiTextGenerator] = useState(false);
+    const [aiTextPrompt, setAiTextPrompt] = useState('');
+    const [isGeneratingText, setIsGeneratingText] = useState(false);
+    const [showAiImageGenerator, setShowAiImageGenerator] = useState(false);
+    const [aiImagePrompt, setAiImagePrompt] = useState('');
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+    
+    const { toast } = useToast();
+    const imageInputRef = React.useRef<HTMLInputElement>(null);
+
+    const resetModal = () => {
+        setNewPostContent('');
+        setNewPostImagePreview(null);
+        setNewPostFile(null);
+        setAiTextPrompt('');
+        setAiImagePrompt('');
+        setIsGeneratingText(false);
+        setIsGeneratingImage(false);
+        setShowAiTextGenerator(false);
+        setShowAiImageGenerator(false);
+        setIsModalOpen(false);
+        setIsPosting(false);
+    }
+
+    const handleCreatePost = async () => {
+        if (!newPostContent.trim() && !newPostFile) {
+            toast({
+                title: "O post não pode estar vazio.",
+                description: "Por favor, escreva algo ou adicione uma imagem antes de postar.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setIsPosting(true);
+
+        try {
+            let imageUrl = '';
+            let imageHint = '';
+
+            if (newPostFile) {
+                const imageRef = ref(storage, `posts/${user.uid}/${uuidv4()}_${newPostFile.name}`);
+                await uploadBytes(imageRef, newPostFile);
+                imageUrl = await getDownloadURL(imageRef);
+                imageHint = aiImagePrompt || 'user upload';
+            }
+
+            await addDoc(collection(db, "posts"), {
+                authorId: user.uid,
+                author: chirpUser.displayName,
+                handle: chirpUser.handle,
+                avatar: chirpUser.avatar,
+                avatarFallback: chirpUser.displayName[0],
+                content: newPostContent,
+                image: imageUrl,
+                imageHint: imageUrl ? imageHint : '',
+                communityId: null,
+                createdAt: serverTimestamp(),
+                comments: 0,
+                retweets: [],
+                likes: [],
+                views: 0,
+            });
+
+            resetModal();
+            toast({
+                title: "Post criado!",
+                description: "Seu post foi publicado com sucesso.",
+            });
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Falha ao criar o post", description: "Por favor, tente novamente.", variant: "destructive" });
+        } finally {
+            setIsPosting(false);
+        }
+    };
+
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setNewPostFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setNewPostImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+            setAiImagePrompt('');
+        }
+    };
+    
+    const handleGenerateText = async () => {
+        if(!aiTextPrompt.trim()) {
+            toast({ title: "O prompt não pode estar vazio", variant: "destructive"});
+            return;
+        }
+        setIsGeneratingText(true);
+        try {
+            const generatedContent = await generatePost(aiTextPrompt);
+            setNewPostContent(generatedContent);
+            toast({ title: "Conteúdo do post gerado!" });
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Falha ao gerar o post", description: "Por favor, tente novamente.", variant: "destructive" });
+        } finally {
+            setIsGeneratingText(false);
+        }
+    };
+
+    const handleGenerateImage = async () => {
+        if (!aiImagePrompt.trim()) return;
+        setIsGeneratingImage(true);
+        setNewPostFile(null);
+        setNewPostImagePreview(null);
+        try {
+            const imageDataUri = await generateImageFromPrompt(aiImagePrompt);
+            setNewPostImagePreview(imageDataUri);
+            const imageFile = dataURItoFile(imageDataUri, `${uuidv4()}.png`);
+            setNewPostFile(imageFile);
+            toast({ title: "Imagem gerada com sucesso!" });
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Falha ao gerar a imagem", description: `${error}`, variant: "destructive" });
+        } finally {
+            setIsGeneratingImage(false);
+        }
+    };
+
+    return (
+            <Dialog open={isModalOpen} onOpenChange={(isOpen) => { if(!isPosting) setIsModalOpen(isOpen); }}>
+                <DialogTrigger asChild>
+                    <Button className="fixed bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50">
+                        <Plus className="h-8 w-8" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                    <DialogTitle>Criar Post</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-4">
+                        <div className="flex gap-4">
+                            <Avatar>
+                                <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
+                                <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="w-full">
+                                <Textarea 
+                                    placeholder="O que está acontecendo?!" 
+                                    className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
+                                    value={newPostContent}
+                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    rows={1}
+                                    disabled={isPosting}
+                                />
+                                {newPostImagePreview && (
+                                    <div className="mt-4 relative">
+                                        <Image src={newPostImagePreview} width={500} height={300} alt="Pré-visualização" className="rounded-2xl border" />
+                                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => {if(!isPosting) {setNewPostImagePreview(null); setNewPostFile(null)}}}>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {showAiTextGenerator && (
+                            <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
+                                <Textarea 
+                                    placeholder="ex: Um post sobre o futuro da exploração espacial"
+                                    className="text-sm focus-visible:ring-1 bg-background"
+                                    value={aiTextPrompt}
+                                    onChange={(e) => setAiTextPrompt(e.target.value)}
+                                    rows={2}
+                                    disabled={isGeneratingText}
+                                />
+                                <Button onClick={handleGenerateText} disabled={isGeneratingText || !aiTextPrompt.trim()} className="self-end" size="sm">
+                                    {isGeneratingText && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Gerar Texto
+                                </Button>
+                            </div>
+                        )}
+                        
+                        {showAiImageGenerator && (
+                            <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
+                                <Textarea 
+                                    placeholder="ex: Um astronauta surfando em um anel de Saturno"
+                                    className="text-sm focus-visible:ring-1 bg-background"
+                                    value={aiImagePrompt}
+                                    onChange={(e) => setAiImagePrompt(e.target.value)}
+                                    rows={2}
+                                    disabled={isGeneratingImage}
+                                />
+                                <Button onClick={handleGenerateImage} disabled={isGeneratingImage || !aiImagePrompt.trim()} className="self-end" size="sm">
+                                    {isGeneratingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Gerar Imagem
+                                </Button>
+                            </div>
+                        )}
+
+
+                        <div className="flex justify-between items-center mt-2 border-t pt-4">
+                            <div className="flex items-center gap-1">
+                                <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                                <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                                    <ImageIcon className="h-6 w-6 text-primary" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => {setShowAiImageGenerator(!showAiImageGenerator); setShowAiTextGenerator(false);}} disabled={isPosting}>
+                                    <ImageUp className="h-6 w-6 text-primary" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator); setShowAiImageGenerator(false);}} disabled={isPosting}>
+                                    <Sparkles className="h-6 w-6 text-primary" />
+                                </Button>
+                            </div>
+                            <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !newPostFile) || isPosting}>
+                                {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Postar
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+    );
+}
+
+
 export default function HomePage() {
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [followingPosts, setFollowingPosts] = useState<Post[]>([]);
@@ -105,7 +342,6 @@ export default function HomePage() {
                  if(doc.exists()){
                     setChirpUser({ uid: doc.id, ...doc.data() } as ChirpUser);
                 } else {
-                    // Handle case where user is authenticated but not in DB
                     router.push('/login');
                 }
             });
@@ -115,12 +351,9 @@ export default function HomePage() {
         }
     });
 
-    return () => {
-        unsubscribeAuth();
-    };
+    return () => unsubscribeAuth();
   }, [router]);
 
-  // Fetch all posts for "For you" tab
   useEffect(() => {
     const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(50));
     const unsubscribePosts = onSnapshot(q, (snapshot) => {
@@ -130,11 +363,11 @@ export default function HomePage() {
             return {
                 id: doc.id,
                 ...data,
-                time: '', // Will be set in PostItem component
+                time: '', 
                 isLiked: data.likes.includes(auth.currentUser?.uid || ''),
                 isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
             } as Post
-        }).filter(post => !post.communityId); // Filter client-side
+        }).filter(post => !post.communityId); 
         
         setAllPosts(postsData);
         setIsLoading(false);
@@ -146,7 +379,6 @@ export default function HomePage() {
     return () => unsubscribePosts();
   }, []);
 
-  // Fetch posts for "Following" tab
   const fetchFollowingPosts = useCallback(async () => {
     if (!chirpUser || chirpUser.following.length === 0) {
         setFollowingPosts([]);
@@ -167,7 +399,7 @@ export default function HomePage() {
         return {
             id: doc.id,
             ...data,
-            time: '', // Will be set in PostItem component
+            time: '', 
             isLiked: data.likes.includes(auth.currentUser?.uid || ''),
             isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
         } as Post
@@ -184,30 +416,6 @@ export default function HomePage() {
 
   const handlePostAction = async (postId: string, action: 'like' | 'retweet') => {
     if (!user || !chirpUser) return;
-
-    if (postId === 'chirp-ai-post-of-the-day') {
-        // Handle AI post interaction locally
-        const updatePosts = (posts: Post[]) => posts.map(p => {
-            if (p.id === postId) {
-                const isActioned = action === 'like' ? p.isLiked : p.isRetweeted;
-                const field = action === 'like' ? 'likes' : 'retweets';
-                const newCount = isActioned ? p[field].length - 1 : p[field].length + 1;
-
-                // This is a dummy update, it won't persist
-                const newFieldArray = isActioned ? [] : [user.uid];
-
-                return {
-                    ...p,
-                    [field]: newFieldArray,
-                    isLiked: action === 'like' ? !isActioned : p.isLiked,
-                    isRetweeted: action === 'retweet' ? !isActioned : p.isRetweeted,
-                };
-            }
-            return p;
-        });
-        setAllPosts(updatePosts(allPosts));
-        return;
-    }
       
     const postRef = doc(db, "posts", postId);
     const postToUpdate = allPosts.find(p => p.id === postId) || followingPosts.find(p => p.id === postId);
@@ -220,10 +428,8 @@ export default function HomePage() {
         await updateDoc(postRef, { [field]: arrayRemove(user.uid) });
     } else {
         const batch = writeBatch(db);
-        // Add like/retweet
         batch.update(postRef, { [field]: arrayUnion(user.uid) });
         
-        // Create notification if not own post
         if (user.uid !== postToUpdate.authorId) {
             const notificationRef = doc(collection(db, 'notifications'));
             batch.set(notificationRef, {
@@ -318,7 +524,6 @@ export default function HomePage() {
   };
 
   const handlePostClick = (postId: string) => {
-    if (postId === 'chirp-ai-post-of-the-day') return;
     router.push(`/post/${postId}`);
   };
 
@@ -328,29 +533,26 @@ export default function HomePage() {
 
     useEffect(() => {
       if (post.createdAt) {
-        const date = post.createdAt.toDate();
-        setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
+        try {
+            const date = post.createdAt.toDate();
+            setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
+        } catch(e) {
+            setTime('agora');
+        }
       }
     }, [post.createdAt]);
 
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => handlePostClick(post.id)}>
             <div className="flex gap-4">
-                <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); if (post.authorId !== 'chirp-ai') router.push(`/profile/${post.authorId}`)}}>
-                    {post.authorId === 'chirp-ai' ? (
-                        <AvatarFallback className="bg-primary text-primary-foreground"><Bird /></AvatarFallback>
-                    ) : (
-                        <>
-                            <AvatarImage src={post.avatar} alt={post.handle} />
-                            <AvatarFallback>{post.avatarFallback}</AvatarFallback>
-                        </>
-                    )}
+                <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
+                    <AvatarImage src={post.avatar} alt={post.handle} />
+                    <AvatarFallback>{post.avatarFallback}</AvatarFallback>
                 </Avatar>
                 <div className='w-full'>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm">
                         <p className="font-bold text-base">{post.author}</p>
-                        {post.authorId === 'chirp-ai' && <Badge variant="default" className="bg-primary text-primary-foreground">IA</Badge>}
                         <p className="text-muted-foreground">{post.handle} · {time}</p>
                         {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
                     </div>
@@ -573,6 +775,7 @@ export default function HomePage() {
             </DialogContent>
         </Dialog>
       </main>
+      <CreatePostModal user={user} chirpUser={chirpUser} />
     </>
   );
 }
