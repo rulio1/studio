@@ -11,15 +11,12 @@ import { auth, db, storage } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { ImageIcon, Sparkles, Loader2, X, Plus, Home, Search, Users, Bell, Mail, Bot, Settings, Bookmark, Radio, User } from 'lucide-react';
+import { ImageIcon, Sparkles, Loader2, X, Plus } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from './ui/button';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import BottomNavBar from './bottom-nav-bar';
 import React from 'react';
-import { SidebarProvider, Sidebar, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarHeader, SidebarFooter, SidebarInset } from './ui/sidebar';
-import Link from 'next/link';
-import { ThemeToggle } from './theme-toggle';
 import { Toaster } from './ui/toaster';
 
 
@@ -180,7 +177,7 @@ function CreatePostModal() {
     return (
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
-                     <Button className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 md:hidden z-50">
+                    <Button className="fixed bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50">
                         <Plus className="h-8 w-8" />
                     </Button>
                 </DialogTrigger>
@@ -253,79 +250,6 @@ function CreatePostModal() {
     );
 }
 
-function DesktopSidebar() {
-    const pathname = usePathname();
-    const router = useRouter();
-    const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            if (currentUser) {
-                setUser(currentUser);
-                const userDocRef = doc(db, "users", currentUser.uid);
-                const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
-                    if (doc.exists()) {
-                        setChirpUser(doc.data() as ChirpUser);
-                    }
-                });
-                return () => unsubscribeUser();
-            }
-        });
-        return () => unsubscribe();
-    }, []);
-
-    if (!user || !chirpUser) {
-        return null;
-    }
-
-    const navItems = [
-        { href: '/home', icon: Home, label: 'Início' },
-        { href: '/search', icon: Search, label: 'Busca' },
-        { href: '/communities', icon: Users, label: 'Comunidades' },
-        { href: '/notifications', icon: Bell, label: 'Notificações' },
-        { href: '/messages', icon: Mail, label: 'Mensagens' },
-        { href: `/profile/${user.uid}`, icon: User, label: 'Perfil' },
-        { href: '/saved', icon: Bookmark, label: 'Itens Salvos' },
-    ];
-
-
-    return (
-        <Sidebar className="border-r hidden md:flex" collapsible="icon">
-            <SidebarContent className="p-2">
-                <SidebarHeader>
-                    <ThemeToggle/>
-                </SidebarHeader>
-                <SidebarMenu>
-                {navItems.map((item) => (
-                    <SidebarMenuItem key={item.href}>
-                         <Link href={item.href} className="w-full">
-                            <SidebarMenuButton tooltip={item.label} isActive={pathname.startsWith(item.href)}>
-                                <item.icon />
-                                <span>{item.label}</span>
-                            </SidebarMenuButton>
-                        </Link>
-                    </SidebarMenuItem>
-                ))}
-                </SidebarMenu>
-            </SidebarContent>
-             <SidebarFooter>
-                <div className="flex items-center gap-2 p-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
-                      <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 overflow-hidden">
-                        <p className="font-bold text-sm truncate">{chirpUser.displayName}</p>
-                        <p className="text-xs text-muted-foreground truncate">{chirpUser.handle}</p>
-                    </div>
-                </div>
-            </SidebarFooter>
-        </Sidebar>
-    )
-}
-
-
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [isClient, setIsClient] = useState(false);
@@ -341,15 +265,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
 
     return (
-        <SidebarProvider>
-            <div className="flex min-h-screen">
-                <DesktopSidebar />
-                <SidebarInset>
-                    <div className="flex-1 pb-24 md:pb-0">
-                        {children}
-                    </div>
-                </SidebarInset>
-            </div>
+        <>
+            <main className="flex-1 min-w-0">
+              {children}
+            </main>
             {isClient && (
                 <>
                     <CreatePostModal />
@@ -357,6 +276,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     <Toaster />
                 </>
             )}
-        </SidebarProvider>
+        </>
     );
 }
