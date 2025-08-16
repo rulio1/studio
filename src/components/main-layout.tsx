@@ -157,7 +157,7 @@ function CreatePostModal() {
                 content: newPostContent,
                 image: imageUrl,
                 imageHint: imageUrl ? imageHint : '',
-                communityId: null, // Always null for main feed posts
+                communityId: null,
                 createdAt: serverTimestamp(),
                 comments: 0,
                 retweets: [],

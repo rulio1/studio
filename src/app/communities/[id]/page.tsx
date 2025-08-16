@@ -282,7 +282,7 @@ export default function CommunityDetailPage() {
             let imageHint = '';
             
             if (newPostFile) {
-                 const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}_${newPostFile.name}`);
+                 const imageRef = ref(storage, `posts/${user.uid}/${uuidv4()}_${newPostFile.name}`);
                  await uploadBytes(imageRef, newPostFile);
                  imageUrl = await getDownloadURL(imageRef);
                  imageHint = aiImagePrompt || 'user upload';
