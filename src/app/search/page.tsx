@@ -274,7 +274,6 @@ export default function SearchPage() {
             <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10 px-4">
               <TabsTrigger value="for-you" className="flex-1">Para você</TabsTrigger>
               <TabsTrigger value="trending" className="flex-1">Tópicos do momento</TabsTrigger>
-              <TabsTrigger value="news" className="flex-1">Notícias</TabsTrigger>
               <TabsTrigger value="new-users" className="flex-1">Novos Usuários</TabsTrigger>
             </TabsList>
             <TabsContent value="for-you" className="mt-0">
@@ -301,9 +300,6 @@ export default function SearchPage() {
                 ))}
                 </ul>
                 )}
-            </TabsContent>
-            <TabsContent value="news" className="mt-0">
-                 <div className="p-8 text-center text-muted-foreground">Feed de notícias em breve!</div>
             </TabsContent>
             <TabsContent value="new-users" className="mt-0">
                 {isLoading ? (
