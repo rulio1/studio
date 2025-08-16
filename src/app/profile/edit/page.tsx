@@ -130,7 +130,6 @@ export default function EditProfilePage() {
                 description: "Suas alterações foram salvas com sucesso.",
             });
             router.push(`/profile/${user.uid}`);
-            router.refresh(); // Forces a refresh of the profile page to show new data
 
         } catch (error) {
             console.error("Erro ao salvar perfil: ", error);
@@ -225,5 +224,3 @@ export default function EditProfilePage() {
     </div>
   );
 }
-
-    
