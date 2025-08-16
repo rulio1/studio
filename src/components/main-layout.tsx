@@ -20,6 +20,7 @@ import BottomNavBar from './bottom-nav-bar';
 import React from 'react';
 import { Toaster } from './ui/toaster';
 import { v4 as uuidv4 } from 'uuid';
+import { dataURItoFile } from '@/lib/utils';
 
 
 interface ChirpUser {
@@ -35,26 +36,6 @@ interface ChirpUser {
     birthDate: Date | null;
     followers: string[];
     following: string[];
-}
-
-// Helper to convert data URI to File object
-function dataURItoFile(dataURI: string, filename: string): File {
-    const arr = dataURI.split(',');
-    if (arr.length < 2) {
-        throw new Error('Invalid data URI');
-    }
-    const mimeMatch = arr[0].match(/:(.*?);/);
-    if (!mimeMatch) {
-        throw new Error('Could not find MIME type in data URI');
-    }
-    const mime = mimeMatch[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new File([u8arr], filename, { type: mime });
 }
 
 
@@ -218,7 +199,6 @@ function CreatePostModal() {
         try {
             const imageDataUri = await generateImageFromPrompt(aiImagePrompt);
             setNewPostImagePreview(imageDataUri);
-            // Convert data URI to a File object to be uploaded
             const imageFile = dataURItoFile(imageDataUri, `${uuidv4()}.png`);
             setNewPostFile(imageFile);
             toast({ title: "Imagem gerada com sucesso!" });
