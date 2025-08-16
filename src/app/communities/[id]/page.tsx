@@ -422,7 +422,7 @@ export default function CommunityDetailPage() {
             {isMember && (
                 <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                     <DialogTrigger asChild>
-                         <Button className="fixed bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 md:hidden z-50">
+                         <Button className="fixed bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50">
                             <PenSquare className="h-6 w-6" />
                         </Button>
                     </DialogTrigger>

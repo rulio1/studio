@@ -335,7 +335,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
     const noLayoutPages = ['/login', '/register', '/'];
     if (noLayoutPages.includes(pathname)) {
-        return <>{children}</>;
+        return <>{children}<Toaster /></>;
     }
 
     return (
