@@ -16,6 +16,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import React from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 interface UserProfileData {
     displayName: string;
@@ -98,13 +99,13 @@ export default function EditProfilePage() {
             const updateData: { [key: string]: any } = { ...profileData };
 
             if (bannerFile) {
-                const bannerStorageRef = ref(storage, `banners/${user.uid}/${Date.now()}_${bannerFile.name}`);
+                const bannerStorageRef = ref(storage, `banners/${user.uid}/${uuidv4()}_${bannerFile.name}`);
                 await uploadBytes(bannerStorageRef, bannerFile);
                 updateData.banner = await getDownloadURL(bannerStorageRef);
             }
 
             if (avatarFile) {
-                const avatarStorageRef = ref(storage, `avatars/${user.uid}/${Date.now()}_${avatarFile.name}`);
+                const avatarStorageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}_${avatarFile.name}`);
                 await uploadBytes(avatarStorageRef, avatarFile);
                 updateData.avatar = await getDownloadURL(avatarStorageRef);
             }

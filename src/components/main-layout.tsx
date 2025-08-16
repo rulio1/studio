@@ -114,6 +114,7 @@ function CreatePostModal() {
         setShowAiTextGenerator(false);
         setShowAiImageGenerator(false);
         setIsModalOpen(false);
+        setIsPosting(false);
     }
 
     const handleCreatePost = async () => {
@@ -141,7 +142,7 @@ function CreatePostModal() {
             let imageHint = '';
 
             if (newPostFile) {
-                const imageRef = ref(storage, `posts/${user.uid}/${Date.now()}_${newPostFile.name}`);
+                const imageRef = ref(storage, `posts/${user.uid}/${uuidv4()}_${newPostFile.name}`);
                 await uploadBytes(imageRef, newPostFile);
                 imageUrl = await getDownloadURL(imageRef);
                 imageHint = aiImagePrompt || 'user upload';
@@ -156,7 +157,7 @@ function CreatePostModal() {
                 content: newPostContent,
                 image: imageUrl,
                 imageHint: imageUrl ? imageHint : '',
-                communityId: null,
+                communityId: null, // Always null for main feed posts
                 createdAt: serverTimestamp(),
                 comments: 0,
                 retweets: [],
@@ -186,6 +187,8 @@ function CreatePostModal() {
                 setNewPostImagePreview(reader.result as string);
             };
             reader.readAsDataURL(file);
+            // Clear AI image prompt if a user uploads an image
+            setAiImagePrompt('');
         }
     };
     
@@ -229,7 +232,7 @@ function CreatePostModal() {
 
 
     return (
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <Dialog open={isModalOpen} onOpenChange={(isOpen) => { if(!isPosting) setIsModalOpen(isOpen); }}>
                 <DialogTrigger asChild>
                     <Button className="fixed bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50">
                         <Plus className="h-8 w-8" />
@@ -254,11 +257,12 @@ function CreatePostModal() {
                                     value={newPostContent}
                                     onChange={(e) => setNewPostContent(e.target.value)}
                                     rows={1}
+                                    disabled={isPosting}
                                 />
                                 {newPostImagePreview && (
                                     <div className="mt-4 relative">
                                         <Image src={newPostImagePreview} width={500} height={300} alt="Pré-visualização" className="rounded-2xl border" />
-                                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => {setNewPostImagePreview(null); setNewPostFile(null)}}>
+                                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => {if(!isPosting) {setNewPostImagePreview(null); setNewPostFile(null)}}}>
                                             <X className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -274,6 +278,7 @@ function CreatePostModal() {
                                     value={aiTextPrompt}
                                     onChange={(e) => setAiTextPrompt(e.target.value)}
                                     rows={2}
+                                    disabled={isGeneratingText}
                                 />
                                 <Button onClick={handleGenerateText} disabled={isGeneratingText || !aiTextPrompt.trim()} className="self-end" size="sm">
                                     {isGeneratingText && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -290,6 +295,7 @@ function CreatePostModal() {
                                     value={aiImagePrompt}
                                     onChange={(e) => setAiImagePrompt(e.target.value)}
                                     rows={2}
+                                    disabled={isGeneratingImage}
                                 />
                                 <Button onClick={handleGenerateImage} disabled={isGeneratingImage || !aiImagePrompt.trim()} className="self-end" size="sm">
                                     {isGeneratingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
