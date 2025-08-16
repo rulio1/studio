@@ -10,7 +10,9 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
-export const ChatHistorySchema = z.object({
+// O schema foi movido para dentro da função chat para evitar o erro "use server".
+// Apenas o tipo é exportado, o que é permitido.
+const ChatHistorySchema = z.object({
   role: z.enum(['user', 'model']),
   content: z.string(),
 });
