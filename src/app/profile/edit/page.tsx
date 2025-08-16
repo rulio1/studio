@@ -50,26 +50,32 @@ export default function EditProfilePage() {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    setProfileData({
-                        displayName: userData.displayName || '',
-                        bio: userData.bio || '',
-                        location: userData.location || '',
-                    });
-                    setAvatarPreview(userData.avatar || null);
-                    setBannerPreview(userData.banner || null);
-                } else {
-                    router.push('/login');
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        setProfileData({
+                            displayName: userData.displayName || '',
+                            bio: userData.bio || '',
+                            location: userData.location || '',
+                        });
+                        setAvatarPreview(userData.avatar || null);
+                        setBannerPreview(userData.banner || null);
+                    } else {
+                        toast({ title: "Usuário não encontrado.", variant: "destructive" });
+                        router.push('/login');
+                    }
+                } catch (error) {
+                     toast({ title: "Erro ao carregar perfil.", variant: "destructive" });
+                } finally {
+                    setIsLoading(false);
                 }
             } else {
                 router.push('/login');
             }
-            setIsLoading(false);
         });
         return () => unsubscribe();
-    }, [router]);
+    }, [router, toast]);
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setProfileData({ ...profileData, [e.target.id]: e.target.value });
@@ -80,12 +86,13 @@ export default function EditProfilePage() {
         if (file) {
           const reader = new FileReader();
           reader.onloadend = () => {
+            const result = reader.result as string;
             if (type === 'avatar') {
                 setAvatarFile(file);
-                setAvatarPreview(reader.result as string);
+                setAvatarPreview(result);
             } else {
                 setBannerFile(file);
-                setBannerPreview(reader.result as string);
+                setBannerPreview(result);
             }
           };
           reader.readAsDataURL(file);
@@ -95,8 +102,13 @@ export default function EditProfilePage() {
     const handleSave = async () => {
         if (!user) return;
         setIsSaving(true);
+        
         try {
-            const updateData: { [key: string]: any } = { ...profileData };
+            const updateData: { [key: string]: any } = { 
+                displayName: profileData.displayName,
+                bio: profileData.bio,
+                location: profileData.location,
+            };
 
             if (bannerFile) {
                 const bannerStorageRef = ref(storage, `banners/${user.uid}/${uuidv4()}_${bannerFile.name}`);
@@ -110,13 +122,16 @@ export default function EditProfilePage() {
                 updateData.avatar = await getDownloadURL(avatarStorageRef);
             }
             
-            await updateDoc(doc(db, 'users', user.uid), updateData);
+            const userDocRef = doc(db, 'users', user.uid);
+            await updateDoc(userDocRef, updateData);
 
             toast({
                 title: "Perfil Salvo",
                 description: "Suas alterações foram salvas com sucesso.",
             });
             router.push(`/profile/${user.uid}`);
+            router.refresh(); // Forces a refresh of the profile page to show new data
+
         } catch (error) {
             console.error("Erro ao salvar perfil: ", error);
             toast({
@@ -156,12 +171,7 @@ export default function EditProfilePage() {
                 alt="Pré-visualização do Banner"
                 layout="fill"
                 objectFit="cover"
-            /> :  <Image
-                src="https://placehold.co/600x200.png"
-                alt="Banner Padrão"
-                layout="fill"
-                objectFit="cover"
-            />}
+            /> :  <div className="w-full h-full bg-muted" />}
             <div className="absolute top-0 left-0 w-full h-full bg-black/30 flex items-center justify-center gap-2">
                 <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => bannerInputRef.current?.click()}><Camera className="h-5 w-5" /></Button>
             </div>
@@ -211,8 +221,9 @@ export default function EditProfilePage() {
                 />
             </div>
         </div>
-
       </main>
     </div>
   );
 }
+
+    
