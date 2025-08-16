@@ -166,10 +166,12 @@ export default function MessagesPage() {
     <>
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
-           <Avatar className="h-8 w-8 cursor-pointer" onClick={() => user && router.push(`/profile/${user.uid}`)}>
-            {chirpUser && <AvatarImage src={chirpUser.avatar} alt={chirpUser.displayName} />}
-            <AvatarFallback>{chirpUser?.displayName?.[0] || 'U'}</AvatarFallback>
-          </Avatar>
+           {chirpUser && (
+                <Avatar className="h-8 w-8 cursor-pointer" onClick={() => user && router.push(`/profile/${user.uid}`)}>
+                    <AvatarImage src={chirpUser.avatar} alt={chirpUser.displayName} />
+                    <AvatarFallback>{chirpUser.displayName?.[0] || 'U'}</AvatarFallback>
+                </Avatar>
+           )}
           <div className="flex-1">
              <h1 className="text-xl font-bold">Mensagens</h1>
           </div>

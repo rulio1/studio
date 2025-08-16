@@ -140,7 +140,7 @@ export default function NotificationsPage() {
        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
           <Avatar className="h-8 w-8">
-            {user ? <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} /> : null}
+            {user ? <AvatarImage src={user.photoURL ?? undefined} alt={user.displayName || 'User'} /> : null}
             <AvatarFallback>{user?.displayName?.[0] || 'U'}</AvatarFallback>
           </Avatar>
           <div className="flex-1">

@@ -104,6 +104,9 @@ export default function HomePage() {
             const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
                  if(doc.exists()){
                     setChirpUser({ uid: doc.id, ...doc.data() } as ChirpUser);
+                } else {
+                    // Handle case where user is authenticated but not in DB
+                    router.push('/login');
                 }
             });
             return () => unsubscribeUser();
@@ -120,7 +123,7 @@ export default function HomePage() {
   // Fetch all posts for "For you" tab
   useEffect(() => {
     const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(50));
-    const unsubscribePosts = onSnapshot(q, async (snapshot) => {
+    const unsubscribePosts = onSnapshot(q, (snapshot) => {
         const postsData = snapshot.docs
           .map(doc => {
             const data = doc.data();
@@ -174,10 +177,10 @@ export default function HomePage() {
   }, [chirpUser]);
 
   useEffect(() => {
-    if (activeTab === 'following') {
+    if (activeTab === 'following' && chirpUser) {
         fetchFollowingPosts();
     }
-  }, [activeTab, fetchFollowingPosts]);
+  }, [activeTab, fetchFollowingPosts, chirpUser]);
 
   const handlePostAction = async (postId: string, action: 'like' | 'retweet') => {
     if (!user || !chirpUser) return;

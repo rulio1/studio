@@ -66,8 +66,8 @@ export default function BottomNavBar() {
     }, [user]);
 
     return (
-        <footer className="fixed bottom-2 inset-x-0 z-50 flex justify-center">
-            <nav className="flex justify-around items-center h-16 w-[calc(100%-2rem)] max-w-sm bg-background/70 backdrop-blur-lg border rounded-full shadow-lg">
+        <footer className="fixed bottom-0 inset-x-0 z-50 flex justify-center bg-background/70 backdrop-blur-lg border-t md:bottom-2 md:border md:rounded-full md:w-auto md:mx-auto">
+            <nav className="flex justify-around items-center h-16 w-full max-w-sm">
                 {navItems.map((item) => (
                     <Link key={item.href} href={item.href} className={`relative flex-1 flex justify-center items-center h-full rounded-full transition-colors ${pathname.startsWith(item.href) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                         <item.icon className="h-7 w-7" />
