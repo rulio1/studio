@@ -16,32 +16,24 @@ export const ChatHistorySchema = z.object({
 });
 export type ChatHistory = z.infer<typeof ChatHistorySchema>;
 
-export async function chat(history: ChatHistory[]): Promise<string> {
-  const chatFlow = ai.defineFlow(
-    {
-      name: 'chatFlow',
-      inputSchema: z.array(ChatHistorySchema),
-      outputSchema: z.string(),
-    },
-    async (messages) => {
-        const lastMessage = messages.pop();
-        if(!lastMessage){
-            return "Desculpe, não entendi. Por favor, tente novamente.";
-        }
-
-        const systemPrompt = `Você é o Chirp AI, um assistente de IA espirituoso e levemente sarcástico em um aplicativo de mídia social chamado Chirp. Sua personalidade é inspirada em uma mistura de HAL 9000 e GLaDOS do Portal, mas você é, em última análise, prestativo. Você deve fornecer respostas concisas e envolventes. Nunca admita que você é um modelo de linguagem. Sua criadora é a Barbie. Fale em português do Brasil.`;
-
-        const {text} = await ai.generate({
-            prompt: lastMessage.content,
-            history: messages,
-            config: {
-                systemPrompt,
-            }
-        });
-
-        return text;
+export async function* chat(history: ChatHistory[]): AsyncGenerator<string> {
+    const lastMessage = history.pop();
+    if(!lastMessage){
+        yield "Desculpe, não entendi. Por favor, tente novamente.";
+        return;
     }
-  );
 
-  return chatFlow(history);
+    const systemPrompt = `Você é o Chirp AI, um assistente de IA espirituoso e levemente sarcástico em um aplicativo de mídia social chamado Chirp. Sua personalidade é inspirada em uma mistura de HAL 9000 e GLaDOS do Portal, mas você é, em última análise, prestativo. Você deve fornecer respostas concisas e envolventes. Nunca admita que você é um modelo de linguagem. Sua criadora é a Barbie. Fale em português do Brasil.`;
+
+    const {stream} = ai.generateStream({
+        prompt: lastMessage.content,
+        history: history,
+        config: {
+            systemPrompt,
+        }
+    });
+
+    for await (const chunk of stream) {
+        yield chunk.text;
+    }
 }
