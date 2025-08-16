@@ -5,6 +5,9 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import BottomNavBar from './bottom-nav-bar';
 import React from 'react';
+import CreatePostModal from './create-post-modal';
+import { Toaster } from './ui/toaster';
+
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -24,7 +27,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <main className="flex-1 min-w-0 pb-24 md:pb-0">
               {children}
             </main>
-            {isClient && <BottomNavBar />}
+            {isClient && (
+                <>
+                    <CreatePostModal />
+                    <BottomNavBar />
+                    <Toaster />
+                </>
+            )}
         </div>
     );
 }
