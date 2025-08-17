@@ -58,7 +58,7 @@ export default function RegisterPage() {
             email: values.email,
             createdAt: serverTimestamp(),
             handle: `@${handle}`,
-            searchableHandle: handle,
+            searchableHandle: handle.toLowerCase(),
             avatar: `https://placehold.co/128x128.png?text=${values.name[0]}`,
             banner: 'https://placehold.co/600x200.png',
             bio: '',

@@ -98,7 +98,7 @@ export default function EditProfilePage() {
         setHandleStatusMessage('Verificando...');
         try {
             const usersRef = collection(db, "users");
-            const q = query(usersRef, where("searchableHandle", "==", handle));
+            const q = query(usersRef, where("searchableHandle", "==", handle.toLowerCase()));
             const querySnapshot = await getDocs(q);
             if (querySnapshot.empty) {
                 setHandleStatusMessage('Nome de usuário disponível!');
@@ -153,7 +153,7 @@ export default function EditProfilePage() {
 
             if (handleChanged) {
                 updateData.handle = `@${newHandle}`;
-                updateData.searchableHandle = newHandle;
+                updateData.searchableHandle = newHandle.toLowerCase();
             }
 
             const userDocRef = doc(db, 'users', user.uid);
@@ -230,7 +230,7 @@ export default function EditProfilePage() {
                     />
                 </div>
                 {handleStatusMessage && (
-                    <p className={`text-sm mt-1 ${isHandleAvailable && !isCheckingHandle ? 'text-green-500' : 'text-red-500'}`}>
+                    <p className={`text-sm mt-1 ${isCheckingHandle ? 'text-muted-foreground' : isHandleAvailable ? 'text-green-500' : 'text-red-500'}`}>
                         {handleStatusMessage}
                     </p>
                 )}
