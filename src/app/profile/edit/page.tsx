@@ -11,7 +11,7 @@ import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, updateProfile } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 
@@ -96,7 +96,7 @@ export default function EditProfilePage() {
         if (file.size > 1 * 1024 * 1024) {
             toast({
                 title: 'Imagem muito grande',
-                description: 'Por favor, selecione uma imagem menor que 1MB.',
+                description: 'Por favor, selecione uma imagem menor que 1MB para a abordagem Data URI.',
                 variant: 'destructive',
             });
             return;
@@ -114,16 +114,21 @@ export default function EditProfilePage() {
         if (!user) return;
         setIsSaving(true);
         
-        let finalAvatarUrl = profileData.avatar;
-
         try {
-            // Step 1: If there's a new avatar, convert it to Data URI
+            let finalAvatarUrl = profileData.avatar;
+            
+            // If there's a new avatar, convert it to Data URI
             if (newAvatarFile) {
                 finalAvatarUrl = await fileToDataUri(newAvatarFile);
             }
 
-            // Step 2: Prepare data for Firestore
-            const updateData = {
+            // Prepare data for Firestore and Auth
+             const authUpdateData = {
+                displayName: profileData.displayName,
+                photoURL: finalAvatarUrl,
+            };
+
+            const firestoreUpdateData = {
                 displayName: profileData.displayName,
                 searchableDisplayName: profileData.displayName.toLowerCase(),
                 handle: profileData.handle,
@@ -133,13 +138,9 @@ export default function EditProfilePage() {
                 avatar: finalAvatarUrl,
             };
 
-            // Step 3: Update Auth and Firestore
-            await updateProfile(user, {
-                displayName: profileData.displayName,
-                photoURL: finalAvatarUrl,
-            });
-            
-            await updateDoc(doc(db, 'users', user.uid), updateData);
+            // Update Auth and Firestore
+            await updateProfile(user, authUpdateData);
+            await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
             
             toast({
                 title: "Perfil Salvo!",
