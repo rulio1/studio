@@ -68,6 +68,11 @@ interface Comment {
     content: string;
     createdAt: any;
     editedAt?: any;
+    likes: string[];
+    retweets: string[];
+    comments: number;
+    views: number;
+    isLiked: boolean;
 }
 
 interface ChirpUser {
@@ -106,6 +111,7 @@ const PostContent = ({ content }: { content: string }) => {
 
 const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comment: Comment, user: FirebaseUser | null, onEdit: (comment: Comment) => void, onDelete: (id: string) => void, isLastComment: boolean }) => {
     const router = useRouter();
+    const {toast} = useToast();
     const [time, setTime] = useState('');
     const isOfficialAccount = comment.handle.toLowerCase() === '@chirp' || comment.handle.toLowerCase() === '@rulio';
 
@@ -114,6 +120,20 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
             setTime(formatTimeAgo(comment.createdAt.toDate()));
         }
     }, [comment.createdAt]);
+
+    const handleCommentAction = async (action: 'like' | 'retweet') => {
+        if (!user || !comment) return;
+
+        const commentRef = doc(db, "comments", comment.id);
+        const field = action === 'like' ? 'likes' : 'retweets';
+        const isActioned = action === 'like' ? comment.isLiked : (comment.retweets || []).includes(user.uid);
+
+        if (isActioned) {
+            await updateDoc(commentRef, { [field]: arrayRemove(user.uid) });
+        } else {
+            await updateDoc(commentRef, { [field]: arrayUnion(user.uid) });
+        }
+    };
 
     return (
         <li className="p-4 flex gap-4 relative">
@@ -155,6 +175,24 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
                     )}
                 </div>
                 <p className="whitespace-pre-wrap mt-1">{comment.content}</p>
+                 <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors">
+                        <MessageCircle className="h-5 w-5" />
+                        <span>{comment.comments}</span>
+                    </div>
+                    <button onClick={() => toast({title: "Em breve!", description: "Retweetar comentários estará disponível em breve."})} className={`flex items-center gap-1`}>
+                        <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
+                        <span>{comment.retweets?.length || 0}</span>
+                    </button>
+                    <button onClick={() => handleCommentAction('like')} className={`flex items-center gap-1 ${comment.isLiked ? 'text-red-500' : ''}`}>
+                        <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${comment.isLiked ? 'fill-current' : ''}`} />
+                        <span>{comment.likes?.length || 0}</span>
+                    </button>
+                    <div className="flex items-center gap-1">
+                        <BarChart2 className="h-5 w-5" />
+                        <span>{comment.views}</span>
+                    </div>
+                </div>
             </div>
         </li>
     );
@@ -204,7 +242,7 @@ export default function PostDetailPage() {
     }, [router]);
 
     useEffect(() => {
-        if (id) {
+        if (id && user) {
             const postId = id as string;
             const postRef = doc(db, "posts", postId);
             
@@ -220,8 +258,8 @@ export default function PostDetailPage() {
                         id: doc.id,
                         ...postData,
                         time: postData.createdAt ? format(postData.createdAt.toDate(), "h:mm a · d 'de' MMMM 'de' yyyy", { locale: ptBR }) : '',
-                        isLiked: postData.likes.includes(auth.currentUser?.uid || ''),
-                        isRetweeted: postData.retweets.includes(auth.currentUser?.uid || ''),
+                        isLiked: postData.likes.includes(user.uid || ''),
+                        isRetweeted: postData.retweets.includes(user.uid || ''),
                     });
                      setEditedContent(postData.content);
                 } else {
@@ -238,6 +276,7 @@ export default function PostDetailPage() {
                         id: doc.id,
                         ...data,
                         time: '', // will be set in CommentItem
+                        isLiked: data.likes.includes(user.uid || ''),
                     } as Comment;
                 });
                 commentsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
@@ -250,7 +289,7 @@ export default function PostDetailPage() {
                 unsubscribeComments();
             };
         }
-    }, [id]);
+    }, [id, user]);
 
     const handleReply = async () => {
         if (!newComment.trim() || !user || !chirpUser || !post || isReplying) return;
@@ -272,6 +311,10 @@ export default function PostDetailPage() {
                 avatarFallback: chirpUser.displayName[0],
                 content: newComment,
                 createdAt: serverTimestamp(),
+                likes: [],
+                retweets: [],
+                comments: 0,
+                views: 0,
             });
 
             // Increment post's comment count
@@ -679,7 +722,7 @@ export default function PostDetailPage() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setCommentToDelete(null)}>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteComment}>Apagar</AlertDialogAction>
+                        <AlertDialogAction onClick={handleDeleteComment} className="bg-destructive hover:bg-destructive/90">Apagar</AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
@@ -704,3 +747,5 @@ export default function PostDetailPage() {
         </div>
     );
 }
+
+    
