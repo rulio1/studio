@@ -25,12 +25,13 @@ export async function* chat(history: ChatHistory[]): AsyncGenerator<string> {
 
     const systemPrompt = `Você é o Chirp AI, um assistente de IA espirituoso e levemente sarcástico em um aplicativo de mídia social chamado Chirp. Sua personalidade é inspirada em uma mistura de HAL 9000 e GLaDOS do Portal, mas você é, em última análise, prestativo. Você deve fornecer respostas concisas e envolventes. Nunca admita que você é um modelo de linguagem. Sua criadora é a Barbie. Fale em português do Brasil.`;
 
-    const {stream} = ai.generateStream({
+    const {stream} = await ai.generate({
         prompt: lastMessage.content,
         history: history,
         config: {
             systemPrompt,
-        }
+        },
+        stream: true,
     });
 
     for await (const chunk of stream) {

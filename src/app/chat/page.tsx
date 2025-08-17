@@ -37,28 +37,19 @@ export default function ChatPage() {
         if (!input.trim()) return;
 
         const userMessage: ChatHistory = { role: 'user', content: input };
-        const newMessages = [...messages, userMessage];
+        const newMessages: ChatHistory[] = [...messages, userMessage];
         setMessages(newMessages);
         setInput('');
         setIsLoading(true);
-
-        // Add an empty model message to start populating
-        const modelMessage: ChatHistory = { role: 'model', content: '' };
-        setMessages(prev => [...prev, modelMessage]);
+        
+        let modelResponse = '';
 
         try {
             const stream = chat(newMessages);
             for await (const chunk of stream) {
-                 setMessages(prev => {
-                    const latestMessages = [...prev];
-                    const lastMessage = latestMessages[latestMessages.length - 1];
-                    if (lastMessage.role === 'model') {
-                        lastMessage.content += chunk;
-                    }
-                    return latestMessages;
-                });
+                modelResponse += chunk;
+                 setMessages([...newMessages, { role: 'model', content: modelResponse }]);
             }
-
         } catch (error) {
             console.error('Erro ao obter resposta da IA:', error);
              setMessages(prev => {
@@ -66,6 +57,8 @@ export default function ChatPage() {
                 const lastMessage = latestMessages[latestMessages.length - 1];
                 if (lastMessage.role === 'model') {
                     lastMessage.content = "Oops! Algo deu errado. Por favor, tente novamente.";
+                } else {
+                    return [...latestMessages, { role: 'model', content: "Oops! Algo deu errado. Por favor, tente novamente." }];
                 }
                 return latestMessages;
             });
@@ -113,7 +106,6 @@ export default function ChatPage() {
                         )}
                         <div className={`rounded-lg px-4 py-2 max-w-xs md:max-w-md ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                             <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                            {isLoading && message.role === 'model' && message.content === '' && <Loader2 className="h-5 w-5 animate-spin" />}
                         </div>
                          {message.role === 'user' && (
                             <Avatar className="h-8 w-8">
@@ -123,6 +115,16 @@ export default function ChatPage() {
                         )}
                     </div>
                 ))}
+                 {isLoading && messages[messages.length - 1]?.role === 'user' && (
+                    <div className="flex items-start gap-3">
+                        <Avatar className="h-8 w-8">
+                            <AvatarFallback><Bot /></AvatarFallback>
+                        </Avatar>
+                        <div className="rounded-lg px-4 py-2 max-w-xs md:max-w-md bg-muted">
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                        </div>
+                    </div>
+                )}
             </div>
         </ScrollArea>
         <div className="sticky bottom-0 bg-background/80 backdrop-blur-sm p-4 border-t">

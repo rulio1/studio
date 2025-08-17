@@ -1,8 +1,8 @@
 import type {Metadata} from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/theme-provider';
 import MainLayout from '@/components/main-layout';
+import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
   title: 'Chirp',
@@ -31,6 +31,7 @@ export default function RootLayout({
             <MainLayout>
               {children}
             </MainLayout>
+            <Toaster />
         </ThemeProvider>
       </body>
     </html>
