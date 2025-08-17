@@ -9,7 +9,7 @@ import { auth, db, storage } from '@/lib/firebase';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Bird, Trash2, Edit, Save, Sparkles, X, BadgeCheck, ImageIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Bird, Trash2, Edit, Save, Sparkles, X, BadgeCheck, ImageIcon, Smile, Film } from 'lucide-react';
 import PostSkeleton from '@/components/post-skeleton';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -20,6 +20,11 @@ import { generatePost } from '@/ai/flows/post-generator-flow';
 import React from 'react';
 import { fileToDataUri } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import { Grid } from '@giphy/react-components';
+import { GiphyFetch } from '@giphy/js-fetch-api';
+import type { IGif } from '@giphy/js-types';
 
 interface Community {
     id: string;
@@ -61,6 +66,38 @@ interface ChirpUser {
     avatar: string;
     communities?: string[];
     savedPosts?: string[];
+}
+
+const giphyFetch = new GiphyFetch(process.env.NEXT_PUBLIC_GIPHY_API_KEY || '');
+
+function GifPicker({ onGifClick }: { onGifClick: (gif: IGif) => void }) {
+    const [searchTerm, setSearchTerm] = useState('trending');
+    
+    const fetchGifs = (offset: number) => {
+        if (searchTerm.trim() === '') {
+             return giphyFetch.trending({ offset, limit: 10 });
+        }
+        return giphyFetch.search(searchTerm, { offset, limit: 10 });
+    }
+
+    return (
+        <div className="flex flex-col gap-2">
+            <Input 
+                placeholder="Buscar GIFs..."
+                onChange={(e) => setSearchTerm(e.target.value || 'trending')}
+            />
+            <div className="h-64 overflow-y-auto">
+                <Grid 
+                    key={searchTerm}
+                    width={550} 
+                    columns={3} 
+                    gutter={6}
+                    fetchGifs={fetchGifs}
+                    onGifClick={onGifClick}
+                />
+            </div>
+        </div>
+    )
 }
 
 const PostContent = ({ content }: { content: string }) => {
@@ -367,6 +404,16 @@ export default function CommunityDetailPage() {
         }
     };
     
+    const onEmojiClick = (emojiData: EmojiClickData) => {
+        setNewPostContent(prev => prev + emojiData.emoji);
+    };
+
+    const onGifClick = (gif: IGif, e: React.SyntheticEvent<HTMLElement, Event>) => {
+        e.preventDefault();
+        setPostImagePreview(gif.images.original.url);
+        setPostImageDataUri(gif.images.original.url);
+    };
+    
     if (isLoading || !community) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
@@ -488,6 +535,26 @@ export default function CommunityDetailPage() {
                                         <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
                                             <ImageIcon className="h-6 w-6 text-primary" />
                                         </Button>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="ghost" size="icon" disabled={isPosting}>
+                                                    <Smile className="h-6 w-6 text-primary" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0 border-0">
+                                                <EmojiPicker onEmojiClick={onEmojiClick} />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="ghost" size="icon" disabled={isPosting}>
+                                                    <Film className="h-6 w-6 text-primary" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-2 border-0 bg-background" style={{width: 580}}>
+                                                <GifPicker onGifClick={onGifClick} />
+                                            </PopoverContent>
+                                        </Popover>
                                         <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator);}} disabled={isPosting}>
                                             <Sparkles className="h-6 w-6 text-primary" />
                                         </Button>
