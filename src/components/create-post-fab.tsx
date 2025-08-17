@@ -25,6 +25,16 @@ export default function CreatePostFAB() {
         <>
             <div className="fixed bottom-20 right-4 z-50 flex flex-col items-center gap-4">
                  <div className={`relative flex flex-col items-center gap-4 transition-all duration-300 ${isOpen ? 'speed-dial-open' : ''}`}>
+                     {/* Post Button */}
+                     <button
+                        className="speed-dial-button opacity-0 transform-none"
+                        onClick={() => openModal('post')}
+                        aria-label="Create Post"
+                    >
+                         <div className="h-14 w-14 rounded-full bg-primary shadow-lg flex items-center justify-center text-primary-foreground">
+                            <Feather className="h-6 w-6" />
+                        </div>
+                    </button>
                     {/* GIF Button */}
                     <button
                         className="speed-dial-button opacity-0 transform-none"
@@ -33,17 +43,6 @@ export default function CreatePostFAB() {
                     >
                         <div className="h-14 w-14 rounded-full bg-primary shadow-lg flex items-center justify-center text-primary-foreground">
                             <Film className="h-6 w-6" />
-                        </div>
-                    </button>
-                    
-                    {/* Post Button */}
-                     <button
-                        className="speed-dial-button opacity-0 transform-none"
-                        onClick={() => openModal('post')}
-                        aria-label="Create Post"
-                    >
-                         <div className="h-14 w-14 rounded-full bg-primary shadow-lg flex items-center justify-center text-primary-foreground">
-                            <Feather className="h-6 w-6" />
                         </div>
                     </button>
                 </div>
