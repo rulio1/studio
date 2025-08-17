@@ -9,8 +9,7 @@ import { collection, doc, getDoc, getDocs, query, where, limit, orderBy, updateD
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, Bookmark, MessageCircle, Repeat, Heart, BarChart2, Upload, MoreHorizontal, Save, Trash2, Edit } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { format, formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatTimeAgo } from '@/lib/utils';
 import Image from 'next/image';
 import PostSkeleton from '@/components/post-skeleton';
 
@@ -73,7 +72,7 @@ const SavedPostItem = ({ post }: { post: Post }) => {
 
     useEffect(() => {
         if (post.createdAt) {
-            setTime(formatDistanceToNow(post.createdAt.toDate(), { locale: ptBR }));
+            setTime(formatTimeAgo(post.createdAt.toDate()));
         }
     }, [post.createdAt]);
     

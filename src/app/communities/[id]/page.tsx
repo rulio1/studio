@@ -11,8 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Bird, Trash2, Edit, Save, Sparkles, X, BadgeCheck, ImageIcon, Smile, Film } from 'lucide-react';
 import PostSkeleton from '@/components/post-skeleton';
-import { format, formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatTimeAgo } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -176,7 +175,7 @@ const PostItem = ({ post }: { post: Post }) => {
     useEffect(() => {
         if (post.createdAt) {
           try {
-            setTime(formatDistanceToNow(post.createdAt.toDate(), { locale: ptBR }));
+            setTime(formatTimeAgo(post.createdAt.toDate()));
           } catch(e) {
             setTime('agora')
           }

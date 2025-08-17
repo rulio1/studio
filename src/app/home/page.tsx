@@ -17,8 +17,7 @@ import { useRouter } from 'next/navigation';
 import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch, deleteDoc, increment, documentId, Timestamp } from 'firebase/firestore';
-import { format, formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatTimeAgo } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generatePost } from '@/ai/flows/post-generator-flow';
 import {
@@ -361,7 +360,7 @@ export default function HomePage() {
       if (timestamp) {
         try {
             const date = timestamp.toDate();
-            setTime(formatDistanceToNow(date, { locale: ptBR }));
+            setTime(formatTimeAgo(date));
         } catch(e) {
             setTime('agora');
         }

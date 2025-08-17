@@ -35,6 +35,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { formatTimeAgo } from '@/lib/utils';
 
 
 const EmptyState = ({ title, description }: { title: string, description: string }) => (
@@ -135,7 +136,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, t
         const timestamp = post.repostedAt || post.createdAt;
         if (timestamp) {
             try {
-                setTime(formatDistanceToNow(timestamp.toDate(), { locale: ptBR }));
+                setTime(formatTimeAgo(timestamp.toDate()));
             } catch (e) {
                 setTime('agora')
             }
@@ -254,7 +255,7 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
     useEffect(() => {
         if (reply.createdAt) {
             try {
-                setTime(formatDistanceToNow(reply.createdAt.toDate(), { locale: ptBR }));
+                setTime(formatTimeAgo(reply.createdAt.toDate()));
             } catch (e) {
                 setTime('agora');
             }

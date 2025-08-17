@@ -10,8 +10,7 @@ import { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc } from 'firebase/firestore';
-import { format, formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatTimeAgo } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 interface Notification {
@@ -46,7 +45,7 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
         if (notification.createdAt) {
             try {
                 const date = notification.createdAt.toDate();
-                setTime(formatDistanceToNow(date, { locale: ptBR }));
+                setTime(formatTimeAgo(date));
             } catch(e) {
                 setTime('agora');
             }

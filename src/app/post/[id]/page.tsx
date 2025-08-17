@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { formatTimeAgo } from '@/lib/utils';
 
 interface Post {
     id: string;
@@ -105,12 +106,12 @@ const PostContent = ({ content }: { content: string }) => {
 
 const CommentItem = ({ comment, user, onEdit, onDelete }: { comment: Comment, user: FirebaseUser | null, onEdit: (comment: Comment) => void, onDelete: (id: string) => void }) => {
     const router = useRouter();
-    const [time, setTime] = useState(() => comment.createdAt ? format(comment.createdAt.toDate(), 'PP') : 'agora');
+    const [time, setTime] = useState('');
     const isOfficialAccount = comment.handle.toLowerCase() === '@chirp' || comment.handle.toLowerCase() === '@rulio';
 
     useEffect(() => {
         if (comment.createdAt) {
-            setTime(formatDistanceToNow(comment.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+            setTime(formatTimeAgo(comment.createdAt.toDate()));
         }
     }, [comment.createdAt]);
 
@@ -218,7 +219,7 @@ export default function PostDetailPage() {
                     setPost({
                         id: doc.id,
                         ...postData,
-                        time: postData.createdAt ? format(postData.createdAt.toDate(), "h:mm a · MMM d, yyyy", { locale: ptBR }) : '',
+                        time: postData.createdAt ? format(postData.createdAt.toDate(), "h:mm a · d 'de' MMMM 'de' yyyy", { locale: ptBR }) : '',
                         isLiked: postData.likes.includes(auth.currentUser?.uid || ''),
                         isRetweeted: postData.retweets.includes(auth.currentUser?.uid || ''),
                     });

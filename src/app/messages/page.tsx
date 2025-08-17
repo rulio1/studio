@@ -10,8 +10,7 @@ import { MailPlus, Search, Settings, Loader2, MessageSquare, Pin, Archive, Trash
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, doc, getDoc, orderBy, deleteDoc } from 'firebase/firestore';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatTimeAgo } from '@/lib/utils';
 import NewMessageModal from '@/components/new-message-modal';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
@@ -42,11 +41,11 @@ interface Conversation {
 
 const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conversation; currentUserId: string | null; onActionClick: (convoId: string, action: 'pin' | 'archive' | 'delete') => void; }) => {
     const router = useRouter();
-    const [time, setTime] = useState(() => convo.lastMessage.timestamp ? formatDistanceToNow(convo.lastMessage.timestamp.toDate(), { addSuffix: true, locale: ptBR }) : '');
+    const [time, setTime] = useState(() => convo.lastMessage.timestamp ? formatTimeAgo(convo.lastMessage.timestamp.toDate()) : '');
     
     useEffect(() => {
         if (convo.lastMessage.timestamp) {
-            setTime(formatDistanceToNow(convo.lastMessage.timestamp.toDate(), { addSuffix: true, locale: ptBR }));
+            setTime(formatTimeAgo(convo.lastMessage.timestamp.toDate()));
         }
     }, [convo.lastMessage.timestamp]);
 
