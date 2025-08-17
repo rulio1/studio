@@ -455,6 +455,9 @@ export default function HomePage() {
     const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@chirp';
     const isChirpAccount = post.handle === '@chirp';
 
+    const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
+
+
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => handlePostClick(post.id)}>
              {post.repostedBy && (
@@ -499,7 +502,7 @@ export default function HomePage() {
                                         <Trash2 className="mr-2 h-4 w-4"/>
                                         Apagar
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleEditClick(post)}>
+                                    <DropdownMenuItem onClick={() => handleEditClick(post)} disabled={!isEditable}>
                                         <Edit className="mr-2 h-4 w-4"/>
                                         Editar
                                     </DropdownMenuItem>

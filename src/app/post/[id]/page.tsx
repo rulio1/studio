@@ -644,6 +644,7 @@ export default function PostDetailPage() {
     
     const isPostVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@chirp';
     const isChirpAccount = post.handle === '@chirp';
+    const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
     return (
         <div className="flex flex-col h-screen bg-background">
@@ -693,7 +694,7 @@ export default function PostDetailPage() {
                                             <Trash2 className="mr-2 h-4 w-4"/>
                                             Apagar
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                                        <DropdownMenuItem onClick={() => setIsEditing(true)} disabled={!isEditable}>
                                             <Edit className="mr-2 h-4 w-4"/>
                                             Editar
                                         </DropdownMenuItem>

@@ -150,6 +150,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
     
     const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@chirp';
     const isChirpAccount = post.handle === '@chirp';
+    const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
@@ -201,7 +202,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
                                             <Trash2 className="mr-2 h-4 w-4"/>
                                             Apagar
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => onEdit(post)}>
+                                        <DropdownMenuItem onClick={() => onEdit(post)} disabled={!isEditable}>
                                             <Edit className="mr-2 h-4 w-4"/>
                                             Editar
                                         </DropdownMenuItem>
