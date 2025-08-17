@@ -43,8 +43,8 @@ export default function EditProfilePage() {
         banner: '',
     });
 
-    const [avatarPreview, setAvatarPreview] = useState<string>('');
-    const [newAvatarUrl, setNewAvatarUrl] = useState<string>('');
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [newAvatarUrl, setNewAvatarUrl] = useState<string | null>(null);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,7 +59,7 @@ export default function EditProfilePage() {
                         const userData = userDoc.data();
                         setProfileData({
                             displayName: userData.displayName || '',
-                            handle: userData.handle.startsWith('@') ? userData.handle.substring(1) : userData.handle,
+                            handle: userData.handle || '',
                             bio: userData.bio || '',
                             location: userData.location || '',
                             avatar: userData.avatar || '',
@@ -80,67 +80,67 @@ export default function EditProfilePage() {
     }, [router, toast]);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0] && user) {
-            const file = e.target.files[0];
-            setAvatarPreview(URL.createObjectURL(file));
-            
-            const storageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}`);
-            const uploadTask = uploadBytesResumable(storageRef, file);
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
 
-            uploadTask.on('state_changed',
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    setUploadProgress(progress);
-                },
-                (error) => {
-                    console.error("Upload failed:", error);
-                    toast({ title: "Falha no upload do avatar", variant: "destructive" });
-                    setUploadProgress(null);
-                    setAvatarPreview(profileData.avatar); // Revert preview
-                },
-                () => {
-                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                        setNewAvatarUrl(downloadURL);
-                        setUploadProgress(null);
-                        toast({ title: "Avatar enviado!", description: "Clique em Salvar para aplicar as alterações." });
-                    });
-                }
-            );
-        }
+        setAvatarPreview(URL.createObjectURL(file));
+        setNewAvatarUrl(null);
+        setUploadProgress(0);
+
+        const storageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
+            },
+            (error) => {
+                console.error("Upload failed:", error);
+                toast({ title: "Falha no upload do avatar", description: "Verifique suas regras de segurança do Storage.", variant: "destructive" });
+                setUploadProgress(null);
+                setAvatarPreview(profileData.avatar); // Revert preview
+            },
+            () => {
+                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                    setNewAvatarUrl(downloadURL);
+                    setUploadProgress(100);
+                    toast({ title: "Avatar enviado!", description: "Clique em Salvar para aplicar as alterações." });
+                });
+            }
+        );
     };
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        let value = e.target.value;
-        if (e.target.id === 'handle') {
-             value = value.replace(/[^a-z0-9_]/gi, '').toLowerCase();
-        }
-        setProfileData({ ...profileData, [e.target.id]: value });
+        setProfileData({ ...profileData, [e.target.id]: e.target.value });
     };
 
     const handleSave = async () => {
         if (!user) return;
+        
+        if (uploadProgress !== null && uploadProgress < 100) {
+            toast({ title: "Aguarde o upload do avatar terminar.", variant: "destructive" });
+            return;
+        }
 
         setIsSaving(true);
         try {
             const finalAvatarUrl = newAvatarUrl || profileData.avatar;
-
-            const authUpdateData = {
+            
+            await updateProfile(user, {
                 displayName: profileData.displayName,
                 photoURL: finalAvatarUrl,
-            };
-            await updateProfile(user, authUpdateData);
+            });
             
-            const firestoreUpdateData: any = {
+            await updateDoc(doc(db, 'users', user.uid), {
                 displayName: profileData.displayName,
                 searchableDisplayName: profileData.displayName.toLowerCase(),
-                handle: `@${profileData.handle}`,
-                searchableHandle: profileData.handle.toLowerCase(),
+                handle: profileData.handle,
+                searchableHandle: profileData.handle.replace('@','').toLowerCase(),
                 bio: profileData.bio,
                 location: profileData.location,
                 avatar: finalAvatarUrl
-            };
-            
-            await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
+            });
 
             toast({
                 title: "Perfil Salvo!",
@@ -152,7 +152,7 @@ export default function EditProfilePage() {
             console.error("Erro ao salvar perfil: ", error);
             toast({
                 title: "Falha ao Salvar",
-                description: "Não foi possível salvar as alterações do seu perfil. Por favor, tente novamente.",
+                description: "Não foi possível salvar as alterações do seu perfil.",
                 variant: 'destructive'
             });
         } finally {
@@ -169,11 +169,11 @@ export default function EditProfilePage() {
     <div className="flex flex-col h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2">
-            <Button variant="ghost" onClick={() => router.back()} disabled={isSaving || uploadProgress !== null}>
+            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.back()} disabled={isSaving || (uploadProgress !== null && uploadProgress < 100)}>
                 <X className="h-5 w-5" />
             </Button>
             <h1 className="font-bold text-lg">Editar perfil</h1>
-            <Button variant="default" className="rounded-full font-bold px-4 bg-foreground text-background hover:bg-foreground/80" onClick={handleSave} disabled={isSaving || uploadProgress !== null}>
+            <Button variant="default" className="rounded-full font-bold px-4 bg-foreground text-background hover:bg-foreground/80" onClick={handleSave} disabled={isSaving || (uploadProgress !== null && uploadProgress < 100)}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Salvar
             </Button>
@@ -185,7 +185,8 @@ export default function EditProfilePage() {
         <div className="px-4">
             <div className="-mt-16 relative w-32">
                 <Avatar className="h-32 w-32 border-4 border-background">
-                    {avatarPreview ? <AvatarImage src={avatarPreview} alt={profileData.displayName} />: <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>}
+                     <AvatarImage src={avatarPreview ?? undefined} alt={profileData.displayName} />
+                     <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>
                 </Avatar>
                 
                 {uploadProgress !== null ? (
@@ -206,9 +207,9 @@ export default function EditProfilePage() {
                     type="file" 
                     ref={avatarInputRef} 
                     className="hidden" 
-                    accept="image/png, image/jpeg"
+                    accept="image/png, image/jpeg, image/gif"
                     onChange={handleImageChange}
-                    disabled={isSaving || uploadProgress !== null}
+                    disabled={isSaving || (uploadProgress !== null && uploadProgress < 100)}
                 />
             </div>
         </div>
@@ -221,21 +222,18 @@ export default function EditProfilePage() {
                     value={profileData.displayName} 
                     onChange={handleFormChange}
                     className="text-lg" 
-                    disabled={isSaving || uploadProgress !== null}
+                    disabled={isSaving}
                 />
             </div>
              <div className="grid gap-1.5">
                 <Label htmlFor="handle">Nome de usuário</Label>
-                 <div className="flex items-center rounded-md border border-input focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                    <span className="pl-3 text-muted-foreground">@</span>
-                    <Input 
-                        id="handle" 
-                        value={profileData.handle} 
-                        onChange={handleFormChange}
-                        className="text-lg border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                        disabled={isSaving || uploadProgress !== null}
-                    />
-                </div>
+                <Input 
+                    id="handle" 
+                    value={profileData.handle} 
+                    onChange={handleFormChange}
+                    className="text-lg" 
+                    disabled={isSaving}
+                />
             </div>
              <div className="grid gap-1.5">
                 <Label htmlFor="bio">Bio</Label>
@@ -245,7 +243,7 @@ export default function EditProfilePage() {
                     onChange={handleFormChange}
                     rows={3}
                     className="text-lg"
-                    disabled={isSaving || uploadProgress !== null}
+                    disabled={isSaving}
                 />
             </div>
              <div className="grid gap-1.5">
@@ -255,7 +253,7 @@ export default function EditProfilePage() {
                     value={profileData.location}
                     onChange={handleFormChange}
                      className="text-lg"
-                     disabled={isSaving || uploadProgress !== null}
+                     disabled={isSaving}
                 />
             </div>
         </div>
