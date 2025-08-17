@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, onSnapshot, orderBy, writeBatch, arrayUnion, arrayRemove, increment, serverTimestamp, addDoc, runTransaction } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, onSnapshot, orderBy, writeBatch, arrayUnion, arrayRemove, increment, serverTimestamp, addDoc, runTransaction, limit } from 'firebase/firestore';
 import { auth, db, storage } from '@/lib/firebase';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -327,12 +327,17 @@ export default function CommunityDetailPage() {
             await runTransaction(db, async (transaction) => {
                 const postRef = doc(collection(db, "posts"));
 
-                // First, perform all reads
+                // 1. Check if it's the user's first post
+                const userPostsQuery = query(collection(db, 'posts'), where('authorId', '==', user.uid), limit(1));
+                const userPostsSnapshot = await transaction.get(userPostsQuery);
+                const isFirstPost = userPostsSnapshot.empty;
+
+                // 2. Perform all reads for hashtags
                 const hashtagRefs = hashtags.map(tag => doc(db, "hashtags", tag));
                 const hashtagDocs = await Promise.all(hashtagRefs.map(ref => transaction.get(ref)));
 
-                // Now, perform all writes
-                // 1. Create the new post
+                // 3. Perform all writes
+                // Create the new post
                 transaction.set(postRef, {
                     authorId: user.uid,
                     author: chirpUser.displayName,
@@ -353,7 +358,7 @@ export default function CommunityDetailPage() {
                     isVerified: chirpUser.isVerified || false,
                 });
 
-                // 2. Update hashtag counts
+                // Update hashtag counts
                  hashtagDocs.forEach((hashtagDoc, index) => {
                     const tag = hashtags[index];
                     const hashtagRef = hashtagRefs[index];
@@ -367,6 +372,35 @@ export default function CommunityDetailPage() {
                         });
                     }
                 });
+
+                // Handle First Post Notification
+                if (isFirstPost) {
+                    const chirpOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@chirp'), limit(1));
+                    // We can't use `transaction.get` with queries that have complex clauses in some Firestore client libraries.
+                    // A `getDocs` outside the transaction or simplifying the logic is safer. Let's do a non-transactional get for this.
+                    const chirpUserSnapshot = await getDocs(chirpOfficialUserQuery);
+
+                    if (!chirpUserSnapshot.empty) {
+                        const chirpUserData = chirpUserSnapshot.docs[0].data();
+                        const notificationRef = doc(collection(db, 'notifications'));
+                        transaction.set(notificationRef, {
+                            toUserId: user.uid,
+                            fromUserId: chirpUserSnapshot.docs[0].id,
+                            fromUser: {
+                                name: chirpUserData.displayName,
+                                handle: chirpUserData.handle,
+                                avatar: chirpUserData.avatar,
+                                isVerified: true,
+                            },
+                            type: 'post',
+                            text: 'Bem-vindo ao Chirp! Adoramos seu primeiro post.',
+                            postContent: newPostContent.substring(0, 50),
+                            postId: postRef.id,
+                            createdAt: serverTimestamp(),
+                            read: false,
+                        });
+                    }
+                }
             });
 
             resetModal();

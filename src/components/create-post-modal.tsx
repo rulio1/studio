@@ -9,9 +9,9 @@ import { useToast } from '@/hooks/use-toast';
 import { generatePost } from '@/ai/flows/post-generator-flow';
 import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 import { auth, db, storage } from '@/lib/firebase';
-import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, increment, query, where, getDocs, writeBatch, getDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, increment, query, where, getDocs, writeBatch, getDoc, limit } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Sparkles, Loader2, Plus, ImageIcon, X, Smile, Upload, MapPin } from 'lucide-react';
+import { Sparkles, Loader2, Plus, ImageIcon, X, Smile, Upload, MapPin, Bird } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
@@ -158,75 +158,116 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         const mentionedHandles = extractMentions(newPostContent);
 
         try {
-            const batch = writeBatch(db);
-            const postRef = doc(collection(db, "posts"));
+            await runTransaction(db, async (transaction) => {
+                const postRef = doc(collection(db, "posts"));
 
-            batch.set(postRef, {
-                authorId: user.uid,
-                author: chirpUser.displayName,
-                handle: chirpUser.handle,
-                avatar: chirpUser.avatar,
-                avatarFallback: chirpUser.displayName[0],
-                content: newPostContent,
-                location: location,
-                hashtags: hashtags,
-                mentions: mentionedHandles,
-                image: postImageDataUri || '',
-                imageHint: '',
-                communityId: null,
-                createdAt: serverTimestamp(),
-                comments: 0,
-                retweets: [],
-                likes: [],
-                views: 0,
-                isVerified: chirpUser.isVerified || false,
-            });
+                // 1. Check if it's the user's first post
+                const userPostsQuery = query(collection(db, 'posts'), where('authorId', '==', user.uid), limit(1));
+                const userPostsSnapshot = await transaction.get(userPostsQuery);
+                const isFirstPost = userPostsSnapshot.empty;
 
-            // Handle Mentions
-            if (mentionedHandles.length > 0) {
-                const usersRef = collection(db, "users");
-                const q = query(usersRef, where("handle", "in", mentionedHandles));
-                const querySnapshot = await getDocs(q);
-                querySnapshot.forEach(userDoc => {
-                    const mentionedUserId = userDoc.id;
-                    if (mentionedUserId !== user.uid) { // Don't notify for self-mention
+                // 2. Set the new post
+                transaction.set(postRef, {
+                    authorId: user.uid,
+                    author: chirpUser.displayName,
+                    handle: chirpUser.handle,
+                    avatar: chirpUser.avatar,
+                    avatarFallback: chirpUser.displayName[0],
+                    content: newPostContent,
+                    location: location,
+                    hashtags: hashtags,
+                    mentions: mentionedHandles,
+                    image: postImageDataUri || '',
+                    imageHint: '',
+                    communityId: null,
+                    createdAt: serverTimestamp(),
+                    comments: 0,
+                    retweets: [],
+                    likes: [],
+                    views: 0,
+                    isVerified: chirpUser.isVerified || false,
+                });
+
+                 // 3. Handle First Post Notification
+                if (isFirstPost) {
+                    const chirpOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@chirp'), limit(1));
+                    const chirpUserSnapshot = await getDocs(chirpOfficialUserQuery); // Use getDocs, not transaction.get
+                    
+                    if (!chirpUserSnapshot.empty) {
+                        const chirpUserData = chirpUserSnapshot.docs[0].data();
                         const notificationRef = doc(collection(db, 'notifications'));
-                        batch.set(notificationRef, {
-                            toUserId: mentionedUserId,
-                            fromUserId: user.uid,
+                        transaction.set(notificationRef, {
+                            toUserId: user.uid,
+                            fromUserId: chirpUserSnapshot.docs[0].id,
                             fromUser: {
-                                name: chirpUser.displayName,
-                                handle: chirpUser.handle,
-                                avatar: chirpUser.avatar,
-                                isVerified: chirpUser.isVerified || false,
+                                name: chirpUserData.displayName,
+                                handle: chirpUserData.handle,
+                                avatar: chirpUserData.avatar,
+                                isVerified: true,
                             },
-                            type: 'mention',
-                            text: 'mencionou você em um post',
+                            type: 'post',
+                            text: 'Bem-vindo ao Chirp! Adoramos seu primeiro post.',
                             postContent: newPostContent.substring(0, 50),
                             postId: postRef.id,
                             createdAt: serverTimestamp(),
                             read: false,
                         });
                     }
-                });
-            }
-
-            // Handle Hashtags
-            for (const tag of hashtags) {
-                const hashtagRef = doc(db, "hashtags", tag);
-                const hashtagDoc = await getDoc(hashtagRef);
-                if (hashtagDoc.exists()) {
-                    batch.update(hashtagRef, { count: increment(1) });
-                } else {
-                    batch.set(hashtagRef, {
-                        name: tag,
-                        count: 1,
-                        createdAt: serverTimestamp()
-                    });
                 }
-            }
-            
-            await batch.commit();
+
+                // 4. Handle Mentions
+                if (mentionedHandles.length > 0) {
+                    const usersRef = collection(db, "users");
+                    // Firestore transactions don't support 'in' queries directly with get, so we do it outside or handle it differently.
+                    // For simplicity, we'll fetch them outside the transaction if needed, but for notifications it's often better to do it after the post is committed.
+                    // Let's do it inside with individual gets
+                     const mentionedUserDocs = await Promise.all(mentionedHandles.map(handle => {
+                         const mentionQuery = query(usersRef, where("handle", "==", handle), limit(1));
+                         return getDocs(mentionQuery); // Firestore recommends getDocs for transactions
+                     }));
+
+                     mentionedUserDocs.forEach(querySnapshot => {
+                        if (!querySnapshot.empty) {
+                            const userDoc = querySnapshot.docs[0];
+                            const mentionedUserId = userDoc.id;
+                            if (mentionedUserId !== user.uid) { // Don't notify for self-mention
+                                const notificationRef = doc(collection(db, 'notifications'));
+                                transaction.set(notificationRef, {
+                                    toUserId: mentionedUserId,
+                                    fromUserId: user.uid,
+                                    fromUser: {
+                                        name: chirpUser.displayName,
+                                        handle: chirpUser.handle,
+                                        avatar: chirpUser.avatar,
+                                        isVerified: chirpUser.isVerified || false,
+                                    },
+                                    type: 'mention',
+                                    text: 'mencionou você em um post',
+                                    postContent: newPostContent.substring(0, 50),
+                                    postId: postRef.id,
+                                    createdAt: serverTimestamp(),
+                                    read: false,
+                                });
+                            }
+                        }
+                     });
+                }
+                
+                // 5. Handle Hashtags
+                for (const tag of hashtags) {
+                    const hashtagRef = doc(db, "hashtags", tag);
+                    const hashtagDoc = await transaction.get(hashtagRef);
+                    if (hashtagDoc.exists()) {
+                        transaction.update(hashtagRef, { count: increment(1) });
+                    } else {
+                        transaction.set(hashtagRef, {
+                            name: tag,
+                            count: 1,
+                            createdAt: serverTimestamp()
+                        });
+                    }
+                }
+            });
 
             resetModal();
             toast({
