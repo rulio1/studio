@@ -385,9 +385,9 @@ export default function ProfilePage() {
     const fetchUserReplies = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingReplies(true);
-        const q = query(collection(db, "comments"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
+        const q = query(collection(db, "comments"), where("authorId", "==", profileId));
         onSnapshot(q, (snapshot) => {
-            const repliesData = snapshot.docs.map(doc => {
+            let repliesData = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
                     id: doc.id,
@@ -395,6 +395,7 @@ export default function ProfilePage() {
                     time: '', 
                 } as Reply;
             });
+            repliesData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setUserReplies(repliesData);
             setIsLoadingReplies(false);
         });
