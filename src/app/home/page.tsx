@@ -43,6 +43,7 @@ import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { dataURItoFile } from '@/lib/utils';
 import { DialogTitle } from '@radix-ui/react-dialog';
+import CreatePostForm from '@/components/create-post-form';
 
 
 interface Post {
@@ -646,10 +647,13 @@ export default function HomePage() {
       </header>
        <main className="flex-1 overflow-y-auto">
         <Tabs defaultValue="for-you" className="w-full" onValueChange={(value) => setActiveTab(value as 'for-you' | 'following')}>
-            <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+            <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-14 bg-background/80 backdrop-blur-sm z-10">
               <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Para você</TabsTrigger>
               <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Seguindo</TabsTrigger>
             </TabsList>
+            <div className="sticky top-0 z-10 p-4 border-b bg-background/70 backdrop-blur-lg">
+                <CreatePostForm />
+            </div>
             <TabsContent value="for-you" className="mt-0">
                 <PostList posts={allPosts} loading={isLoading} tab="for-you" />
             </TabsContent>
