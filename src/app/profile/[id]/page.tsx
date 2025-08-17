@@ -135,7 +135,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, t
         const timestamp = post.repostedAt || post.createdAt;
         if (timestamp) {
             try {
-                setTime(formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: ptBR }));
+                setTime(formatDistanceToNow(timestamp.toDate(), { locale: ptBR }));
             } catch (e) {
                 setTime('agora')
             }
@@ -254,7 +254,7 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
     useEffect(() => {
         if (reply.createdAt) {
             try {
-                setTime(formatDistanceToNow(reply.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+                setTime(formatDistanceToNow(reply.createdAt.toDate(), { locale: ptBR }));
             } catch (e) {
                 setTime('agora');
             }

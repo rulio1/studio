@@ -176,7 +176,7 @@ const PostItem = ({ post }: { post: Post }) => {
     useEffect(() => {
         if (post.createdAt) {
           try {
-            setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+            setTime(formatDistanceToNow(post.createdAt.toDate(), { locale: ptBR }));
           } catch(e) {
             setTime('agora')
           }

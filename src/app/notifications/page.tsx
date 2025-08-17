@@ -46,7 +46,7 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
         if (notification.createdAt) {
             try {
                 const date = notification.createdAt.toDate();
-                setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
+                setTime(formatDistanceToNow(date, { locale: ptBR }));
             } catch(e) {
                 setTime('agora');
             }

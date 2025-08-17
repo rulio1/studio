@@ -69,11 +69,11 @@ const PostContent = ({ content }: { content: string }) => {
 
 const SavedPostItem = ({ post }: { post: Post }) => {
     const router = useRouter();
-    const [time, setTime] = useState(() => post.createdAt ? format(post.createdAt.toDate(), "PP") : 'Agora');
+    const [time, setTime] = useState('');
 
     useEffect(() => {
         if (post.createdAt) {
-            setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+            setTime(formatDistanceToNow(post.createdAt.toDate(), { locale: ptBR }));
         }
     }, [post.createdAt]);
     

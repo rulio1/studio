@@ -361,7 +361,7 @@ export default function HomePage() {
       if (timestamp) {
         try {
             const date = timestamp.toDate();
-            setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
+            setTime(formatDistanceToNow(date, { locale: ptBR }));
         } catch(e) {
             setTime('agora');
         }
