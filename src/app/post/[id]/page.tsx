@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, Upload, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird } from 'lucide-react';
+import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -202,6 +202,12 @@ export default function PostDetailPage() {
         if (id) {
             const postId = id as string;
             const postRef = doc(db, "posts", postId);
+            
+            // Increment view count.
+            updateDoc(postRef, { views: increment(1) }).catch(err => {
+                // We can ignore this error if the document doesn't exist yet, it will be created with views=0
+            });
+
             const unsubscribePost = onSnapshot(postRef, (doc) => {
                 if (doc.exists()) {
                     const postData = doc.data() as Omit<Post, 'id' | 'isLiked' | 'isRetweeted' | 'time'>;
@@ -540,7 +546,10 @@ export default function PostDetailPage() {
                              <Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
                             <span>{post.likes.length}</span>
                         </button>
-                        <Button variant="ghost" size="icon"><Upload className="h-5 w-5" /></Button>
+                        <div className="flex items-center gap-2">
+                           <BarChart2 className="h-5 w-5" />
+                            <span>{post.views}</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -651,4 +660,3 @@ export default function PostDetailPage() {
         </div>
     );
 }
-

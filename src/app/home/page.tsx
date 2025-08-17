@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Loader2, Trash2, Edit, Save, BadgeCheck, LogOut } from 'lucide-react';
+import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Loader2, Trash2, Edit, Save, BadgeCheck, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -16,7 +16,7 @@ import PostSkeleton from '@/components/post-skeleton';
 import { useRouter } from 'next/navigation';
 import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
-import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch, deleteDoc, increment } from 'firebase/firestore';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -413,9 +413,6 @@ export default function HomePage() {
                     <BarChart2 className="h-5 w-5" />
                     <span>{post.views}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                    <Upload className="h-5 w-5" />
-                    </div>
                 </div>
                 </div>
             </div>
@@ -529,7 +526,7 @@ export default function HomePage() {
                         <Bookmark className="h-6 w-6" /> Itens Salvos
                       </Link>
                     </SheetClose>
-                    <SheetClose asChild>
+                     <SheetClose asChild>
                         <div className="flex items-center gap-4 py-2 text-xl font-bold rounded-md text-muted-foreground cursor-not-allowed">
                             <Radio className="h-6 w-6" /> Spaces <Badge variant="secondary" className="ml-auto">em breve</Badge>
                         </div>
@@ -541,9 +538,11 @@ export default function HomePage() {
                     </SheetClose>
                   </nav>
                   <div className="p-4 border-t mt-auto flex flex-col gap-2">
-                    <div className="flex items-center gap-4 py-2 font-semibold rounded-md text-muted-foreground cursor-not-allowed">
-                        <Bot className="h-6 w-6" /> Chirp AI <Badge variant="secondary" className="ml-auto">em breve</Badge>
-                    </div>
+                    <SheetClose asChild>
+                      <Link href="/chat" className="flex items-center gap-4 py-2 font-semibold rounded-md">
+                        <Bot className="h-6 w-6" /> Chirp AI
+                      </Link>
+                    </SheetClose>
                     <SheetClose asChild>
                        <Link href="/settings" className="flex items-center gap-4 py-2 font-semibold rounded-md">
                         <Settings className="h-6 w-6" /> Configurações e privacidade
@@ -613,4 +612,3 @@ export default function HomePage() {
     </>
   );
 }
-
