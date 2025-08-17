@@ -319,7 +319,7 @@ export default function HomePage() {
                 <div className='w-full'>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm">
-                        <p className="font-bold text-base flex items-center gap-1">{post.author} {post.handle === '@Rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
+                        <p className="font-bold text-base flex items-center gap-1">{post.author} {post.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
                         <p className="text-muted-foreground">{post.handle} · {time}</p>
                         {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
                     </div>
@@ -546,4 +546,5 @@ export default function HomePage() {
   );
 }
 
+    
     

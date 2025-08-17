@@ -183,7 +183,7 @@ export default function SearchPage() {
                     <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/profile/${user.uid}`)}>
                         <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
                         <div>
-                            <p className="font-bold flex items-center gap-1">{user.displayName} {user.handle === '@Rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
+                            <p className="font-bold flex items-center gap-1">{user.displayName} {user.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
                             <p className="text-sm text-muted-foreground">{user.handle}</p>
                             <p className="text-sm mt-1">{user.bio}</p>
                         </div>
@@ -200,7 +200,7 @@ export default function SearchPage() {
                 <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/profile/${user.uid}`)}>
                     <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
                     <div>
-                        <p className="font-bold flex items-center gap-1">{user.displayName} {user.handle === '@Rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
+                        <p className="font-bold flex items-center gap-1">{user.displayName} {user.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
                         <p className="text-sm text-muted-foreground">{user.handle}</p>
                         <p className="text-sm mt-1">{user.bio}</p>
                     </div>
@@ -336,4 +336,5 @@ export default function SearchPage() {
   );
 }
 
+    
     

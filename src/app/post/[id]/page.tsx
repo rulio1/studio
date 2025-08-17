@@ -95,7 +95,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete }: { comment: Comment, us
                 <div className='w-full'>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
-                            <p className="font-bold flex items-center gap-1">{comment.author} {comment.handle === '@Rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
+                            <p className="font-bold flex items-center gap-1">{comment.author} {comment.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
                             <p className="text-muted-foreground">{comment.handle} · {time}</p>
                              {comment.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
                         </div>
@@ -443,7 +443,7 @@ export default function PostDetailPage() {
                                 <AvatarFallback>{post.avatarFallback}</AvatarFallback>
                             </Avatar>
                             <div>
-                                <p className="font-bold flex items-center gap-1">{post.author} {post.handle === '@Rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
+                                <p className="font-bold flex items-center gap-1">{post.author} {post.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
                                 <p className="text-sm text-muted-foreground">{post.handle}</p>
                             </div>
                         </div>
@@ -608,4 +608,5 @@ export default function PostDetailPage() {
     );
 }
 
+    
     
