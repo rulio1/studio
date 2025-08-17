@@ -151,7 +151,6 @@ export default function HomePage() {
     if (allReferencedUserIds.size > 0) {
         const uniqueUserIds = Array.from(allReferencedUserIds);
          if (uniqueUserIds.length > 0) {
-            // Firestore 'in' query limit is 30. Chunk if necessary.
             const chunks = [];
             for (let i = 0; i < uniqueUserIds.length; i += 30) {
                 chunks.push(uniqueUserIds.slice(i, i + 30));
@@ -165,7 +164,6 @@ export default function HomePage() {
     
     let repostedPosts: Post[] = [];
     if (repostedPostIds.length > 0) {
-        // Firestore 'in' query limit is 30. Chunk if necessary.
         const chunks = [];
         for (let i = 0; i < repostedPostIds.length; i += 30) {
             chunks.push(repostedPostIds.slice(i, i + 30));
@@ -229,10 +227,8 @@ export default function HomePage() {
     setIsLoadingFollowing(true);
 
     const followingIds = chirpUser.following;
-    // Also include self in following feed to see own posts/reposts
     const feedUserIds = [...new Set([...followingIds, user.uid])];
 
-    // Firestore 'in' query limit is 30. Chunk if necessary.
     const chunks = [];
     for (let i = 0; i < feedUserIds.length; i += 30) {
         chunks.push(feedUserIds.slice(i, i + 30));
@@ -324,7 +320,7 @@ export default function HomePage() {
         const post = allPosts.find(p => p.id === postId) || followingPosts.find(p => p.id === postId);
         if (!post) return;
     
-        const isActioned = action === 'like' ? post.isLiked : post.isRetweeted;
+        const isActioned = action === 'like' ? post.isLiked : post.retweets.includes(user.uid);
     
         const batch = writeBatch(db);
     
@@ -372,7 +368,6 @@ export default function HomePage() {
         }
         await batch.commit();
         
-        // Force a re-fetch of the relevant feed
         if (activeTab === 'for-you') {
             await fetchAllPosts();
         } else {
@@ -398,6 +393,7 @@ export default function HomePage() {
     } finally {
         setPostToDelete(null);
         await fetchAllPosts();
+        await fetchFollowingPosts();
     }
   };
 
@@ -412,7 +408,6 @@ export default function HomePage() {
         if (!matches) {
             return [];
         }
-        // Return unique hashtags in lowercase
         return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
     };
 
@@ -443,6 +438,7 @@ export default function HomePage() {
     } finally {
         setIsUpdating(false);
         await fetchAllPosts();
+        await fetchFollowingPosts();
     }
   };
   
@@ -576,7 +572,7 @@ export default function HomePage() {
                         <MessageCircle className="h-5 w-5 hover:text-primary transition-colors" />
                         <span>{post.comments}</span>
                     </div>
-                    <button onClick={() => handlePostAction(post.id, 'retweet', post.authorId)} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
+                    <button onClick={() => handlePostAction(post.id, 'retweet', post.authorId)} className={`flex items-center gap-1 ${post.retweets.includes(user?.uid || '') ? 'text-green-500' : ''}`}>
                         <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
                         <span>{post.retweets.length}</span>
                     </button>
@@ -782,5 +778,3 @@ export default function HomePage() {
     </>
   );
 }
-
-    

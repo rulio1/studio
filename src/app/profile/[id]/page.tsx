@@ -202,7 +202,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }:
                     )}
                     <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
                         <button className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></button>
-                        <button onClick={() => onAction(post.id, 'retweet', post.authorId)} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}><Repeat className="h-5 w-5 hover:text-green-500 transition-colors" /><span>{post.retweets.length}</span></button>
+                        <button onClick={() => onAction(post.id, 'retweet', post.authorId)} className={`flex items-center gap-1 ${post.retweets.includes(user?.uid || '') ? 'text-green-500' : ''}`}><Repeat className="h-5 w-5 hover:text-green-500 transition-colors" /><span>{post.retweets.length}</span></button>
                         <button onClick={() => onAction(post.id, 'like', post.authorId)} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}><Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} /><span>{post.likes.length}</span></button>
                         <div className="flex items-center gap-1"><BarChart2 className="h-5 w-5" /><span>{post.views}</span></div>
                     </div>
@@ -325,31 +325,31 @@ export default function ProfilePage() {
         if (!profileId || !currentUser) return;
         setIsLoadingPosts(true);
     
-        // 1. Get original posts by the user
         const postsQuery = query(collection(db, "posts"), where("authorId", "==", profileId));
-        const postsSnapshot = await getDocs(postsQuery);
-        const originalPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
-        
-        // 2. Get reposts by the user
         const repostsQuery = query(collection(db, "reposts"), where("userId", "==", profileId));
-        const repostsSnapshot = await getDocs(repostsQuery);
+
+        const [postsSnapshot, repostsSnapshot] = await Promise.all([getDocs(postsQuery), getDocs(repostsQuery)]);
+
+        const originalPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
         const repostsData = repostsSnapshot.docs.map(doc => doc.data());
         const repostedPostIds = repostsData.map(repost => repost.postId);
-
+        
         let repostedPosts: Post[] = [];
         if (repostedPostIds.length > 0) {
             const profileUserDoc = await getDoc(doc(db, 'users', profileId));
             const profileUserData = profileUserDoc.data() as ChirpUser;
-
-            // 3. Get the full data for the reposted posts
-            const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
-            const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
+            
+            const chunks = [];
+            for (let i = 0; i < repostedPostIds.length; i += 30) {
+                chunks.push(repostedPostIds.slice(i, i + 30));
+            }
+            
+            const repostedPostsSnapshots = await Promise.all(chunks.map(chunk => getDocs(query(collection(db, "posts"), where(documentId(), "in", chunk)))));
             const postsMap = new Map<string, Post>();
-            repostedPostsSnapshot.docs.forEach(doc => {
-                postsMap.set(doc.id, { id: doc.id, ...doc.data() } as Post);
+            repostedPostsSnapshots.forEach(snapshot => {
+                snapshot.docs.forEach(doc => postsMap.set(doc.id, { id: doc.id, ...doc.data() } as Post));
             });
             
-            // 4. Combine repost info with post data
             repostedPosts = repostsData.map(repost => {
                 const postData = postsMap.get(repost.postId);
                 if (!postData) return null;
@@ -364,7 +364,6 @@ export default function ProfilePage() {
             }).filter(p => p !== null) as Post[];
         }
     
-        // 5. Merge and sort
         const allPosts = [...originalPosts, ...repostedPosts];
         allPosts.sort((a, b) => {
             const timeA = a.repostedAt?.toMillis() || a.createdAt?.toMillis() || 0;
@@ -390,7 +389,6 @@ export default function ProfilePage() {
     const fetchUserReplies = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingReplies(true);
-        // Remove order by from query to avoid index error
         const q = query(collection(db, "comments"), where("authorId", "==", profileId));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             let repliesData = snapshot.docs.map(doc => {
@@ -401,7 +399,6 @@ export default function ProfilePage() {
                     time: '', 
                 } as Reply;
             });
-            // Sort on the client side
             repliesData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setUserReplies(repliesData);
             setIsLoadingReplies(false);
@@ -413,7 +410,7 @@ export default function ProfilePage() {
     const fetchLikedPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingLikes(true);
-        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId));
+        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId), orderBy("createdAt", "desc"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const posts = snapshot.docs.map(doc => {
                 const data = doc.data();
@@ -424,7 +421,6 @@ export default function ProfilePage() {
                     isRetweeted: data.retweets.includes(currentUser?.uid || ''),
                 } as Post
             });
-             posts.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setLikedPosts(posts);
             setIsLoadingLikes(false);
         });
@@ -453,11 +449,9 @@ export default function ProfilePage() {
         const profileUserRef = doc(db, 'users', profileUser.uid);
 
         if (isFollowing) {
-            // Unfollow
             batch.update(currentUserRef, { following: arrayRemove(profileUser.uid) });
             batch.update(profileUserRef, { followers: arrayRemove(currentUser.uid) });
         } else {
-            // Follow
             batch.update(currentUserRef, { following: arrayUnion(profileUser.uid) });
             batch.update(profileUserRef, { followers: arrayUnion(currentUser.uid) });
             
@@ -544,7 +538,6 @@ export default function ProfilePage() {
         if (!matches) {
             return [];
         }
-        // Return unique hashtags in lowercase
         return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
     };
 
@@ -599,7 +592,7 @@ export default function ProfilePage() {
         const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId) || mediaPosts.find(p => p.id === postId);
         if (!post) return;
     
-        const isActioned = action === 'like' ? post.isLiked : post.isRetweeted;
+        const isActioned = action === 'like' ? post.isLiked : post.retweets.includes(currentUser.uid);
     
         const batch = writeBatch(db);
     
@@ -646,7 +639,7 @@ export default function ProfilePage() {
             }
         }
         await batch.commit();
-        fetchUserPosts(); // Re-fetch to update the view
+        fetchUserPosts();
     };
     
 
@@ -854,5 +847,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
