@@ -114,7 +114,9 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                         </div>
                     ) : results.length > 0 ? (
                         <ul className="divide-y divide-border">
-                            {results.map(user => (
+                            {results.map(user => {
+                                const isVerified = user.isVerified || user.handle === '@chirp' || user.handle === '@rulio';
+                                return (
                                     <li key={user.uid}>
                                         <button 
                                             className="w-full flex items-center gap-3 p-2 text-left hover:bg-muted rounded-md"
@@ -128,14 +130,15 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                                             <div>
                                                 <p className="font-semibold flex items-center gap-1">
                                                     {user.displayName}
-                                                    {user.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                                                    {isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                                                 </p>
                                                 <p className="text-sm text-muted-foreground">{user.handle}</p>
                                             </div>
                                             {isCreating && <Loader2 className="h-4 w-4 animate-spin ml-auto" />}
                                         </button>
                                     </li>
-                                ))}
+                                )
+                            })}
                         </ul>
                     ) : (
                         debouncedSearchTerm && <p className="text-center text-muted-foreground pt-8">Nenhum usuário encontrado.</p>

@@ -107,6 +107,8 @@ const PostItem = ({ post }: { post: Post }) => {
           }
         }
     }, [post.createdAt]);
+    
+    const isVerified = post.isVerified || post.handle === '@chirp' || post.handle === '@rulio';
 
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
@@ -120,7 +122,7 @@ const PostItem = ({ post }: { post: Post }) => {
                         <div className="flex items-center gap-2 text-sm">
                             <p className="font-bold text-base flex items-center gap-1">
                                 {post.author} 
-                                {post.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                                {isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                             </p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
                         </div>

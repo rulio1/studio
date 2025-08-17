@@ -181,6 +181,8 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
             await updateDoc(commentRef, { [field]: arrayUnion(user.uid) });
         }
     };
+    
+    const isVerified = comment.isVerified || comment.handle === '@chirp' || comment.handle === '@rulio';
 
     return (
         <li className="p-4 flex gap-4 relative">
@@ -196,7 +198,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
                     <div className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
                         <p className="font-bold flex items-center gap-1">
                             {comment.author} 
-                            {comment.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            {isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                         </p>
                         <p className="text-muted-foreground">{comment.handle} · {time}</p>
                          {comment.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
@@ -629,6 +631,8 @@ export default function PostDetailPage() {
         );
     }
     
+    const isPostVerified = post.isVerified || post.handle === '@chirp' || post.handle === '@rulio';
+
     return (
         <div className="flex flex-col h-screen bg-background">
             <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
@@ -651,7 +655,7 @@ export default function PostDetailPage() {
                             <div>
                                 <p className="font-bold flex items-center gap-1">
                                     {post.author} 
-                                    {post.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                                    {isPostVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                                 </p>
                                 <p className="text-sm text-muted-foreground">{post.handle}</p>
                             </div>

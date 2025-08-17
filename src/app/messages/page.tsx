@@ -59,6 +59,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
     const isMyMessage = convo.lastMessage.senderId === currentUserId;
     const isUnread = convo.unreadCount > 0;
     const messagePreview = `${isMyMessage ? 'Você: ' : ''}${convo.lastMessage.text}`;
+    const isVerified = convo.otherUser.isVerified || convo.otherUser.handle === '@chirp' || convo.otherUser.handle === '@rulio';
 
     return (
          <li 
@@ -74,7 +75,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
                     <div className="flex items-baseline gap-2">
                         <p className="font-bold truncate flex items-center gap-1">
                             {convo.otherUser.name}
-                            {convo.otherUser.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            {isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">{convo.otherUser.handle}</p>
                     </div>
@@ -174,7 +175,7 @@ export default function MessagesPage() {
                         name: otherUserData.displayName,
                         handle: otherUserData.handle,
                         avatar: otherUserData.avatar,
-                        isVerified: otherUserData.isVerified || false,
+                        isVerified: otherUserData.isVerified,
                     },
                     lastMessage: {
                         ...conversationData.lastMessage,

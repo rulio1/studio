@@ -219,6 +219,8 @@ export default function ConversationPage() {
             </div>
         );
     }
+    
+    const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@chirp' || otherUser.handle === '@rulio';
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -236,7 +238,7 @@ export default function ConversationPage() {
                     <div>
                         <h1 className="text-lg font-bold flex items-center gap-1">
                             {otherUser.displayName}
-                            {otherUser.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            {isOtherUserVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                         </h1>
                         <p className="text-xs text-muted-foreground">{otherUser.handle}</p>
                     </div>

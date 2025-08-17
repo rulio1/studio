@@ -145,6 +145,8 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
             }
         }
     }, [post.createdAt, post.repostedAt]);
+    
+    const isVerified = post.isVerified || post.handle === '@chirp' || post.handle === '@rulio';
 
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
@@ -170,7 +172,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
                         <div className="flex items-center gap-2 text-sm">
                             <p className="font-bold text-base flex items-center gap-1">
                                 {post.author} 
-                                {post.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                                {isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                             </p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
                             {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
@@ -796,6 +798,7 @@ export default function ProfilePage() {
     }
 
     const isOwnProfile = currentUser?.uid === profileUser.uid;
+    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@chirp' || profileUser.handle === '@rulio';
 
   return (
     <div className="animate-fade-in">
@@ -806,7 +809,7 @@ export default function ProfilePage() {
             <div>
                 <h1 className="text-xl font-bold flex items-center gap-1">
                     {profileUser.displayName}
-                    {profileUser.isVerified && <BadgeCheck className="h-5 w-5 text-primary" />}
+                    {isProfileVerified && <BadgeCheck className="h-5 w-5 text-primary" />}
                 </h1>
                 <p className="text-sm text-muted-foreground">{userPosts.length + (pinnedPost ? 1 : 0)} posts</p>
             </div>
@@ -847,7 +850,7 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-bold flex items-center gap-1">
                         {profileUser.displayName}
-                        {profileUser.isVerified && <BadgeCheck className="h-6 w-6 text-primary" />}
+                        {isProfileVerified && <BadgeCheck className="h-6 w-6 text-primary" />}
                     </h1>
                 </div>
                 <p className="text-muted-foreground">{profileUser.handle}</p>

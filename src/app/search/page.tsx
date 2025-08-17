@@ -254,6 +254,7 @@ export default function SearchPage() {
 
   const renderUser = (user: UserSearchResult, list: 'newUsers' | 'users') => {
     const isFollowing = user.followers?.includes(currentUser?.uid || '');
+    const isVerified = user.isVerified || user.handle === '@chirp' || user.handle === '@rulio';
     if (currentUser?.uid === user.uid) {
         return (
             <li key={user.uid} className="p-4 hover:bg-muted/50">
@@ -263,7 +264,7 @@ export default function SearchPage() {
                         <div>
                             <p className="font-bold flex items-center gap-1">
                                 {user.displayName}
-                                {user.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                                {isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                             </p>
                             <p className="text-sm text-muted-foreground">{user.handle}</p>
                             <p className="text-sm mt-1">{user.bio}</p>
@@ -283,7 +284,7 @@ export default function SearchPage() {
                     <div>
                         <p className="font-bold flex items-center gap-1">
                             {user.displayName}
-                            {user.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            {isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                         </p>
                         <p className="text-sm text-muted-foreground">{user.handle}</p>
                         <p className="text-sm mt-1">{user.bio}</p>
