@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, Upload, MoreHorizontal, Loader2, Trash2, Edit, Save } from 'lucide-react';
+import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, Upload, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck } from 'lucide-react';
 import Image from 'next/image';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch } from 'firebase/firestore';
@@ -95,7 +95,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete }: { comment: Comment, us
                 <div className='w-full'>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
-                            <p className="font-bold">{comment.author}</p>
+                            <p className="font-bold flex items-center gap-1">{comment.author} {comment.handle === '@Rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
                             <p className="text-muted-foreground">{comment.handle} · {time}</p>
                              {comment.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
                         </div>
@@ -443,7 +443,7 @@ export default function PostDetailPage() {
                                 <AvatarFallback>{post.avatarFallback}</AvatarFallback>
                             </Avatar>
                             <div>
-                                <p className="font-bold">{post.author}</p>
+                                <p className="font-bold flex items-center gap-1">{post.author} {post.handle === '@Rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
                                 <p className="text-sm text-muted-foreground">{post.handle}</p>
                             </div>
                         </div>
@@ -607,3 +607,5 @@ export default function PostDetailPage() {
         </div>
     );
 }
+
+    

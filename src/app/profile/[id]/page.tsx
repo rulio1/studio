@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Upload, Bell, Trash2, Edit, Save, Bookmark } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Upload, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -119,7 +119,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }:
                 <div className='w-full'>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm">
-                            <p className="font-bold text-base">{post.author}</p>
+                            <p className="font-bold text-base flex items-center gap-1">{post.author} {post.handle === '@Rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
                             {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
                         </div>
@@ -191,7 +191,7 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
                 <div className='w-full'>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm">
-                            <p className="font-bold text-base">{reply.author}</p>
+                            <p className="font-bold text-base flex items-center gap-1">{reply.author} {reply.handle === '@Rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
                             <p className="text-muted-foreground">{reply.handle} · {time}</p>
                         </div>
                     </div>
@@ -583,7 +583,7 @@ export default function ProfilePage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-                <h1 className="text-xl font-bold">{profileUser.displayName}</h1>
+                <h1 className="text-xl font-bold flex items-center gap-1">{profileUser.displayName} {profileUser.handle === '@Rulio' && <BadgeCheck className="h-5 w-5 text-primary" />}</h1>
                 <p className="text-sm text-muted-foreground">{userPosts.length} posts</p>
             </div>
         </header>
@@ -621,7 +621,7 @@ export default function ProfilePage() {
             </div>
             <div className="mt-4">
                 <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold">{profileUser.displayName}</h1>
+                    <h1 className="text-2xl font-bold flex items-center gap-1">{profileUser.displayName} {profileUser.handle === '@Rulio' && <BadgeCheck className="h-6 w-6 text-primary" />}</h1>
                 </div>
                 <p className="text-muted-foreground">{profileUser.handle}</p>
                 <p className="mt-2 whitespace-pre-wrap">{profileUser.bio}</p>

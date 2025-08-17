@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, Search, Settings, MessageCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { MoreHorizontal, Search, Settings, MessageCircle, Loader2, ArrowLeft, BadgeCheck } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { collection, getDocs, query, where, limit, orderBy, doc, updateDoc, arrayUnion, arrayRemove, writeBatch, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
@@ -183,7 +183,7 @@ export default function SearchPage() {
                     <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/profile/${user.uid}`)}>
                         <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
                         <div>
-                            <p className="font-bold">{user.displayName}</p>
+                            <p className="font-bold flex items-center gap-1">{user.displayName} {user.handle === '@Rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
                             <p className="text-sm text-muted-foreground">{user.handle}</p>
                             <p className="text-sm mt-1">{user.bio}</p>
                         </div>
@@ -200,7 +200,7 @@ export default function SearchPage() {
                 <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/profile/${user.uid}`)}>
                     <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
                     <div>
-                        <p className="font-bold">{user.displayName}</p>
+                        <p className="font-bold flex items-center gap-1">{user.displayName} {user.handle === '@Rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
                         <p className="text-sm text-muted-foreground">{user.handle}</p>
                         <p className="text-sm mt-1">{user.bio}</p>
                     </div>

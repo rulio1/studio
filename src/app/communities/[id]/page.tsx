@@ -9,7 +9,7 @@ import { auth, db, storage } from '@/lib/firebase';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Upload, Bird, Trash2, Edit, Save, ImageIcon, Sparkles, X, ImageUp } from 'lucide-react';
+import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Upload, Bird, Trash2, Edit, Save, ImageIcon, Sparkles, X, ImageUp, BadgeCheck } from 'lucide-react';
 import PostSkeleton from '@/components/post-skeleton';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -105,7 +105,7 @@ const PostItem = ({ post }: { post: Post }) => {
                 <div className='w-full'>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm">
-                            <p className="font-bold text-base">{post.author}</p>
+                            <p className="font-bold text-base flex items-center gap-1">{post.author} {post.handle === '@Rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
                         </div>
                     </div>
@@ -492,3 +492,5 @@ export default function CommunityDetailPage() {
         </div>
     );
 }
+
+    
