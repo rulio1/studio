@@ -187,16 +187,25 @@ export default function EditProfilePage() {
             
             batch.update(userDocRef, updateData);
             
-            // If avatar or handle changed, update all posts by this user
-            const shouldUpdatePosts = updateData.avatar || handleChanged;
-            if (shouldUpdatePosts) {
+            // If avatar or handle changed, update all posts and comments by this user
+            if (newAvatarFile || handleChanged) {
+                const contentUpdate: { [key: string]: any } = {};
+                if(newAvatarFile) contentUpdate.avatar = updateData.avatar;
+                if(handleChanged) contentUpdate.handle = updateData.handle;
+                
                 const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
-                const postsSnapshot = await getDocs(postsQuery);
+                const commentsQuery = query(collection(db, "comments"), where("authorId", "==", user.uid));
+                
+                const [postsSnapshot, commentsSnapshot] = await Promise.all([
+                    getDocs(postsQuery),
+                    getDocs(commentsQuery),
+                ]);
+
                 postsSnapshot.forEach((postDoc) => {
-                    const postUpdate: { [key: string]: any } = {};
-                    if(updateData.avatar) postUpdate.avatar = updateData.avatar;
-                    if(handleChanged) postUpdate.handle = updateData.handle;
-                    batch.update(postDoc.ref, postUpdate);
+                    batch.update(postDoc.ref, contentUpdate);
+                });
+                commentsSnapshot.forEach((commentDoc) => {
+                     batch.update(commentDoc.ref, contentUpdate);
                 });
             }
 
