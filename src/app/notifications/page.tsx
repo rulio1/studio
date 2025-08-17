@@ -20,6 +20,7 @@ interface Notification {
     fromUser: {
         name: string;
         avatar: string;
+        handle: string;
     };
     text: string;
     postContent?: string;
@@ -157,6 +158,13 @@ export default function NotificationsPage() {
         return notifications.filter(n => n.type === 'mention');
     }, [notifications]);
 
+    const verifiedNotifications = useMemo(() => {
+        return notifications.filter(n => 
+            n.fromUser.handle.toLowerCase() === '@chirp' || 
+            n.fromUser.handle.toLowerCase() === '@rulio'
+        );
+    }, [notifications]);
+
   return (
     <Tabs defaultValue="all" className="flex flex-col h-screen">
        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
@@ -169,8 +177,8 @@ export default function NotificationsPage() {
         </div>
         <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
             <TabsTrigger value="all" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Todas</TabsTrigger>
-            <TabsTrigger value="mentions" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Menções</TabsTrigger>
             <TabsTrigger value="verified" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Verificados</TabsTrigger>
+            <TabsTrigger value="mentions" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Menções</TabsTrigger>
         </TabsList>
       </header>
 
@@ -192,6 +200,22 @@ export default function NotificationsPage() {
                     </ul>
                 )}
             </TabsContent>
+            <TabsContent value="verified" className="mt-0">
+                 {isLoading ? (
+                    <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                ) : verifiedNotifications.length === 0 ? (
+                     <div className="p-8 text-center text-muted-foreground">
+                        <h3 className="font-bold text-2xl text-foreground">Nada para ver aqui — ainda</h3>
+                        <p>Curtidas, menções, repostagens e muito mais — quando vier de uma conta verificada, você encontrará aqui.</p>
+                    </div>
+                ) : (
+                    <ul className="divide-y divide-border">
+                        {verifiedNotifications.map((item) => (
+                           <NotificationItem key={item.id} notification={item} />
+                        ))}
+                    </ul>
+                )}
+            </TabsContent>
             <TabsContent value="mentions" className="mt-0">
                  {isLoading ? (
                     <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -207,12 +231,6 @@ export default function NotificationsPage() {
                         ))}
                     </ul>
                 )}
-            </TabsContent>
-            <TabsContent value="verified" className="mt-0">
-                 <div className="p-8 text-center text-muted-foreground">
-                    <h3 className="font-bold text-2xl text-foreground">Nada para ver aqui — ainda</h3>
-                    <p>Curtidas, menções, repostagens e muito mais — quando vier de uma conta verificada, você encontrará aqui.</p>
-                </div>
             </TabsContent>
         </div>
     </Tabs>
