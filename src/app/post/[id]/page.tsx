@@ -315,10 +315,13 @@ export default function PostDetailPage() {
             
             const unsubscribePost = onSnapshot(postRef, (doc) => {
                 if (doc.exists()) {
-                     // Increment view count.
-                    updateDoc(postRef, { views: increment(1) }).catch(err => {
-                        console.error("Failed to increment views, may not be critical.", err);
-                    });
+                    const viewedPosts = JSON.parse(sessionStorage.getItem('viewedPosts') || '[]');
+                    if (!viewedPosts.includes(postId)) {
+                        updateDoc(postRef, { views: increment(1) }).catch(err => {
+                            console.error("Failed to increment views, may not be critical.", err);
+                        });
+                        sessionStorage.setItem('viewedPosts', JSON.stringify([...viewedPosts, postId]));
+                    }
 
                     const postData = doc.data() as Omit<Post, 'id' | 'isLiked' | 'isRetweeted' | 'time'>;
                     setPost({
