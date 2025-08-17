@@ -6,12 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bell, Settings, Star, Users, Heart, Loader2, AtSign, BadgeCheck, Bird, UserX } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { formatTimeAgo } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+
+interface ChirpUser {
+    uid: string;
+    following?: string[];
+}
 
 interface Notification {
     id: string;
@@ -40,10 +45,11 @@ const iconMap = {
     unfollow: { icon: UserX, color: 'text-muted-foreground' },
 };
 
-const NotificationItem = ({ notification }: { notification: Notification }) => {
+const NotificationItem = ({ notification, chirpUser, handleFollowBack }: { notification: Notification, chirpUser: ChirpUser | null, handleFollowBack: (userId: string) => Promise<void> }) => {
     const router = useRouter();
     const { icon: Icon, color } = iconMap[notification.type] || iconMap.post;
     const [time, setTime] = useState('');
+    const [isFollowing, setIsFollowing] = useState(false);
     
     useEffect(() => {
         if (notification.createdAt) {
@@ -54,7 +60,10 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
                 setTime('agora');
             }
         }
-    }, [notification.createdAt]);
+        if (chirpUser && chirpUser.following?.includes(notification.fromUserId)) {
+            setIsFollowing(true);
+        }
+    }, [notification, chirpUser]);
     
     const handleItemClick = () => {
         if (notification.type === 'follow' || notification.type === 'unfollow') {
@@ -67,6 +76,12 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
     const handleAvatarClick = (e: React.MouseEvent) => {
         e.stopPropagation(); // Impede que o clique no avatar acione o clique no item da lista
         router.push(`/profile/${notification.fromUserId}`);
+    };
+
+    const onFollowBackClick = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        await handleFollowBack(notification.fromUserId);
+        setIsFollowing(true);
     };
 
     const isVerified = notification.fromUser.isVerified || notification.fromUser.handle === '@rulio';
@@ -92,6 +107,12 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
                 {notification.postContent && <p className="text-muted-foreground mt-1">{notification.postContent}</p>}
                 <p className="text-sm text-muted-foreground mt-1">{time}</p>
             </div>
+            {notification.type === 'follow' && !isFollowing && (
+                 <Button onClick={onFollowBackClick}>Seguir de volta</Button>
+            )}
+             {notification.type === 'follow' && isFollowing && (
+                 <Button variant="secondary" disabled>Seguindo</Button>
+            )}
         </li>
     );
 };
@@ -99,13 +120,24 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
 
 export default function NotificationsPage() {
     const [user, setUser] = useState<FirebaseUser | null>(null);
+    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
-            if (!currentUser) {
+            if (currentUser) {
+                setUser(currentUser);
+                const userDocRef = doc(db, 'users', currentUser.uid);
+                const unsubUser = onSnapshot(userDocRef, (doc) => {
+                    if (doc.exists()) {
+                        setChirpUser({ uid: doc.id, ...doc.data() } as ChirpUser);
+                    }
+                });
+                return () => unsubUser();
+            } else {
+                setUser(null);
+                setChirpUser(null);
                 setIsLoading(false);
             }
         });
@@ -160,6 +192,17 @@ export default function NotificationsPage() {
         return () => unsubscribe();
     }, [user]);
 
+    const handleFollowBack = useCallback(async (targetUserId: string) => {
+        if (!user) return;
+        const currentUserRef = doc(db, 'users', user.uid);
+        const targetUserRef = doc(db, 'users', targetUserId);
+
+        const batch = writeBatch(db);
+        batch.update(currentUserRef, { following: arrayUnion(targetUserId) });
+        batch.update(targetUserRef, { followers: arrayUnion(user.uid) });
+        await batch.commit();
+    }, [user]);
+
     const mentions = useMemo(() => {
         return notifications.filter(n => n.type === 'mention');
     }, [notifications]);
@@ -198,7 +241,7 @@ export default function NotificationsPage() {
                 ) : (
                     <ul className="divide-y divide-border">
                         {notifications.map((item) => (
-                           <NotificationItem key={item.id} notification={item} />
+                           <NotificationItem key={item.id} notification={item} chirpUser={chirpUser} handleFollowBack={handleFollowBack} />
                         ))}
                     </ul>
                 )}
@@ -214,7 +257,7 @@ export default function NotificationsPage() {
                 ) : (
                     <ul className="divide-y divide-border">
                         {verifiedNotifications.map((item) => (
-                           <NotificationItem key={item.id} notification={item} />
+                           <NotificationItem key={item.id} notification={item} chirpUser={chirpUser} handleFollowBack={handleFollowBack} />
                         ))}
                     </ul>
                 )}
@@ -230,7 +273,7 @@ export default function NotificationsPage() {
                 ) : (
                      <ul className="divide-y divide-border">
                         {mentions.map((item) => (
-                           <NotificationItem key={item.id} notification={item} />
+                           <NotificationItem key={item.id} notification={item} chirpUser={chirpUser} handleFollowBack={handleFollowBack} />
                         ))}
                     </ul>
                 )}
@@ -239,3 +282,5 @@ export default function NotificationsPage() {
     </Tabs>
   );
 }
+
+    
