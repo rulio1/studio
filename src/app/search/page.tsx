@@ -254,7 +254,9 @@ export default function SearchPage() {
 
   const renderUser = (user: UserSearchResult, list: 'newUsers' | 'users') => {
     const isFollowing = user.followers?.includes(currentUser?.uid || '');
-    const isVerified = user.isVerified || user.handle === '@chirp' || user.handle === '@rulio';
+    const isVerified = user.isVerified || user.handle === '@rulio';
+    const isChirpAccount = user.handle === '@chirp';
+
     if (currentUser?.uid === user.uid) {
         return (
             <li key={user.uid} className="p-4 hover:bg-muted/50">
@@ -264,7 +266,7 @@ export default function SearchPage() {
                         <div>
                             <p className="font-bold flex items-center gap-1">
                                 {user.displayName}
-                                {isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                                {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                             </p>
                             <p className="text-sm text-muted-foreground">{user.handle}</p>
                             <p className="text-sm mt-1">{user.bio}</p>
@@ -284,7 +286,7 @@ export default function SearchPage() {
                     <div>
                         <p className="font-bold flex items-center gap-1">
                             {user.displayName}
-                            {isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                         </p>
                         <p className="text-sm text-muted-foreground">{user.handle}</p>
                         <p className="text-sm mt-1">{user.bio}</p>
@@ -312,7 +314,7 @@ export default function SearchPage() {
                 <div className="flex items-center gap-2 text-sm">
                     <p className="font-bold text-base flex items-center gap-1">
                         {post.author} 
-                        <BadgeCheck className="h-4 w-4 text-primary" />
+                        <Bird className="h-4 w-4 text-primary" />
                     </p>
                     <p className="text-muted-foreground">{post.handle}</p>
                 </div>

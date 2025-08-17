@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -220,7 +220,8 @@ export default function ConversationPage() {
         );
     }
     
-    const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@chirp' || otherUser.handle === '@rulio';
+    const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@rulio';
+    const isChirpAccount = otherUser.handle === '@chirp';
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -238,7 +239,7 @@ export default function ConversationPage() {
                     <div>
                         <h1 className="text-lg font-bold flex items-center gap-1">
                             {otherUser.displayName}
-                            {isOtherUserVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isOtherUserVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                         </h1>
                         <p className="text-xs text-muted-foreground">{otherUser.handle}</p>
                     </div>

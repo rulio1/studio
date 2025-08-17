@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, Settings, Star, Users, Heart, Loader2, AtSign, BadgeCheck } from 'lucide-react';
+import { Bell, Settings, Star, Users, Heart, Loader2, AtSign, BadgeCheck, Bird } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useMemo } from 'react';
 import { auth, db } from '@/lib/firebase';
@@ -68,7 +68,8 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
         router.push(`/profile/${notification.fromUserId}`);
     };
 
-    const isVerified = notification.fromUser.isVerified || notification.fromUser.handle === '@chirp' || notification.fromUser.handle === '@rulio';
+    const isVerified = notification.fromUser.isVerified || notification.fromUser.handle === '@rulio';
+    const isChirpAccount = notification.fromUser.handle === '@chirp';
 
     return (
         <li className={`p-4 flex gap-4 hover:bg-muted/50 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`} onClick={handleItemClick}>
@@ -84,7 +85,7 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
                 </div>
                 <p>
                     <span className="font-bold">{notification.fromUser.name}</span>
-                    {isVerified && <BadgeCheck className="inline-block h-4 w-4 text-primary ml-1" />}
+                    {isChirpAccount ? <Bird className="inline-block h-4 w-4 text-primary ml-1" /> : (isVerified && <BadgeCheck className="inline-block h-4 w-4 text-primary ml-1" />)}
                     <span className="font-normal text-muted-foreground"> {notification.text}</span>
                 </p>
                 {notification.postContent && <p className="text-muted-foreground mt-1">{notification.postContent}</p>}

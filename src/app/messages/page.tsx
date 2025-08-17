@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MailPlus, Search, Settings, Loader2, MessageSquare, Pin, Archive, Trash2, MoreHorizontal, BadgeCheck } from 'lucide-react';
+import { MailPlus, Search, Settings, Loader2, MessageSquare, Pin, Archive, Trash2, MoreHorizontal, BadgeCheck, Bird } from 'lucide-react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, doc, getDoc, orderBy, deleteDoc } from 'firebase/firestore';
@@ -59,7 +59,8 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
     const isMyMessage = convo.lastMessage.senderId === currentUserId;
     const isUnread = convo.unreadCount > 0;
     const messagePreview = `${isMyMessage ? 'Você: ' : ''}${convo.lastMessage.text}`;
-    const isVerified = convo.otherUser.isVerified || convo.otherUser.handle === '@chirp' || convo.otherUser.handle === '@rulio';
+    const isVerified = convo.otherUser.isVerified || convo.otherUser.handle === '@rulio';
+    const isChirpAccount = convo.otherUser.handle === '@chirp';
 
     return (
          <li 
@@ -75,7 +76,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
                     <div className="flex items-baseline gap-2">
                         <p className="font-bold truncate flex items-center gap-1">
                             {convo.otherUser.name}
-                            {isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">{convo.otherUser.handle}</p>
                     </div>

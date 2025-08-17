@@ -451,7 +451,8 @@ export default function HomePage() {
       }
     }, [post.createdAt, post.repostedAt]);
     
-    const isVerified = post.isVerified || post.handle === '@chirp' || post.handle === '@rulio';
+    const isVerified = post.isVerified || post.handle === '@rulio';
+    const isChirpAccount = post.handle === '@chirp';
 
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => handlePostClick(post.id)}>
@@ -471,7 +472,7 @@ export default function HomePage() {
                     <div className="flex items-center gap-2 text-sm">
                         <p className="font-bold text-base flex items-center gap-1">
                             {post.author} 
-                            {isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                         </p>
                         <p className="text-muted-foreground">{post.handle} · {time}</p>
                         {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
@@ -626,7 +627,8 @@ export default function HomePage() {
       );
   }
   
-  const isChirpUserVerified = chirpUser.isVerified || chirpUser.handle === '@chirp' || chirpUser.handle === '@rulio';
+    const isChirpUserVerified = chirpUser.isVerified || chirpUser.handle === '@rulio';
+    const isChirpAccount = chirpUser.handle === '@chirp';
 
 
   return (
@@ -656,7 +658,7 @@ export default function HomePage() {
                     <div className="flex flex-col">
                         <div className="flex items-center gap-1 font-bold text-lg">
                             {chirpUser.displayName}
-                            {isChirpUserVerified && <BadgeCheck className="h-5 w-5 text-primary" />}
+                            {isChirpAccount ? <Bird className="h-5 w-5 text-primary" /> : (isChirpUserVerified && <BadgeCheck className="h-5 w-5 text-primary" />)}
                         </div>
                         <p className="text-sm text-muted-foreground">{chirpUser.handle}</p>
                     </div>

@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search, BadgeCheck } from 'lucide-react';
+import { Loader2, Search, BadgeCheck, Bird } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, setDoc, getDoc, serverTimestamp, limit } from 'firebase/firestore';
@@ -115,7 +115,8 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                     ) : results.length > 0 ? (
                         <ul className="divide-y divide-border">
                             {results.map(user => {
-                                const isVerified = user.isVerified || user.handle === '@chirp' || user.handle === '@rulio';
+                                const isVerified = user.isVerified || user.handle === '@rulio';
+                                const isChirpAccount = user.handle === '@chirp';
                                 return (
                                     <li key={user.uid}>
                                         <button 
@@ -130,7 +131,7 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                                             <div>
                                                 <p className="font-semibold flex items-center gap-1">
                                                     {user.displayName}
-                                                    {isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                                                    {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                                                 </p>
                                                 <p className="text-sm text-muted-foreground">{user.handle}</p>
                                             </div>
