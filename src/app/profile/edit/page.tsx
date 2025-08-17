@@ -10,14 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser, updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
 
 interface UserProfileData {
     displayName: string;
@@ -37,13 +34,6 @@ function fileToDataUri(file: File): Promise<string> {
     });
 }
 
-function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number): Crop {
-    return centerCrop(
-        makeAspectCrop({ unit: '%', width: 90 }, aspect, mediaWidth, mediaHeight),
-        mediaWidth,
-        mediaHeight
-    );
-}
 
 export default function EditProfilePage() {
     const router = useRouter();
@@ -66,15 +56,6 @@ export default function EditProfilePage() {
     
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const bannerInputRef = useRef<HTMLInputElement>(null);
-
-    // Cropping state
-    const [crop, setCrop] = useState<Crop>();
-    const [isCropModalOpen, setIsCropModalOpen] = useState(false);
-    const [imageToCrop, setImageToCrop] = useState('');
-    const [cropAspect, setCropAspect] = useState(1);
-    const [cropType, setCropType] = useState<'avatar' | 'banner' | null>(null);
-    const imgRef = useRef<HTMLImageElement>(null);
-    const [completedCrop, setCompletedCrop] = useState<Crop | null>(null);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -107,11 +88,6 @@ export default function EditProfilePage() {
     }, [router, toast]);
 
 
-    const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-        const { width, height } = e.currentTarget;
-        setCrop(centerAspectCrop(width, height, cropAspect));
-    };
-
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -126,58 +102,13 @@ export default function EditProfilePage() {
         }
 
         const dataUri = await fileToDataUri(file);
-        setImageToCrop(dataUri);
-        setCropType(type);
-        setCropAspect(type === 'avatar' ? 1 / 1 : 3 / 1);
-        setIsCropModalOpen(true);
+        if (type === 'avatar') {
+            setNewAvatarDataUri(dataUri);
+        } else {
+            setNewBannerDataUri(dataUri);
+        }
          // Reset the input value to allow selecting the same file again
         e.target.value = '';
-    };
-
-    const getCroppedImg = (): Promise<string | null> => {
-        const image = imgRef.current;
-        const canvas = document.createElement('canvas');
-        if (!image || !completedCrop) {
-            return Promise.resolve(null);
-        }
-
-        const scaleX = image.naturalWidth / image.width;
-        const scaleY = image.naturalHeight / image.height;
-        canvas.width = completedCrop.width * scaleX;
-        canvas.height = completedCrop.height * scaleY;
-        const ctx = canvas.getContext('2d');
-
-        if (!ctx) {
-            return Promise.resolve(null);
-        }
-
-        ctx.drawImage(
-            image,
-            completedCrop.x * scaleX,
-            completedCrop.y * scaleY,
-            completedCrop.width * scaleX,
-            completedCrop.height * scaleY,
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-        
-        return new Promise((resolve) => {
-            resolve(canvas.toDataURL('image/jpeg'));
-        });
-    };
-
-    const handleCropComplete = async () => {
-        const croppedDataUrl = await getCroppedImg();
-        if (croppedDataUrl) {
-            if (cropType === 'avatar') {
-                setNewAvatarDataUri(croppedDataUrl);
-            } else if (cropType === 'banner') {
-                setNewBannerDataUri(croppedDataUrl);
-            }
-        }
-        setIsCropModalOpen(false);
     };
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -205,8 +136,6 @@ export default function EditProfilePage() {
                 updateData.banner = newBannerDataUri;
             }
 
-            // We only update the displayName in auth, as photoURL has size limits
-            // and the app reads the avatar from Firestore anyway.
             if(user.displayName !== profileData.displayName) {
                 await updateProfile(user, { displayName: profileData.displayName });
             }
@@ -339,36 +268,6 @@ export default function EditProfilePage() {
             </div>
         </div>
       </main>
-
-        <Dialog open={isCropModalOpen} onOpenChange={setIsCropModalOpen}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Cortar Imagem</DialogTitle>
-                </DialogHeader>
-                {imageToCrop && (
-                    <ReactCrop
-                        crop={crop}
-                        onChange={(_, percentCrop) => setCrop(percentCrop)}
-                        onComplete={(c) => setCompletedCrop(c)}
-                        aspect={cropAspect}
-                    >
-                         <img
-                            ref={imgRef}
-                            alt="Crop me"
-                            src={imageToCrop}
-                            onLoad={onImageLoad}
-                            style={{ maxHeight: '70vh' }}
-                        />
-                    </ReactCrop>
-                )}
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="outline">Cancelar</Button>
-                    </DialogClose>
-                    <Button onClick={handleCropComplete}>Cortar</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
     </div>
   );
 }

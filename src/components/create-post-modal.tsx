@@ -18,10 +18,7 @@ import React from 'react';
 import { fileToDataUri } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
-import { Grid } from '@giphy/react-components';
-import { GiphyFetch } from '@giphy/js-fetch-api';
-import type { IGif } from '@giphy/js-types';
-
+import { useDebounce } from 'use-debounce';
 
 interface ChirpUser {
     uid: string;
@@ -30,36 +27,79 @@ interface ChirpUser {
     avatar: string;
 }
 
-const giphyFetch = new GiphyFetch('Y8w1xO42S2G43y3y0dM9cNoZpXAZyq57');
-
-function GifPicker({ onGifClick }: { onGifClick: (gif: IGif) => void }) {
-    const [searchTerm, setSearchTerm] = useState('trending');
-    
-    const fetchGifs = (offset: number) => {
-        if (searchTerm.trim() === '' || searchTerm === 'trending') {
-             return giphyFetch.trending({ offset, limit: 10 });
+interface Gif {
+    id: string;
+    url: string;
+    title: string;
+    images: {
+        fixed_height: {
+            url: string;
         }
-        return giphyFetch.search(searchTerm, { offset, limit: 10 });
+        original: {
+            url: string;
+        }
     }
+}
+
+const GIPHY_API_KEY = 'Y8w1xO42S2G43y3y0dM9cNoZpXAZyq57';
+
+function GifPicker({ onGifClick }: { onGifClick: (gif: Gif) => void }) {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
+    const [gifs, setGifs] = useState<Gif[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchGifs = async () => {
+            setIsLoading(true);
+            const endpoint = debouncedSearchTerm 
+                ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${debouncedSearchTerm}&limit=20`
+                : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=20`;
+            
+            try {
+                const res = await fetch(endpoint);
+                const { data } = await res.json();
+                setGifs(data);
+            } catch (error) {
+                console.error("Failed to fetch GIFs", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchGifs();
+    }, [debouncedSearchTerm]);
+
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 p-2">
             <Input 
                 placeholder="Buscar GIFs..."
-                onChange={(e) => setSearchTerm(e.target.value || 'trending')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
             />
             <div className="h-64 overflow-y-auto">
-                <Grid 
-                    key={searchTerm}
-                    width={380} 
-                    columns={2} 
-                    gutter={6}
-                    fetchGifs={fetchGifs}
-                    onGifClick={onGifClick}
-                />
+                {isLoading ? (
+                    <div className="flex justify-center items-center h-full">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                ) : (
+                     <div className="grid grid-cols-2 gap-2">
+                        {gifs.map((gif) => (
+                             <div key={gif.id} className="cursor-pointer" onClick={() => onGifClick(gif)}>
+                                <Image 
+                                    src={gif.images.fixed_height.url} 
+                                    alt={gif.title} 
+                                    width={200} 
+                                    height={120}
+                                    className="w-full h-auto object-cover rounded"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
-    )
+    );
 }
 
 
@@ -243,8 +283,7 @@ export default function CreatePostModal() {
         setNewPostContent(prev => prev + emojiData.emoji);
     };
 
-    const onGifClick = (gif: IGif, e: React.SyntheticEvent<HTMLElement, Event>) => {
-        e.preventDefault();
+    const onGifClick = (gif: Gif) => {
         setPostImagePreview(gif.images.original.url);
         setPostImageDataUri(gif.images.original.url);
     };
@@ -333,7 +372,7 @@ export default function CreatePostModal() {
                                             <Film className="h-6 w-6 text-primary" />
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto max-w-[400px] p-0 border-0 bg-background">
+                                    <PopoverContent className="w-auto max-w-[450px] p-0 border-0 bg-background">
                                         <GifPicker onGifClick={onGifClick} />
                                     </PopoverContent>
                                 </Popover>
