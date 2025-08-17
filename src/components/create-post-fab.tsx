@@ -53,7 +53,7 @@ export default function CreatePostFAB() {
                     onClick={handleToggle}
                     className={`h-16 w-16 rounded-full shadow-lg transition-transform duration-300 ${isOpen ? 'bg-destructive hover:bg-destructive/90 main-fab-open' : 'bg-primary hover:bg-primary/90'}`}
                 >
-                    <Plus className="h-8 w-8" />
+                   {isOpen ? <X className="h-8 w-8" /> : <Plus className="h-8 w-8" />}
                 </Button>
             </div>
             {isModalOpen && (
