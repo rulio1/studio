@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, onSnapshot, orderBy, writeBatch, arrayUnion, arrayRemove, increment, serverTimestamp, addDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, onSnapshot, orderBy, writeBatch, arrayUnion, arrayRemove, increment, serverTimestamp, addDoc, runTransaction } from 'firebase/firestore';
 import { auth, db, storage } from '@/lib/firebase';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -263,22 +263,39 @@ export default function CommunityDetailPage() {
         const hashtags = extractHashtags(newPostContent);
 
         try {
-            await addDoc(collection(db, "posts"), {
-                authorId: user.uid,
-                author: chirpUser.displayName,
-                handle: chirpUser.handle,
-                avatar: chirpUser.avatar,
-                avatarFallback: chirpUser.displayName[0],
-                content: newPostContent,
-                hashtags: hashtags,
-                image: '',
-                imageHint: '',
-                communityId: communityId,
-                createdAt: serverTimestamp(),
-                comments: 0,
-                retweets: [],
-                likes: [],
-                views: 0,
+            await runTransaction(db, async (transaction) => {
+                const postRef = doc(collection(db, "posts"));
+                transaction.set(postRef, {
+                    authorId: user.uid,
+                    author: chirpUser.displayName,
+                    handle: chirpUser.handle,
+                    avatar: chirpUser.avatar,
+                    avatarFallback: chirpUser.displayName[0],
+                    content: newPostContent,
+                    hashtags: hashtags,
+                    image: '',
+                    imageHint: '',
+                    communityId: communityId,
+                    createdAt: serverTimestamp(),
+                    comments: 0,
+                    retweets: [],
+                    likes: [],
+                    views: 0,
+                });
+
+                for (const tag of hashtags) {
+                    const hashtagRef = doc(db, "hashtags", tag);
+                    const hashtagDoc = await transaction.get(hashtagRef);
+                    if (hashtagDoc.exists()) {
+                        transaction.update(hashtagRef, { count: increment(1) });
+                    } else {
+                        transaction.set(hashtagRef, {
+                            name: tag,
+                            count: 1,
+                            createdAt: serverTimestamp()
+                        });
+                    }
+                }
             });
 
             resetModal();

@@ -15,10 +15,8 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
 
 interface Trend {
-  rank: number;
-  category: string;
-  topic: string;
-  posts: string;
+  name: string;
+  count: number;
 }
 
 interface UserSearchResult {
@@ -87,18 +85,18 @@ export default function SearchPage() {
     return () => unsubscribe();
   }, []);
 
-  const fetchTrends = useCallback(async () => {
+  const fetchTrends = useCallback(() => {
     setIsLoading(true);
-    const trendsQuery = query(collection(db, 'trends'), orderBy('rank'), limit(10));
-    try {
-        const snapshot = await getDocs(trendsQuery);
+    const trendsQuery = query(collection(db, 'hashtags'), orderBy('count', 'desc'), limit(10));
+    const unsubscribe = onSnapshot(trendsQuery, (snapshot) => {
         const trendsData = snapshot.docs.map(doc => doc.data() as Trend);
         setTrends(trendsData);
-    } catch (error) {
-        console.error("Erro ao buscar tendências:", error);
-    } finally {
         setIsLoading(false);
-    }
+    }, (error) => {
+        console.error("Erro ao buscar tendências:", error);
+        setIsLoading(false);
+    });
+    return unsubscribe;
   }, []);
 
   const fetchNewUsers = useCallback(() => {
@@ -118,10 +116,11 @@ export default function SearchPage() {
 
 
   useEffect(() => {
-    fetchTrends();
-    const unsub = fetchNewUsers();
+    const unsubTrends = fetchTrends();
+    const unsubUsers = fetchNewUsers();
     return () => {
-      unsub();
+      unsubTrends();
+      unsubUsers();
     };
   }, [fetchTrends, fetchNewUsers]);
   
@@ -211,8 +210,7 @@ export default function SearchPage() {
   const filteredTrends = useMemo(() => {
     if (!searchTerm) return trends;
     return trends.filter(trend => 
-      trend.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trend.category.toLowerCase().includes(searchTerm.toLowerCase())
+      trend.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [searchTerm, trends]);
 
@@ -326,13 +324,13 @@ export default function SearchPage() {
                     <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
                 ): (
                 <ul className="divide-y divide-border">
-                {filteredTrends.map((trend) => (
-                    <li key={trend.rank} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => setSearchTerm(trend.topic)}>
+                {filteredTrends.map((trend, index) => (
+                    <li key={trend.name} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => setSearchTerm(`#${trend.name}`)}>
                         <div className="flex items-start justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground">{trend.rank} · {trend.category}</p>
-                                <p className="font-bold">{trend.topic}</p>
-                                <p className="text-sm text-muted-foreground">{trend.posts} posts</p>
+                                <p className="text-sm text-muted-foreground">{index + 1} · Tópicos do momento</p>
+                                <p className="font-bold">#{trend.name}</p>
+                                <p className="text-sm text-muted-foreground">{trend.count.toLocaleString()} posts</p>
                             </div>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <MoreHorizontal className="h-5 w-5 text-muted-foreground" />

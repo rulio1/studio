@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { generatePost } from '@/ai/flows/post-generator-flow';
 import { auth, db, storage } from '@/lib/firebase';
-import { addDoc, collection, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Sparkles, Loader2, Plus } from 'lucide-react';
 import { Button } from './ui/button';
@@ -97,23 +97,44 @@ export default function CreatePostModal() {
         const hashtags = extractHashtags(newPostContent);
 
         try {
-            await addDoc(collection(db, "posts"), {
-                authorId: user.uid,
-                author: chirpUser.displayName,
-                handle: chirpUser.handle,
-                avatar: chirpUser.avatar,
-                avatarFallback: chirpUser.displayName[0],
-                content: newPostContent,
-                hashtags: hashtags,
-                image: '',
-                imageHint: '',
-                communityId: null,
-                createdAt: serverTimestamp(),
-                comments: 0,
-                retweets: [],
-                likes: [],
-                views: 0,
+            await runTransaction(db, async (transaction) => {
+                // 1. Create the new post
+                const postRef = doc(collection(db, "posts"));
+                transaction.set(postRef, {
+                    authorId: user.uid,
+                    author: chirpUser.displayName,
+                    handle: chirpUser.handle,
+                    avatar: chirpUser.avatar,
+                    avatarFallback: chirpUser.displayName[0],
+                    content: newPostContent,
+                    hashtags: hashtags,
+                    image: '',
+                    imageHint: '',
+                    communityId: null,
+                    createdAt: serverTimestamp(),
+                    comments: 0,
+                    retweets: [],
+                    likes: [],
+                    views: 0,
+                });
+
+                // 2. Update hashtag counts
+                for (const tag of hashtags) {
+                    const hashtagRef = doc(db, "hashtags", tag);
+                    const hashtagDoc = await transaction.get(hashtagRef);
+
+                    if (hashtagDoc.exists()) {
+                        transaction.update(hashtagRef, { count: increment(1) });
+                    } else {
+                        transaction.set(hashtagRef, {
+                            name: tag,
+                            count: 1,
+                            createdAt: serverTimestamp()
+                        });
+                    }
+                }
             });
+
 
             resetModal();
             toast({
