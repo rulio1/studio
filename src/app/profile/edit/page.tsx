@@ -233,7 +233,7 @@ export default function EditProfilePage() {
                 </Avatar>
                 <Button 
                     variant="ghost" 
-                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-full p-0"
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-full"
                     onClick={() => avatarInputRef.current?.click()}>
                     <Upload className="h-8 w-8 text-white" />
                 </Button>
@@ -301,4 +301,5 @@ export default function EditProfilePage() {
       </main>
     </div>
   );
-}
+
+    
