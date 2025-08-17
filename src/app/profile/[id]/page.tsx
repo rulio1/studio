@@ -82,6 +82,7 @@ interface Reply {
     time: string;
     content: string;
     createdAt: any;
+    postId: string;
 }
 
 interface ChirpUser {
@@ -342,7 +343,7 @@ export default function ProfilePage() {
         const userDocRef = doc(db, 'users', profileId);
         const unsubscribe = onSnapshot(userDocRef, (userDoc) => {
              if (userDoc.exists()) {
-                const userData = { uid: userDoc.id, ...doc.data() } as ChirpUser;
+                const userData = { uid: userDoc.id, ...userDoc.data() } as ChirpUser;
                 setProfileUser(userData);
                 setIsFollowing(userData.followers?.includes(currentUser.uid));
             } else {
