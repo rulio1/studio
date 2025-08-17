@@ -6,15 +6,15 @@ import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MailPlus, Search, Settings, Loader2, MessageSquare, Pin, Archive, Trash2 } from 'lucide-react';
+import { MailPlus, Search, Settings, Loader2, MessageSquare, Pin, Archive, Trash2, MoreHorizontal } from 'lucide-react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, doc, getDoc, orderBy, deleteDoc } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import NewMessageModal from '@/components/new-message-modal';
-import { useGesture } from '@use-gesture/react';
 import { useToast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 interface ChirpUser {
     uid: string;
@@ -40,9 +40,8 @@ interface Conversation {
 }
 
 
-const ConversationItem = ({ convo, currentUserId, onSwipeOpen, onActionClick, isSwiped }: { convo: Conversation; currentUserId: string | null; onSwipeOpen: (id: string) => void; onActionClick: (convoId: string, action: 'pin' | 'archive' | 'delete') => void; isSwiped: boolean; }) => {
+const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conversation; currentUserId: string | null; onActionClick: (convoId: string, action: 'pin' | 'archive' | 'delete') => void; }) => {
     const router = useRouter();
-    const itemRef = useRef<HTMLLIElement>(null);
     const [time, setTime] = useState(() => convo.lastMessage.timestamp ? formatDistanceToNow(convo.lastMessage.timestamp.toDate(), { addSuffix: true, locale: ptBR }) : '');
     
     useEffect(() => {
@@ -51,93 +50,59 @@ const ConversationItem = ({ convo, currentUserId, onSwipeOpen, onActionClick, is
         }
     }, [convo.lastMessage.timestamp]);
 
-    const bind = useGesture({
-        onDrag: ({ down, movement: [mx], direction: [dx], tap }) => {
-            if (tap) return; // Prevent drag on simple tap
-            if (itemRef.current) {
-                if (mx < 0 && dx < 0) { // Swiping left
-                    const newX = down ? mx : (mx < -100 ? -180 : 0);
-                    itemRef.current.style.transform = `translateX(${newX}px)`;
-                    if (newX < -50) {
-                        onSwipeOpen(convo.id);
-                    }
-                } else if (mx > 0) { // Swiping right to close
-                    itemRef.current.style.transform = `translateX(0px)`;
-                }
-            }
-        },
-        onDragEnd: ({ movement: [mx] }) => {
-            if (itemRef.current) {
-                if (mx < -100) { // Threshold to keep open
-                    itemRef.current.style.transform = `translateX(-180px)`;
-                    onSwipeOpen(convo.id);
-                } else {
-                    itemRef.current.style.transform = 'translateX(0)';
-                }
-            }
-        },
-        onClick: (state) => {
-            // Only navigate if it was a tap (not a drag)
-            if (state.tap) {
-                router.push(`/messages/${convo.id}`);
-            }
-        },
-    }, {
-        drag: {
-            axis: 'x',
-            threshold: 20, // start dragging after 20px
-            filterTaps: true, // distinguish between tap and drag
-        }
-    });
-
-    // Reset style if another item is swiped
-    useEffect(() => {
-        if (!isSwiped && itemRef.current) {
-            itemRef.current.style.transform = 'translateX(0)';
-        }
-    }, [isSwiped]);
 
     const isMyMessage = convo.lastMessage.senderId === currentUserId;
     const isUnread = convo.unreadCount > 0;
     const messagePreview = `${isMyMessage ? 'Você: ' : ''}${convo.lastMessage.text}`;
 
     return (
-        <div className="relative bg-background overflow-hidden">
-            <div className="absolute top-0 right-0 h-full flex items-center z-0">
-                 <button onClick={() => onActionClick(convo.id, 'pin')} className="h-full flex flex-col items-center justify-center bg-blue-500 text-white w-20 p-2"><Pin className="h-5 w-5 mb-1"/> <span className="text-xs">Fixar</span></button>
-                <button onClick={() => onActionClick(convo.id, 'archive')} className="h-full flex flex-col items-center justify-center bg-gray-500 text-white w-20 p-2"><Archive className="h-5 w-5 mb-1"/> <span className="text-xs">Arquivar</span></button>
-                <button onClick={() => onActionClick(convo.id, 'delete')} className="h-full flex flex-col items-center justify-center bg-red-500 text-white w-20 p-2"><Trash2 className="h-5 w-5 mb-1"/> <span className="text-xs">Apagar</span></button>
-            </div>
-            <li 
-                ref={itemRef}
-                {...bind()}
-                className={`w-full p-4 hover:bg-muted/50 cursor-pointer relative z-10 touch-pan-y transition-transform duration-200 ease-in-out ${isUnread ? 'border-l-2 border-primary' : ''}`}
-            >
-                <div className="flex items-center gap-4">
-                    <Avatar className="h-12 w-12">
-                        <AvatarImage src={convo.otherUser.avatar} alt={convo.otherUser.name} />
-                        <AvatarFallback>{convo.otherUser.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 overflow-hidden">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-baseline gap-2">
-                                <p className="font-bold truncate">{convo.otherUser.name}</p>
-                                <p className="text-sm text-muted-foreground truncate">{convo.otherUser.handle}</p>
-                            </div>
-                            <p className="text-xs text-muted-foreground whitespace-nowrap">{time}</p>
-                        </div>
-                        <div className="flex justify-between items-center">
-                           <p className={`text-sm mt-1 truncate ${isUnread && !isMyMessage ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
-                               {messagePreview}
-                           </p>
-                           {isUnread && !isMyMessage && (
-                               <div className="w-2.5 h-2.5 bg-primary rounded-full ml-2 flex-shrink-0"></div>
-                           )}
-                        </div>
+         <li 
+            onClick={() => router.push(`/messages/${convo.id}`)}
+            className={`w-full p-4 hover:bg-muted/50 cursor-pointer flex items-center gap-4 ${isUnread ? 'border-l-2 border-primary' : ''}`}
+        >
+            <Avatar className="h-12 w-12">
+                <AvatarImage src={convo.otherUser.avatar} alt={convo.otherUser.name} />
+                <AvatarFallback>{convo.otherUser.name[0]}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 overflow-hidden">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-baseline gap-2">
+                        <p className="font-bold truncate">{convo.otherUser.name}</p>
+                        <p className="text-sm text-muted-foreground truncate">{convo.otherUser.handle}</p>
                     </div>
+                    <p className="text-xs text-muted-foreground whitespace-nowrap">{time}</p>
                 </div>
-            </li>
-        </div>
+                <div className="flex justify-between items-center">
+                   <p className={`text-sm mt-1 truncate ${isUnread && !isMyMessage ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
+                       {messagePreview}
+                   </p>
+                   {isUnread && !isMyMessage && (
+                       <div className="w-2.5 h-2.5 bg-primary rounded-full ml-2 flex-shrink-0"></div>
+                   )}
+                </div>
+            </div>
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={() => onActionClick(convo.id, 'pin')}>
+                        <Pin className="mr-2 h-4 w-4"/>
+                        Fixar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onActionClick(convo.id, 'archive')}>
+                        <Archive className="mr-2 h-4 w-4"/>
+                        Arquivar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onActionClick(convo.id, 'delete')} className="text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4"/>
+                        Apagar
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </li>
     );
 };
 
@@ -151,7 +116,6 @@ export default function MessagesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [swipedConversationId, setSwipedConversationId] = useState<string | null>(null);
 
 
     useEffect(() => {
@@ -225,10 +189,6 @@ export default function MessagesPage() {
         return () => unsubscribe();
     }, [user]);
 
-    const handleSwipeOpen = (id: string) => {
-        setSwipedConversationId(id);
-    };
-
     const handleActionClick = async (convoId: string, action: 'pin' | 'archive' | 'delete') => {
         if (action === 'delete') {
             try {
@@ -237,7 +197,6 @@ export default function MessagesPage() {
                     title: "Conversa apagada",
                     description: "A conversa foi removida permanentemente.",
                 });
-                setSwipedConversationId(null);
             } catch (error) {
                  toast({
                     title: "Erro",
@@ -250,7 +209,6 @@ export default function MessagesPage() {
                 title: "Função em breve",
                 description: `A função de ${action === 'pin' ? 'fixar' : 'arquivar'} será implementada em breve.`,
             });
-            setSwipedConversationId(null);
         }
     };
   
@@ -317,9 +275,7 @@ export default function MessagesPage() {
                         key={convo.id} 
                         convo={convo} 
                         currentUserId={user?.uid || null}
-                        onSwipeOpen={handleSwipeOpen}
                         onActionClick={handleActionClick}
-                        isSwiped={swipedConversationId === convo.id}
                     />
                 ))}
              </ul>
