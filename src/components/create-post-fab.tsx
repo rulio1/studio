@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Feather, Film, X } from 'lucide-react';
+import { Plus, Feather, ImageIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CreatePostModal from './create-post-modal';
 
@@ -35,14 +35,14 @@ export default function CreatePostFAB() {
                             <Feather className="h-6 w-6" />
                         </div>
                     </button>
-                    {/* GIF Button */}
+                    {/* GIF/Image Button */}
                     <button
                         className="speed-dial-button opacity-0 transform-none"
                         onClick={() => openModal('gif')}
-                        aria-label="Post GIF"
+                        aria-label="Post GIF or Image"
                     >
                          <div className="h-14 w-14 rounded-full bg-primary shadow-lg flex items-center justify-center text-primary-foreground">
-                            <Film className="h-6 w-6" />
+                            <ImageIcon className="h-6 w-6" />
                         </div>
                     </button>
                 </div>
