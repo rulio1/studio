@@ -52,10 +52,10 @@ function GifPicker({ onGifClick }: { onGifClick: (gif: Gif) => void }) {
     useEffect(() => {
         const fetchGifs = async () => {
             setIsLoading(true);
-            const endpoint = debouncedSearchTerm 
+            const endpoint = debouncedSearchTerm
                 ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${debouncedSearchTerm}&limit=20`
                 : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=20`;
-            
+
             try {
                 const res = await fetch(endpoint);
                 const { data } = await res.json();
@@ -72,7 +72,7 @@ function GifPicker({ onGifClick }: { onGifClick: (gif: Gif) => void }) {
 
     return (
         <div className="flex flex-col gap-2 p-2">
-            <Input 
+            <Input
                 placeholder="Buscar GIFs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -83,13 +83,13 @@ function GifPicker({ onGifClick }: { onGifClick: (gif: Gif) => void }) {
                         <Loader2 className="h-6 w-6 animate-spin" />
                     </div>
                 ) : (
-                     <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                         {gifs.map((gif) => (
-                             <div key={gif.id} className="cursor-pointer" onClick={() => onGifClick(gif)}>
-                                <Image 
-                                    src={gif.images.fixed_height.url} 
-                                    alt={gif.title} 
-                                    width={200} 
+                            <div key={gif.id} className="cursor-pointer" onClick={() => onGifClick(gif)}>
+                                <Image
+                                    src={gif.images.fixed_height.url}
+                                    alt={gif.title}
+                                    width={200}
                                     height={120}
                                     className="w-full h-auto object-cover rounded"
                                 />
@@ -391,3 +391,5 @@ export default function CreatePostModal() {
             </Dialog>
     );
 }
+
+    
