@@ -14,6 +14,7 @@ import { onAuthStateChanged, User as FirebaseUser, updateProfile } from 'firebas
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
+import Image from 'next/image';
 
 interface UserProfileData {
     displayName: string;
@@ -53,8 +54,12 @@ export default function EditProfilePage() {
     });
 
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
     const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null);
+    const [newBannerFile, setNewBannerFile] = useState<File | null>(null);
+    
     const avatarInputRef = useRef<HTMLInputElement>(null);
+    const bannerInputRef = useRef<HTMLInputElement>(null);
 
 
     useEffect(() => {
@@ -75,6 +80,7 @@ export default function EditProfilePage() {
                         };
                         setProfileData(initialData);
                         setAvatarPreview(initialData.avatar);
+                        setBannerPreview(initialData.banner);
                     }
                 } catch (error) {
                      toast({ title: "Erro ao carregar perfil.", variant: "destructive" });
@@ -88,15 +94,14 @@ export default function EditProfilePage() {
         return () => unsubscribe();
     }, [router, toast]);
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Limit file size to 1MB
         if (file.size > 1 * 1024 * 1024) {
             toast({
                 title: 'Imagem muito grande',
-                description: 'Por favor, selecione uma imagem menor que 1MB para a abordagem Data URI.',
+                description: 'Por favor, selecione uma imagem de avatar menor que 1MB.',
                 variant: 'destructive',
             });
             return;
@@ -104,6 +109,23 @@ export default function EditProfilePage() {
 
         setNewAvatarFile(file);
         setAvatarPreview(URL.createObjectURL(file));
+    };
+
+    const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+         if (file.size > 2 * 1024 * 1024) { // Allow slightly larger banner
+            toast({
+                title: 'Imagem muito grande',
+                description: 'Por favor, selecione uma imagem de capa menor que 2MB.',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        setNewBannerFile(file);
+        setBannerPreview(URL.createObjectURL(file));
     };
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -116,18 +138,20 @@ export default function EditProfilePage() {
         
         try {
             let finalAvatarUrl = profileData.avatar;
-            
-            // If there's a new avatar, convert it to Data URI
             if (newAvatarFile) {
                 finalAvatarUrl = await fileToDataUri(newAvatarFile);
             }
+            
+            let finalBannerUrl = profileData.banner;
+            if (newBannerFile) {
+                finalBannerUrl = await fileToDataUri(newBannerFile);
+            }
 
-            // Prepare data for Firebase Auth update
-             const authUpdateData = {
+            const authUpdateData = {
                 displayName: profileData.displayName,
             };
 
-            const firestoreUpdateData = {
+            const firestoreUpdateData: any = {
                 displayName: profileData.displayName,
                 searchableDisplayName: profileData.displayName.toLowerCase(),
                 handle: profileData.handle,
@@ -135,9 +159,9 @@ export default function EditProfilePage() {
                 bio: profileData.bio,
                 location: profileData.location,
                 avatar: finalAvatarUrl,
+                banner: finalBannerUrl,
             };
 
-            // Update Auth and Firestore
             await updateProfile(user, authUpdateData);
             await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
             
@@ -149,9 +173,15 @@ export default function EditProfilePage() {
             
         } catch (error) {
             console.error("Erro ao salvar perfil: ", error);
+            const firebaseError = error as {code?: string};
+            let description = "Não foi possível salvar as alterações do seu perfil.";
+             if (firebaseError.code === 'auth/invalid-profile-attribute') {
+                description = "Ocorreu um erro ao atualizar seu perfil de autenticação. Tente novamente."
+            }
+
             toast({
                 title: "Falha ao Salvar",
-                description: "Não foi possível salvar as alterações do seu perfil.",
+                description: description,
                 variant: 'destructive'
             });
         } finally {
@@ -180,7 +210,24 @@ export default function EditProfilePage() {
       </header>
 
       <main className="flex-1 overflow-y-auto">
-        <div className="relative h-48 bg-muted" />
+        <div className="relative h-48 bg-muted">
+             {bannerPreview && <Image src={bannerPreview} alt="Banner" layout="fill" objectFit="cover" />}
+             <Button 
+                variant="ghost" 
+                className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity w-full h-full p-0"
+                onClick={() => bannerInputRef.current?.click()}
+                disabled={isSaving}>
+                <Upload className="h-8 w-8 text-white" />
+            </Button>
+            <Input 
+                type="file" 
+                ref={bannerInputRef} 
+                className="hidden" 
+                accept="image/png, image/jpeg, image/gif"
+                onChange={handleBannerChange}
+                disabled={isSaving}
+            />
+        </div>
         <div className="px-4">
             <div className="-mt-16 relative w-32">
                 <Avatar className="h-32 w-32 border-4 border-background">
@@ -201,7 +248,7 @@ export default function EditProfilePage() {
                     ref={avatarInputRef} 
                     className="hidden" 
                     accept="image/png, image/jpeg, image/gif"
-                    onChange={handleImageChange}
+                    onChange={handleAvatarChange}
                     disabled={isSaving}
                 />
             </div>
