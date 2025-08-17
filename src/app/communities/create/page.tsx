@@ -1,22 +1,20 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db, storage } from '@/lib/firebase';
-import { addDoc, collection, serverTimestamp, arrayUnion, doc, updateDoc, writeBatch } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { auth, db } from '@/lib/firebase';
+import { addDoc, collection, serverTimestamp, arrayUnion, doc, writeBatch } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Camera, Image as ImageIcon, Loader2, X } from 'lucide-react';
+import { ArrowLeft, Loader2, ImageIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import React from 'react';
-
 
 export default function CreateCommunityPage() {
     const router = useRouter();
@@ -26,13 +24,6 @@ export default function CreateCommunityPage() {
 
     const [name, setName] = useState('');
     const [topic, setTopic] = useState('');
-    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-    const [bannerFile, setBannerFile] = useState<File | null>(null);
-    const [avatarFile, setAvatarFile] = useState<File | null>(null);
-
-    const bannerInputRef = useRef<HTMLInputElement>(null);
-    const avatarInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -44,23 +35,6 @@ export default function CreateCommunityPage() {
         });
         return () => unsubscribe();
     }, [router]);
-
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
-        const file = event.target.files?.[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            if (type === 'avatar') {
-                setAvatarFile(file);
-                setAvatarPreview(reader.result as string);
-            } else {
-                setBannerFile(file);
-                setBannerPreview(reader.result as string);
-            }
-          };
-          reader.readAsDataURL(file);
-        }
-    };
 
     const handleCreateCommunity = async () => {
         if (!user || !name.trim() || !topic.trim()) {
@@ -76,18 +50,6 @@ export default function CreateCommunityPage() {
         try {
             let bannerUrl = 'https://placehold.co/600x200.png';
             let avatarUrl = `https://placehold.co/128x128.png?text=${name.substring(0,2)}`;
-
-            if (bannerFile) {
-                const bannerRef = ref(storage, `communities/${user.uid}/${Date.now()}_${bannerFile.name}`);
-                await uploadBytes(bannerRef, bannerFile);
-                bannerUrl = await getDownloadURL(bannerRef);
-            }
-
-            if (avatarFile) {
-                const avatarRef = ref(storage, `communities/${user.uid}/${Date.now()}_${avatarFile.name}`);
-                await uploadBytes(avatarRef, avatarFile);
-                avatarUrl = await getDownloadURL(avatarRef);
-            }
             
             const batch = writeBatch(db);
             const communityRef = doc(collection(db, 'communities'));
@@ -97,8 +59,8 @@ export default function CreateCommunityPage() {
                 topic,
                 image: bannerUrl,
                 avatar: avatarUrl,
-                imageHint: bannerFile ? 'community banner' : 'placeholder',
-                avatarHint: avatarFile ? 'community avatar' : 'placeholder',
+                imageHint: 'placeholder',
+                avatarHint: 'placeholder',
                 createdBy: user.uid,
                 createdAt: serverTimestamp(),
                 memberCount: 1,
@@ -141,33 +103,19 @@ export default function CreateCommunityPage() {
 
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
-            <input type="file" accept="image/*" ref={bannerInputRef} onChange={(e) => handleFileChange(e, 'banner')} className="hidden" />
-            {bannerPreview ? <Image
-                src={bannerPreview}
-                alt="Pré-visualização do Banner"
-                layout="fill"
-                objectFit="cover"
-            /> :  <Image
+            <Image
                 src="https://placehold.co/600x200.png"
                 alt="Banner Padrão"
                 layout="fill"
                 objectFit="cover"
-            />}
-            <div className="absolute top-0 left-0 w-full h-full bg-black/30 flex items-center justify-center gap-2">
-                <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => bannerInputRef.current?.click()}><Camera className="h-5 w-5" /></Button>
-                 {bannerPreview && <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => {setBannerPreview(null); setBannerFile(null);}}><X className="h-5 w-5" /></Button>}
-            </div>
+            />
         </div>
         <div className="px-4">
             <div className="-mt-16 relative w-32">
-                <input type="file" accept="image/*" ref={avatarInputRef} onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" />
                 <Avatar className="h-32 w-32 border-4 border-background">
-                    <AvatarImage src={avatarPreview || `https://placehold.co/128x128.png?text=${name ? name.substring(0,2) : ''}`} alt="Pré-visualização do Avatar" />
+                    <AvatarImage src={`https://placehold.co/128x128.png?text=${name ? name.substring(0,2) : ''}`} alt="Avatar da comunidade" />
                     <AvatarFallback className="text-4xl">{name ? name.substring(0,2) : <ImageIcon />}</AvatarFallback>
                 </Avatar>
-                <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity" onClick={() => avatarInputRef.current?.click()}>
-                    <Camera className="h-6 w-6 text-white" />
-                </div>
             </div>
         </div>
 

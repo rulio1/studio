@@ -7,21 +7,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Camera, Loader2, X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { useState, useEffect, useRef } from 'react';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { useState, useEffect } from 'react';
 import React from 'react';
-import { v4 as uuidv4 } from 'uuid';
 
 interface UserProfileData {
     displayName: string;
     bio: string;
     location: string;
+    avatar: string;
+    banner: string;
 }
 
 export default function EditProfilePage() {
@@ -35,16 +35,9 @@ export default function EditProfilePage() {
         displayName: '',
         bio: '',
         location: '',
+        avatar: '',
+        banner: '',
     });
-
-    const [avatarFile, setAvatarFile] = useState<File | null>(null);
-    const [bannerFile, setBannerFile] = useState<File | null>(null);
-    
-    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-
-    const bannerInputRef = useRef<HTMLInputElement>(null);
-    const avatarInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -58,9 +51,9 @@ export default function EditProfilePage() {
                             displayName: userData.displayName || '',
                             bio: userData.bio || '',
                             location: userData.location || '',
+                            avatar: userData.avatar || '',
+                            banner: userData.banner || '',
                         });
-                        setAvatarPreview(userData.avatar || null);
-                        setBannerPreview(userData.banner || null);
                     } else {
                         toast({ title: "Usuário não encontrado.", variant: "destructive" });
                         router.push('/login');
@@ -81,24 +74,6 @@ export default function EditProfilePage() {
         setProfileData({ ...profileData, [e.target.id]: e.target.value });
     };
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
-        const file = event.target.files?.[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const result = reader.result as string;
-            if (type === 'avatar') {
-                setAvatarFile(file);
-                setAvatarPreview(result);
-            } else {
-                setBannerFile(file);
-                setBannerPreview(result);
-            }
-          };
-          reader.readAsDataURL(file);
-        }
-    };
-
     const handleSave = async () => {
         if (!user) return;
         setIsSaving(true);
@@ -110,18 +85,6 @@ export default function EditProfilePage() {
                 location: profileData.location,
             };
 
-            if (bannerFile) {
-                const bannerStorageRef = ref(storage, `banners/${user.uid}/${uuidv4()}_${bannerFile.name}`);
-                await uploadBytes(bannerStorageRef, bannerFile);
-                updateData.banner = await getDownloadURL(bannerStorageRef);
-            }
-
-            if (avatarFile) {
-                const avatarStorageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}_${avatarFile.name}`);
-                await uploadBytes(avatarStorageRef, avatarFile);
-                updateData.avatar = await getDownloadURL(avatarStorageRef);
-            }
-            
             const userDocRef = doc(db, 'users', user.uid);
             await updateDoc(userDocRef, updateData);
 
@@ -164,26 +127,18 @@ export default function EditProfilePage() {
 
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
-            <input type="file" accept="image/*" ref={bannerInputRef} onChange={(e) => handleFileChange(e, 'banner')} className="hidden" />
-            {bannerPreview ? <Image
-                src={bannerPreview}
-                alt="Pré-visualização do Banner"
+            {profileData.banner ? <Image
+                src={profileData.banner}
+                alt="Banner do perfil"
                 layout="fill"
                 objectFit="cover"
             /> :  <div className="w-full h-full bg-muted" />}
-            <div className="absolute top-0 left-0 w-full h-full bg-black/30 flex items-center justify-center gap-2">
-                <Button variant="ghost" size="icon" className='text-white rounded-full bg-black/50 hover:bg-black/70' onClick={() => bannerInputRef.current?.click()}><Camera className="h-5 w-5" /></Button>
-            </div>
         </div>
         <div className="px-4">
             <div className="-mt-16 relative w-32">
-                <input type="file" accept="image/*" ref={avatarInputRef} onChange={(e) => handleFileChange(e, 'avatar')} className="hidden" />
                 <Avatar className="h-32 w-32 border-4 border-background">
-                    {avatarPreview ? <AvatarImage src={avatarPreview} alt={profileData.displayName} />: <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>}
+                    {profileData.avatar ? <AvatarImage src={profileData.avatar} alt={profileData.displayName} />: <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>}
                 </Avatar>
-                <div className="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity" onClick={() => avatarInputRef.current?.click()}>
-                    <Camera className="h-6 w-6 text-white" />
-                </div>
             </div>
         </div>
 
