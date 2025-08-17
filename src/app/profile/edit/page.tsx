@@ -169,30 +169,28 @@ export default function EditProfilePage() {
                 location: profileData.location,
             };
 
+            const contentUpdate: { [key: string]: any } = {};
+            const handleChanged = profileData.handle !== originalHandle;
+
             // Handle avatar upload
             if (newAvatarFile) {
                 const storageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}`);
                 await uploadBytes(storageRef, newAvatarFile);
                 const downloadURL = await getDownloadURL(storageRef);
                 updateData.avatar = downloadURL;
+                contentUpdate.avatar = downloadURL;
             }
 
-            const newHandle = profileData.handle;
-            const handleChanged = newHandle !== originalHandle;
-            
             if (handleChanged) {
-                updateData.handle = `@${newHandle}`;
-                updateData.searchableHandle = newHandle.toLowerCase();
+                updateData.handle = `@${profileData.handle}`;
+                updateData.searchableHandle = profileData.handle.toLowerCase();
+                contentUpdate.handle = updateData.handle;
             }
             
             batch.update(userDocRef, updateData);
             
             // If avatar or handle changed, update all posts and comments by this user
-            if (newAvatarFile || handleChanged) {
-                const contentUpdate: { [key: string]: any } = {};
-                if(newAvatarFile) contentUpdate.avatar = updateData.avatar;
-                if(handleChanged) contentUpdate.handle = updateData.handle;
-                
+            if (Object.keys(contentUpdate).length > 0) {
                 const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
                 const commentsQuery = query(collection(db, "comments"), where("authorId", "==", user.uid));
                 
@@ -264,7 +262,7 @@ export default function EditProfilePage() {
                 />
                  <Button
                     variant="ghost"
-                    className="absolute inset-0 h-full w-full bg-black/50 text-white opacity-0 hover:opacity-100 rounded-full flex items-center justify-center"
+                    className="absolute inset-0 h-full w-full bg-black/50 text-white opacity-0 hover:opacity-100 rounded-full flex items-center justify-center p-0"
                     onClick={() => avatarInputRef.current?.click()}
                     disabled={isSaving}
                 >
