@@ -122,10 +122,9 @@ export default function EditProfilePage() {
                 finalAvatarUrl = await fileToDataUri(newAvatarFile);
             }
 
-            // Prepare data for Firestore and Auth
+            // Prepare data for Firebase Auth update
              const authUpdateData = {
                 displayName: profileData.displayName,
-                photoURL: finalAvatarUrl,
             };
 
             const firestoreUpdateData = {
