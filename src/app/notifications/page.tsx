@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, Settings, Star, Users, Heart, Loader2, AtSign } from 'lucide-react';
+import { Bell, Settings, Star, Users, Heart, Loader2, AtSign, BadgeCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useMemo } from 'react';
 import { auth, db } from '@/lib/firebase';
@@ -42,6 +42,7 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
     const router = useRouter();
     const { icon: Icon, color } = iconMap[notification.type] || iconMap.post;
     const [time, setTime] = useState('');
+    const isVerified = notification.fromUser.handle.toLowerCase() === '@chirp' || notification.fromUser.handle.toLowerCase() === '@rulio';
     
     useEffect(() => {
         if (notification.createdAt) {
@@ -81,6 +82,7 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
                 </div>
                 <p>
                     <span className="font-bold">{notification.fromUser.name}</span>
+                    {isVerified && <BadgeCheck className="inline-block h-4 w-4 text-primary ml-1" />}
                     <span className="font-normal text-muted-foreground"> {notification.text}</span>
                 </p>
                 {notification.postContent && <p className="text-muted-foreground mt-1">{notification.postContent}</p>}
