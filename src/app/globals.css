@@ -74,24 +74,4 @@
   .animate-slide-in-from-bottom {
     animation: slide-in-from-bottom 0.5s ease-in-out;
   }
-  
-  .speed-dial-button {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .speed-dial-open > .speed-dial-button:nth-child(1) {
-      transform: translateY(-70px);
-      opacity: 1;
-      z-index: 10;
-  }
-
-  .speed-dial-open > .speed-dial-button:nth-child(2) {
-      transform: translateY(-140px);
-      opacity: 1;
-      z-index: 9;
-  }
-
-  .main-fab-open {
-      transform: rotate(45deg);
-  }
 }
