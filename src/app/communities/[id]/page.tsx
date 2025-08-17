@@ -68,7 +68,7 @@ interface ChirpUser {
     savedPosts?: string[];
 }
 
-const giphyFetch = new GiphyFetch(process.env.NEXT_PUBLIC_GIPHY_API_KEY || '');
+const giphyFetch = new GiphyFetch('Y8w1xO42S2G43y3y0dM9cNoZpXAZyq57');
 
 function GifPicker({ onGifClick }: { onGifClick: (gif: IGif) => void }) {
     const [searchTerm, setSearchTerm] = useState('trending');
