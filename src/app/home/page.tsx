@@ -132,7 +132,7 @@ export default function HomePage() {
 
     const [postsSnapshot, repostsSnapshot] = await Promise.all([
       getDocs(postsQuery),
-      getDocs(repostsQuery),
+      getDocs(repostsSnapshot),
     ]);
 
     const originalPosts = postsSnapshot.docs.map(doc => ({
