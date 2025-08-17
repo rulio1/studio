@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X } from 'lucide-react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -198,9 +197,7 @@ export default function EditProfilePage() {
       </header>
 
       <main className="flex-1 overflow-y-auto">
-        <div className="relative h-48 bg-muted">
-            <div className="w-full h-full bg-muted" />
-        </div>
+        <div className="relative h-48 bg-muted" />
         <div className="px-4">
             <div className="-mt-16 relative w-32">
                 <Avatar className="h-32 w-32 border-4 border-background">

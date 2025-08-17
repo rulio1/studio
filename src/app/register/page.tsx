@@ -48,7 +48,9 @@ export default function RegisterPage() {
             displayName: values.name,
         });
 
-        const handle = values.name.toLowerCase().replace(/[^a-z0-9_]/g, '');
+        // Use a predictable and unique part of the email for the initial handle
+        const handle = values.email.split('@')[0].replace(/[^a-z0-9_]/g, '');
+
         await setDoc(doc(db, "users", user.uid), {
             uid: user.uid,
             displayName: values.name,
