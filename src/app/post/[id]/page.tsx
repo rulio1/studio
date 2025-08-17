@@ -117,7 +117,11 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
 
     useEffect(() => {
         if (comment.createdAt) {
+          try {
             setTime(formatTimeAgo(comment.createdAt.toDate()));
+          } catch(e) {
+            setTime('agora')
+          }
         }
     }, [comment.createdAt]);
 
@@ -276,7 +280,7 @@ export default function PostDetailPage() {
                         id: doc.id,
                         ...data,
                         time: '', // will be set in CommentItem
-                        isLiked: data.likes.includes(user.uid || ''),
+                        isLiked: (data.likes || []).includes(user.uid || ''),
                     } as Comment;
                 });
                 commentsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
