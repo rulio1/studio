@@ -24,30 +24,28 @@ export default function CreatePostFAB() {
     return (
         <>
             <div className="fixed bottom-24 right-4 z-50 flex flex-col items-center gap-4">
-                <div
-                    className={`flex flex-col items-center gap-4 transition-all duration-300 ease-in-out ${
-                        isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                 {/* Action Buttons Container */}
+                 <div
+                    className={`absolute bottom-0 flex flex-col items-center gap-4 transition-all duration-300 ease-in-out ${
+                        isOpen ? 'opacity-100 -translate-y-20' : 'opacity-0 translate-y-0 pointer-events-none'
                     }`}
                 >
-                    <div className={`transition-transform duration-300 ease-in-out ${isOpen ? '-translate-y-36' : 'translate-y-0'}`}>
-                         <Button
-                            onClick={() => openModal('gif')}
-                            aria-label="Post GIF or Image"
-                            className="h-14 w-14 rounded-full bg-primary shadow-lg flex items-center justify-center text-primary-foreground"
-                        >
-                            <ImageIcon className="h-6 w-6" />
-                        </Button>
-                    </div>
-                     <div className={`transition-transform duration-300 ease-in-out ${isOpen ? '-translate-y-20' : 'translate-y-0'}`}>
-                        <Button
-                            onClick={() => openModal('post')}
-                            aria-label="Create Post"
-                            className="h-14 w-14 rounded-full bg-primary shadow-lg flex items-center justify-center text-primary-foreground"
-                        >
-                            <Feather className="h-6 w-6" />
-                        </Button>
-                    </div>
+                    <Button
+                        onClick={() => openModal('post')}
+                        aria-label="Create Post"
+                        className="h-14 w-14 rounded-full bg-primary shadow-lg flex items-center justify-center text-primary-foreground"
+                    >
+                        <Feather className="h-6 w-6" />
+                    </Button>
+                    <Button
+                        onClick={() => openModal('gif')}
+                        aria-label="Post GIF or Image"
+                        className="h-14 w-14 rounded-full bg-primary shadow-lg flex items-center justify-center text-primary-foreground"
+                    >
+                        <ImageIcon className="h-6 w-6" />
+                    </Button>
                 </div>
+
 
                 {/* Main FAB */}
                 <Button
