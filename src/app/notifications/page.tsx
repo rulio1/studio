@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, Settings, Star, Users, Heart, Loader2, AtSign, BadgeCheck, Bird } from 'lucide-react';
+import { Bell, Settings, Star, Users, Heart, Loader2, AtSign, BadgeCheck, Bird, UserX } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useMemo } from 'react';
 import { auth, db } from '@/lib/firebase';
@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 
 interface Notification {
     id: string;
-    type: 'like' | 'follow' | 'post' | 'retweet' | 'mention';
+    type: 'like' | 'follow' | 'post' | 'retweet' | 'mention' | 'unfollow';
     fromUserId: string;
     fromUser: {
         name: string;
@@ -37,6 +37,7 @@ const iconMap = {
     post: { icon: Star, color: 'text-purple-500' },
     retweet: { icon: Users, color: 'text-green-500' },
     mention: { icon: AtSign, color: 'text-primary' },
+    unfollow: { icon: UserX, color: 'text-muted-foreground' },
 };
 
 const NotificationItem = ({ notification }: { notification: Notification }) => {
@@ -56,7 +57,7 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
     }, [notification.createdAt]);
     
     const handleItemClick = () => {
-        if (notification.type === 'follow') {
+        if (notification.type === 'follow' || notification.type === 'unfollow') {
             router.push(`/profile/${notification.fromUserId}`);
         } else if (notification.postId) {
             router.push(`/post/${notification.postId}`);

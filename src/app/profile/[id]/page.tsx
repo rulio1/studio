@@ -38,6 +38,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatTimeAgo } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Poll from '@/components/poll';
+import { Badge } from '@/components/ui/badge';
 
 
 const EmptyState = ({ title, description }: { title: string, description: string }) => (
@@ -346,6 +347,7 @@ export default function ProfilePage() {
     const [mediaPosts, setMediaPosts] = useState<Post[]>([]);
     const [likedPosts, setLikedPosts] = useState<Post[]>([]);
     const [isFollowing, setIsFollowing] = useState(false);
+    const [isFollowedBy, setIsFollowedBy] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingPosts, setIsLoadingPosts] = useState(true);
     const [isLoadingReplies, setIsLoadingReplies] = useState(true);
@@ -366,6 +368,10 @@ export default function ProfilePage() {
                      if (doc.exists()) {
                         const userData = { uid: doc.id, ...doc.data() } as ChirpUser;
                         setChirpUser(userData);
+                        // Check if the profile user is in the current user's followers list
+                        if (profileUser) {
+                           setIsFollowedBy(userData.followers?.includes(profileUser.uid));
+                        }
                      }
                  });
             } else {
@@ -373,7 +379,7 @@ export default function ProfilePage() {
             }
         });
         return () => unsubscribe();
-    }, [router]);
+    }, [router, profileUser]);
 
     const fetchProfileUser = useCallback(async () => {
         if (!profileId || !currentUser) return;
@@ -385,6 +391,9 @@ export default function ProfilePage() {
                 const userData = { uid: userDoc.id, ...userDoc.data() } as ChirpUser;
                 setProfileUser(userData);
                 setIsFollowing(userData.followers?.includes(currentUser.uid));
+                if (chirpUser) {
+                    setIsFollowedBy(chirpUser.followers?.includes(userData.uid));
+                }
             } else {
                 console.error("Usuário não encontrado!");
             }
@@ -392,7 +401,7 @@ export default function ProfilePage() {
         });
 
         return unsubscribe;
-    }, [profileId, currentUser]);
+    }, [profileId, currentUser, chirpUser]);
 
     useEffect(() => {
         const unsub = fetchProfileUser();
@@ -507,17 +516,34 @@ export default function ProfilePage() {
         if (!profileId || !currentUser) return;
         setIsLoadingLikes(true);
         try {
-            const q = query(collection(db, "posts"), where("likes", "array-contains", profileId), orderBy("createdAt", "desc"));
-            const snapshot = await getDocs(q);
-            const posts = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    ...data,
-                    isLiked: data.likes.includes(currentUser?.uid || ''),
-                    isRetweeted: data.retweets.includes(currentUser?.uid || ''),
-                } as Post
-            });
+            const userDoc = await getDoc(doc(db, 'users', profileId));
+            const likedPostIds = userDoc.data()?.likedPosts || [];
+
+            if (likedPostIds.length === 0) {
+                 setLikedPosts([]);
+                 setIsLoadingLikes(false);
+                 return;
+            }
+            
+            const chunks = [];
+            for (let i = 0; i < likedPostIds.length; i += 30) {
+                 chunks.push(likedPostIds.slice(i, i + 30));
+            }
+            const postsSnapshots = await Promise.all(chunks.map(chunk => getDocs(query(collection(db, "posts"), where(documentId(), "in", chunk)))));
+
+            const posts = postsSnapshots.flatMap(snapshot =>
+                snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        ...data,
+                        isLiked: data.likes.includes(currentUser?.uid || ''),
+                        isRetweeted: data.retweets.includes(currentUser?.uid || ''),
+                    } as Post;
+                })
+            );
+
+            posts.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setLikedPosts(posts);
         } catch (error) {
             console.error("Error fetching liked posts:", error);
@@ -542,18 +568,30 @@ export default function ProfilePage() {
         if (!currentUser || !profileUser || !chirpUser) return;
         
         const batch = writeBatch(db);
-
         const currentUserRef = doc(db, 'users', currentUser.uid);
         const profileUserRef = doc(db, 'users', profileUser.uid);
+        const notificationRef = doc(collection(db, 'notifications'));
 
         if (isFollowing) {
             batch.update(currentUserRef, { following: arrayRemove(profileUser.uid) });
             batch.update(profileUserRef, { followers: arrayRemove(currentUser.uid) });
+             batch.set(notificationRef, {
+                toUserId: profileUser.uid,
+                fromUserId: currentUser.uid,
+                fromUser: {
+                    name: chirpUser.displayName,
+                    handle: chirpUser.handle,
+                    avatar: chirpUser.avatar,
+                    isVerified: chirpUser.isVerified || false,
+                },
+                type: 'unfollow',
+                text: 'deixou de seguir você',
+                createdAt: serverTimestamp(),
+                read: false,
+            });
         } else {
             batch.update(currentUserRef, { following: arrayUnion(profileUser.uid) });
             batch.update(profileUserRef, { followers: arrayUnion(currentUser.uid) });
-            
-            const notificationRef = doc(collection(db, 'notifications'));
             batch.set(notificationRef, {
                 toUserId: profileUser.uid,
                 fromUserId: currentUser.uid,
@@ -959,7 +997,10 @@ export default function ProfilePage() {
                         {isChirpAccount ? <Bird className="h-6 w-6 text-primary" /> : (isProfileVerified && <BadgeCheck className="h-6 w-6 text-primary" />)}
                     </h1>
                 </div>
-                <p className="text-muted-foreground">{profileUser.handle}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-muted-foreground">{profileUser.handle}</p>
+                  {isFollowedBy && !isOwnProfile && <Badge variant="secondary">Segue você</Badge>}
+                </div>
                 <p className="mt-2 whitespace-pre-wrap">{profileUser.bio}</p>
             </div>
              {isChirpAccount && (
