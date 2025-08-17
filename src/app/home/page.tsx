@@ -39,7 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle as EditDialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -451,17 +451,20 @@ export default function HomePage() {
                 </Avatar>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0 animate-slide-in-from-bottom">
-                 <div className="p-4 border-b">
-                    <div className="flex items-center justify-between mb-4">
-                        <Avatar className="h-10 w-10" onClick={() => router.push(`/profile/${user.uid}`)}>
-                        <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
-                        <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
-                        </Avatar>
-                        <Button variant="outline" onClick={handleSignOut}>Sair</Button>
-                    </div>
+                 <SheetHeader>
+                    <SheetTitle className="sr-only">Menu Principal</SheetTitle>
+                 </SheetHeader>
+                 <div className="flex justify-between items-center p-4 border-b">
+                    <Avatar className="h-10 w-10" onClick={() => router.push(`/profile/${user.uid}`)}>
+                    <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
+                    <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
+                    </Avatar>
+                    <Button variant="outline" onClick={handleSignOut}>Sair</Button>
+                </div>
+                <div className="p-4 border-b">
                     <div>
-                        <div className="flex items-center gap-1">
-                            <p className="font-bold text-lg">{chirpUser.displayName}</p>
+                        <div className="flex items-center gap-1 font-bold text-lg">
+                            {chirpUser.displayName}
                             {chirpUser.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-5 w-5 text-primary" />}
                         </div>
                         <p className="text-sm text-muted-foreground">{chirpUser.handle}</p>
@@ -529,7 +532,7 @@ export default function HomePage() {
         <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Editar Post</DialogTitle>
+                    <EditDialogTitle>Editar Post</EditDialogTitle>
                 </DialogHeader>
                 <Textarea 
                     value={editedContent}
