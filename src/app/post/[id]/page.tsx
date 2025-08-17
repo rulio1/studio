@@ -11,7 +11,7 @@ import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loa
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Image from 'next/image';
 import {
@@ -751,5 +751,7 @@ export default function PostDetailPage() {
         </div>
     );
 }
+
+    
 
     
