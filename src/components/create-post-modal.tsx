@@ -161,16 +161,18 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         }
 
         setIsPosting(true);
-        const hashtags = extractHashtags(newPostContent);
-        const mentionedHandles = extractMentions(newPostContent);
-
+        
         try {
+            // Check if it's the user's first post outside the transaction
+            const userPostsQuery = query(collection(db, 'posts'), where('authorId', '==', user.uid), limit(1));
+            const userPostsSnapshot = await getDocs(userPostsQuery);
+            const isFirstPost = userPostsSnapshot.empty;
+
+            const hashtags = extractHashtags(newPostContent);
+            const mentionedHandles = extractMentions(newPostContent);
+
             await runTransaction(db, async (transaction) => {
                 const postRef = doc(collection(db, "posts"));
-
-                const userPostsQuery = query(collection(db, 'posts'), where('authorId', '==', user.uid), limit(1));
-                const userPostsSnapshot = await transaction.get(userPostsQuery);
-                const isFirstPost = userPostsSnapshot.empty;
 
                 const finalPollData = pollData ? {
                     options: pollData.options.map(o => o.text),
@@ -178,6 +180,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     voters: {} // Map of userId to optionIndex
                 } : null;
 
+                // 1. Set the main post data
                 transaction.set(postRef, {
                     authorId: user.uid,
                     author: chirpUser.displayName,
@@ -201,6 +204,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     poll: finalPollData
                 });
 
+                // 2. Handle first post notification
                 if (isFirstPost) {
                     const chirpOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@chirp'), limit(1));
                     const chirpUserSnapshot = await getDocs(chirpOfficialUserQuery); 
@@ -226,9 +230,10 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                         });
                     }
                 }
-
+                
+                // 3. Handle mentions
                 if (mentionedHandles.length > 0) {
-                    const usersRef = collection(db, "users");
+                     const usersRef = collection(db, "users");
                      const mentionedUserDocs = await Promise.all(mentionedHandles.map(handle => {
                          const mentionQuery = query(usersRef, where("handle", "==", handle), limit(1));
                          return getDocs(mentionQuery);
@@ -261,6 +266,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                      });
                 }
                 
+                // 4. Update hashtag counts
                 for (const tag of hashtags) {
                     const hashtagRef = doc(db, "hashtags", tag);
                     const hashtagDoc = await transaction.get(hashtagRef);

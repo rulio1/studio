@@ -328,22 +328,22 @@ export default function CommunityDetailPage() {
         }
         if (!user || !chirpUser) return;
         setIsPosting(true);
-        const hashtags = extractHashtags(newPostContent);
-
+        
         try {
+            // Check if it's the user's first post outside the transaction
+            const userPostsQuery = query(collection(db, 'posts'), where('authorId', '==', user.uid), limit(1));
+            const userPostsSnapshot = await getDocs(userPostsQuery);
+            const isFirstPost = userPostsSnapshot.empty;
+            const hashtags = extractHashtags(newPostContent);
+
             await runTransaction(db, async (transaction) => {
                 const postRef = doc(collection(db, "posts"));
 
-                // 1. Check if it's the user's first post
-                const userPostsQuery = query(collection(db, 'posts'), where('authorId', '==', user.uid), limit(1));
-                const userPostsSnapshot = await transaction.get(userPostsQuery);
-                const isFirstPost = userPostsSnapshot.empty;
-
-                // 2. Perform all reads for hashtags
+                // 1. Perform all reads for hashtags
                 const hashtagRefs = hashtags.map(tag => doc(db, "hashtags", tag));
                 const hashtagDocs = await Promise.all(hashtagRefs.map(ref => transaction.get(ref)));
 
-                // 3. Perform all writes
+                // 2. Perform all writes
                 // Create the new post
                 transaction.set(postRef, {
                     authorId: user.uid,
@@ -384,8 +384,6 @@ export default function CommunityDetailPage() {
                 // Handle First Post Notification
                 if (isFirstPost) {
                     const chirpOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@chirp'), limit(1));
-                    // We can't use `transaction.get` with queries that have complex clauses in some Firestore client libraries.
-                    // A `getDocs` outside the transaction or simplifying the logic is safer. Let's do a non-transactional get for this.
                     const chirpUserSnapshot = await getDocs(chirpOfficialUserQuery);
 
                     if (!chirpUserSnapshot.empty) {
