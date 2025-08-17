@@ -34,6 +34,8 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle as EditDialogTitle, DialogTitle as OtherDialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { formatTimeAgo } from '@/lib/utils';
+import Poll from '@/components/poll';
+import { runTransaction } from 'firebase/firestore';
 
 interface Post {
     id: string;
@@ -58,6 +60,11 @@ interface Post {
     hashtags?: string[];
     mentions?: string[];
     isVerified?: boolean;
+    poll?: {
+        options: string[];
+        votes: number[];
+        voters: Record<string, number>;
+    } | null;
 }
 
 interface Comment {
@@ -306,13 +313,13 @@ export default function PostDetailPage() {
             const postId = id as string;
             const postRef = doc(db, "posts", postId);
             
-            // Increment view count.
-            updateDoc(postRef, { views: increment(1) }).catch(err => {
-                // We can ignore this error if the document doesn't exist yet, it will be created with views=0
-            });
-
             const unsubscribePost = onSnapshot(postRef, (doc) => {
                 if (doc.exists()) {
+                     // Increment view count.
+                    updateDoc(postRef, { views: increment(1) }).catch(err => {
+                        console.error("Failed to increment views, may not be critical.", err);
+                    });
+
                     const postData = doc.data() as Omit<Post, 'id' | 'isLiked' | 'isRetweeted' | 'time'>;
                     setPost({
                         id: doc.id,
@@ -354,6 +361,53 @@ export default function PostDetailPage() {
             };
         }
     }, [id, user]);
+
+    const handleVote = async (postId: string, optionIndex: number) => {
+        if (!user) return;
+        const postRef = doc(db, 'posts', postId);
+    
+        try {
+            await runTransaction(db, async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                if (!postDoc.exists()) {
+                    throw "Post não existe!";
+                }
+    
+                const postData = postDoc.data() as Post;
+                const poll = postData.poll;
+    
+                if (!poll) {
+                    throw "Enquete não existe neste post.";
+                }
+    
+                // Se o usuário já votou, não faz nada
+                if (poll.voters && poll.voters[user.uid] !== undefined) {
+                    toast({
+                        title: "Você já votou nesta enquete.",
+                        variant: "destructive"
+                    });
+                    return;
+                }
+    
+                const newVotes = [...poll.votes];
+                newVotes[optionIndex] += 1;
+    
+                const newVoters = { ...poll.voters, [user.uid]: optionIndex };
+    
+                transaction.update(postRef, {
+                    'poll.votes': newVotes,
+                    'poll.voters': newVoters
+                });
+            });
+        } catch (error) {
+            console.error("Erro ao votar:", error);
+            toast({
+                title: "Erro ao votar",
+                description: "Não foi possível registrar seu voto. Tente novamente.",
+                variant: "destructive",
+            });
+        }
+    };
 
     const extractMentions = (content: string) => {
         const regex = /@(\w+)/g;
@@ -745,6 +799,18 @@ export default function PostDetailPage() {
                     {post.image && (
                         <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border">
                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
+                        </div>
+                    )}
+                     {post.poll && user && (
+                        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                            <Poll 
+                                postId={post.id}
+                                options={post.poll.options}
+                                votes={post.poll.votes}
+                                voters={post.poll.voters}
+                                currentUserId={user.uid}
+                                onVote={handleVote}
+                            />
                         </div>
                     )}
                     {post.location && (
