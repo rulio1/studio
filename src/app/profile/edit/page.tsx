@@ -147,6 +147,12 @@ export default function EditProfilePage() {
         }
     };
 
+    const uploadAvatar = async (userId: string, file: File): Promise<string> => {
+        const storageRef = ref(storage, `avatars/${userId}/${uuidv4()}`);
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+        return downloadURL;
+    };
 
     const handleSave = async () => {
         if (!user || !isHandleAvailable) {
@@ -172,24 +178,21 @@ export default function EditProfilePage() {
             const contentUpdate: { [key: string]: any } = {};
             const handleChanged = profileData.handle !== originalHandle;
 
-            // Handle avatar upload
             if (newAvatarFile) {
-                const storageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}`);
-                await uploadBytes(storageRef, newAvatarFile);
-                const downloadURL = await getDownloadURL(storageRef);
-                updateData.avatar = downloadURL;
-                contentUpdate.avatar = downloadURL;
+                const newAvatarUrl = await uploadAvatar(user.uid, newAvatarFile);
+                updateData.avatar = newAvatarUrl;
+                contentUpdate.avatar = newAvatarUrl;
             }
 
             if (handleChanged) {
-                updateData.handle = `@${profileData.handle}`;
+                const newHandle = `@${profileData.handle}`;
+                updateData.handle = newHandle;
                 updateData.searchableHandle = profileData.handle.toLowerCase();
-                contentUpdate.handle = updateData.handle;
+                contentUpdate.handle = newHandle;
             }
             
             batch.update(userDocRef, updateData);
             
-            // If avatar or handle changed, update all posts and comments by this user
             if (Object.keys(contentUpdate).length > 0) {
                 const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
                 const commentsQuery = query(collection(db, "comments"), where("authorId", "==", user.uid));
