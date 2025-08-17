@@ -61,7 +61,7 @@ export default function LoginPage() {
 
   return (
     <AuthLayout>
-      <Card className="w-full max-w-md animate-slide-in-from-bottom bg-card/75 backdrop-blur-lg">
+      <Card className="w-full max-w-md animate-slide-in-from-bottom bg-card/80 backdrop-blur-lg rounded-2xl">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
             <CardHeader className="space-y-1 text-center">
