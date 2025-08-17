@@ -484,11 +484,9 @@ export default function HomePage() {
                         <Bookmark className="h-6 w-6" /> Itens Salvos
                       </Link>
                     </SheetClose>
-                     <SheetClose asChild>
-                       <Link href="/spaces" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                     <div className="flex items-center gap-4 py-2 text-xl font-bold rounded-md text-muted-foreground cursor-not-allowed">
                         <Radio className="h-6 w-6" /> Spaces <Badge variant="secondary" className="ml-auto">em breve</Badge>
-                      </Link>
-                    </SheetClose>
+                      </div>
                   </nav>
                   <div className="p-4 border-t mt-auto flex flex-col gap-2">
                     <div className="flex items-center gap-4 py-2 font-semibold rounded-md text-muted-foreground cursor-not-allowed">
