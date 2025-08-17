@@ -186,6 +186,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     likes: [],
                     views: 0,
                     isVerified: chirpUser.isVerified || false,
+                    isFirstPost: isFirstPost,
                 });
 
                  // 3. Handle First Post Notification

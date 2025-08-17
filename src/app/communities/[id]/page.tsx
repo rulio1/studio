@@ -4,12 +4,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, onSnapshot, orderBy, writeBatch, arrayUnion, arrayRemove, increment, serverTimestamp, addDoc, runTransaction, limit } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, onSnapshot, orderBy, writeBatch, arrayUnion, arrayRemove, increment, serverTimestamp, addDoc, runTransaction, limit, getDocs } from 'firebase/firestore';
 import { auth, db, storage } from '@/lib/firebase';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Bird, Trash2, Edit, Save, Sparkles, X, BadgeCheck, ImageIcon, Smile, Upload, MapPin } from 'lucide-react';
+import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Bird, Trash2, Edit, Save, Sparkles, X, BadgeCheck, ImageIcon, Smile, Upload, MapPin, Star } from 'lucide-react';
 import PostSkeleton from '@/components/post-skeleton';
 import { formatTimeAgo } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -56,6 +56,7 @@ interface Post {
     editedAt?: any;
     hashtags?: string[];
     isVerified?: boolean;
+    isFirstPost?: boolean;
 }
 
 interface ChirpUser {
@@ -114,6 +115,12 @@ const PostItem = ({ post }: { post: Post }) => {
 
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
+             {post.isFirstPost && (
+                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-12">
+                    <Star className="h-4 w-4" />
+                    <span>Primeiro post</span>
+                </div>
+            )}
             <div className="flex gap-4">
                  <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
                     {isChirpAccount ? (
@@ -356,6 +363,7 @@ export default function CommunityDetailPage() {
                     likes: [],
                     views: 0,
                     isVerified: chirpUser.isVerified || false,
+                    isFirstPost: isFirstPost,
                 });
 
                 // Update hashtag counts

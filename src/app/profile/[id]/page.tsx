@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Info } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Info, Star } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -72,6 +72,7 @@ interface Post {
     repostedAt?: any;
     isPinned?: boolean;
     isVerified?: boolean;
+    isFirstPost?: boolean;
 }
 
 interface Reply {
@@ -164,6 +165,12 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-12">
                     <Pin className="h-4 w-4" />
                     <span>Post fixado</span>
+                </div>
+            )}
+             {post.isFirstPost && (
+                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-12">
+                    <Star className="h-4 w-4" />
+                    <span>Primeiro post</span>
                 </div>
             )}
             <div className="flex gap-4">
