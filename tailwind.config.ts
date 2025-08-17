@@ -1,5 +1,6 @@
 import type {Config} from 'tailwindcss';
 
+// This is a dummy comment to force a rebuild and solve a file reference issue.
 export default {
   darkMode: ['class'],
   content: [

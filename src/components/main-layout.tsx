@@ -22,7 +22,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     
     // Pages where the FAB should not be shown
     const fabBlacklist = [
-        '/home', // Replaced with a static post form
         '/messages/', // Important: This targets specific message threads like /messages/xyz
         '/chat',
         '/profile/edit',
