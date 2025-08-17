@@ -16,7 +16,7 @@ import PostSkeleton from '@/components/post-skeleton';
 import { useRouter } from 'next/navigation';
 import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
-import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch, deleteDoc, increment, documentId, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch, deleteDoc, increment, documentId, Timestamp, runTransaction } from 'firebase/firestore';
 import { formatTimeAgo } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generatePost } from '@/ai/flows/post-generator-flow';
@@ -42,6 +42,7 @@ import { Textarea } from '@/components/ui/textarea';
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { dataURItoFile } from '@/lib/utils';
+import Poll from '@/components/poll';
 
 
 interface Post {
@@ -72,6 +73,11 @@ interface Post {
     isPinned?: boolean;
     isVerified?: boolean;
     isFirstPost?: boolean;
+    poll?: {
+        options: string[];
+        votes: number[];
+        voters: Record<string, number>;
+    } | null;
 }
 
 interface ChirpUser {
@@ -436,6 +442,54 @@ export default function HomePage() {
             </p>
         );
     };
+    
+    const handleVote = async (postId: string, optionIndex: number) => {
+        if (!user) return;
+        const postRef = doc(db, 'posts', postId);
+    
+        try {
+            await runTransaction(db, async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                if (!postDoc.exists()) {
+                    throw "Post não existe!";
+                }
+    
+                const postData = postDoc.data() as Post;
+                const poll = postData.poll;
+    
+                if (!poll) {
+                    throw "Enquete não existe neste post.";
+                }
+    
+                // Se o usuário já votou, não faz nada
+                if (poll.voters && poll.voters[user.uid] !== undefined) {
+                    toast({
+                        title: "Você já votou nesta enquete.",
+                        variant: "destructive"
+                    });
+                    return;
+                }
+    
+                const newVotes = [...poll.votes];
+                newVotes[optionIndex] += 1;
+    
+                const newVoters = { ...poll.voters, [user.uid]: optionIndex };
+    
+                transaction.update(postRef, {
+                    'poll.votes': newVotes,
+                    'poll.voters': newVoters
+                });
+            });
+        } catch (error) {
+            console.error("Erro ao votar:", error);
+            toast({
+                title: "Erro ao votar",
+                description: "Não foi possível registrar seu voto. Tente novamente.",
+                variant: "destructive",
+            });
+        }
+    };
+
 
   const PostItem = ({ post }: { post: Post }) => {
     const router = useRouter();
@@ -559,6 +613,18 @@ export default function HomePage() {
                 <div className="mb-2 whitespace-pre-wrap">
                     <PostContent content={post.content} />
                 </div>
+                {post.poll && user && (
+                    <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                        <Poll 
+                            postId={post.id}
+                            options={post.poll.options}
+                            votes={post.poll.votes}
+                            voters={post.poll.voters}
+                            currentUserId={user.uid}
+                            onVote={handleVote}
+                        />
+                    </div>
+                )}
                 {post.image && (
                     <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border">
                         <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />

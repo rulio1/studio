@@ -11,7 +11,7 @@ import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 import { auth, db, storage } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, increment, query, where, getDocs, writeBatch, getDoc, limit } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Sparkles, Loader2, Plus, ImageIcon, X, Smile, Upload, MapPin, Bird } from 'lucide-react';
+import { Sparkles, Loader2, Plus, ImageIcon, X, Smile, Upload, MapPin, Bird, ListOrdered, PlusCircle, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
@@ -19,6 +19,7 @@ import React from 'react';
 import { fileToDataUri } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import PollCreator, { PollData } from './poll-creator';
 
 interface ChirpUser {
     uid: string;
@@ -52,6 +53,10 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const [showAiImageGenerator, setShowAiImageGenerator] = useState(initialMode === 'image');
     const [aiImagePrompt, setAiImagePrompt] = useState('');
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+    
+    // Poll State
+    const [showPollCreator, setShowPollCreator] = useState(false);
+    const [pollData, setPollData] = useState<PollData | null>(null);
     
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
@@ -95,6 +100,8 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         setIsGeneratingImage(false);
         setShowAiImageGenerator(false);
         setAiImagePrompt('');
+        setShowPollCreator(false);
+        setPollData(null);
         onOpenChange(false);
         setIsPosting(false);
     }
@@ -136,10 +143,10 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     };
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() && !postImageDataUri) {
+        if (!newPostContent.trim() && !postImageDataUri && !pollData) {
             toast({
                 title: "O post não pode estar vazio.",
-                description: "Por favor, escreva algo ou adicione uma imagem.",
+                description: "Por favor, escreva algo, adicione uma imagem ou crie uma enquete.",
                 variant: "destructive",
             });
             return;
@@ -161,12 +168,16 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
             await runTransaction(db, async (transaction) => {
                 const postRef = doc(collection(db, "posts"));
 
-                // 1. Check if it's the user's first post
                 const userPostsQuery = query(collection(db, 'posts'), where('authorId', '==', user.uid), limit(1));
                 const userPostsSnapshot = await transaction.get(userPostsQuery);
                 const isFirstPost = userPostsSnapshot.empty;
 
-                // 2. Set the new post
+                const finalPollData = pollData ? {
+                    options: pollData.options.map(o => o.text),
+                    votes: pollData.options.map(() => 0), // Initialize votes
+                    voters: {} // Map of userId to optionIndex
+                } : null;
+
                 transaction.set(postRef, {
                     authorId: user.uid,
                     author: chirpUser.displayName,
@@ -187,12 +198,12 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     views: 0,
                     isVerified: chirpUser.isVerified || false,
                     isFirstPost: isFirstPost,
+                    poll: finalPollData
                 });
 
-                 // 3. Handle First Post Notification
                 if (isFirstPost) {
                     const chirpOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@chirp'), limit(1));
-                    const chirpUserSnapshot = await getDocs(chirpOfficialUserQuery); // Use getDocs, not transaction.get
+                    const chirpUserSnapshot = await getDocs(chirpOfficialUserQuery); 
                     
                     if (!chirpUserSnapshot.empty) {
                         const chirpUserData = chirpUserSnapshot.docs[0].data();
@@ -216,22 +227,18 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     }
                 }
 
-                // 4. Handle Mentions
                 if (mentionedHandles.length > 0) {
                     const usersRef = collection(db, "users");
-                    // Firestore transactions don't support 'in' queries directly with get, so we do it outside or handle it differently.
-                    // For simplicity, we'll fetch them outside the transaction if needed, but for notifications it's often better to do it after the post is committed.
-                    // Let's do it inside with individual gets
                      const mentionedUserDocs = await Promise.all(mentionedHandles.map(handle => {
                          const mentionQuery = query(usersRef, where("handle", "==", handle), limit(1));
-                         return getDocs(mentionQuery); // Firestore recommends getDocs for transactions
+                         return getDocs(mentionQuery);
                      }));
 
                      mentionedUserDocs.forEach(querySnapshot => {
                         if (!querySnapshot.empty) {
                             const userDoc = querySnapshot.docs[0];
                             const mentionedUserId = userDoc.id;
-                            if (mentionedUserId !== user.uid) { // Don't notify for self-mention
+                            if (mentionedUserId !== user.uid) {
                                 const notificationRef = doc(collection(db, 'notifications'));
                                 transaction.set(notificationRef, {
                                     toUserId: mentionedUserId,
@@ -254,7 +261,6 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                      });
                 }
                 
-                // 5. Handle Hashtags
                 for (const tag of hashtags) {
                     const hashtagRef = doc(db, "hashtags", tag);
                     const hashtagDoc = await transaction.get(hashtagRef);
@@ -340,10 +346,9 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                         <div className="w-full">
                             <Textarea 
                                 placeholder="O que está acontecendo?!" 
-                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
+                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0"
                                 value={newPostContent}
                                 onChange={(e) => setNewPostContent(e.target.value)}
-                                rows={newPostContent.length > 50 || postImagePreview ? 5 : 1}
                                 disabled={isPosting}
                             />
                             {postImagePreview && (
@@ -352,6 +357,11 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                     <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => { setPostImagePreview(null); setPostImageDataUri(null); }}>
                                         <X className="h-4 w-4" />
                                     </Button>
+                                </div>
+                            )}
+                             {showPollCreator && (
+                                <div className="mt-4">
+                                    <PollCreator onChange={setPollData} />
                                 </div>
                             )}
                         </div>
@@ -411,10 +421,10 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                 accept="image/png, image/jpeg, image/gif"
                                 onChange={handleImageChange}
                             />
-                             <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                             <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting || showPollCreator}>
                                 <Upload className="h-6 w-6 text-primary" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => setShowAiImageGenerator(!showAiImageGenerator)} disabled={isPosting}>
+                            <Button variant="ghost" size="icon" onClick={() => setShowAiImageGenerator(!showAiImageGenerator)} disabled={isPosting || showPollCreator}>
                                 <ImageIcon className="h-6 w-6 text-primary" />
                             </Button>
                             <Popover>
@@ -430,11 +440,14 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                             <Button variant="ghost" size="icon" onClick={() => setShowLocationInput(!showLocationInput)} disabled={isPosting}>
                                 <MapPin className="h-6 w-6 text-primary" />
                             </Button>
+                             <Button variant="ghost" size="icon" onClick={() => setShowPollCreator(!showPollCreator)} disabled={isPosting || !!postImageDataUri}>
+                                <ListOrdered className="h-6 w-6 text-primary" />
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator);}} disabled={isPosting}>
                                 <Sparkles className="h-6 w-6 text-primary" />
                             </Button>
                         </div>
-                        <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !postImageDataUri) || isPosting}>
+                        <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !postImageDataUri && !pollData) || isPosting}>
                             {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Postar
                         </Button>
