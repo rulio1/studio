@@ -158,7 +158,7 @@ export default function NotificationsPage() {
     }, [notifications]);
 
   return (
-    <>
+    <Tabs defaultValue="all" className="flex flex-col h-screen">
        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
           <div className="w-6"></div>
@@ -167,16 +167,14 @@ export default function NotificationsPage() {
           </div>
            <div className="w-6"></div>
         </div>
-        <Tabs defaultValue="all" className="w-full">
-            <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
-              <TabsTrigger value="all" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Todas</TabsTrigger>
-              <TabsTrigger value="mentions" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Menções</TabsTrigger>
-               <TabsTrigger value="verified" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Verificados</TabsTrigger>
-            </TabsList>
-        </Tabs>
+        <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
+            <TabsTrigger value="all" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Todas</TabsTrigger>
+            <TabsTrigger value="mentions" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Menções</TabsTrigger>
+            <TabsTrigger value="verified" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Verificados</TabsTrigger>
+        </TabsList>
       </header>
 
-        <Tabs defaultValue="all" className="mt-0">
+        <div className="flex-1 overflow-y-auto">
             <TabsContent value="all" className="mt-0">
                 {isLoading ? (
                     <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -216,7 +214,7 @@ export default function NotificationsPage() {
                     <p>Curtidas, menções, repostagens e muito mais — quando vier de uma conta verificada, você encontrará aqui.</p>
                 </div>
             </TabsContent>
-        </Tabs>
-    </>
+        </div>
+    </Tabs>
   );
 }
