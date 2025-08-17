@@ -93,13 +93,11 @@ export default function EditProfilePage() {
         if (!handle || handle === originalHandle) {
             setHandleStatusMessage('');
             setIsHandleAvailable(true);
-            setIsCheckingHandle(false);
             return;
         }
         if (handle.length < 3) {
             setHandleStatusMessage('O nome de usuário deve ter pelo menos 3 caracteres.');
             setIsHandleAvailable(false);
-            setIsCheckingHandle(false);
             return;
         }
 
@@ -125,13 +123,10 @@ export default function EditProfilePage() {
     }, [originalHandle]);
 
      useEffect(() => {
-        if (debouncedHandle !== originalHandle) {
-            checkHandleAvailability(debouncedHandle);
-        } else {
-            setHandleStatusMessage('');
-            setIsHandleAvailable(true);
-        }
-    }, [debouncedHandle, originalHandle, checkHandleAvailability]);
+        // This effect will run whenever the debounced handle changes.
+        checkHandleAvailability(debouncedHandle);
+    }, [debouncedHandle, checkHandleAvailability]);
+
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -150,7 +145,8 @@ export default function EditProfilePage() {
     };
 
     const handleSave = async () => {
-        if (!user || !isHandleAvailable || isCheckingHandle) {
+        if (!user) return;
+        if (!isHandleAvailable || isCheckingHandle) {
             toast({
                 title: "Não é possível salvar",
                 description: isCheckingHandle ? "Aguarde a verificação do nome de usuário." : "O nome de usuário escolhido não está disponível.",
@@ -158,43 +154,44 @@ export default function EditProfilePage() {
             });
             return;
         }
+
         setIsSaving(true);
-    
+
         try {
             let newAvatarUrl = profileData.avatar;
-    
+
+            // 1. Upload new avatar if one is selected
             if (newAvatarFile) {
                 const storageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}`);
                 const uploadResult = await uploadBytes(storageRef, newAvatarFile);
                 newAvatarUrl = await getDownloadURL(uploadResult.ref);
             }
-    
-            const firestoreUpdateData: any = {
+
+            // 2. Prepare data for Firestore and Auth
+            const firestoreUpdateData = {
                 displayName: profileData.displayName,
+                handle: `@${profileData.handle}`,
                 bio: profileData.bio,
                 location: profileData.location,
                 avatar: newAvatarUrl,
-                handle: `@${profileData.handle}`,
                 searchableHandle: profileData.handle.toLowerCase(),
             };
-    
-            const authUpdateData: any = {
+            
+            const authUpdateData = {
                 displayName: profileData.displayName,
                 photoURL: newAvatarUrl,
             };
-    
+
+            // 3. Update Firebase Auth and Firestore
             await updateProfile(user, authUpdateData);
             await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
 
-            // Note: Batch updating posts/comments on the client is removed to prevent timeouts.
-            // This is best handled by a server-side function.
-    
             toast({
                 title: "Perfil Salvo!",
                 description: "Suas alterações foram salvas com sucesso.",
             });
             router.push(`/profile/${user.uid}`);
-    
+            
         } catch (error) {
             console.error("Erro ao salvar perfil: ", error);
             toast({
@@ -206,6 +203,7 @@ export default function EditProfilePage() {
             setIsSaving(false);
         }
     };
+
 
     if (isLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -235,8 +233,7 @@ export default function EditProfilePage() {
                 </Avatar>
                 <Button 
                     variant="ghost" 
-                    size="icon"
-                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-full h-full w-full"
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-full h-full w-full p-0"
                     onClick={() => avatarInputRef.current?.click()}>
                     <Upload className="h-8 w-8 text-white" />
                 </Button>
