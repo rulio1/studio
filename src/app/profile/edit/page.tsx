@@ -98,7 +98,7 @@ export default function EditProfilePage() {
         setHandleStatusMessage('Verificando...');
         try {
             const usersRef = collection(db, "users");
-            const q = query(usersRef, where("searchableHandle", "==", handle.toLowerCase()));
+            const q = query(usersRef, where("handle", "==", `@${handle}`));
             const querySnapshot = await getDocs(q);
             if (querySnapshot.empty) {
                 setHandleStatusMessage('Nome de usuário disponível!');
