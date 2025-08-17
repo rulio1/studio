@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useEffect, useState, useMemo } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc } from 'firestore';
+import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc } from 'firebase/firestore';
 import { formatTimeAgo } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -220,5 +220,3 @@ export default function NotificationsPage() {
     </>
   );
 }
-
-    
