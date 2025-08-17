@@ -145,19 +145,16 @@ export default function HomePage() {
     const reposterIds = repostsData.map(repost => repost.userId);
     
     let allReferencedUserIds = [...reposterIds];
-    if (repostedPostIds.length > 0) {
-        const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
-        const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
-        repostedPostsSnapshot.forEach(doc => allReferencedUserIds.push(doc.data().authorId));
-    }
-    
-    // Fetch all users (authors and reposters) in one go
+    originalPosts.forEach(post => allReferencedUserIds.push(post.authorId));
+
     let usersMap = new Map();
     if (allReferencedUserIds.length > 0) {
         const uniqueUserIds = [...new Set(allReferencedUserIds)];
-        const usersQuery = query(collection(db, 'users'), where('uid', 'in', uniqueUserIds));
-        const usersSnapshot = await getDocs(usersQuery);
-        usersMap = new Map(usersSnapshot.docs.map(doc => [doc.id, doc.data() as ChirpUser]));
+         if (uniqueUserIds.length > 0) {
+            const usersQuery = query(collection(db, 'users'), where(documentId(), "in", uniqueUserIds));
+            const usersSnapshot = await getDocs(usersQuery);
+            usersMap = new Map(usersSnapshot.docs.map(doc => [doc.id, doc.data() as ChirpUser]));
+        }
     }
     
     let repostedPosts: Post[] = [];
@@ -240,7 +237,7 @@ export default function HomePage() {
 
     let repostedPosts: Post[] = [];
     if (repostedPostIds.length > 0) {
-        const followingUsersQuery = query(collection(db, 'users'), where('uid', 'in', followingIds));
+        const followingUsersQuery = query(collection(db, 'users'), where(documentId(), 'in', followingIds));
         const followingUsersSnapshot = await getDocs(followingUsersQuery);
         const followingUsersMap = new Map(followingUsersSnapshot.docs.map(doc => [doc.id, doc.data() as ChirpUser]));
         
@@ -751,7 +748,3 @@ export default function HomePage() {
     </>
   );
 }
-
-    
-
-    

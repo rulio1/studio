@@ -322,7 +322,7 @@ export default function ProfilePage() {
     }, [fetchProfileUser]);
     
     const fetchUserPosts = useCallback(async () => {
-        if (!profileId || !profileUser) return;
+        if (!profileId || !currentUser) return;
         setIsLoadingPosts(true);
 
         const postsQuery = query(collection(db, "posts"), where("authorId", "==", profileId));
@@ -338,25 +338,42 @@ export default function ProfilePage() {
             ...doc.data(),
         } as Post));
 
-        const repostedPostIds = repostsSnapshot.docs.map(doc => doc.data().postId);
         const repostsData = repostsSnapshot.docs.map(doc => doc.data());
+        const repostedPostIds = repostsData.map(repost => repost.postId);
+        
+        let allReferencedUserIds: string[] = [];
+        originalPosts.forEach(p => allReferencedUserIds.push(p.authorId));
+
+        let usersMap = new Map();
+        if (allReferencedUserIds.length > 0) {
+            const uniqueUserIds = [...new Set(allReferencedUserIds)];
+            if(uniqueUserIds.length > 0){
+                const usersQuery = query(collection(db, 'users'), where(documentId(), 'in', uniqueUserIds));
+                const usersSnapshot = await getDocs(usersQuery);
+                usersMap = new Map(usersSnapshot.docs.map(doc => [doc.id, doc.data() as ChirpUser]));
+            }
+        }
+        
+        const profileUserDoc = await getDoc(doc(db, 'users', profileId));
+        const profileUserData = profileUserDoc.data() as ChirpUser;
+
 
         let repostedPosts: Post[] = [];
         if (repostedPostIds.length > 0) {
             const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
             const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
-            const postsMap = new Map(repostedPostsSnapshot.docs.map(doc => [doc.id, doc.data()]));
+            const postsMap = new Map(repostedPostsSnapshot.docs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as Post]));
 
             repostedPosts = repostsData.map(repost => {
                 const postData = postsMap.get(repost.postId);
                 if (!postData) return null;
+                
                 return {
-                    id: repost.postId,
                     ...postData,
                     repostedAt: repost.repostedAt,
                     repostedBy: {
-                        name: profileUser.displayName,
-                        handle: profileUser.handle
+                        name: profileUserData.displayName,
+                        handle: profileUserData.handle
                     },
                 } as Post;
             }).filter(p => p !== null) as Post[];
@@ -368,7 +385,7 @@ export default function ProfilePage() {
             const timeB = b.repostedAt || b.createdAt;
             return timeB.toMillis() - timeA.toMillis();
         });
-
+        
         const finalPosts = allPosts.map(post => ({
             ...post,
             isLiked: post.likes.includes(currentUser?.uid || ''),
@@ -382,13 +399,13 @@ export default function ProfilePage() {
         setMediaPosts(finalPosts.filter(p => p.image));
         setIsLoadingMedia(false);
 
-    }, [profileId, currentUser, profileUser]);
+    }, [profileId, currentUser]);
 
     const fetchUserReplies = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingReplies(true);
         const q = query(collection(db, "comments"), where("authorId", "==", profileId));
-        onSnapshot(q, (snapshot) => {
+        const unsubscribe = onSnapshot(q, (snapshot) => {
             let repliesData = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
@@ -397,10 +414,11 @@ export default function ProfilePage() {
                     time: '', 
                 } as Reply;
             });
-            repliesData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+            repliesData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
             setUserReplies(repliesData);
             setIsLoadingReplies(false);
         });
+        return unsubscribe;
     }, [profileId]);
 
 
@@ -408,7 +426,7 @@ export default function ProfilePage() {
         if (!profileId) return;
         setIsLoadingLikes(true);
         const q = query(collection(db, "posts"), where("likes", "array-contains", profileId));
-        onSnapshot(q, (snapshot) => {
+        const unsubscribe = onSnapshot(q, (snapshot) => {
             const posts = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
@@ -422,16 +440,21 @@ export default function ProfilePage() {
             setLikedPosts(posts);
             setIsLoadingLikes(false);
         });
+        return unsubscribe;
     }, [profileId, currentUser]);
 
 
     useEffect(() => {
-        if(profileId && profileUser) {
+        if(profileId && currentUser) {
             fetchUserPosts();
-            fetchUserReplies();
-            fetchLikedPosts();
+            const unsubReplies = fetchUserReplies();
+            const unsubLikes = fetchLikedPosts();
+            return () => {
+                unsubReplies.then(u => u());
+                unsubLikes.then(u => u());
+            };
         }
-    }, [profileId, profileUser, fetchUserPosts, fetchLikedPosts, fetchUserReplies]);
+    }, [profileId, currentUser, fetchUserPosts, fetchLikedPosts, fetchUserReplies]);
 
     const handleFollow = async () => {
         if (!currentUser || !profileUser || !chirpUser) return;
@@ -841,5 +864,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
