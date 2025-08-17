@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { auth, db, storage } from '@/lib/firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser, updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import React from 'react';
@@ -157,38 +157,44 @@ export default function EditProfilePage() {
         setIsSaving(true);
     
         try {
-            let avatarUrl = profileData.avatar;
+            let newAvatarUrl = profileData.avatar;
+    
+            // 1. Upload new avatar if it exists
             if (newAvatarFile) {
                 const storageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}`);
                 await uploadBytes(storageRef, newAvatarFile);
-                avatarUrl = await getDownloadURL(storageRef);
+                newAvatarUrl = await getDownloadURL(storageRef);
             }
     
-            const handleChanged = profileData.handle !== originalHandle;
-    
-            const updateData: any = {
+            // 2. Prepare data for Firestore and Auth updates
+            const firestoreUpdateData: any = {
                 displayName: profileData.displayName,
                 bio: profileData.bio,
                 location: profileData.location,
-                avatar: avatarUrl,
+                avatar: newAvatarUrl, // Use the new URL
             };
     
-            if (handleChanged) {
-                updateData.handle = `@${profileData.handle}`;
-                updateData.searchableHandle = profileData.handle.toLowerCase();
+            const authUpdateData: any = {
+                displayName: profileData.displayName,
+                photoURL: newAvatarUrl,
+            };
+            
+            if (profileData.handle !== originalHandle) {
+                firestoreUpdateData.handle = `@${profileData.handle}`;
+                firestoreUpdateData.searchableHandle = profileData.handle.toLowerCase();
             }
     
+            // 3. Perform updates
             const userDocRef = doc(db, 'users', user.uid);
-            await updateDoc(userDocRef, updateData);
+            await updateProfile(user, authUpdateData);
+            await updateDoc(userDocRef, firestoreUpdateData);
     
-            // NOTE: In a production app, updating all posts and comments would ideally
-            // be handled by a backend function (e.g., a Cloud Function) triggered on
-            // user profile update. Doing this on the client can be slow and error-prone
-            // if the user has a lot of content. We are removing this from the client
-            // to fix the saving issue. New content will use the updated profile info.
+            // NOTE: Batch updating all posts/comments is removed from client-side
+            // to prevent performance issues and timeouts. This should be handled
+            // by a backend function in a production environment.
     
             toast({
-                title: "Perfil Salvo",
+                title: "Perfil Salvo!",
                 description: "Suas alterações foram salvas com sucesso.",
             });
             router.push(`/profile/${user.uid}`);
@@ -301,5 +307,6 @@ export default function EditProfilePage() {
       </main>
     </div>
   );
+}
 
     
