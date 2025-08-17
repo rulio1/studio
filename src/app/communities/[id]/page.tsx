@@ -265,6 +265,13 @@ export default function CommunityDetailPage() {
         try {
             await runTransaction(db, async (transaction) => {
                 const postRef = doc(collection(db, "posts"));
+
+                // First, perform all reads
+                const hashtagRefs = hashtags.map(tag => doc(db, "hashtags", tag));
+                const hashtagDocs = await Promise.all(hashtagRefs.map(ref => transaction.get(ref)));
+
+                // Now, perform all writes
+                // 1. Create the new post
                 transaction.set(postRef, {
                     authorId: user.uid,
                     author: chirpUser.displayName,
@@ -283,9 +290,10 @@ export default function CommunityDetailPage() {
                     views: 0,
                 });
 
-                for (const tag of hashtags) {
-                    const hashtagRef = doc(db, "hashtags", tag);
-                    const hashtagDoc = await transaction.get(hashtagRef);
+                // 2. Update hashtag counts
+                 hashtagDocs.forEach((hashtagDoc, index) => {
+                    const tag = hashtags[index];
+                    const hashtagRef = hashtagRefs[index];
                     if (hashtagDoc.exists()) {
                         transaction.update(hashtagRef, { count: increment(1) });
                     } else {
@@ -295,7 +303,7 @@ export default function CommunityDetailPage() {
                             createdAt: serverTimestamp()
                         });
                     }
-                }
+                });
             });
 
             resetModal();

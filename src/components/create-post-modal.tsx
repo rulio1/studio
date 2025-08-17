@@ -98,8 +98,14 @@ export default function CreatePostModal() {
 
         try {
             await runTransaction(db, async (transaction) => {
-                // 1. Create the new post
                 const postRef = doc(collection(db, "posts"));
+
+                // First, perform all reads
+                const hashtagRefs = hashtags.map(tag => doc(db, "hashtags", tag));
+                const hashtagDocs = await Promise.all(hashtagRefs.map(ref => transaction.get(ref)));
+
+                // Now, perform all writes
+                // 1. Create the new post
                 transaction.set(postRef, {
                     authorId: user.uid,
                     author: chirpUser.displayName,
@@ -119,10 +125,9 @@ export default function CreatePostModal() {
                 });
 
                 // 2. Update hashtag counts
-                for (const tag of hashtags) {
-                    const hashtagRef = doc(db, "hashtags", tag);
-                    const hashtagDoc = await transaction.get(hashtagRef);
-
+                hashtagDocs.forEach((hashtagDoc, index) => {
+                    const tag = hashtags[index];
+                    const hashtagRef = hashtagRefs[index];
                     if (hashtagDoc.exists()) {
                         transaction.update(hashtagRef, { count: increment(1) });
                     } else {
@@ -132,7 +137,7 @@ export default function CreatePostModal() {
                             createdAt: serverTimestamp()
                         });
                     }
-                }
+                });
             });
 
 
