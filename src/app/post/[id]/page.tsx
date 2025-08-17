@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird } from 'lucide-react';
+import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird, Pin, Sparkles } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -19,6 +19,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
@@ -512,13 +513,22 @@ export default function PostDetailPage() {
                             <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
                                 {user?.uid === post.authorId ? (
                                     <>
-                                        <DropdownMenuItem onClick={() => setIsDeleteAlertOpen(true)}>
+                                        <DropdownMenuItem onClick={() => setIsDeleteAlertOpen(true)} className="text-destructive">
                                             <Trash2 className="mr-2 h-4 w-4"/>
                                             Apagar
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => setIsEditing(true)}>
                                             <Edit className="mr-2 h-4 w-4"/>
                                             Editar
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de fixar posts no perfil será adicionada em breve.'})}>
+                                            <Pin className="mr-2 h-4 w-4"/>
+                                            Fixar no seu perfil
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de adicionar posts aos destaques será adicionada em breve.'})}>
+                                            <Sparkles className="mr-2 h-4 w-4"/>
+                                            Adicionar aos Destaques
                                         </DropdownMenuItem>
                                     </>
                                 ) : (
@@ -610,7 +620,7 @@ export default function PostDetailPage() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeletePost}>Apagar</AlertDialogAction>
+                        <AlertDialogAction onClick={handleDeletePost} className="bg-destructive hover:bg-destructive/90">Apagar</AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>

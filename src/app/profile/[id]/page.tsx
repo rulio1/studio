@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -20,6 +20,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -125,7 +126,7 @@ const PostContent = ({ content }: { content: string }) => {
     );
 };
 
-const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void }) => {
+const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, toast }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, toast: any }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
     const isOfficialAccount = post.handle.toLowerCase() === '@chirp' || post.handle.toLowerCase() === '@rulio';
@@ -174,13 +175,22 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }:
                             <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
                                 {user?.uid === post.authorId ? (
                                     <>
-                                        <DropdownMenuItem onClick={() => onDelete(post.id)}>
+                                        <DropdownMenuItem onClick={() => onDelete(post.id)} className="text-destructive">
                                             <Trash2 className="mr-2 h-4 w-4"/>
                                             Apagar
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => onEdit(post)}>
                                             <Edit className="mr-2 h-4 w-4"/>
                                             Editar
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de fixar posts no perfil será adicionada em breve.'})}>
+                                            <Pin className="mr-2 h-4 w-4"/>
+                                            Fixar no seu perfil
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de adicionar posts aos destaques será adicionada em breve.'})}>
+                                            <Sparkles className="mr-2 h-4 w-4"/>
+                                            Adicionar aos Destaques
                                         </DropdownMenuItem>
                                     </>
                                 ) : (
@@ -667,6 +677,7 @@ export default function ProfilePage() {
                         onDelete={setPostToDelete}
                         onEdit={handleEditClick}
                         onSave={handleSavePost}
+                        toast={toast}
                     />
                 ))}
             </ul>
@@ -823,7 +834,7 @@ export default function ProfilePage() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                 <AlertDialogCancel onClick={() => setPostToDelete(null)}>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeletePost}>Continuar</AlertDialogAction>
+                <AlertDialogAction onClick={handleDeletePost} className="bg-destructive hover:bg-destructive/90">Continuar</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
