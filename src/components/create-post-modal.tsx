@@ -102,9 +102,13 @@ function GifPicker({ onGifClick }: { onGifClick: (gif: Gif) => void }) {
     );
 }
 
+interface CreatePostModalProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    initialMode?: 'post' | 'gif';
+}
 
-export default function CreatePostModal() {
-    const [isModalOpen, setIsModalOpen] = useState(false);
+export default function CreatePostModal({ open, onOpenChange, initialMode = 'post'}: CreatePostModalProps) {
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
     
@@ -142,7 +146,6 @@ export default function CreatePostModal() {
         return () => unsubscribe();
     }, []);
 
-
     const resetModal = () => {
         setNewPostContent('');
         setAiTextPrompt('');
@@ -150,7 +153,7 @@ export default function CreatePostModal() {
         setPostImagePreview(null);
         setIsGeneratingText(false);
         setShowAiTextGenerator(false);
-        setIsModalOpen(false);
+        onOpenChange(false);
         setIsPosting(false);
     }
 
@@ -288,108 +291,100 @@ export default function CreatePostModal() {
         setPostImageDataUri(gif.images.original.url);
     };
 
-
     return (
-            <Dialog open={isModalOpen} onOpenChange={(isOpen) => { if(!isPosting) setIsModalOpen(isOpen); }}>
-                <DialogTrigger asChild>
-                    <Button className="fixed bottom-20 right-4 h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-50">
-                        <Plus className="h-8 w-8" />
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                    <DialogTitle>Criar Post</DialogTitle>
-                    </DialogHeader>
-                     {chirpUser ? (
-                    <div className="flex flex-col gap-4">
-                        <div className="flex gap-4">
-                            <Avatar>
-                                <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
-                                <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
-                            </Avatar>
-                            <div className="w-full">
-                                <Textarea 
-                                    placeholder="O que está acontecendo?!" 
-                                    className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
-                                    value={newPostContent}
-                                    onChange={(e) => setNewPostContent(e.target.value)}
-                                    rows={newPostContent.length > 50 || postImagePreview ? 5 : 1}
-                                    disabled={isPosting}
-                                />
-                                {postImagePreview && (
-                                    <div className="mt-4 relative">
-                                        <Image src={postImagePreview} alt="Prévia da imagem" width={500} height={300} className="rounded-lg object-cover w-full" />
-                                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => { setPostImagePreview(null); setPostImageDataUri(null); }}>
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {showAiTextGenerator && (
-                            <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
-                                <Textarea 
-                                    placeholder="ex: Um post sobre o futuro da exploração espacial"
-                                    className="text-sm focus-visible:ring-1 bg-background"
-                                    value={aiTextPrompt}
-                                    onChange={(e) => setAiTextPrompt(e.target.value)}
-                                    rows={2}
-                                    disabled={isGeneratingText}
-                                />
-                                <Button onClick={handleGenerateText} disabled={isGeneratingText || !aiTextPrompt.trim()} className="self-end" size="sm">
-                                    {isGeneratingText && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Gerar Texto
-                                </Button>
-                            </div>
-                        )}
-
-                        <div className="flex justify-between items-center mt-2 border-t pt-4">
-                            <div className="flex items-center gap-1">
-                                <Input
-                                    type="file"
-                                    className="hidden"
-                                    ref={imageInputRef}
-                                    accept="image/png, image/jpeg, image/gif"
-                                    onChange={handleImageChange}
-                                />
-                                <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
-                                    <ImageIcon className="h-6 w-6 text-primary" />
-                                </Button>
-                                 <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="ghost" size="icon" disabled={isPosting}>
-                                            <Smile className="h-6 w-6 text-primary" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0 border-0">
-                                        <EmojiPicker onEmojiClick={onEmojiClick} />
-                                    </PopoverContent>
-                                </Popover>
-                                 <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="ghost" size="icon" disabled={isPosting}>
-                                            <Film className="h-6 w-6 text-primary" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto max-w-[450px] p-0 border-0 bg-background">
-                                        <GifPicker onGifClick={onGifClick} />
-                                    </PopoverContent>
-                                </Popover>
-                                <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator);}} disabled={isPosting}>
-                                    <Sparkles className="h-6 w-6 text-primary" />
-                                </Button>
-                            </div>
-                            <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !postImageDataUri) || isPosting}>
-                                {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Postar
-                            </Button>
+        <Dialog open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen); }}>
+            <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                <DialogTitle>Criar Post</DialogTitle>
+                </DialogHeader>
+                    {chirpUser ? (
+                <div className="flex flex-col gap-4">
+                    <div className="flex gap-4">
+                        <Avatar>
+                            <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
+                            <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="w-full">
+                            <Textarea 
+                                placeholder="O que está acontecendo?!" 
+                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
+                                value={newPostContent}
+                                onChange={(e) => setNewPostContent(e.target.value)}
+                                rows={newPostContent.length > 50 || postImagePreview ? 5 : 1}
+                                disabled={isPosting}
+                            />
+                            {postImagePreview && (
+                                <div className="mt-4 relative">
+                                    <Image src={postImagePreview} alt="Prévia da imagem" width={500} height={300} className="rounded-lg object-cover w-full" />
+                                    <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => { setPostImagePreview(null); setPostImageDataUri(null); }}>
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
-                     ) : <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>}
-                </DialogContent>
-            </Dialog>
+
+                    {showAiTextGenerator && (
+                        <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
+                            <Textarea 
+                                placeholder="ex: Um post sobre o futuro da exploração espacial"
+                                className="text-sm focus-visible:ring-1 bg-background"
+                                value={aiTextPrompt}
+                                onChange={(e) => setAiTextPrompt(e.target.value)}
+                                rows={2}
+                                disabled={isGeneratingText}
+                            />
+                            <Button onClick={handleGenerateText} disabled={isGeneratingText || !aiTextPrompt.trim()} className="self-end" size="sm">
+                                {isGeneratingText && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Gerar Texto
+                            </Button>
+                        </div>
+                    )}
+
+                    <div className="flex justify-between items-center mt-2 border-t pt-4">
+                        <div className="flex items-center gap-1">
+                            <Input
+                                type="file"
+                                className="hidden"
+                                ref={imageInputRef}
+                                accept="image/png, image/jpeg, image/gif"
+                                onChange={handleImageChange}
+                            />
+                            <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                                <ImageIcon className="h-6 w-6 text-primary" />
+                            </Button>
+                                <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" disabled={isPosting}>
+                                        <Smile className="h-6 w-6 text-primary" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 border-0">
+                                    <EmojiPicker onEmojiClick={onEmojiClick} />
+                                </PopoverContent>
+                            </Popover>
+                                <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" disabled={isPosting} data-test="gif-picker-trigger">
+                                        <Film className="h-6 w-6 text-primary" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto max-w-[450px] p-0 border-0 bg-background">
+                                    <GifPicker onGifClick={onGifClick} />
+                                </PopoverContent>
+                            </Popover>
+                            <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator);}} disabled={isPosting}>
+                                <Sparkles className="h-6 w-6 text-primary" />
+                            </Button>
+                        </div>
+                        <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !postImageDataUri) || isPosting}>
+                            {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Postar
+                        </Button>
+                    </div>
+                </div>
+                    ) : <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>}
+            </DialogContent>
+        </Dialog>
     );
 }
-
-    
