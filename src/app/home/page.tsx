@@ -633,7 +633,7 @@ export default function HomePage() {
                   <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
                 </Avatar>
               </SheetTrigger>
-              <SheetContent side="left" className="w-80 p-0 flex flex-col bg-background/80 backdrop-blur-lg">
+              <SheetContent side="left" className="w-80 p-0 flex flex-col bg-background">
                  <OtherDialogTitle className="sr-only">Menu Principal</OtherDialogTitle>
                  <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
                     <X className="h-4 w-4" />
