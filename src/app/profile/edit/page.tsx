@@ -7,14 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { useState, useEffect, useCallback } from 'react';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import React from 'react';
 import { useDebounce } from 'use-debounce';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
 
 interface UserProfileData {
     displayName: string;
@@ -41,6 +43,9 @@ export default function EditProfilePage() {
         avatar: '',
         banner: '',
     });
+
+    const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null);
+    const avatarInputRef = useRef<HTMLInputElement>(null);
 
     const [debouncedHandle] = useDebounce(profileData.handle, 500);
     const [isCheckingHandle, setIsCheckingHandle] = useState(false);
@@ -130,6 +135,19 @@ export default function EditProfilePage() {
         setProfileData({ ...profileData, [e.target.id]: value });
     };
 
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setNewAvatarFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProfileData(prev => ({ ...prev, avatar: reader.result as string }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+
     const handleSave = async () => {
         if (!user || !isHandleAvailable) {
             toast({
@@ -142,8 +160,8 @@ export default function EditProfilePage() {
         setIsSaving(true);
         
         try {
-            const newHandle = profileData.handle;
-            const handleChanged = newHandle !== originalHandle;
+            const batch = writeBatch(db);
+            const userDocRef = doc(db, 'users', user.uid);
             
             const updateData: { [key: string]: any } = { 
                 displayName: profileData.displayName,
@@ -151,13 +169,34 @@ export default function EditProfilePage() {
                 location: profileData.location,
             };
 
+            // Handle avatar upload
+            if (newAvatarFile) {
+                const storageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}`);
+                await uploadBytes(storageRef, newAvatarFile);
+                const downloadURL = await getDownloadURL(storageRef);
+                updateData.avatar = downloadURL;
+            }
+
+            const newHandle = profileData.handle;
+            const handleChanged = newHandle !== originalHandle;
+            
             if (handleChanged) {
                 updateData.handle = `@${newHandle}`;
                 updateData.searchableHandle = newHandle.toLowerCase();
             }
+            
+            batch.update(userDocRef, updateData);
+            
+            // If avatar changed, update all posts by this user
+            if (updateData.avatar) {
+                const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
+                const postsSnapshot = await getDocs(postsQuery);
+                postsSnapshot.forEach((postDoc) => {
+                    batch.update(postDoc.ref, { avatar: updateData.avatar });
+                });
+            }
 
-            const userDocRef = doc(db, 'users', user.uid);
-            await updateDoc(userDocRef, updateData);
+            await batch.commit();
 
             toast({
                 title: "Perfil Salvo",
@@ -203,6 +242,22 @@ export default function EditProfilePage() {
                 <Avatar className="h-32 w-32 border-4 border-background">
                     {profileData.avatar ? <AvatarImage src={profileData.avatar} alt={profileData.displayName} />: <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>}
                 </Avatar>
+                <input
+                    type="file"
+                    accept="image/*"
+                    ref={avatarInputRef}
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                />
+                 <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute inset-0 bg-black/50 text-white opacity-0 hover:opacity-100 rounded-full"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={isSaving}
+                >
+                    <Upload className="h-8 w-8" />
+                </Button>
             </div>
         </div>
 
