@@ -187,12 +187,16 @@ export default function EditProfilePage() {
             
             batch.update(userDocRef, updateData);
             
-            // If avatar changed, update all posts by this user
-            if (updateData.avatar) {
+            // If avatar or handle changed, update all posts by this user
+            const shouldUpdatePosts = updateData.avatar || handleChanged;
+            if (shouldUpdatePosts) {
                 const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
                 const postsSnapshot = await getDocs(postsQuery);
                 postsSnapshot.forEach((postDoc) => {
-                    batch.update(postDoc.ref, { avatar: updateData.avatar });
+                    const postUpdate: { [key: string]: any } = {};
+                    if(updateData.avatar) postUpdate.avatar = updateData.avatar;
+                    if(handleChanged) postUpdate.handle = updateData.handle;
+                    batch.update(postDoc.ref, postUpdate);
                 });
             }
 
@@ -251,8 +255,7 @@ export default function EditProfilePage() {
                 />
                  <Button
                     variant="ghost"
-                    size="icon"
-                    className="absolute inset-0 bg-black/50 text-white opacity-0 hover:opacity-100 rounded-full"
+                    className="absolute inset-0 h-full w-full bg-black/50 text-white opacity-0 hover:opacity-100 rounded-full flex items-center justify-center"
                     onClick={() => avatarInputRef.current?.click()}
                     disabled={isSaving}
                 >
