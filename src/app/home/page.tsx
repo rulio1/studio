@@ -460,9 +460,9 @@ export default function HomePage() {
                     </Avatar>
                     <Button variant="outline" onClick={handleSignOut}>Sair</Button>
                   </div>
-                  <div className="mt-4">
-                    <p className="font-bold text-lg flex items-center gap-1">{chirpUser.displayName} {chirpUser.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-5 w-5 text-primary" />}</p>
-                    <p className="text-sm text-muted-foreground">{chirpUser.handle}</p>
+                  <div className="mt-4 flex flex-col">
+                      <p className="font-bold text-lg flex items-center gap-1">{chirpUser.displayName} {chirpUser.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-5 w-5 text-primary" />}</p>
+                      <p className="text-sm text-muted-foreground">{chirpUser.handle}</p>
                   </div>
                   <div className="flex gap-4 mt-2 text-sm">
                     <p><span className="font-bold">{chirpUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
