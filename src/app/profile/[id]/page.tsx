@@ -388,9 +388,8 @@ export default function ProfilePage() {
                 if (doc.exists()) {
                     const profileData = { uid: doc.id, ...doc.data() } as ChirpUser;
                     setProfileUser(profileData);
-                    if (chirpUser) {
-                        setIsFollowedBy(chirpUser.followers?.includes(profileId));
-                    }
+                    setIsFollowing(profileData.followers?.includes(user.uid));
+                    setIsFollowedBy(profileData.following?.includes(user.uid));
                     setIsLoading(false);
                 }
             });
