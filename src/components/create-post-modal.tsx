@@ -124,6 +124,8 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+
+    const [isGifPickerOpen, setIsGifPickerOpen] = useState(false);
     
     const { toast } = useToast();
 
@@ -146,6 +148,12 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         return () => unsubscribe();
     }, []);
 
+    useEffect(() => {
+        if (open && initialMode === 'gif') {
+            setIsGifPickerOpen(true);
+        }
+    }, [open, initialMode]);
+
     const resetModal = () => {
         setNewPostContent('');
         setAiTextPrompt('');
@@ -155,6 +163,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         setShowAiTextGenerator(false);
         onOpenChange(false);
         setIsPosting(false);
+        setIsGifPickerOpen(false);
     }
 
     const extractHashtags = (content: string) => {
@@ -289,6 +298,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const onGifClick = (gif: Gif) => {
         setPostImagePreview(gif.images.original.url);
         setPostImageDataUri(gif.images.original.url);
+        setIsGifPickerOpen(false);
     };
 
     return (
@@ -363,7 +373,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                     <EmojiPicker onEmojiClick={onEmojiClick} />
                                 </PopoverContent>
                             </Popover>
-                                <Popover>
+                                <Popover open={isGifPickerOpen} onOpenChange={setIsGifPickerOpen}>
                                 <PopoverTrigger asChild>
                                     <Button variant="ghost" size="icon" disabled={isPosting} data-test="gif-picker-trigger">
                                         <Film className="h-6 w-6 text-primary" />
