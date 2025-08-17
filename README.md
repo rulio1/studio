@@ -1,6 +1,6 @@
 # Chirp 🐦
 
-Bem-vindo ao Chirp, uma moderna plataforma de mídia social construída com Next.js e Firebase. Este repositório contém o código-fonte de um aplicativo web completo, demonstrando a criação de uma experiência social interativa e em tempo real.
+Bem-vindo ao Chirpp, uma moderna plataforma de mídia social construída com Next.js e Firebase. Este repositório contém o código-fonte de um aplicativo web completo, demonstrando a criação de uma experiência social interativa e em tempo real.
 
 ## ✨ Funcionalidades
 
