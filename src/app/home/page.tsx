@@ -505,7 +505,7 @@ export default function HomePage() {
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
-                        <Button variant="destructive" className="w-full justify-start gap-4 p-2 text-base font-semibold" onClick={handleSignOut}>
+                        <Button variant="destructive" className="w-full justify-start gap-4 py-2 font-semibold" onClick={handleSignOut}>
                             <LogOut className="h-6 w-6" />
                             Sair
                         </Button>
