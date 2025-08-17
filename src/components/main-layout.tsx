@@ -22,13 +22,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     
     // Pages where the FAB should not be shown
     const fabBlacklist = [
-        '/messages/',
+        '/messages/', // Important: This targets specific message threads like /messages/xyz
         '/chat',
         '/profile/edit',
         '/communities/create',
     ];
 
-    const showFab = !fabBlacklist.some(path => pathname.startsWith(path));
+    const showFab = !fabBlacklist.some(path => pathname.startsWith(path) && pathname !== '/messages');
 
     return (
         <div className="flex min-h-screen">
