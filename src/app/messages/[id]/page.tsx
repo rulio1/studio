@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, MoreHorizontal, Send, Loader2 } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -219,6 +219,8 @@ export default function ConversationPage() {
         );
     }
     
+    const isOfficialAccount = otherUser.handle.toLowerCase() === '@chirp' || otherUser.handle.toLowerCase() === '@rulio';
+
   return (
     <div className="flex flex-col h-screen bg-background">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
@@ -233,7 +235,10 @@ export default function ConversationPage() {
                         <AvatarFallback>{otherUser.displayName[0]}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <h1 className="text-lg font-bold">{otherUser.displayName}</h1>
+                        <h1 className="text-lg font-bold flex items-center gap-1">
+                            {otherUser.displayName}
+                            {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                        </h1>
                         <p className="text-xs text-muted-foreground">{otherUser.handle}</p>
                     </div>
                 </div>
@@ -294,3 +299,4 @@ export default function ConversationPage() {
     </div>
   );
 }
+
