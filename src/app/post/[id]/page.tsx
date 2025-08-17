@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird, Pin, Sparkles } from 'lucide-react';
+import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird, Pin, Sparkles, Frown, Flag, BarChart3, Megaphone, UserRound } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -532,10 +532,34 @@ export default function PostDetailPage() {
                                         </DropdownMenuItem>
                                     </>
                                 ) : (
-                                    <DropdownMenuItem onClick={() => handleSavePost(post.id)}>
-                                        <Save className="mr-2 h-4 w-4"/>
-                                        {chirpUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
-                                    </DropdownMenuItem>
+                                    <>
+                                        <DropdownMenuItem onClick={() => handleSavePost(post.id)}>
+                                            <Save className="mr-2 h-4 w-4"/>
+                                            {chirpUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                            <Frown className="mr-2 h-4 w-4"/>
+                                            Não tenho interesse
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                            <Flag className="mr-2 h-4 w-4"/>
+                                            Denunciar post
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                            <BarChart3 className="mr-2 h-4 w-4"/>
+                                            Ver interações
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                            <Megaphone className="mr-2 h-4 w-4"/>
+                                            Nota da comunidade
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => router.push(`/profile/${post.authorId}`)}>
+                                            <UserRound className="mr-2 h-4 w-4"/>
+                                            Ir para perfil de {post.handle}
+                                        </DropdownMenuItem>
+                                    </>
                                 )}
                             </DropdownMenuContent>
                         </DropdownMenu>

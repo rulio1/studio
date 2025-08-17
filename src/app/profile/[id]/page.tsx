@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -194,10 +194,34 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, t
                                         </DropdownMenuItem>
                                     </>
                                 ) : (
-                                    <DropdownMenuItem onClick={() => onSave(post.id)}>
-                                        <Save className="mr-2 h-4 w-4"/>
-                                        {chirpUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
-                                    </DropdownMenuItem>
+                                    <>
+                                        <DropdownMenuItem onClick={() => onSave(post.id)}>
+                                            <Save className="mr-2 h-4 w-4"/>
+                                            {chirpUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                            <Frown className="mr-2 h-4 w-4"/>
+                                            Não tenho interesse
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                            <Flag className="mr-2 h-4 w-4"/>
+                                            Denunciar post
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                            <BarChart3 className="mr-2 h-4 w-4"/>
+                                            Ver interações
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                            <Megaphone className="mr-2 h-4 w-4"/>
+                                            Nota da comunidade
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => router.push(`/profile/${post.authorId}`)}>
+                                            <UserRound className="mr-2 h-4 w-4"/>
+                                            Ir para perfil de {post.handle}
+                                        </DropdownMenuItem>
+                                    </>
                                 )}
                             </DropdownMenuContent>
                         </DropdownMenu>
