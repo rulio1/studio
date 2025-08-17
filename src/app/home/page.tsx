@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Loader2, Trash2, Edit, Save, BadgeCheck, LogOut } from 'lucide-react';
+import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Loader2, Trash2, Edit, Save, BadgeCheck, LogOut, Pin, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -26,6 +26,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
@@ -541,13 +542,22 @@ export default function HomePage() {
                         <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
                             {user?.uid === post.authorId ? (
                                 <>
-                                    <DropdownMenuItem onClick={() => setPostToDelete(post.id)}>
+                                    <DropdownMenuItem onClick={() => setPostToDelete(post.id)} className="text-destructive">
                                         <Trash2 className="mr-2 h-4 w-4"/>
                                         Apagar
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleEditClick(post)}>
                                         <Edit className="mr-2 h-4 w-4"/>
                                         Editar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de fixar posts no perfil será adicionada em breve.'})}>
+                                        <Pin className="mr-2 h-4 w-4"/>
+                                        Fixar no seu perfil
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de adicionar posts aos destaques será adicionada em breve.'})}>
+                                        <Sparkles className="mr-2 h-4 w-4"/>
+                                        Adicionar aos Destaques
                                     </DropdownMenuItem>
                                 </>
                             ) : (
