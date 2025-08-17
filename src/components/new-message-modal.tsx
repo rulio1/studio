@@ -93,7 +93,7 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md bg-background/80 backdrop-blur-lg rounded-2xl">
                 <DialogHeader>
                     <DialogTitle>Nova Mensagem</DialogTitle>
                 </DialogHeader>
