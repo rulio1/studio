@@ -26,15 +26,6 @@ export default function SettingsPage() {
 
     return (
         <div className="flex flex-col h-screen bg-background">
-            <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
-                <div className="flex items-center gap-4 px-4 py-2">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <h1 className="text-xl font-bold">Configurações e privacidade</h1>
-                </div>
-            </header>
-
             <main className="flex-1 overflow-y-auto p-4">
                 <Card>
                     <CardHeader>
@@ -44,15 +35,9 @@ export default function SettingsPage() {
                     <CardContent className="space-y-2">
                         <SettingsItem 
                             icon={User} 
-                            title="Informações da conta" 
-                            description="Veja as informações da sua conta, como seu nome de usuário."
-                            onClick={() => alert('Página de informações da conta em breve!')}
-                        />
-                         <SettingsItem 
-                            icon={Lock} 
-                            title="Altere sua senha" 
-                            description="Altere sua senha a qualquer momento."
-                            onClick={() => alert('Funcionalidade de alteração de senha em breve!')}
+                            title="Sua Conta" 
+                            description="Veja as informações da sua conta e gerencie suas configurações."
+                            onClick={() => router.push('/settings/account')}
                         />
                     </CardContent>
                 </Card>
