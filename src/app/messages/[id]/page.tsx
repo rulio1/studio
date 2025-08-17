@@ -244,7 +244,7 @@ export default function ConversationPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col pb-24">
         <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
             <div className="space-y-4">
                 {messages.map((message, index) => {
@@ -275,7 +275,7 @@ export default function ConversationPage() {
                 })}
             </div>
         </ScrollArea>
-        <div className="sticky bottom-0 m-4">
+        <div className="fixed bottom-20 inset-x-4">
             <div className="relative flex items-center rounded-2xl border bg-background/80 backdrop-blur-lg p-2">
                 <Input 
                     placeholder="Inicie uma nova mensagem"
