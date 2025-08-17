@@ -5,9 +5,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Image as ImageIcon, Sparkles, Loader2, Trash2, Edit, Save, ImageUp, BadgeCheck } from 'lucide-react';
+import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Upload, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Image as ImageIcon, Sparkles, Loader2, Trash2, Edit, Save, ImageUp, BadgeCheck, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -464,7 +464,7 @@ export default function HomePage() {
                             <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
                         </Avatar>
                     </div>
-                    <div>
+                    <div className="flex flex-col">
                         <div className="flex items-center gap-1 font-bold text-lg">
                             {chirpUser.displayName}
                             {chirpUser.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-5 w-5 text-primary" />}
@@ -505,7 +505,10 @@ export default function HomePage() {
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
-                        <Button variant="destructive" className="w-full justify-start gap-4 p-2 text-base font-semibold" onClick={handleSignOut}>Sair</Button>
+                        <Button variant="destructive" className="w-full justify-start gap-4 p-2 text-base font-semibold" onClick={handleSignOut}>
+                            <LogOut className="h-6 w-6" />
+                            Sair
+                        </Button>
                     </SheetClose>
                   </div>
               </SheetContent>
