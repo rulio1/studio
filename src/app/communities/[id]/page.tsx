@@ -54,6 +54,7 @@ interface Post {
     createdAt: any;
     editedAt?: any;
     hashtags?: string[];
+    isVerified?: boolean;
 }
 
 interface ChirpUser {
@@ -63,6 +64,7 @@ interface ChirpUser {
     avatar: string;
     communities?: string[];
     savedPosts?: string[];
+    isVerified?: boolean;
 }
 
 const PostContent = ({ content }: { content: string }) => {
@@ -95,7 +97,6 @@ const PostContent = ({ content }: { content: string }) => {
 const PostItem = ({ post }: { post: Post }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
-    const isOfficialAccount = post.handle.toLowerCase() === '@chirp' || post.handle.toLowerCase() === '@rulio';
     
     useEffect(() => {
         if (post.createdAt) {
@@ -119,8 +120,7 @@ const PostItem = ({ post }: { post: Post }) => {
                         <div className="flex items-center gap-2 text-sm">
                             <p className="font-bold text-base flex items-center gap-1">
                                 {post.author} 
-                                {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
-                                {isOfficialAccount && <Bird className="h-4 w-4 text-primary" />}
+                                {post.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                             </p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
                         </div>
@@ -333,6 +333,7 @@ export default function CommunityDetailPage() {
                     retweets: [],
                     likes: [],
                     views: 0,
+                    isVerified: chirpUser.isVerified || false,
                 });
 
                 // 2. Update hashtag counts

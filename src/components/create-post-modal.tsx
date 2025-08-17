@@ -25,6 +25,7 @@ interface ChirpUser {
     displayName: string;
     handle: string;
     avatar: string;
+    isVerified?: boolean;
 }
 
 interface CreatePostModalProps {
@@ -173,6 +174,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                 retweets: [],
                 likes: [],
                 views: 0,
+                isVerified: chirpUser.isVerified || false,
             });
 
             // Handle Mentions
@@ -191,6 +193,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                 name: chirpUser.displayName,
                                 handle: chirpUser.handle,
                                 avatar: chirpUser.avatar,
+                                isVerified: chirpUser.isVerified || false,
                             },
                             type: 'mention',
                             text: 'mencionou você em um post',
