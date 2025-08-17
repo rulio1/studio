@@ -68,6 +68,8 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
         router.push(`/profile/${notification.fromUserId}`);
     };
 
+    const isVerified = notification.fromUser.isVerified || notification.fromUser.handle === '@chirp' || notification.fromUser.handle === '@rulio';
+
     return (
         <li className={`p-4 flex gap-4 hover:bg-muted/50 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`} onClick={handleItemClick}>
             <div className="w-8 flex justify-end">
@@ -82,7 +84,7 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
                 </div>
                 <p>
                     <span className="font-bold">{notification.fromUser.name}</span>
-                    {notification.fromUser.isVerified && <BadgeCheck className="inline-block h-4 w-4 text-primary ml-1" />}
+                    {isVerified && <BadgeCheck className="inline-block h-4 w-4 text-primary ml-1" />}
                     <span className="font-normal text-muted-foreground"> {notification.text}</span>
                 </p>
                 {notification.postContent && <p className="text-muted-foreground mt-1">{notification.postContent}</p>}
@@ -161,7 +163,7 @@ export default function NotificationsPage() {
     }, [notifications]);
 
     const verifiedNotifications = useMemo(() => {
-        return notifications.filter(n => n.fromUser.isVerified);
+        return notifications.filter(n => n.fromUser.isVerified || n.fromUser.handle === '@chirp' || n.fromUser.handle === '@rulio');
     }, [notifications]);
 
   return (
