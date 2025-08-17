@@ -76,6 +76,7 @@ interface Comment {
     views: number;
     isLiked: boolean;
     isVerified?: boolean;
+    postId: string;
 }
 
 interface ChirpUser {

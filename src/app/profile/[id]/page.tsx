@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Info } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -36,6 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { formatTimeAgo } from '@/lib/utils';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 
 const EmptyState = ({ title, description }: { title: string, description: string }) => (
@@ -82,6 +83,7 @@ interface Reply {
     time: string;
     content: string;
     createdAt: any;
+    postId: string;
 }
 
 interface ChirpUser {
@@ -818,20 +820,34 @@ export default function ProfilePage() {
         </header>
         <main className="flex-1">
         <div className="relative h-48 bg-muted">
-          {profileUser.banner && <Image
-            src={profileUser.banner}
-            alt="Banner"
-            layout="fill"
-            objectFit="cover"
-            data-ai-hint="Imagem do perfil"
-          />}
+           {isChirpAccount ? (
+                <div className="w-full h-full bg-primary flex items-center justify-center">
+                    <Bird className="h-24 w-24 text-primary-foreground" />
+                </div>
+            ) : (
+                profileUser.banner && <Image
+                    src={profileUser.banner}
+                    alt="Banner"
+                    layout="fill"
+                    objectFit="cover"
+                    data-ai-hint="Imagem do perfil"
+                />
+            )}
         </div>
         <div className="p-4">
             <div className="flex justify-between items-start">
                 <div className="-mt-20">
-                    <Avatar className="h-32 w-32 border-4 border-background">
-                        <AvatarImage src={profileUser.avatar} data-ai-hint="Imagem do perfil" alt={profileUser.displayName} />
-                        <AvatarFallback className="text-4xl">{profileUser.displayName?.[0]}</AvatarFallback>
+                    <Avatar className="h-32 w-32 border-4 border-background bg-muted">
+                        {isChirpAccount ? (
+                            <div className="w-full h-full flex items-center justify-center">
+                                <Bird className="h-16 w-16 text-primary" />
+                            </div>
+                        ) : (
+                           <>
+                             <AvatarImage src={profileUser.avatar} data-ai-hint="Imagem do perfil" alt={profileUser.displayName} />
+                             <AvatarFallback className="text-4xl">{profileUser.displayName?.[0]}</AvatarFallback>
+                           </>
+                        )}
                     </Avatar>
                 </div>
                 {isOwnProfile ? (
@@ -858,6 +874,17 @@ export default function ProfilePage() {
                 <p className="text-muted-foreground">{profileUser.handle}</p>
                 <p className="mt-2 whitespace-pre-wrap">{profileUser.bio}</p>
             </div>
+             {isChirpAccount && (
+                <Card className="mt-4 border-primary/50">
+                    <CardHeader className="flex-row items-center gap-4 space-y-0">
+                        <Info className="h-6 w-6 text-primary" />
+                        <CardTitle>Conta Oficial</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Esta é a conta oficial do Chirp. Fique de olho para anúncios, dicas e atualizações importantes da plataforma.</p>
+                    </CardContent>
+                </Card>
+            )}
             <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-muted-foreground text-sm">
                 {profileUser.location && <div className="flex items-center gap-2"><MapPin className="h-4 w-4" /><span>{profileUser.location}</span></div>}
                 {profileUser.birthDate && <div className="flex items-center gap-2"><Gift className="h-4 w-4" /><span>Nascido em {format(profileUser.birthDate.toDate(), 'd de MMMM, yyyy', { locale: ptBR })}</span></div>}
@@ -947,3 +974,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
