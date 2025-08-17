@@ -44,9 +44,6 @@ export default function EditProfilePage() {
         banner: '',
     });
 
-    const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null);
-    const avatarInputRef = useRef<HTMLInputElement>(null);
-
     const [debouncedHandle] = useDebounce(profileData.handle, 500);
     const [isCheckingHandle, setIsCheckingHandle] = useState(false);
     const [isHandleAvailable, setIsHandleAvailable] = useState(true);
@@ -135,25 +132,6 @@ export default function EditProfilePage() {
         setProfileData({ ...profileData, [e.target.id]: value });
     };
 
-    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setNewAvatarFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setProfileData(prev => ({ ...prev, avatar: reader.result as string }));
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const uploadAvatar = async (userId: string, file: File): Promise<string> => {
-        const storageRef = ref(storage, `avatars/${userId}/${uuidv4()}`);
-        await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(storageRef);
-        return downloadURL;
-    };
-
     const handleSave = async () => {
         if (!user || !isHandleAvailable) {
             toast({
@@ -177,12 +155,6 @@ export default function EditProfilePage() {
 
             const contentUpdate: { [key: string]: any } = {};
             const handleChanged = profileData.handle !== originalHandle;
-
-            if (newAvatarFile) {
-                const newAvatarUrl = await uploadAvatar(user.uid, newAvatarFile);
-                updateData.avatar = newAvatarUrl;
-                contentUpdate.avatar = newAvatarUrl;
-            }
 
             if (handleChanged) {
                 const newHandle = `@${profileData.handle}`;
@@ -256,21 +228,6 @@ export default function EditProfilePage() {
                 <Avatar className="h-32 w-32 border-4 border-background">
                     {profileData.avatar ? <AvatarImage src={profileData.avatar} alt={profileData.displayName} />: <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>}
                 </Avatar>
-                <input
-                    type="file"
-                    accept="image/*"
-                    ref={avatarInputRef}
-                    onChange={handleAvatarChange}
-                    className="hidden"
-                />
-                 <Button
-                    variant="ghost"
-                    className="absolute inset-0 h-full w-full bg-black/50 text-white opacity-0 hover:opacity-100 rounded-full flex items-center justify-center p-0"
-                    onClick={() => avatarInputRef.current?.click()}
-                    disabled={isSaving}
-                >
-                    <Upload className="h-8 w-8" />
-                </Button>
             </div>
         </div>
 
