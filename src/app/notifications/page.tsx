@@ -53,22 +53,27 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
         }
     }, [notification.createdAt]);
     
-    const handleClick = () => {
+    const handleItemClick = () => {
         if (notification.type === 'follow') {
             router.push(`/profile/${notification.fromUserId}`);
         } else if (notification.postId) {
             router.push(`/post/${notification.postId}`);
         }
     };
+    
+    const handleAvatarClick = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Impede que o clique no avatar acione o clique no item da lista
+        router.push(`/profile/${notification.fromUserId}`);
+    };
 
     return (
-        <li className={`p-4 flex gap-4 hover:bg-muted/50 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`} onClick={handleClick}>
+        <li className={`p-4 flex gap-4 hover:bg-muted/50 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`} onClick={handleItemClick}>
             <div className="w-8 flex justify-end">
                 <Icon className={`h-6 w-6 ${color}`} />
             </div>
             <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-8 w-8" onClick={handleAvatarClick}>
                         <AvatarImage src={notification.fromUser.avatar} alt={notification.fromUser.name} />
                         <AvatarFallback>{notification.fromUser.name[0]}</AvatarFallback>
                     </Avatar>
@@ -156,7 +161,7 @@ export default function NotificationsPage() {
           <div className="flex-1">
             <h1 className="text-xl font-bold text-center">Notificações</h1>
           </div>
-          <Settings className="h-6 w-6" />
+           <div className="w-6"></div>
         </div>
         <Tabs defaultValue="all" className="w-full">
             <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
@@ -201,4 +206,3 @@ export default function NotificationsPage() {
     </>
   );
 }
-
