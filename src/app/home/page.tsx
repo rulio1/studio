@@ -451,61 +451,64 @@ export default function HomePage() {
                   <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
                 </Avatar>
               </SheetTrigger>
-              <SheetContent side="left" className="w-80 p-0 animate-slide-in-from-bottom">
+              <SheetContent side="left" className="w-80 p-0 flex flex-col">
                  <DialogTitle className="sr-only">Menu Principal</DialogTitle>
-                 <div className="flex flex-col h-full">
-                    <div className="p-4 border-b">
-                        <div className="flex justify-between items-center mb-4">
-                             <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
-                                <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
-                                <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
-                            </Avatar>
-                            <SheetClose asChild>
-                                <Button variant="outline" onClick={handleSignOut}>Sair</Button>
-                            </SheetClose>
-                        </div>
-                         <div>
-                            <div className="flex items-center gap-1 font-bold text-lg">
-                                {chirpUser.displayName}
-                                {chirpUser.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-5 w-5 text-primary" />}
-                            </div>
-                            <p className="text-sm text-muted-foreground">{chirpUser.handle}</p>
-                        </div>
-                        <div className="flex gap-4 mt-2 text-sm">
-                            <p><span className="font-bold">{chirpUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
-                            <p><span className="font-bold">{chirpUser.followers?.length || 0}</span> <span className="text-muted-foreground">Seguidores</span></p>
-                        </div>
+                  <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Close</span>
+                 </SheetClose>
+
+                 <div className="p-4 border-b">
+                    <div className="flex justify-between items-center mb-4">
+                         <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
+                            <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
+                            <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
+                        </Avatar>
                     </div>
-                     <nav className="flex-1 flex flex-col gap-2 p-4">
-                        <SheetClose asChild>
-                          <Link href={`/profile/${user.uid}`} className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                            <User className="h-6 w-6" /> Perfil
-                          </Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                           <Link href="/saved" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                            <Bookmark className="h-6 w-6" /> Itens Salvos
-                          </Link>
-                        </SheetClose>
-                         <SheetClose asChild>
-                           <Link href="/spaces" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                            <Radio className="h-6 w-6" /> Spaces <Badge variant="secondary" className="ml-auto">em breve</Badge>
-                          </Link>
-                        </SheetClose>
-                      </nav>
-                      <div className="p-4 border-t">
-                        <SheetClose asChild>
-                         <Link href="/chat" className="flex items-center gap-4 py-2 font-semibold rounded-md">
-                            <Bot className="h-6 w-6" /> Abrir Chirp AI
-                          </Link>
-                        </SheetClose>
-                        <SheetClose asChild>
-                           <Link href="#" className="flex items-center gap-4 py-2 font-semibold rounded-md">
-                            <Settings className="h-6 w-6" /> Configurações e privacidade
-                          </Link>
-                        </SheetClose>
-                      </div>
-                 </div>
+                     <div>
+                        <div className="flex items-center gap-1 font-bold text-lg">
+                            {chirpUser.displayName}
+                            {chirpUser.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-5 w-5 text-primary" />}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{chirpUser.handle}</p>
+                    </div>
+                    <div className="flex gap-4 mt-2 text-sm">
+                        <p><span className="font-bold">{chirpUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
+                        <p><span className="font-bold">{chirpUser.followers?.length || 0}</span> <span className="text-muted-foreground">Seguidores</span></p>
+                    </div>
+                </div>
+                 <nav className="flex-1 flex flex-col gap-2 p-4">
+                    <SheetClose asChild>
+                      <Link href={`/profile/${user.uid}`} className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                        <User className="h-6 w-6" /> Perfil
+                      </Link>
+                    </SheetClose>
+                    <SheetClose asChild>
+                       <Link href="/saved" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                        <Bookmark className="h-6 w-6" /> Itens Salvos
+                      </Link>
+                    </SheetClose>
+                     <SheetClose asChild>
+                       <Link href="/spaces" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                        <Radio className="h-6 w-6" /> Spaces <Badge variant="secondary" className="ml-auto">em breve</Badge>
+                      </Link>
+                    </SheetClose>
+                  </nav>
+                  <div className="p-4 border-t mt-auto">
+                    <SheetClose asChild>
+                     <Link href="/chat" className="flex items-center gap-4 py-2 font-semibold rounded-md">
+                        <Bot className="h-6 w-6" /> Abrir Chirp AI
+                      </Link>
+                    </SheetClose>
+                    <SheetClose asChild>
+                       <Link href="#" className="flex items-center gap-4 py-2 font-semibold rounded-md">
+                        <Settings className="h-6 w-6" /> Configurações e privacidade
+                      </Link>
+                    </SheetClose>
+                     <SheetClose asChild>
+                        <Button variant="ghost" className="w-full justify-start gap-4 p-2 text-base font-semibold" onClick={handleSignOut}>Sair</Button>
+                    </SheetClose>
+                  </div>
               </SheetContent>
             </Sheet>
             <div className="flex-1 flex justify-center">
