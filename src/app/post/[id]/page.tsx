@@ -13,6 +13,7 @@ import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, ser
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import Image from 'next/image';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +43,8 @@ interface Post {
     time: string;
     createdAt: any;
     content: string;
+    image?: string;
+    imageHint?: string;
     comments: number;
     retweets: string[];
     likes: string[];
@@ -528,7 +531,12 @@ export default function PostDetailPage() {
                         </DropdownMenu>
                     </div>
                     <PostContent content={post.content} />
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    {post.image && (
+                        <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border">
+                           <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
+                        </div>
+                    )}
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
                         <p>{post.time}</p>
                         {post.editedAt && <p className="text-xs">(editado)</p>}
                     </div>

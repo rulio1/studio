@@ -10,9 +10,12 @@ import { generatePost } from '@/ai/flows/post-generator-flow';
 import { auth, db, storage } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Sparkles, Loader2, Plus } from 'lucide-react';
+import { Sparkles, Loader2, Plus, ImageIcon, X } from 'lucide-react';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
+import Image from 'next/image';
 import React from 'react';
+import { fileToDataUri } from '@/lib/utils';
 
 interface ChirpUser {
     uid: string;
@@ -26,6 +29,11 @@ export default function CreatePostModal() {
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
     
+    // Image state
+    const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
+    const [postImageDataUri, setPostImageDataUri] = useState<string | null>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
+
     // AI Generators State
     const [showAiTextGenerator, setShowAiTextGenerator] = useState(false);
     const [aiTextPrompt, setAiTextPrompt] = useState('');
@@ -59,6 +67,8 @@ export default function CreatePostModal() {
     const resetModal = () => {
         setNewPostContent('');
         setAiTextPrompt('');
+        setPostImageDataUri(null);
+        setPostImagePreview(null);
         setIsGeneratingText(false);
         setShowAiTextGenerator(false);
         setIsModalOpen(false);
@@ -75,11 +85,29 @@ export default function CreatePostModal() {
         return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
     };
 
+     const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit for Data URI
+            toast({
+                title: 'Imagem muito grande',
+                description: 'Por favor, selecione uma imagem menor que 2MB.',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        const dataUri = await fileToDataUri(file);
+        setPostImagePreview(URL.createObjectURL(file));
+        setPostImageDataUri(dataUri);
+    };
+
     const handleCreatePost = async () => {
-        if (!newPostContent.trim()) {
+        if (!newPostContent.trim() && !postImageDataUri) {
             toast({
                 title: "O post não pode estar vazio.",
-                description: "Por favor, escreva algo antes de postar.",
+                description: "Por favor, escreva algo ou adicione uma imagem.",
                 variant: "destructive",
             });
             return;
@@ -114,7 +142,7 @@ export default function CreatePostModal() {
                     avatarFallback: chirpUser.displayName[0],
                     content: newPostContent,
                     hashtags: hashtags,
-                    image: '',
+                    image: postImageDataUri || '',
                     imageHint: '',
                     communityId: null,
                     createdAt: serverTimestamp(),
@@ -196,9 +224,17 @@ export default function CreatePostModal() {
                                     className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
                                     value={newPostContent}
                                     onChange={(e) => setNewPostContent(e.target.value)}
-                                    rows={1}
+                                    rows={newPostContent.length > 50 || postImagePreview ? 5 : 1}
                                     disabled={isPosting}
                                 />
+                                {postImagePreview && (
+                                    <div className="mt-4 relative">
+                                        <Image src={postImagePreview} alt="Prévia da imagem" width={500} height={300} className="rounded-lg object-cover w-full" />
+                                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => { setPostImagePreview(null); setPostImageDataUri(null); }}>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -221,11 +257,21 @@ export default function CreatePostModal() {
 
                         <div className="flex justify-between items-center mt-2 border-t pt-4">
                             <div className="flex items-center gap-1">
+                                <Input
+                                    type="file"
+                                    className="hidden"
+                                    ref={imageInputRef}
+                                    accept="image/png, image/jpeg, image/gif"
+                                    onChange={handleImageChange}
+                                />
+                                <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                                    <ImageIcon className="h-6 w-6 text-primary" />
+                                </Button>
                                 <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator);}} disabled={isPosting}>
                                     <Sparkles className="h-6 w-6 text-primary" />
                                 </Button>
                             </div>
-                            <Button onClick={handleCreatePost} disabled={!newPostContent.trim() || isPosting}>
+                            <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !postImageDataUri) || isPosting}>
                                 {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Postar
                             </Button>

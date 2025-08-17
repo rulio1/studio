@@ -61,6 +61,14 @@ const forYouPosts: PostSearchResult[] = [
         content: 'Os "Tópicos do Momento" já estão funcionando! Fique de olho na aba de tendências para ver o que está bombando na plataforma. #Trending',
         avatar: '/logo.svg',
         avatarFallback: 'C',
+    },
+    {
+        id: '4',
+        author: 'Chirp',
+        handle: '@chirp',
+        content: 'Agora você pode postar com imagens! Dê vida aos seus posts e compartilhe seus momentos com mais cores. #ImagensNoChirp',
+        avatar: '/logo.svg',
+        avatarFallback: 'C',
     }
 ];
 

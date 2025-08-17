@@ -9,7 +9,7 @@ import { auth, db, storage } from '@/lib/firebase';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Bird, Trash2, Edit, Save, Sparkles, X, BadgeCheck } from 'lucide-react';
+import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Bird, Trash2, Edit, Save, Sparkles, X, BadgeCheck, ImageIcon } from 'lucide-react';
 import PostSkeleton from '@/components/post-skeleton';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -18,6 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from '@/components/ui/textarea';
 import { generatePost } from '@/ai/flows/post-generator-flow';
 import React from 'react';
+import { fileToDataUri } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 interface Community {
     id: string;
@@ -124,6 +126,11 @@ const PostItem = ({ post }: { post: Post }) => {
                     <div className="mb-2 whitespace-pre-wrap">
                         <PostContent content={post.content} />
                     </div>
+                    {post.image && (
+                        <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border">
+                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
+                        </div>
+                    )}
                 </div>
             </div>
         </li>
@@ -149,6 +156,9 @@ export default function CommunityDetailPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
+    const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
+    const [postImageDataUri, setPostImageDataUri] = useState<string | null>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
     // AI Generators State
     const [showAiTextGenerator, setShowAiTextGenerator] = useState(false);
@@ -242,6 +252,8 @@ export default function CommunityDetailPage() {
         setAiTextPrompt('');
         setIsGeneratingText(false);
         setShowAiTextGenerator(false);
+        setPostImageDataUri(null);
+        setPostImagePreview(null);
         setIsModalOpen(false);
     }
     
@@ -255,11 +267,29 @@ export default function CommunityDetailPage() {
         return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
     };
 
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit for Data URI
+            toast({
+                title: 'Imagem muito grande',
+                description: 'Por favor, selecione uma imagem menor que 2MB.',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        const dataUri = await fileToDataUri(file);
+        setPostImagePreview(URL.createObjectURL(file));
+        setPostImageDataUri(dataUri);
+    };
+
     const handleCreatePost = async () => {
-        if (!newPostContent.trim()) {
+        if (!newPostContent.trim() && !postImageDataUri) {
              toast({
                 title: "O post não pode estar vazio.",
-                description: "Por favor, escreva algo antes de postar.",
+                description: "Por favor, escreva algo ou adicione uma imagem.",
                 variant: "destructive",
             });
             return;
@@ -286,7 +316,7 @@ export default function CommunityDetailPage() {
                     avatarFallback: chirpUser.displayName[0],
                     content: newPostContent,
                     hashtags: hashtags,
-                    image: '',
+                    image: postImageDataUri || '',
                     imageHint: '',
                     communityId: communityId,
                     createdAt: serverTimestamp(),
@@ -420,6 +450,14 @@ export default function CommunityDetailPage() {
                                             onChange={(e) => setNewPostContent(e.target.value)}
                                             rows={5}
                                         />
+                                         {postImagePreview && (
+                                            <div className="mt-4 relative">
+                                                <Image src={postImagePreview} alt="Prévia da imagem" width={500} height={300} className="rounded-lg object-cover w-full" />
+                                                <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => { setPostImagePreview(null); setPostImageDataUri(null); }}>
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -440,11 +478,21 @@ export default function CommunityDetailPage() {
                                 )}
                                 <div className="flex justify-between items-center mt-2 border-t pt-4">
                                     <div className="flex items-center gap-1">
+                                        <Input
+                                            type="file"
+                                            className="hidden"
+                                            ref={imageInputRef}
+                                            accept="image/png, image/jpeg, image/gif"
+                                            onChange={handleImageChange}
+                                        />
+                                        <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                                            <ImageIcon className="h-6 w-6 text-primary" />
+                                        </Button>
                                         <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator);}} disabled={isPosting}>
                                             <Sparkles className="h-6 w-6 text-primary" />
                                         </Button>
                                     </div>
-                                    <Button onClick={handleCreatePost} disabled={!newPostContent.trim() || isPosting}>
+                                    <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !postImageDataUri) || isPosting}>
                                         {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Postar
                                     </Button>
@@ -457,4 +505,3 @@ export default function CommunityDetailPage() {
         </div>
     );
 }
-

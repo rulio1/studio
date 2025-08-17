@@ -24,3 +24,12 @@ export function dataURItoFile(dataURI: string, filename: string): File {
     }
     return new File([u8arr], filename, { type: mime });
 }
+
+export function fileToDataUri(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
