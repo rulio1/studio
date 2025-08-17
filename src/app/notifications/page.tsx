@@ -12,16 +12,19 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc } from 'firebase/firestore';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
 
 interface Notification {
     id: string;
-    type: 'like' | 'follow' | 'post';
+    type: 'like' | 'follow' | 'post' | 'retweet';
+    fromUserId: string;
     fromUser: {
         name: string;
         avatar: string;
     };
     text: string;
     postContent?: string;
+    postId?: string;
     createdAt: any;
     time: string;
     read: boolean;
@@ -31,9 +34,11 @@ const iconMap = {
     like: { icon: Heart, color: 'text-red-500' },
     follow: { icon: Users, color: 'text-blue-500' },
     post: { icon: Star, color: 'text-purple-500' },
+    retweet: { icon: Users, color: 'text-green-500' },
 };
 
 const NotificationItem = ({ notification }: { notification: Notification }) => {
+    const router = useRouter();
     const { icon: Icon, color } = iconMap[notification.type] || iconMap.post;
     const [time, setTime] = useState('');
     
@@ -47,26 +52,34 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
             }
         }
     }, [notification.createdAt]);
+    
+    const handleClick = () => {
+        if (notification.type === 'follow') {
+            router.push(`/profile/${notification.fromUserId}`);
+        } else if (notification.postId) {
+            router.push(`/post/${notification.postId}`);
+        }
+    };
 
     return (
-        <li className={`p-4 flex gap-4 hover:bg-muted/50 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`}>
-        <div className="w-8 flex justify-end">
-            <Icon className={`h-6 w-6 ${color}`} />
-        </div>
-        <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-                <Avatar className="h-8 w-8">
-                    <AvatarImage src={notification.fromUser.avatar} alt={notification.fromUser.name} />
-                    <AvatarFallback>{notification.fromUser.name[0]}</AvatarFallback>
-                </Avatar>
+        <li className={`p-4 flex gap-4 hover:bg-muted/50 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`} onClick={handleClick}>
+            <div className="w-8 flex justify-end">
+                <Icon className={`h-6 w-6 ${color}`} />
             </div>
-            <p>
-                <span className="font-bold">{notification.fromUser.name}</span>
-                <span className="font-normal text-muted-foreground"> {notification.text}</span>
-            </p>
-            {notification.postContent && <p className="text-muted-foreground mt-1">{notification.postContent}</p>}
-            <p className="text-sm text-muted-foreground mt-1">{time}</p>
-        </div>
+            <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                    <Avatar className="h-8 w-8">
+                        <AvatarImage src={notification.fromUser.avatar} alt={notification.fromUser.name} />
+                        <AvatarFallback>{notification.fromUser.name[0]}</AvatarFallback>
+                    </Avatar>
+                </div>
+                <p>
+                    <span className="font-bold">{notification.fromUser.name}</span>
+                    <span className="font-normal text-muted-foreground"> {notification.text}</span>
+                </p>
+                {notification.postContent && <p className="text-muted-foreground mt-1">{notification.postContent}</p>}
+                <p className="text-sm text-muted-foreground mt-1">{time}</p>
+            </div>
         </li>
     );
 };
@@ -139,10 +152,7 @@ export default function NotificationsPage() {
     <>
        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
-          <Avatar className="h-8 w-8">
-            {user ? <AvatarImage src={user.photoURL ?? undefined} alt={user.displayName || 'User'} /> : null}
-            <AvatarFallback>{user?.displayName?.[0] || 'U'}</AvatarFallback>
-          </Avatar>
+          <div className="w-6"></div>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-center">Notificações</h1>
           </div>
@@ -191,3 +201,4 @@ export default function NotificationsPage() {
     </>
   );
 }
+
