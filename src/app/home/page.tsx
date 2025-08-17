@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Loader2, Trash2, Edit, Save, BadgeCheck, LogOut, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, ArrowUp } from 'lucide-react';
+import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Loader2, Trash2, Edit, Save, BadgeCheck, LogOut, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -90,9 +90,6 @@ interface ChirpUser {
 export default function HomePage() {
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [followingPosts, setFollowingPosts] = useState<Post[]>([]);
-  const [newAllPosts, setNewAllPosts] = useState<Post[]>([]);
-  const [newFollowingPosts, setNewFollowingPosts] = useState<Post[]>([]);
-  
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(true);
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -102,10 +99,6 @@ export default function HomePage() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editedContent, setEditedContent] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
-  const [showNewPostsButton, setShowNewPostsButton] = useState(false);
-  const mainContainerRef = useRef<HTMLDivElement>(null);
-
-
   const { toast } = useToast();
   const router = useRouter();
   
@@ -134,34 +127,20 @@ export default function HomePage() {
     if (!user) return;
     setIsLoading(true);
 
-    const postsQuery = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(postsQuery, async (postsSnapshot) => {
-      const originalPosts = postsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        isLiked: doc.data().likes.includes(user.uid || ''),
-        isRetweeted: doc.data().retweets.includes(user.uid || ''),
-      })) as Post[];
-      
-      if (isLoading) {
-        setAllPosts(originalPosts);
+    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const postsData = snapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data(),
+            isLiked: doc.data().likes.includes(user.uid || ''),
+            isRetweeted: doc.data().retweets.includes(user.uid || ''),
+        } as Post));
+        setAllPosts(postsData);
         setIsLoading(false);
-      } else {
-        const latestPostTime = allPosts[0]?.createdAt.toMillis() || 0;
-        const newPosts = originalPosts.filter(p => p.createdAt.toMillis() > latestPostTime);
-        if (newPosts.length > 0) {
-          setNewAllPosts(prev => [...newPosts, ...prev]);
-          if (mainContainerRef.current && mainContainerRef.current.scrollTop > 50) {
-            setShowNewPostsButton(true);
-          } else {
-            setAllPosts(originalPosts);
-          }
-        }
-      }
     });
 
     return unsubscribe;
-  }, [user, isLoading, allPosts]);
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -169,31 +148,6 @@ export default function HomePage() {
         return () => unsubscribe();
     }
   }, [user, fetchAllPosts]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-        if (mainContainerRef.current && mainContainerRef.current.scrollTop === 0) {
-            setShowNewPostsButton(false);
-            if (newAllPosts.length > 0) {
-                setAllPosts(prev => [...newAllPosts, ...prev].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
-                setNewAllPosts([]);
-            }
-        }
-    };
-    const container = mainContainerRef.current;
-    container?.addEventListener('scroll', handleScroll);
-    return () => container?.removeEventListener('scroll', handleScroll);
-}, [newAllPosts]);
-
-  const showNewPosts = () => {
-    if (mainContainerRef.current) {
-        mainContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    setAllPosts(prev => [...newAllPosts, ...prev].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
-    setNewAllPosts([]);
-    setShowNewPostsButton(false);
-  }
-
 
  const fetchFollowingPosts = useCallback(() => {
     if (!chirpUser || !user || chirpUser.following.length === 0) {
@@ -207,34 +161,20 @@ export default function HomePage() {
     const followingIds = chirpUser.following;
     const feedUserIds = [...new Set([...followingIds, user.uid])];
 
-    const postsQuery = query(collection(db, "posts"), where("authorId", "in", feedUserIds), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(postsQuery, async (postsSnapshot) => {
-         const originalPosts = postsSnapshot.docs.map(doc => ({ 
+    const q = query(collection(db, "posts"), where("authorId", "in", feedUserIds), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const postsData = snapshot.docs.map(doc => ({ 
             id: doc.id, 
             ...doc.data(),
             isLiked: doc.data().likes.includes(user.uid || ''),
             isRetweeted: doc.data().retweets.includes(user.uid || ''),
         } as Post));
-
-        if (isLoadingFollowing) {
-            setFollowingPosts(originalPosts);
-            setIsLoadingFollowing(false);
-        } else {
-            const latestPostTime = followingPosts[0]?.createdAt.toMillis() || 0;
-            const newPosts = originalPosts.filter(p => p.createdAt.toMillis() > latestPostTime);
-            if (newPosts.length > 0) {
-                setNewFollowingPosts(prev => [...newPosts, ...prev]);
-                if (mainContainerRef.current && mainContainerRef.current.scrollTop > 50) {
-                     setShowNewPostsButton(true);
-                } else {
-                    setFollowingPosts(originalPosts);
-                }
-            }
-        }
+        setFollowingPosts(postsData);
+        setIsLoadingFollowing(false);
     });
 
     return unsubscribe;
-}, [chirpUser, user, isLoadingFollowing, followingPosts]);
+}, [chirpUser, user]);
 
   useEffect(() => {
     if (activeTab === 'following' && chirpUser) {
@@ -602,8 +542,6 @@ export default function HomePage() {
       );
   }
 
-  const newPosts = activeTab === 'for-you' ? newAllPosts : newFollowingPosts;
-
   return (
     <>
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
@@ -689,31 +627,12 @@ export default function HomePage() {
             <ThemeToggle />
         </div>
       </header>
-       <main className="flex-1 overflow-y-auto" ref={mainContainerRef}>
-        <Tabs defaultValue="for-you" className="w-full relative" onValueChange={(value) => setActiveTab(value as 'for-you' | 'following')}>
+       <main className="flex-1 overflow-y-auto">
+        <Tabs defaultValue="for-you" className="w-full" onValueChange={(value) => setActiveTab(value as 'for-you' | 'following')}>
             <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
               <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Para você</TabsTrigger>
               <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Seguindo</TabsTrigger>
             </TabsList>
-            {showNewPostsButton && newPosts.length > 0 && (
-                 <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20">
-                    <Button 
-                        onClick={showNewPosts}
-                        className="rounded-full bg-primary text-primary-foreground shadow-lg animate-fade-in"
-                    >
-                         <ArrowUp className="mr-2 h-4 w-4" />
-                        <div className="flex items-center -space-x-2">
-                            {Array.from(new Map(newPosts.map(p => [p.authorId, p])).values()).slice(0, 3).map((post, index) => (
-                                <Avatar key={post.authorId + index} className="h-6 w-6 border-2 border-primary-foreground">
-                                    <AvatarImage src={post.repostedBy ? post.repostedBy.avatar : post.avatar} alt={post.author} />
-                                    <AvatarFallback>{post.author[0]}</AvatarFallback>
-                                </Avatar>
-                            ))}
-                        </div>
-                        <span className="ml-2">Ver {newPosts.length} novo{newPosts.length > 1 ? 's' : ''} post{newPosts.length > 1 ? 's' : ''}</span>
-                    </Button>
-                 </div>
-            )}
             <TabsContent value="for-you" className="mt-0">
                 <PostList posts={allPosts} loading={isLoading} tab="for-you" />
             </TabsContent>
