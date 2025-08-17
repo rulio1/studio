@@ -531,11 +531,6 @@ export default function HomePage() {
                             <Radio className="h-6 w-6" /> Spaces <Badge variant="secondary" className="ml-auto">em breve</Badge>
                         </div>
                     </SheetClose>
-                    <SheetClose asChild>
-                         <Link href="/jobs" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                            <Briefcase className="h-6 w-6" /> Vagas
-                        </Link>
-                    </SheetClose>
                   </nav>
                   <div className="p-4 border-t mt-auto flex flex-col gap-2">
                     <SheetClose asChild>
