@@ -380,5 +380,3 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         </Dialog>
     );
 }
-
-    

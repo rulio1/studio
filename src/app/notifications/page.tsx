@@ -176,7 +176,7 @@ export default function NotificationsPage() {
         </Tabs>
       </header>
 
-        <Tabs defaultValue="all">
+        <Tabs defaultValue="all" className="mt-0">
             <TabsContent value="all" className="mt-0">
                 {isLoading ? (
                     <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
