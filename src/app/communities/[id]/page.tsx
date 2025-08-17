@@ -49,6 +49,7 @@ interface Post {
     isRetweeted: boolean;
     createdAt: any;
     editedAt?: any;
+    hashtags?: string[];
 }
 
 interface ChirpUser {
@@ -115,6 +116,7 @@ const PostItem = ({ post }: { post: Post }) => {
                             <p className="font-bold text-base flex items-center gap-1">
                                 {post.author} 
                                 {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                                {isOfficialAccount && <Bird className="h-4 w-4 text-primary" />}
                             </p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
                         </div>
@@ -455,3 +457,4 @@ export default function CommunityDetailPage() {
         </div>
     );
 }
+

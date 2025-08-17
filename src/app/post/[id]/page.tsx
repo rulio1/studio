@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, Upload, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck } from 'lucide-react';
+import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, Upload, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -49,6 +49,7 @@ interface Post {
     isLiked: boolean;
     isRetweeted: boolean;
     editedAt?: any;
+    hashtags?: string[];
 }
 
 interface Comment {
@@ -122,6 +123,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete }: { comment: Comment, us
                             <p className="font-bold flex items-center gap-1">
                                 {comment.author} 
                                 {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                                {isOfficialAccount && <Bird className="h-4 w-4 text-primary" />}
                             </p>
                             <p className="text-muted-foreground">{comment.handle} · {time}</p>
                              {comment.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
@@ -487,6 +489,7 @@ export default function PostDetailPage() {
                                 <p className="font-bold flex items-center gap-1">
                                     {post.author} 
                                     {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                                    {isOfficialAccount && <Bird className="h-4 w-4 text-primary" />}
                                 </p>
                                 <p className="text-sm text-muted-foreground">{post.handle}</p>
                             </div>
@@ -648,3 +651,4 @@ export default function PostDetailPage() {
         </div>
     );
 }
+

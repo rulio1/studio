@@ -256,6 +256,7 @@ export default function SearchPage() {
                             <p className="font-bold flex items-center gap-1">
                                 {user.displayName}
                                 {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                                {isOfficialAccount && <Bird className="h-4 w-4 text-primary" />}
                             </p>
                             <p className="text-sm text-muted-foreground">{user.handle}</p>
                             <p className="text-sm mt-1">{user.bio}</p>
@@ -276,6 +277,7 @@ export default function SearchPage() {
                         <p className="font-bold flex items-center gap-1">
                             {user.displayName}
                             {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            {isOfficialAccount && <Bird className="h-4 w-4 text-primary" />}
                         </p>
                         <p className="text-sm text-muted-foreground">{user.handle}</p>
                         <p className="text-sm mt-1">{user.bio}</p>
@@ -304,6 +306,7 @@ export default function SearchPage() {
                     <p className="font-bold text-base flex items-center gap-1">
                         {post.author} 
                         <BadgeCheck className="h-4 w-4 text-primary" />
+                        <Bird className="h-4 w-4 text-primary" />
                     </p>
                     <p className="text-muted-foreground">{post.handle}</p>
                 </div>
@@ -437,3 +440,4 @@ export default function SearchPage() {
     </>
   );
 }
+

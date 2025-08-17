@@ -65,6 +65,7 @@ interface Post {
     createdAt: any;
     editedAt?: any;
     communityId?: string;
+    hashtags?: string[];
 }
 
 interface ChirpUser {
@@ -360,6 +361,7 @@ export default function HomePage() {
                         <p className="font-bold text-base flex items-center gap-1">
                             {post.author} 
                             {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            {isOfficialAccount && <Bird className="h-4 w-4 text-primary" />}
                         </p>
                         <p className="text-muted-foreground">{post.handle} · {time}</p>
                         {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
@@ -507,6 +509,7 @@ export default function HomePage() {
                         <div className="flex items-center gap-1 font-bold text-lg">
                             {chirpUser.displayName}
                             {chirpUser.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-5 w-5 text-primary" />}
+                            {chirpUser.handle.toLowerCase() === '@rulio' && <Bird className="h-5 w-5 text-primary" />}
                         </div>
                         <p className="text-sm text-muted-foreground">{chirpUser.handle}</p>
                     </div>
@@ -527,9 +530,9 @@ export default function HomePage() {
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
-                        <Link href="/spaces" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                            <Radio className="h-6 w-6" /> Spaces
-                        </Link>
+                        <div className="flex items-center gap-4 py-2 text-xl font-bold rounded-md text-muted-foreground cursor-not-allowed">
+                            <Radio className="h-6 w-6" /> Spaces <Badge variant="secondary" className="ml-auto">em breve</Badge>
+                        </div>
                     </SheetClose>
                     <SheetClose asChild>
                          <Link href="/jobs" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
@@ -610,3 +613,4 @@ export default function HomePage() {
     </>
   );
 }
+
