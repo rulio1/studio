@@ -145,13 +145,6 @@ export default function EditProfilePage() {
         setProfileData({ ...profileData, [e.target.id]: value });
     };
 
-    const uploadAvatar = async (file: File, userId: string): Promise<string> => {
-        const storageRef = ref(storage, `avatars/${userId}/${uuidv4()}`);
-        await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(storageRef);
-        return downloadURL;
-    }
-
     const handleSave = async () => {
         if (!user || !isHandleAvailable) {
             toast({
@@ -164,34 +157,45 @@ export default function EditProfilePage() {
         setIsSaving(true);
         
         try {
-            const batch = writeBatch(db);
             const userDocRef = doc(db, 'users', user.uid);
-            
+            let newAvatarUrl = null;
+            if (newAvatarFile) {
+                const storageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}`);
+                await uploadBytes(storageRef, newAvatarFile);
+                newAvatarUrl = await getDownloadURL(storageRef);
+            }
+
             const updateData: { [key: string]: any } = { 
                 displayName: profileData.displayName,
                 bio: profileData.bio,
                 location: profileData.location,
             };
-            
-            if (newAvatarFile) {
-                const newAvatarUrl = await uploadAvatar(newAvatarFile, user.uid);
-                updateData.avatar = newAvatarUrl;
-            }
 
             const handleChanged = profileData.handle !== originalHandle;
+
+            if (newAvatarUrl) {
+                updateData.avatar = newAvatarUrl;
+            }
             if (handleChanged) {
                 const newHandle = `@${profileData.handle}`;
                 updateData.handle = newHandle;
                 updateData.searchableHandle = profileData.handle.toLowerCase();
             }
 
-            batch.update(userDocRef, updateData);
-            
+            await updateDoc(userDocRef, updateData);
+
+            // Now, update posts and comments if needed
             const contentUpdate: { [key: string]: any } = {};
-            if(newAvatarFile) contentUpdate.avatar = updateData.avatar;
-            if(handleChanged) contentUpdate.handle = updateData.handle;
+            if (newAvatarUrl) {
+                contentUpdate.avatar = newAvatarUrl;
+            }
+            if (handleChanged) {
+                contentUpdate.handle = updateData.handle;
+            }
 
             if (Object.keys(contentUpdate).length > 0) {
+                const batch = writeBatch(db);
+                
                 const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
                 const commentsQuery = query(collection(db, "comments"), where("authorId", "==", user.uid));
                 
@@ -206,9 +210,9 @@ export default function EditProfilePage() {
                 commentsSnapshot.forEach((commentDoc) => {
                      batch.update(commentDoc.ref, contentUpdate);
                 });
-            }
 
-            await batch.commit();
+                await batch.commit();
+            }
 
             toast({
                 title: "Perfil Salvo",
@@ -325,4 +329,3 @@ export default function EditProfilePage() {
     </div>
   );
 }
-
