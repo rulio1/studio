@@ -441,7 +441,7 @@ export default function ProfilePage() {
     const fetchUserReplies = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingReplies(true);
-        const q = query(collection(db, "comments"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
+        const q = query(collection(db, "comments"), where("authorId", "==", profileId));
         const snapshot = await getDocs(q);
         let repliesData = snapshot.docs.map(doc => {
             const data = doc.data();
@@ -450,6 +450,12 @@ export default function ProfilePage() {
                 ...data,
                 time: '', 
             } as Reply;
+        });
+        // Sort replies client-side
+        repliesData.sort((a, b) => {
+            const timeA = a.createdAt?.toMillis() || 0;
+            const timeB = b.createdAt?.toMillis() || 0;
+            return timeB - timeA;
         });
         setUserReplies(repliesData);
         setIsLoadingReplies(false);
