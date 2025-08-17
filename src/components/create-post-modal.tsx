@@ -303,7 +303,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen); }}>
-            <DialogContent className="sm:max-w-xl bg-background/80 backdrop-blur-lg border rounded-2xl">
+            <DialogContent className="sm:max-w-xl bg-background/80 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
                 <DialogHeader>
                 <DialogTitle>Criar Post</DialogTitle>
                 </DialogHeader>

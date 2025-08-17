@@ -927,7 +927,7 @@ export default function ProfilePage() {
             </AlertDialogContent>
         </AlertDialog>
         <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
-            <DialogContent>
+            <DialogContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
                 <DialogHeader>
                     <DialogTitle>Editar Post</DialogTitle>
                 </DialogHeader>

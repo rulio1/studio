@@ -720,7 +720,7 @@ export default function PostDetailPage() {
                     </AlertDialogContent>
                 </AlertDialog>
                 <Dialog open={isEditing} onOpenChange={setIsEditing}>
-                    <DialogContent>
+                    <DialogContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
                         <DialogHeader>
                             <DialogTitle>Editar Post</DialogTitle>
                         </DialogHeader>
