@@ -746,12 +746,13 @@ export default function ProfilePage() {
                 </ul>
             );
         }
-
-        const postsToShow = posts.filter(p => showPinnedPost ? true : p.id !== profileUser?.pinnedPostId);
-        
-        if (postsToShow.length === 0 && !pinnedPost) {
+    
+        const displayPosts = showPinnedPost ? posts : posts.filter(p => p.id !== profileUser?.pinnedPostId);
+    
+        if (displayPosts.length === 0 && (!showPinnedPost || !pinnedPost)) {
             return <EmptyState title={emptyTitle} description={emptyDescription} />;
         }
+    
         return (
             <ul className="divide-y divide-border">
                 {showPinnedPost && pinnedPost && (
@@ -768,7 +769,7 @@ export default function ProfilePage() {
                         toast={toast}
                     />
                 )}
-                {postsToShow.map((post) => (
+                {displayPosts.map((post) => (
                     <PostItem 
                         key={`${post.id}-${post.repostedAt?.toMillis() || ''}`}
                         post={post}
@@ -986,5 +987,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
