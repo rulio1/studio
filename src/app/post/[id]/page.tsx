@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird, Pin, Sparkles, Frown, Flag, BarChart3, Megaphone, UserRound } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -55,6 +55,7 @@ interface Post {
     isRetweeted: boolean;
     editedAt?: any;
     hashtags?: string[];
+    mentions?: string[];
 }
 
 interface Comment {
@@ -83,11 +84,12 @@ interface ChirpUser {
     pinnedPostId?: string;
 }
 
-const PostContent = ({ content }: { content: string }) => {
+const ContentRenderer = ({ content }: { content: string }) => {
     const router = useRouter();
-    const parts = content.split(/(#\w+)/g);
+    const parts = content.split(/(#\w+|@\w+)/g);
+
     return (
-        <p className="text-xl mb-4 whitespace-pre-wrap">
+        <>
             {parts.map((part, index) => {
                 if (part.startsWith('#')) {
                     const hashtag = part.substring(1);
@@ -104,11 +106,49 @@ const PostContent = ({ content }: { content: string }) => {
                         </a>
                     );
                 }
+                if (part.startsWith('@')) {
+                    const handle = part.substring(1);
+                    // In a real app, you'd fetch the user ID for the handle here
+                    // For simplicity, we assume the handle is the ID for navigation in this example
+                    return (
+                        <a 
+                            key={index} 
+                            className="text-primary hover:underline"
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                const usersRef = collection(db, "users");
+                                const q = query(usersRef, where("handle", "==", part));
+                                const querySnapshot = await getDocs(q);
+                                if (!querySnapshot.empty) {
+                                    const userDoc = querySnapshot.docs[0];
+                                    router.push(`/profile/${userDoc.id}`);
+                                } else {
+                                    // Handle user not found, maybe just display text
+                                }
+                            }}
+                        >
+                            {part}
+                        </a>
+                    );
+                }
                 return part;
             })}
-        </p>
+        </>
     );
 };
+
+const PostContent = ({ content }: { content: string }) => (
+    <p className="text-xl mb-4 whitespace-pre-wrap">
+        <ContentRenderer content={content} />
+    </p>
+);
+
+const CommentContent = ({ content }: { content: string }) => (
+    <p className="whitespace-pre-wrap mt-1">
+        <ContentRenderer content={content} />
+    </p>
+);
+
 
 const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comment: Comment, user: FirebaseUser | null, onEdit: (comment: Comment) => void, onDelete: (id: string) => void, isLastComment: boolean }) => {
     const router = useRouter();
@@ -179,7 +219,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
                         </DropdownMenu>
                     )}
                 </div>
-                <p className="whitespace-pre-wrap mt-1">{comment.content}</p>
+                <CommentContent content={comment.content} />
                  <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors">
                         <MessageCircle className="h-5 w-5" />
@@ -300,6 +340,15 @@ export default function PostDetailPage() {
         }
     }, [id, user]);
 
+    const extractMentions = (content: string) => {
+        const regex = /@(\w+)/g;
+        const matches = content.match(regex);
+        if (!matches) {
+            return [];
+        }
+        return [...new Set(matches)]; // Returns handles like '@username'
+    };
+
     const handleReply = async () => {
         if (!newComment.trim() || !user || !chirpUser || !post || isReplying) return;
         
@@ -308,8 +357,7 @@ export default function PostDetailPage() {
             const batch = writeBatch(db);
             const postRef = doc(db, 'posts', post.id);
             const commentRef = doc(collection(db, "comments"));
-            const notificationRef = doc(collection(db, 'notifications'));
-
+            
             // Create comment
             batch.set(commentRef, {
                  postId: post.id,
@@ -329,8 +377,39 @@ export default function PostDetailPage() {
             // Increment post's comment count
             batch.update(postRef, { comments: increment(1) });
             
+            // Handle mentions in the reply
+            const mentionedHandles = extractMentions(newComment);
+            if (mentionedHandles.length > 0) {
+                const usersRef = collection(db, "users");
+                const q = query(usersRef, where("handle", "in", mentionedHandles));
+                const querySnapshot = await getDocs(q);
+                querySnapshot.forEach(userDoc => {
+                    const mentionedUserId = userDoc.id;
+                    if (mentionedUserId !== user.uid) { // Don't notify for self-mention
+                        const notificationRef = doc(collection(db, 'notifications'));
+                        batch.set(notificationRef, {
+                            toUserId: mentionedUserId,
+                            fromUserId: user.uid,
+                            fromUser: {
+                                name: chirpUser.displayName,
+                                handle: chirpUser.handle,
+                                avatar: chirpUser.avatar,
+                            },
+                            type: 'mention',
+                            text: 'mencionou você em uma resposta',
+                            postContent: newComment.substring(0, 50),
+                            postId: post.id,
+                            createdAt: serverTimestamp(),
+                            read: false,
+                        });
+                    }
+                });
+            }
+
+
             // Create notification if not replying to own post
             if(user.uid !== post.authorId) {
+                const notificationRef = doc(collection(db, 'notifications'));
                 batch.set(notificationRef, {
                      toUserId: post.authorId,
                     fromUserId: user.uid,
@@ -409,7 +488,7 @@ export default function PostDetailPage() {
     };
     
     const extractHashtags = (content: string) => {
-        const regex = /#([a-zA-Z0-9_]+)/g;
+        const regex = /#(\w+)/g;
         const matches = content.match(regex);
         if (!matches) {
             return [];

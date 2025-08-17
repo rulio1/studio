@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generatePost } from '@/ai/flows/post-generator-flow';
 import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 import { auth, db, storage } from '@/lib/firebase';
-import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
+import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, increment, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Sparkles, Loader2, Plus, ImageIcon, X, Smile, Upload } from 'lucide-react';
 import { Button } from './ui/button';
@@ -95,13 +95,21 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     }
 
     const extractHashtags = (content: string) => {
-        const regex = /#([a-zA-Z0-9_]+)/g;
+        const regex = /#(\w+)/g;
         const matches = content.match(regex);
         if (!matches) {
             return [];
         }
-        // Return unique hashtags in lowercase
         return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
+    };
+    
+    const extractMentions = (content: string) => {
+        const regex = /@(\w+)/g;
+        const matches = content.match(regex);
+        if (!matches) {
+            return [];
+        }
+        return [...new Set(matches)]; // Returns handles like '@username'
     };
 
      const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,51 +150,75 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
 
         setIsPosting(true);
         const hashtags = extractHashtags(newPostContent);
+        const mentionedHandles = extractMentions(newPostContent);
 
         try {
-            await runTransaction(db, async (transaction) => {
-                const postRef = doc(collection(db, "posts"));
+            const batch = writeBatch(db);
+            const postRef = doc(collection(db, "posts"));
 
-                // First, perform all reads
-                const hashtagRefs = hashtags.map(tag => doc(db, "hashtags", tag));
-                const hashtagDocs = await Promise.all(hashtagRefs.map(ref => transaction.get(ref)));
+            batch.set(postRef, {
+                authorId: user.uid,
+                author: chirpUser.displayName,
+                handle: chirpUser.handle,
+                avatar: chirpUser.avatar,
+                avatarFallback: chirpUser.displayName[0],
+                content: newPostContent,
+                hashtags: hashtags,
+                mentions: mentionedHandles,
+                image: postImageDataUri || '',
+                imageHint: '',
+                communityId: null,
+                createdAt: serverTimestamp(),
+                comments: 0,
+                retweets: [],
+                likes: [],
+                views: 0,
+            });
 
-                // Now, perform all writes
-                // 1. Create the new post
-                transaction.set(postRef, {
-                    authorId: user.uid,
-                    author: chirpUser.displayName,
-                    handle: chirpUser.handle,
-                    avatar: chirpUser.avatar,
-                    avatarFallback: chirpUser.displayName[0],
-                    content: newPostContent,
-                    hashtags: hashtags,
-                    image: postImageDataUri || '',
-                    imageHint: '',
-                    communityId: null,
-                    createdAt: serverTimestamp(),
-                    comments: 0,
-                    retweets: [],
-                    likes: [],
-                    views: 0,
-                });
-
-                // 2. Update hashtag counts
-                hashtagDocs.forEach((hashtagDoc, index) => {
-                    const tag = hashtags[index];
-                    const hashtagRef = hashtagRefs[index];
-                    if (hashtagDoc.exists()) {
-                        transaction.update(hashtagRef, { count: increment(1) });
-                    } else {
-                        transaction.set(hashtagRef, {
-                            name: tag,
-                            count: 1,
-                            createdAt: serverTimestamp()
+            // Handle Mentions
+            if (mentionedHandles.length > 0) {
+                const usersRef = collection(db, "users");
+                const q = query(usersRef, where("handle", "in", mentionedHandles));
+                const querySnapshot = await getDocs(q);
+                querySnapshot.forEach(userDoc => {
+                    const mentionedUserId = userDoc.id;
+                    if (mentionedUserId !== user.uid) { // Don't notify for self-mention
+                        const notificationRef = doc(collection(db, 'notifications'));
+                        batch.set(notificationRef, {
+                            toUserId: mentionedUserId,
+                            fromUserId: user.uid,
+                            fromUser: {
+                                name: chirpUser.displayName,
+                                handle: chirpUser.handle,
+                                avatar: chirpUser.avatar,
+                            },
+                            type: 'mention',
+                            text: 'mencionou você em um post',
+                            postContent: newPostContent.substring(0, 50),
+                            postId: postRef.id,
+                            createdAt: serverTimestamp(),
+                            read: false,
                         });
                     }
                 });
-            });
+            }
 
+            // Handle Hashtags
+            for (const tag of hashtags) {
+                const hashtagRef = doc(db, "hashtags", tag);
+                const hashtagDoc = await getDoc(hashtagRef);
+                if (hashtagDoc.exists()) {
+                    batch.update(hashtagRef, { count: increment(1) });
+                } else {
+                    batch.set(hashtagRef, {
+                        name: tag,
+                        count: 1,
+                        createdAt: serverTimestamp()
+                    });
+                }
+            }
+            
+            await batch.commit();
 
             resetModal();
             toast({

@@ -65,6 +65,7 @@ interface Post {
     editedAt?: any;
     communityId?: string;
     hashtags?: string[];
+    mentions?: string[];
     repostedBy?: { name: string; handle: string; avatar: string };
     repostedAt?: any;
     isPinned?: boolean;
@@ -265,7 +266,7 @@ export default function HomePage() {
   };
 
     const extractHashtags = (content: string) => {
-        const regex = /#([a-zA-Z0-9_]+)/g;
+        const regex = /#(\w+)/g;
         const matches = content.match(regex);
         if (!matches) {
             return [];
@@ -273,33 +274,74 @@ export default function HomePage() {
         return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
     };
 
-  const handleUpdatePost = async () => {
-    if (!editingPost || !editedContent.trim()) return;
-    setIsUpdating(true);
-    const hashtags = extractHashtags(editedContent);
-    try {
-        const postRef = doc(db, "posts", editingPost.id);
-        await updateDoc(postRef, {
-            content: editedContent,
-            hashtags: hashtags,
-            editedAt: serverTimestamp()
-        });
-        setEditingPost(null);
-        setEditedContent("");
-        toast({
-            title: "Post atualizado",
-            description: "Seu post foi atualizado com sucesso.",
-        });
-    } catch (error) {
-        console.error("Erro ao atualizar o post:", error);
-        toast({
-            title: "Erro",
-            description: "Não foi possível atualizar o post.",
-            variant: "destructive",
-        });
-    } finally {
-        setIsUpdating(false);
-    }
+    const extractMentions = (content: string) => {
+        const regex = /@(\w+)/g;
+        const matches = content.match(regex);
+        if (!matches) {
+            return [];
+        }
+        return [...new Set(matches)]; // Returns handles like '@username'
+    };
+
+    const handleUpdatePost = async () => {
+      if (!editingPost || !editedContent.trim() || !user) return;
+      setIsUpdating(true);
+      const hashtags = extractHashtags(editedContent);
+      const mentionedHandles = extractMentions(editedContent);
+      
+      try {
+          const batch = writeBatch(db);
+          const postRef = doc(db, "posts", editingPost.id);
+          batch.update(postRef, {
+              content: editedContent,
+              hashtags: hashtags,
+              editedAt: serverTimestamp()
+          });
+
+          if (mentionedHandles.length > 0) {
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("handle", "in", mentionedHandles));
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach(userDoc => {
+                const mentionedUserId = userDoc.id;
+                if (mentionedUserId !== user.uid) { // Don't notify for self-mention
+                    const notificationRef = doc(collection(db, 'notifications'));
+                    batch.set(notificationRef, {
+                        toUserId: mentionedUserId,
+                        fromUserId: user.uid,
+                        fromUser: {
+                            name: chirpUser?.displayName,
+                            handle: chirpUser?.handle,
+                            avatar: chirpUser?.avatar,
+                        },
+                        type: 'mention',
+                        text: 'mencionou você em um post',
+                        postContent: editedContent.substring(0, 50),
+                        postId: editingPost.id,
+                        createdAt: serverTimestamp(),
+                        read: false,
+                    });
+                }
+            });
+        }
+
+          await batch.commit();
+          setEditingPost(null);
+          setEditedContent("");
+          toast({
+              title: "Post atualizado",
+              description: "Seu post foi atualizado com sucesso.",
+          });
+      } catch (error) {
+          console.error("Erro ao atualizar o post:", error);
+          toast({
+              title: "Erro",
+              description: "Não foi possível atualizar o post.",
+              variant: "destructive",
+          });
+      } finally {
+          setIsUpdating(false);
+      }
   };
   
   const handleSavePost = async (postId: string) => {
@@ -343,7 +385,7 @@ export default function HomePage() {
   };
 
     const PostContent = ({ content }: { content: string }) => {
-        const parts = content.split(/(#\w+)/g);
+        const parts = content.split(/(#\w+|@\w+)/g);
         return (
             <p>
                 {parts.map((part, index) => {
@@ -356,6 +398,27 @@ export default function HomePage() {
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     router.push(`/search?q=%23${hashtag}`);
+                                }}
+                            >
+                                {part}
+                            </a>
+                        );
+                    }
+                     if (part.startsWith('@')) {
+                        const handle = part.substring(1);
+                        return (
+                            <a 
+                                key={index} 
+                                className="text-primary hover:underline"
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    const usersRef = collection(db, "users");
+                                    const q = query(usersRef, where("handle", "==", part));
+                                    const querySnapshot = await getDocs(q);
+                                    if (!querySnapshot.empty) {
+                                        const userDoc = querySnapshot.docs[0];
+                                        router.push(`/profile/${userDoc.id}`);
+                                    }
                                 }}
                             >
                                 {part}
@@ -570,7 +633,7 @@ export default function HomePage() {
                   <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
                 </Avatar>
               </SheetTrigger>
-              <SheetContent side="left" className="w-80 p-0 flex flex-col">
+              <SheetContent side="left" className="w-80 p-0 flex flex-col bg-background/80 backdrop-blur-lg">
                  <OtherDialogTitle className="sr-only">Menu Principal</OtherDialogTitle>
                  <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
                     <X className="h-4 w-4" />
