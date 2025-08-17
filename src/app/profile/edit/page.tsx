@@ -11,12 +11,12 @@ import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, updateProfile } from 'firebase/auth';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { useState, useEffect, useRef } from 'react';
 import React from 'react';
-import { useDebounce } from 'use-debounce';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
+import { Progress } from '@/components/ui/progress';
 
 interface UserProfileData {
     displayName: string;
@@ -33,7 +33,6 @@ export default function EditProfilePage() {
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [originalHandle, setOriginalHandle] = useState('');
     
     const [profileData, setProfileData] = useState<UserProfileData>({
         displayName: '',
@@ -44,13 +43,9 @@ export default function EditProfilePage() {
         banner: '',
     });
 
-    const [debouncedHandle] = useDebounce(profileData.handle, 500);
-    const [isCheckingHandle, setIsCheckingHandle] = useState(false);
-    const [isHandleAvailable, setIsHandleAvailable] = useState(true);
-    const [handleStatusMessage, setHandleStatusMessage] = useState('');
-
-    const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string>('');
+    const [newAvatarUrl, setNewAvatarUrl] = useState<string>('');
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
 
 
@@ -62,20 +57,15 @@ export default function EditProfilePage() {
                     const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
-                        const handle = userData.handle.startsWith('@') ? userData.handle.substring(1) : userData.handle;
                         setProfileData({
                             displayName: userData.displayName || '',
-                            handle: handle,
+                            handle: userData.handle.startsWith('@') ? userData.handle.substring(1) : userData.handle,
                             bio: userData.bio || '',
                             location: userData.location || '',
                             avatar: userData.avatar || '',
                             banner: userData.banner || '',
                         });
                         setAvatarPreview(userData.avatar || '');
-                        setOriginalHandle(handle);
-                    } else {
-                        toast({ title: "Usuário não encontrado.", variant: "destructive" });
-                        router.push('/login');
                     }
                 } catch (error) {
                      toast({ title: "Erro ao carregar perfil.", variant: "destructive" });
@@ -89,50 +79,33 @@ export default function EditProfilePage() {
         return () => unsubscribe();
     }, [router, toast]);
 
-    const checkHandleAvailability = useCallback(async (handle: string) => {
-        if (!handle || handle === originalHandle) {
-            setHandleStatusMessage('');
-            setIsHandleAvailable(true);
-            return;
-        }
-        if (handle.length < 3) {
-            setHandleStatusMessage('O nome de usuário deve ter pelo menos 3 caracteres.');
-            setIsHandleAvailable(false);
-            return;
-        }
-
-        setIsCheckingHandle(true);
-        setHandleStatusMessage('Verificando...');
-        try {
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("handle", "==", `@${handle}`));
-            const querySnapshot = await getDocs(q);
-            if (querySnapshot.empty) {
-                setHandleStatusMessage('Nome de usuário disponível!');
-                setIsHandleAvailable(true);
-            } else {
-                setHandleStatusMessage('Este nome de usuário já está em uso.');
-                setIsHandleAvailable(false);
-            }
-        } catch (error) {
-            setHandleStatusMessage('Erro ao verificar o nome de usuário.');
-            setIsHandleAvailable(false);
-        } finally {
-            setIsCheckingHandle(false);
-        }
-    }, [originalHandle]);
-
-     useEffect(() => {
-        // This effect will run whenever the debounced handle changes.
-        checkHandleAvailability(debouncedHandle);
-    }, [debouncedHandle, checkHandleAvailability]);
-
-
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
+        if (e.target.files && e.target.files[0] && user) {
             const file = e.target.files[0];
-            setNewAvatarFile(file);
             setAvatarPreview(URL.createObjectURL(file));
+            
+            const storageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(progress);
+                },
+                (error) => {
+                    console.error("Upload failed:", error);
+                    toast({ title: "Falha no upload do avatar", variant: "destructive" });
+                    setUploadProgress(null);
+                    setAvatarPreview(profileData.avatar); // Revert preview
+                },
+                () => {
+                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                        setNewAvatarUrl(downloadURL);
+                        setUploadProgress(null);
+                        toast({ title: "Avatar enviado!", description: "Clique em Salvar para aplicar as alterações." });
+                    });
+                }
+            );
         }
     };
 
@@ -146,44 +119,27 @@ export default function EditProfilePage() {
 
     const handleSave = async () => {
         if (!user) return;
-        if (!isHandleAvailable || isCheckingHandle) {
-            toast({
-                title: "Não é possível salvar",
-                description: isCheckingHandle ? "Aguarde a verificação do nome de usuário." : "O nome de usuário escolhido não está disponível.",
-                variant: "destructive"
-            });
-            return;
-        }
 
         setIsSaving(true);
-
         try {
-            let newAvatarUrl = profileData.avatar;
+            const finalAvatarUrl = newAvatarUrl || profileData.avatar;
 
-            // 1. Upload new avatar if one is selected
-            if (newAvatarFile) {
-                const storageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}`);
-                const uploadResult = await uploadBytes(storageRef, newAvatarFile);
-                newAvatarUrl = await getDownloadURL(uploadResult.ref);
-            }
-
-            // 2. Prepare data for Firestore and Auth
-            const firestoreUpdateData = {
-                displayName: profileData.displayName,
-                handle: `@${profileData.handle}`,
-                bio: profileData.bio,
-                location: profileData.location,
-                avatar: newAvatarUrl,
-                searchableHandle: profileData.handle.toLowerCase(),
-            };
-            
             const authUpdateData = {
                 displayName: profileData.displayName,
-                photoURL: newAvatarUrl,
+                photoURL: finalAvatarUrl,
             };
-
-            // 3. Update Firebase Auth and Firestore
             await updateProfile(user, authUpdateData);
+            
+            const firestoreUpdateData: any = {
+                displayName: profileData.displayName,
+                searchableDisplayName: profileData.displayName.toLowerCase(),
+                handle: `@${profileData.handle}`,
+                searchableHandle: profileData.handle.toLowerCase(),
+                bio: profileData.bio,
+                location: profileData.location,
+                avatar: finalAvatarUrl
+            };
+            
             await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
 
             toast({
@@ -213,11 +169,11 @@ export default function EditProfilePage() {
     <div className="flex flex-col h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2">
-            <Button variant="ghost" onClick={() => router.back()} disabled={isSaving}>
+            <Button variant="ghost" onClick={() => router.back()} disabled={isSaving || uploadProgress !== null}>
                 <X className="h-5 w-5" />
             </Button>
             <h1 className="font-bold text-lg">Editar perfil</h1>
-            <Button variant="default" className="rounded-full font-bold px-4 bg-foreground text-background hover:bg-foreground/80" onClick={handleSave} disabled={isSaving || isCheckingHandle || !isHandleAvailable}>
+            <Button variant="default" className="rounded-full font-bold px-4 bg-foreground text-background hover:bg-foreground/80" onClick={handleSave} disabled={isSaving || uploadProgress !== null}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Salvar
             </Button>
@@ -231,19 +187,28 @@ export default function EditProfilePage() {
                 <Avatar className="h-32 w-32 border-4 border-background">
                     {avatarPreview ? <AvatarImage src={avatarPreview} alt={profileData.displayName} />: <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>}
                 </Avatar>
-                <Button 
-                    variant="ghost" 
-                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-full h-full w-full p-0"
-                    onClick={() => avatarInputRef.current?.click()}>
-                    <Upload className="h-8 w-8 text-white" />
-                </Button>
+                
+                {uploadProgress !== null ? (
+                     <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full">
+                         <Progress value={uploadProgress} className="w-3/4 h-2" />
+                     </div>
+                ) : (
+                    <Button 
+                        variant="ghost" 
+                        className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-full h-full w-full p-0"
+                        onClick={() => avatarInputRef.current?.click()}
+                        disabled={isSaving}>
+                        <Upload className="h-8 w-8 text-white" />
+                    </Button>
+                )}
+
                 <Input 
                     type="file" 
                     ref={avatarInputRef} 
                     className="hidden" 
                     accept="image/png, image/jpeg"
                     onChange={handleImageChange}
-                    disabled={isSaving}
+                    disabled={isSaving || uploadProgress !== null}
                 />
             </div>
         </div>
@@ -256,7 +221,7 @@ export default function EditProfilePage() {
                     value={profileData.displayName} 
                     onChange={handleFormChange}
                     className="text-lg" 
-                    disabled={isSaving}
+                    disabled={isSaving || uploadProgress !== null}
                 />
             </div>
              <div className="grid gap-1.5">
@@ -268,14 +233,9 @@ export default function EditProfilePage() {
                         value={profileData.handle} 
                         onChange={handleFormChange}
                         className="text-lg border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                        disabled={isSaving}
+                        disabled={isSaving || uploadProgress !== null}
                     />
                 </div>
-                {handleStatusMessage && (
-                    <p className={`text-sm mt-1 ${isCheckingHandle ? 'text-muted-foreground' : isHandleAvailable ? 'text-green-500' : 'text-red-500'}`}>
-                        {handleStatusMessage}
-                    </p>
-                )}
             </div>
              <div className="grid gap-1.5">
                 <Label htmlFor="bio">Bio</Label>
@@ -285,7 +245,7 @@ export default function EditProfilePage() {
                     onChange={handleFormChange}
                     rows={3}
                     className="text-lg"
-                    disabled={isSaving}
+                    disabled={isSaving || uploadProgress !== null}
                 />
             </div>
              <div className="grid gap-1.5">
@@ -295,7 +255,7 @@ export default function EditProfilePage() {
                     value={profileData.location}
                     onChange={handleFormChange}
                      className="text-lg"
-                     disabled={isSaving}
+                     disabled={isSaving || uploadProgress !== null}
                 />
             </div>
         </div>
