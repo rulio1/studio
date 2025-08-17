@@ -112,6 +112,8 @@ export default function SearchPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [posts, setPosts] = useState<PostSearchResult[]>([]);
+
 
   const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
 
