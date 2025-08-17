@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generatePost } from '@/ai/flows/post-generator-flow';
 import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 import { auth, db, storage } from '@/lib/firebase';
-import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, increment, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, increment, query, where, getDocs, writeBatch, getDoc } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Sparkles, Loader2, Plus, ImageIcon, X, Smile, Upload } from 'lucide-react';
 import { Button } from './ui/button';
