@@ -321,45 +321,31 @@ export default function ProfilePage() {
         }
     }, [fetchProfileUser]);
     
-    const fetchUserPosts = useCallback(async () => {
+     const fetchUserPosts = useCallback(async () => {
         if (!profileId || !currentUser) return;
         setIsLoadingPosts(true);
-
+    
+        // Get user's own posts
         const postsQuery = query(collection(db, "posts"), where("authorId", "==", profileId));
+        const postsSnapshot = await getDocs(postsQuery);
+        const originalPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
+    
+        // Get user's reposts
         const repostsQuery = query(collection(db, "reposts"), where("userId", "==", profileId));
-
-        const [postsSnapshot, repostsSnapshot] = await Promise.all([
-            getDocs(postsQuery),
-            getDocs(repostsQuery)
-        ]);
-
-        const originalPosts = postsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-        } as Post));
-
+        const repostsSnapshot = await getDocs(repostsQuery);
         const repostsData = repostsSnapshot.docs.map(doc => doc.data());
         const repostedPostIds = repostsData.map(repost => repost.postId);
-        
-        const allAuthorIds = new Set<string>();
-        originalPosts.forEach(p => allAuthorIds.add(p.authorId));
-
-        let usersMap = new Map<string, ChirpUser>();
-        if(allAuthorIds.size > 0){
-            const usersQuery = query(collection(db, 'users'), where(documentId(), 'in', Array.from(allAuthorIds)));
-            const usersSnapshot = await getDocs(usersQuery);
-            usersSnapshot.docs.forEach(doc => usersMap.set(doc.id, doc.data() as ChirpUser));
-        }
-
-        const profileUserDoc = await getDoc(doc(db, 'users', profileId));
-        const profileUserData = profileUserDoc.data() as ChirpUser;
-
+    
         let repostedPosts: Post[] = [];
         if (repostedPostIds.length > 0) {
+            const profileUserDoc = await getDoc(doc(db, 'users', profileId));
+            const profileUserData = profileUserDoc.data() as ChirpUser;
+    
+            // Fetch the actual post documents for the reposts
             const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
             const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
             const postsMap = new Map(repostedPostsSnapshot.docs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as Post]));
-
+    
             repostedPosts = repostsData.map(repost => {
                 const postData = postsMap.get(repost.postId);
                 if (!postData) return null;
@@ -374,7 +360,7 @@ export default function ProfilePage() {
                 } as Post;
             }).filter(p => p !== null) as Post[];
         }
-
+    
         const allPosts = [...originalPosts, ...repostedPosts];
         allPosts.sort((a, b) => {
             const timeA = a.repostedAt?.toMillis() || a.createdAt?.toMillis() || 0;
@@ -387,14 +373,14 @@ export default function ProfilePage() {
             isLiked: post.likes.includes(currentUser?.uid || ''),
             isRetweeted: post.retweets.includes(currentUser?.uid || ''),
         }));
-
+    
         setUserPosts(finalPosts);
         setIsLoadingPosts(false);
-
+    
         setIsLoadingMedia(true);
         setMediaPosts(finalPosts.filter(p => p.image));
         setIsLoadingMedia(false);
-
+    
     }, [profileId, currentUser]);
 
     const fetchUserReplies = useCallback(async () => {
@@ -862,5 +848,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
