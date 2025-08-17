@@ -10,11 +10,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, X } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import React from 'react';
+import { useDebounce } from 'use-debounce';
 
 interface UserProfileData {
     displayName: string;
@@ -41,6 +42,12 @@ export default function EditProfilePage() {
         avatar: '',
         banner: '',
     });
+
+    const [debouncedHandle] = useDebounce(profileData.handle, 500);
+    const [isCheckingHandle, setIsCheckingHandle] = useState(false);
+    const [isHandleAvailable, setIsHandleAvailable] = useState(true);
+    const [handleStatusMessage, setHandleStatusMessage] = useState('');
+
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -76,6 +83,46 @@ export default function EditProfilePage() {
         return () => unsubscribe();
     }, [router, toast]);
 
+    const checkHandleAvailability = useCallback(async (handle: string) => {
+        if (handle === originalHandle) {
+            setHandleStatusMessage('');
+            setIsHandleAvailable(true);
+            return;
+        }
+        if (handle.length < 3) {
+            setHandleStatusMessage('O nome de usuário deve ter pelo menos 3 caracteres.');
+            setIsHandleAvailable(false);
+            return;
+        }
+
+        setIsCheckingHandle(true);
+        setHandleStatusMessage('Verificando...');
+        try {
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("searchableHandle", "==", handle));
+            const querySnapshot = await getDocs(q);
+            if (querySnapshot.empty) {
+                setHandleStatusMessage('Nome de usuário disponível!');
+                setIsHandleAvailable(true);
+            } else {
+                setHandleStatusMessage('Este nome de usuário já está em uso.');
+                setIsHandleAvailable(false);
+            }
+        } catch (error) {
+            setHandleStatusMessage('Erro ao verificar o nome de usuário.');
+            setIsHandleAvailable(false);
+        } finally {
+            setIsCheckingHandle(false);
+        }
+    }, [originalHandle]);
+
+     useEffect(() => {
+        if (debouncedHandle) {
+            checkHandleAvailability(debouncedHandle);
+        }
+    }, [debouncedHandle, checkHandleAvailability]);
+
+
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         let value = e.target.value;
         if (e.target.id === 'handle') {
@@ -85,28 +132,19 @@ export default function EditProfilePage() {
     };
 
     const handleSave = async () => {
-        if (!user) return;
+        if (!user || !isHandleAvailable) {
+            toast({
+                title: "Não é possível salvar",
+                description: "O nome de usuário escolhido não está disponível.",
+                variant: "destructive"
+            });
+            return;
+        }
         setIsSaving(true);
         
         try {
             const newHandle = profileData.handle;
             const handleChanged = newHandle !== originalHandle;
-
-            if (handleChanged) {
-                if(newHandle.length < 3) {
-                    toast({ title: "Nome de usuário muito curto", description: "O nome de usuário deve ter pelo menos 3 caracteres.", variant: "destructive" });
-                    setIsSaving(false);
-                    return;
-                }
-                const usersRef = collection(db, "users");
-                const q = query(usersRef, where("searchableHandle", "==", newHandle));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    toast({ title: "Nome de usuário já existe", description: "Por favor, escolha outro nome de usuário.", variant: "destructive" });
-                    setIsSaving(false);
-                    return;
-                }
-            }
             
             const updateData: { [key: string]: any } = { 
                 displayName: profileData.displayName,
@@ -152,7 +190,7 @@ export default function EditProfilePage() {
                 <X className="h-5 w-5" />
             </Button>
             <h1 className="font-bold text-lg">Editar perfil</h1>
-            <Button variant="default" className="rounded-full font-bold px-4 bg-foreground text-background hover:bg-foreground/80" onClick={handleSave} disabled={isSaving}>
+            <Button variant="default" className="rounded-full font-bold px-4 bg-foreground text-background hover:bg-foreground/80" onClick={handleSave} disabled={isSaving || isCheckingHandle || !isHandleAvailable}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Salvar
             </Button>
@@ -161,12 +199,7 @@ export default function EditProfilePage() {
 
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
-            {profileData.banner ? <Image
-                src={profileData.banner}
-                alt="Banner do perfil"
-                layout="fill"
-                objectFit="cover"
-            /> :  <div className="w-full h-full bg-muted" />}
+            <div className="w-full h-full bg-muted" />
         </div>
         <div className="px-4">
             <div className="-mt-16 relative w-32">
@@ -199,6 +232,11 @@ export default function EditProfilePage() {
                         disabled={isSaving}
                     />
                 </div>
+                {handleStatusMessage && (
+                    <p className={`text-sm mt-1 ${isHandleAvailable && !isCheckingHandle ? 'text-green-500' : 'text-red-500'}`}>
+                        {handleStatusMessage}
+                    </p>
+                )}
             </div>
              <div className="grid gap-1.5">
                 <Label htmlFor="bio">Bio</Label>
