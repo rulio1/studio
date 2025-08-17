@@ -275,16 +275,17 @@ export default function ConversationPage() {
                 })}
             </div>
         </ScrollArea>
-        <div className="sticky bottom-0 bg-background/80 backdrop-blur-sm p-4 border-t">
-            <div className="flex items-center gap-2">
+        <div className="sticky bottom-0 m-4">
+            <div className="relative flex items-center rounded-2xl border bg-background/80 backdrop-blur-lg p-2">
                 <Input 
                     placeholder="Inicie uma nova mensagem"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                     disabled={isSending}
+                    className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
-                <Button onClick={handleSendMessage} disabled={!newMessage.trim() || isSending}>
+                <Button onClick={handleSendMessage} disabled={!newMessage.trim() || isSending} size="icon" className="rounded-full">
                     {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 </Button>
             </div>
