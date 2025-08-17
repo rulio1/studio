@@ -27,9 +27,12 @@ export default function BottomNavBar() {
     const [messageCount, setMessageCount] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
-    const navItems = [
+    const leftNavItems = [
         { href: '/home', icon: Home, label: 'Início' },
         { href: '/search', icon: Search, label: 'Busca' },
+    ];
+    
+    const rightNavItems = [
         { href: '/notifications', icon: Bell, label: 'Notificações' },
         { href: '/messages', icon: Mail, label: 'Mensagens' },
     ];
@@ -90,7 +93,26 @@ export default function BottomNavBar() {
     return (
         <footer className="fixed bottom-4 inset-x-4 z-50 border rounded-full bg-background/70 backdrop-blur-lg">
             <nav className="flex justify-around items-center h-16 w-full px-2">
-                {navItems.map((item) => (
+                {leftNavItems.map((item) => (
+                    <Link key={item.href} href={item.href} className={`relative flex-1 flex justify-center items-center h-full rounded-full transition-colors ${pathname.startsWith(item.href) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
+                        <item.icon className="h-7 w-7" />
+                    </Link>
+                ))}
+
+                 <div className="relative flex-1 flex justify-center items-center h-full rounded-full">
+                    {isLoading ? (
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                    ) : user && chirpUser ? (
+                        <Link href={`/profile/${user.uid}`} className={`transition-opacity hover:opacity-80 ${pathname.startsWith(`/profile/`) ? 'border-2 border-primary rounded-full p-0.5' : ''}`}>
+                             <Avatar className="h-8 w-8">
+                                <AvatarImage src={chirpUser.avatar} alt={chirpUser.displayName} />
+                                <AvatarFallback>{chirpUser.displayName?.[0]}</AvatarFallback>
+                            </Avatar>
+                        </Link>
+                    ) : null}
+                </div>
+
+                {rightNavItems.map((item) => (
                     <Link key={item.href} href={item.href} className={`relative flex-1 flex justify-center items-center h-full rounded-full transition-colors ${pathname.startsWith(item.href) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                         <item.icon className="h-7 w-7" />
                         {item.label === 'Notificações' && notificationCount > 0 && (
@@ -105,18 +127,6 @@ export default function BottomNavBar() {
                         )}
                     </Link>
                 ))}
-                 <div className="relative flex-1 flex justify-center items-center h-full rounded-full">
-                    {isLoading ? (
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                    ) : user && chirpUser ? (
-                        <Link href={`/profile/${user.uid}`} className={`transition-opacity hover:opacity-80 ${pathname === `/profile/${user.uid}` ? 'border-2 border-primary rounded-full p-0.5' : ''}`}>
-                             <Avatar className="h-8 w-8">
-                                <AvatarImage src={chirpUser.avatar} alt={chirpUser.displayName} />
-                                <AvatarFallback>{chirpUser.displayName?.[0]}</AvatarFallback>
-                            </Avatar>
-                        </Link>
-                    ) : null}
-                </div>
             </nav>
         </footer>
     );
