@@ -80,12 +80,12 @@
   }
 
   .speed-dial-open > .speed-dial-button:nth-child(1) {
-      transform: translateY(-60px) translateX(40px) rotate(0);
+      transform: translateY(-55px) translateX(25px) rotate(0);
       opacity: 1;
   }
 
   .speed-dial-open > .speed-dial-button:nth-child(2) {
-      transform: translateY(-40px) translateX(-60px) rotate(0);
+      transform: translateY(-25px) translateX(-55px) rotate(0);
       opacity: 1;
   }
 
