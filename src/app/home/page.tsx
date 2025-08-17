@@ -453,11 +453,10 @@ export default function HomePage() {
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0 flex flex-col">
                  <DialogTitle className="sr-only">Menu Principal</DialogTitle>
-                  <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+                 <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
                     <X className="h-4 w-4" />
                     <span className="sr-only">Close</span>
                  </SheetClose>
-
                  <div className="p-4 border-b">
                     <div className="flex justify-between items-center mb-4">
                          <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
@@ -465,7 +464,7 @@ export default function HomePage() {
                             <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
                         </Avatar>
                     </div>
-                     <div>
+                    <div>
                         <div className="flex items-center gap-1 font-bold text-lg">
                             {chirpUser.displayName}
                             {chirpUser.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-5 w-5 text-primary" />}
@@ -505,8 +504,8 @@ export default function HomePage() {
                         <Settings className="h-6 w-6" /> Configurações e privacidade
                       </Link>
                     </SheetClose>
-                     <SheetClose asChild>
-                        <Button variant="ghost" className="w-full justify-start gap-4 p-2 text-base font-semibold" onClick={handleSignOut}>Sair</Button>
+                    <SheetClose asChild>
+                        <Button variant="destructive" className="w-full justify-start gap-4 p-2 text-base font-semibold" onClick={handleSignOut}>Sair</Button>
                     </SheetClose>
                   </div>
               </SheetContent>
