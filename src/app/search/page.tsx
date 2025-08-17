@@ -109,7 +109,6 @@ export default function SearchPage() {
   const [trends, setTrends] = useState<Trend[]>([]);
   const [users, setUsers] = useState<UserSearchResult[]>([]);
   const [newUsers, setNewUsers] = useState<UserSearchResult[]>([]);
-  const [posts, setPosts] = useState<PostSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
