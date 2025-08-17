@@ -484,7 +484,7 @@ export default function HomePage() {
                         <Bookmark className="h-6 w-6" /> Itens Salvos
                       </Link>
                     </SheetClose>
-                     <div className="flex items-center gap-4 py-2 text-xl font-bold rounded-md text-muted-foreground cursor-not-allowed">
+                    <div className="flex items-center gap-4 py-2 text-xl font-bold rounded-md text-muted-foreground cursor-not-allowed">
                         <Radio className="h-6 w-6" /> Spaces <Badge variant="secondary" className="ml-auto">em breve</Badge>
                       </div>
                   </nav>
@@ -493,7 +493,7 @@ export default function HomePage() {
                         <Bot className="h-6 w-6" /> Chirp AI <Badge variant="secondary" className="ml-auto">em breve</Badge>
                     </div>
                     <SheetClose asChild>
-                       <Link href="#" className="flex items-center gap-4 py-2 font-semibold rounded-md">
+                       <Link href="/settings" className="flex items-center gap-4 py-2 font-semibold rounded-md">
                         <Settings className="h-6 w-6" /> Configurações e privacidade
                       </Link>
                     </SheetClose>
