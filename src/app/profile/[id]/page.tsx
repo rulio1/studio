@@ -12,7 +12,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp, deleteDoc, setDoc, documentId, addDoc, runTransaction } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PostSkeleton from '@/components/post-skeleton';
 import {
@@ -156,8 +156,8 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
         }
     }, [post.createdAt, post.repostedAt]);
     
-    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@chirp';
-    const isChirpAccount = post.handle === '@chirp';
+    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@chirpp';
+    const isChirpAccount = post.handle === '@chirpp';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
     return (
@@ -357,71 +357,30 @@ export default function ProfilePage() {
     const [editingPost, setEditingPost] = useState<Post | null>(null);
     const [editedContent, setEditedContent] = useState("");
     const [isUpdating, setIsUpdating] = useState(false);
-
-
-    useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                router.push('/login');
-                return;
-            }
-            setCurrentUser(user);
-
-            const unsubscribes: (() => void)[] = [];
-
-            // Listen to current user's document
-            const userDocRef = doc(db, "users", user.uid);
-            const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
-                if (doc.exists()) {
-                    const userData = { uid: doc.id, ...doc.data() } as ChirpUser;
-                    setChirpUser(userData);
-                    if (profileUser) {
-                        setIsFollowing(profileUser.followers?.includes(user.uid));
-                    }
-                }
-            });
-            unsubscribes.push(unsubscribeUser);
-
-            // Listen to profile user's document
-            const profileDocRef = doc(db, 'users', profileId);
-            const unsubscribeProfile = onSnapshot(profileDocRef, (doc) => {
-                if (doc.exists()) {
-                    const profileData = { uid: doc.id, ...doc.data() } as ChirpUser;
-                    setProfileUser(profileData);
-                    setIsFollowing(profileData.followers?.includes(user.uid));
-                    setIsFollowedBy(profileData.following?.includes(user.uid));
-                    setIsLoading(false);
-                }
-            });
-            unsubscribes.push(unsubscribeProfile);
-
-            return () => unsubscribes.forEach(unsub => unsub());
-        });
-
-        return () => unsubscribeAuth();
-    }, [profileId, router]);
     
-     const fetchUserPosts = useCallback(async () => {
-        if (!profileId || !currentUser || !profileUser) return;
+    const isOwnProfile = currentUser?.uid === profileId;
+
+    const fetchUserPosts = useCallback(async (userToFetch: FirebaseUser, profileData: ChirpUser) => {
+        if (!userToFetch || !profileData) return;
         setIsLoadingPosts(true);
         setPinnedPost(null);
 
         // Fetch Pinned Post
-        if (profileUser.pinnedPostId) {
-            const postDoc = await getDoc(doc(db, 'posts', profileUser.pinnedPostId));
+        if (profileData.pinnedPostId) {
+            const postDoc = await getDoc(doc(db, 'posts', profileData.pinnedPostId));
             if (postDoc.exists()) {
                 setPinnedPost({
                     id: postDoc.id,
                     ...postDoc.data(),
-                    isLiked: postDoc.data().likes.includes(currentUser?.uid || ''),
-                    isRetweeted: postDoc.data().retweets.includes(currentUser?.uid || ''),
+                    isLiked: postDoc.data().likes.includes(userToFetch.uid || ''),
+                    isRetweeted: postDoc.data().retweets.includes(userToFetch.uid || ''),
                     isPinned: true
                 } as Post);
             }
         }
     
-        const postsQuery = query(collection(db, "posts"), where("authorId", "==", profileId));
-        const repostsQuery = query(collection(db, "reposts"), where("userId", "==", profileId));
+        const postsQuery = query(collection(db, "posts"), where("authorId", "==", profileData.uid));
+        const repostsQuery = query(collection(db, "reposts"), where("userId", "==", profileData.uid));
 
         const [postsSnapshot, repostsSnapshot] = await Promise.all([getDocs(postsQuery), getDocs(repostsQuery)]);
 
@@ -431,9 +390,6 @@ export default function ProfilePage() {
         
         let repostedPosts: Post[] = [];
         if (repostedPostIds.length > 0) {
-            const profileUserDoc = await getDoc(doc(db, 'users', profileId));
-            const profileUserData = profileUserDoc.data() as ChirpUser;
-            
             const chunks = [];
             for (let i = 0; i < repostedPostIds.length; i += 30) {
                 chunks.push(repostedPostIds.slice(i, i + 30));
@@ -452,14 +408,14 @@ export default function ProfilePage() {
                     ...postData,
                     repostedAt: repost.repostedAt,
                     repostedBy: {
-                        name: profileUserData.displayName,
-                        handle: profileUserData.handle
+                        name: profileData.displayName,
+                        handle: profileData.handle
                     },
                 };
             }).filter(p => p !== null) as Post[];
         }
     
-        const allPosts = [...originalPosts, ...repostedPosts].filter(p => p.id !== profileUser.pinnedPostId);
+        const allPosts = [...originalPosts, ...repostedPosts].filter(p => p.id !== profileData.pinnedPostId);
         allPosts.sort((a, b) => {
             const timeA = a.repostedAt?.toMillis() || a.createdAt?.toMillis() || 0;
             const timeB = b.repostedAt?.toMillis() || b.createdAt?.toMillis() || 0;
@@ -468,8 +424,8 @@ export default function ProfilePage() {
         
         const finalPosts = allPosts.map(post => ({
             ...post,
-            isLiked: post.likes.includes(currentUser?.uid || ''),
-            isRetweeted: post.retweets.includes(currentUser?.uid || ''),
+            isLiked: post.likes.includes(userToFetch.uid || ''),
+            isRetweeted: post.retweets.includes(userToFetch.uid || ''),
         }));
     
         setUserPosts(finalPosts);
@@ -480,34 +436,35 @@ export default function ProfilePage() {
         setMediaPosts(allPostsForMedia.filter(p => p.image));
         setIsLoadingMedia(false);
     
-    }, [profileId, currentUser, profileUser]);
+    }, []);
 
     const fetchUserReplies = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingReplies(true);
-        const q = query(collection(db, "comments"), where("authorId", "==", profileId));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            let repliesData = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    ...data,
-                    time: '', 
-                } as Reply;
-            });
-            repliesData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-            setUserReplies(repliesData);
-            setIsLoadingReplies(false);
+        const q = query(collection(db, "comments"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
+        let repliesData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                time: '', 
+            } as Reply;
         });
-        return unsubscribe;
+        setUserReplies(repliesData);
+        setIsLoadingReplies(false);
     }, [profileId]);
 
 
-    const fetchLikedPosts = useCallback(async () => {
-        if (!profileId || !currentUser) return;
+    const fetchLikedPosts = useCallback(async (userToFetch: FirebaseUser) => {
+        if (!isOwnProfile) {
+            setLikedPosts([]);
+            setIsLoadingLikes(false);
+            return;
+        }
         setIsLoadingLikes(true);
         try {
-            const userDoc = await getDoc(doc(db, 'users', profileId));
+            const userDoc = await getDoc(doc(db, 'users', userToFetch.uid));
             const likedPostIds = userDoc.data()?.likedPosts || [];
 
             if (likedPostIds.length === 0) {
@@ -528,8 +485,8 @@ export default function ProfilePage() {
                     return {
                         id: doc.id,
                         ...data,
-                        isLiked: data.likes.includes(currentUser?.uid || ''),
-                        isRetweeted: data.retweets.includes(currentUser?.uid || ''),
+                        isLiked: data.likes.includes(userToFetch.uid || ''),
+                        isRetweeted: data.retweets.includes(userToFetch.uid || ''),
                     } as Post;
                 })
             );
@@ -541,19 +498,54 @@ export default function ProfilePage() {
         } finally {
             setIsLoadingLikes(false);
         }
-    }, [profileId, currentUser]);
-
+    }, [profileId, isOwnProfile]);
 
     useEffect(() => {
-        if(profileId && currentUser && profileUser) {
-            fetchUserPosts();
-            fetchLikedPosts();
-            const unsubReplies = fetchUserReplies();
-            return () => {
-                unsubReplies.then(u => u());
-            };
-        }
-    }, [profileId, currentUser, profileUser, fetchUserPosts, fetchLikedPosts, fetchUserReplies]);
+        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                router.push('/login');
+                return;
+            }
+            setCurrentUser(user);
+
+            try {
+                const profileDocRef = doc(db, 'users', profileId);
+                const profileDoc = await getDoc(profileDocRef);
+
+                if (!profileDoc.exists()) {
+                    setIsLoading(false);
+                    return;
+                }
+                const profileData = { uid: profileDoc.id, ...profileDoc.data() } as ChirpUser;
+                setProfileUser(profileData);
+                
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists()) {
+                    const currentUserData = { uid: userDoc.id, ...userDoc.data() } as ChirpUser;
+                    setChirpUser(currentUserData);
+                    setIsFollowing(profileData.followers?.includes(user.uid));
+                    setIsFollowedBy(currentUserData.followers?.includes(profileId));
+                }
+
+                await fetchUserPosts(user, profileData);
+                await fetchUserReplies();
+                if (user.uid === profileId) {
+                    await fetchLikedPosts(user);
+                } else {
+                    setIsLoadingLikes(false);
+                }
+
+            } catch (error) {
+                console.error("Error fetching profile data:", error);
+                toast({ title: "Error fetching profile", variant: "destructive" });
+            } finally {
+                setIsLoading(false);
+            }
+        });
+
+        return () => unsubscribeAuth();
+    }, [profileId, router, fetchUserPosts, fetchUserReplies, fetchLikedPosts, toast]);
 
     const handleFollow = async () => {
         if (!currentUser || !profileUser || !chirpUser) return;
@@ -563,24 +555,10 @@ export default function ProfilePage() {
         const profileUserRef = doc(db, 'users', profileUser.uid);
         const notificationRef = doc(collection(db, 'notifications'));
 
-        if (isFollowing) {
-            batch.update(currentUserRef, { following: arrayRemove(profileUser.uid) });
-            batch.update(profileUserRef, { followers: arrayRemove(currentUser.uid) });
-             batch.set(notificationRef, {
-                toUserId: profileUser.uid,
-                fromUserId: currentUser.uid,
-                fromUser: {
-                    name: chirpUser.displayName,
-                    handle: chirpUser.handle,
-                    avatar: chirpUser.avatar,
-                    isVerified: chirpUser.isVerified || false,
-                },
-                type: 'unfollow',
-                text: 'deixou de seguir você',
-                createdAt: serverTimestamp(),
-                read: false,
-            });
-        } else {
+        const newIsFollowing = !isFollowing;
+        setIsFollowing(newIsFollowing); // Optimistic update
+
+        if (newIsFollowing) {
             batch.update(currentUserRef, { following: arrayUnion(profileUser.uid) });
             batch.update(profileUserRef, { followers: arrayUnion(currentUser.uid) });
             batch.set(notificationRef, {
@@ -597,9 +575,27 @@ export default function ProfilePage() {
                 createdAt: serverTimestamp(),
                 read: false,
             });
+        } else {
+            batch.update(currentUserRef, { following: arrayRemove(profileUser.uid) });
+            batch.update(profileUserRef, { followers: arrayRemove(currentUser.uid) });
+             batch.set(notificationRef, {
+                toUserId: profileUser.uid,
+                fromUserId: currentUser.uid,
+                fromUser: {
+                    name: chirpUser.displayName,
+                    handle: chirpUser.handle,
+                    avatar: chirpUser.avatar,
+                    isVerified: chirpUser.isVerified || false,
+                },
+                type: 'unfollow',
+                text: 'deixou de seguir você',
+                createdAt: serverTimestamp(),
+                read: false,
+            });
         }
         
         await batch.commit();
+        setProfileUser(prev => prev ? { ...prev, followers: newIsFollowing ? [...(prev.followers || []), currentUser.uid] : (prev.followers || []).filter(id => id !== currentUser.uid) } : null);
     };
 
     const handleStartConversation = async () => {
@@ -635,7 +631,7 @@ export default function ProfilePage() {
     };
 
     const handleDeletePost = async () => {
-        if (!postToDelete) return;
+        if (!postToDelete || !currentUser || !profileUser) return;
         try {
             await deleteDoc(doc(db, "posts", postToDelete));
             toast({
@@ -651,7 +647,7 @@ export default function ProfilePage() {
             });
         } finally {
             setPostToDelete(null);
-            await fetchUserPosts();
+            await fetchUserPosts(currentUser, profileUser);
         }
     };
     
@@ -670,7 +666,7 @@ export default function ProfilePage() {
     };
 
     const handleUpdatePost = async () => {
-        if (!editingPost || !editedContent.trim()) return;
+        if (!editingPost || !editedContent.trim() || !currentUser || !profileUser) return;
         setIsUpdating(true);
         const hashtags = extractHashtags(editedContent);
         try {
@@ -695,7 +691,7 @@ export default function ProfilePage() {
             });
         } finally {
             setIsUpdating(false);
-             await fetchUserPosts();
+             await fetchUserPosts(currentUser, profileUser);
         }
     };
 
@@ -706,9 +702,11 @@ export default function ProfilePage() {
 
         if (isSaved) {
             await updateDoc(userRef, { savedPosts: arrayRemove(postId) });
+            setChirpUser(prev => prev ? {...prev, savedPosts: prev.savedPosts?.filter(id => id !== postId)} : null);
             toast({ title: 'Post removido dos salvos' });
         } else {
             await updateDoc(userRef, { savedPosts: arrayUnion(postId) });
+            setChirpUser(prev => prev ? {...prev, savedPosts: [...(prev.savedPosts || []), postId]} : null);
             toast({ title: 'Post salvo!' });
         }
     };
@@ -717,7 +715,7 @@ export default function ProfilePage() {
         if (!currentUser || !chirpUser) return;
     
         const postRef = doc(db, 'posts', postId);
-        const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId) || mediaPosts.find(p => p.id === postId) || pinnedPost;
+        const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId) || mediaPosts.find(p => p.id === postId) || (pinnedPost?.id === postId ? pinnedPost : null);
         if (!post) return;
     
         const isActioned = action === 'like' ? post.isLiked : post.retweets.includes(currentUser.uid);
@@ -768,8 +766,10 @@ export default function ProfilePage() {
             }
         }
         await batch.commit();
-        fetchUserPosts();
-        fetchLikedPosts();
+        if(profileUser && currentUser){
+            fetchUserPosts(currentUser, profileUser);
+            fetchLikedPosts(currentUser);
+        }
     };
     
     const handleVote = async (postId: string, optionIndex: number) => {
@@ -820,7 +820,7 @@ export default function ProfilePage() {
 
 
     const handleTogglePinPost = async (post: Post) => {
-        if (!currentUser) return;
+        if (!currentUser || !profileUser) return;
         const userRef = doc(db, 'users', currentUser.uid);
         const isCurrentlyPinned = profileUser?.pinnedPostId === post.id;
         
@@ -832,7 +832,7 @@ export default function ProfilePage() {
                 title: isCurrentlyPinned ? 'Post desafixado!' : 'Post fixado no perfil!',
             });
             // Refetch posts to update UI
-            await fetchUserPosts();
+            await fetchUserPosts(currentUser, profileUser);
         } catch (error) {
             console.error("Error pinning/unpinning post: ", error);
             toast({ title: 'Erro ao fixar post.', variant: 'destructive' });
@@ -916,9 +916,8 @@ export default function ProfilePage() {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
-    const isOwnProfile = currentUser?.uid === profileUser.uid;
-    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@rulio' || profileUser.handle === '@chirp';
-    const isChirpAccount = profileUser.handle === '@chirp';
+    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@rulio' || profileUser.handle === '@chirpp';
+    const isChirpAccount = profileUser.handle === '@chirpp';
 
 
   return (
@@ -1001,7 +1000,7 @@ export default function ProfilePage() {
                         <CardTitle className="text-sm">Conta Oficial</CardTitle>
                     </CardHeader>
                     <CardContent className="p-3 pt-0">
-                        <p className="text-xs text-muted-foreground">Esta é a conta oficial do Chirp. Fique de olho para anúncios, dicas e atualizações importantes da plataforma.</p>
+                        <p className="text-xs text-muted-foreground">Esta é a conta oficial do Chirpp. Fique de olho para anúncios, dicas e atualizações importantes da plataforma.</p>
                     </CardContent>
                 </Card>
             )}
@@ -1021,7 +1020,7 @@ export default function ProfilePage() {
                 <TabsTrigger value="posts" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Posts</TabsTrigger>
                 <TabsTrigger value="replies" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Respostas</TabsTrigger>
                 <TabsTrigger value="media" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Mídia</TabsTrigger>
-                <TabsTrigger value="likes" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Curtidas</TabsTrigger>
+                {isOwnProfile && <TabsTrigger value="likes" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Curtidas</TabsTrigger>}
             </TabsList>
 
              <TabsContent value="posts" className="mt-0">
@@ -1049,14 +1048,14 @@ export default function ProfilePage() {
                     emptyDescription="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui."
                  />
             </TabsContent>
-            <TabsContent value="likes" className="mt-0">
+            {isOwnProfile && <TabsContent value="likes" className="mt-0">
                  <PostList 
                     posts={likedPosts} 
                     loading={isLoadingLikes}
                     emptyTitle="Nenhuma curtida ainda" 
-                    emptyDescription="Quando este usuário curtir posts, eles aparecerão aqui."
+                    emptyDescription="Quando você curtir posts, eles aparecerão aqui."
                  />
-            </TabsContent>
+            </TabsContent>}
         </Tabs>
       </main>
       <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
