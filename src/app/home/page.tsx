@@ -97,7 +97,7 @@ export default function HomePage() {
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editedContent, setEditedContent] = useState("");
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(isUpdating);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -142,26 +142,40 @@ export default function HomePage() {
 
     const repostsData = repostsSnapshot.docs.map(doc => doc.data());
     const repostedPostIds = repostsData.map(repost => repost.postId);
-    const reposterIds = repostsData.map(repost => repost.userId);
     
-    let allReferencedUserIds = [...reposterIds];
-    originalPosts.forEach(post => allReferencedUserIds.push(post.authorId));
+    let allReferencedUserIds = new Set<string>();
+    repostsData.forEach(repost => allReferencedUserIds.add(repost.userId));
+    originalPosts.forEach(post => allReferencedUserIds.add(post.authorId));
 
-    let usersMap = new Map();
-    if (allReferencedUserIds.length > 0) {
-        const uniqueUserIds = [...new Set(allReferencedUserIds)];
+    let usersMap = new Map<string, ChirpUser>();
+    if (allReferencedUserIds.size > 0) {
+        const uniqueUserIds = Array.from(allReferencedUserIds);
          if (uniqueUserIds.length > 0) {
-            const usersQuery = query(collection(db, 'users'), where(documentId(), "in", uniqueUserIds));
-            const usersSnapshot = await getDocs(usersQuery);
-            usersMap = new Map(usersSnapshot.docs.map(doc => [doc.id, doc.data() as ChirpUser]));
+            // Firestore 'in' query limit is 30. Chunk if necessary.
+            const chunks = [];
+            for (let i = 0; i < uniqueUserIds.length; i += 30) {
+                chunks.push(uniqueUserIds.slice(i, i + 30));
+            }
+            const userSnapshots = await Promise.all(chunks.map(chunk => getDocs(query(collection(db, 'users'), where(documentId(), "in", chunk)))));
+            userSnapshots.forEach(snapshot => {
+                snapshot.docs.forEach(doc => usersMap.set(doc.id, { uid: doc.id, ...doc.data() } as ChirpUser));
+            });
         }
     }
     
     let repostedPosts: Post[] = [];
     if (repostedPostIds.length > 0) {
-        const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
-        const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
-        const postsMap = new Map(repostedPostsSnapshot.docs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as Post]));
+        // Firestore 'in' query limit is 30. Chunk if necessary.
+        const chunks = [];
+        for (let i = 0; i < repostedPostIds.length; i += 30) {
+            chunks.push(repostedPostIds.slice(i, i + 30));
+        }
+
+        const repostedPostsSnapshots = await Promise.all(chunks.map(chunk => getDocs(query(collection(db, "posts"), where(documentId(), "in", chunk)))));
+        const postsMap = new Map<string, Post>();
+        repostedPostsSnapshots.forEach(snapshot => {
+            snapshot.docs.forEach(doc => postsMap.set(doc.id, { id: doc.id, ...doc.data() } as Post));
+        });
 
         repostedPosts = repostsData.map(repost => {
             const postData = postsMap.get(repost.postId);
@@ -181,9 +195,9 @@ export default function HomePage() {
 
     const allCombinedPosts = [...originalPosts, ...repostedPosts];
     allCombinedPosts.sort((a, b) => {
-      const timeA = a.repostedAt || a.createdAt;
-      const timeB = b.repostedAt || b.createdAt;
-      return timeB.toMillis() - timeA.toMillis();
+      const timeA = a.repostedAt?.toMillis() || a.createdAt?.toMillis() || 0;
+      const timeB = b.repostedAt?.toMillis() || b.createdAt?.toMillis() || 0;
+      return timeB - timeA;
     });
 
     const uniquePosts = Array.from(new Map(allCombinedPosts.map(post => [post.id + (post.repostedAt?.toMillis() || ''), post])).values());
@@ -215,42 +229,59 @@ export default function HomePage() {
     setIsLoadingFollowing(true);
 
     const followingIds = chirpUser.following;
+    // Also include self in following feed to see own posts/reposts
+    const feedUserIds = [...new Set([...followingIds, user.uid])];
 
-    const postsQuery = query(
-        collection(db, "posts"), 
-        where("authorId", "in", followingIds)
-    );
-    const repostsQuery = query(collection(db, "reposts"), where("userId", "in", followingIds));
+    // Firestore 'in' query limit is 30. Chunk if necessary.
+    const chunks = [];
+    for (let i = 0; i < feedUserIds.length; i += 30) {
+        chunks.push(feedUserIds.slice(i, i + 30));
+    }
 
-    const [postsSnapshot, repostsSnapshot] = await Promise.all([
-        getDocs(postsQuery),
-        getDocs(repostsQuery)
-    ]);
-
-    const originalPosts = postsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-    } as Post));
+    const postSnapshots = await Promise.all(chunks.map(chunk => getDocs(query(collection(db, "posts"), where("authorId", "in", chunk)))));
+    const originalPosts = postSnapshots.flatMap(snapshot => snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post)));
     
-    const repostsData = repostsSnapshot.docs.map(doc => doc.data());
+    const repostsSnapshots = await Promise.all(chunks.map(chunk => getDocs(query(collection(db, "reposts"), where("userId", "in", chunk)))));
+    const repostsData = repostsSnapshots.flatMap(snapshot => snapshot.docs.map(doc => doc.data()));
+
     const repostedPostIds = repostsData.map(repost => repost.postId);
+    const allUserIds = new Set<string>();
+    feedUserIds.forEach(id => allUserIds.add(id));
+    originalPosts.forEach(p => allUserIds.add(p.authorId));
+
+    let usersMap = new Map<string, ChirpUser>();
+    if(allUserIds.size > 0){
+        const userChunks = [];
+        const uniqueUserIds = Array.from(allUserIds);
+        for (let i = 0; i < uniqueUserIds.length; i += 30) {
+            userChunks.push(uniqueUserIds.slice(i, i + 30));
+        }
+        const userSnapshots = await Promise.all(userChunks.map(chunk => getDocs(query(collection(db, 'users'), where(documentId(), 'in', chunk)))));
+        userSnapshots.forEach(snapshot => {
+            snapshot.docs.forEach(doc => usersMap.set(doc.id, { uid: doc.id, ...doc.data() } as ChirpUser));
+        });
+    }
 
     let repostedPosts: Post[] = [];
     if (repostedPostIds.length > 0) {
-        const followingUsersQuery = query(collection(db, 'users'), where(documentId(), 'in', followingIds));
-        const followingUsersSnapshot = await getDocs(followingUsersQuery);
-        const followingUsersMap = new Map(followingUsersSnapshot.docs.map(doc => [doc.id, doc.data() as ChirpUser]));
-        
-        const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
-        const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
-        const postsMap = new Map(repostedPostsSnapshot.docs.map(doc => [doc.id, {id: doc.id, ...doc.data()}]));
+        const postChunks = [];
+        const uniquePostIds = [...new Set(repostedPostIds)];
+        for (let i = 0; i < uniquePostIds.length; i += 30) {
+            postChunks.push(uniquePostIds.slice(i, i + 30));
+        }
+
+        const repostedPostsSnapshots = await Promise.all(postChunks.map(chunk => getDocs(query(collection(db, "posts"), where(documentId(), "in", chunk)))));
+        const postsMap = new Map<string, Post>();
+        repostedPostsSnapshots.forEach(snapshot => {
+            snapshot.docs.forEach(doc => postsMap.set(doc.id, {id: doc.id, ...doc.data()} as Post));
+        });
         
         repostedPosts = repostsData.map(repost => {
             const postData = postsMap.get(repost.postId);
-            const reposter = followingUsersMap.get(repost.userId);
+            const reposter = usersMap.get(repost.userId);
             if (!postData || !reposter) return null;
             return {
-                ...(postData as Post),
+                ...postData,
                 repostedAt: repost.repostedAt,
                 repostedBy: {
                     name: reposter.displayName,
@@ -262,9 +293,9 @@ export default function HomePage() {
 
     const allPosts = [...originalPosts, ...repostedPosts];
     allPosts.sort((a, b) => {
-        const timeA = a.repostedAt || a.createdAt;
-        const timeB = b.repostedAt || b.createdAt;
-        return timeB.toMillis() - timeA.toMillis();
+        const timeA = a.repostedAt?.toMillis() || a.createdAt?.toMillis() || 0;
+        const timeB = b.repostedAt?.toMillis() || b.createdAt?.toMillis() || 0;
+        return timeB - timeA;
     });
 
      const uniquePosts = Array.from(new Map(allPosts.map(post => [post.id + (post.repostedAt?.toMillis() || ''), post])).values());
@@ -340,11 +371,12 @@ export default function HomePage() {
             }
         }
         await batch.commit();
-        // Re-fetch all posts to reflect the change immediately
+        
+        // Force a re-fetch of the relevant feed
         if (activeTab === 'for-you') {
-            fetchAllPosts();
+            await fetchAllPosts();
         } else {
-            fetchFollowingPosts();
+            await fetchFollowingPosts();
         }
     };
 
@@ -365,6 +397,7 @@ export default function HomePage() {
         });
     } finally {
         setPostToDelete(null);
+        await fetchAllPosts();
     }
   };
 
@@ -409,6 +442,7 @@ export default function HomePage() {
         });
     } finally {
         setIsUpdating(false);
+        await fetchAllPosts();
     }
   };
   
@@ -748,3 +782,5 @@ export default function HomePage() {
     </>
   );
 }
+
+    

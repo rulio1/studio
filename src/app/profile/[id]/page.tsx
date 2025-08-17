@@ -197,7 +197,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }:
                     </div>
                      {post.image && (
                         <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border">
-                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint="Imagem do post" />
+                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint="Imagem do perfil" />
                         </div>
                     )}
                     <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
@@ -302,7 +302,7 @@ export default function ProfilePage() {
         const userDocRef = doc(db, 'users', profileId);
         const unsubscribe = onSnapshot(userDocRef, (userDoc) => {
              if (userDoc.exists()) {
-                const userData = userDoc.data() as ChirpUser;
+                const userData = { uid: userDoc.id, ...userDoc.data() } as ChirpUser;
                 setProfileUser(userData);
                 setIsFollowing(userData.followers?.includes(currentUser.uid));
             } else {
@@ -341,22 +341,18 @@ export default function ProfilePage() {
         const repostsData = repostsSnapshot.docs.map(doc => doc.data());
         const repostedPostIds = repostsData.map(repost => repost.postId);
         
-        let allReferencedUserIds: string[] = [];
-        originalPosts.forEach(p => allReferencedUserIds.push(p.authorId));
+        const allAuthorIds = new Set<string>();
+        originalPosts.forEach(p => allAuthorIds.add(p.authorId));
 
-        let usersMap = new Map();
-        if (allReferencedUserIds.length > 0) {
-            const uniqueUserIds = [...new Set(allReferencedUserIds)];
-            if(uniqueUserIds.length > 0){
-                const usersQuery = query(collection(db, 'users'), where(documentId(), 'in', uniqueUserIds));
-                const usersSnapshot = await getDocs(usersQuery);
-                usersMap = new Map(usersSnapshot.docs.map(doc => [doc.id, doc.data() as ChirpUser]));
-            }
+        let usersMap = new Map<string, ChirpUser>();
+        if(allAuthorIds.size > 0){
+            const usersQuery = query(collection(db, 'users'), where(documentId(), 'in', Array.from(allAuthorIds)));
+            const usersSnapshot = await getDocs(usersQuery);
+            usersSnapshot.docs.forEach(doc => usersMap.set(doc.id, doc.data() as ChirpUser));
         }
-        
+
         const profileUserDoc = await getDoc(doc(db, 'users', profileId));
         const profileUserData = profileUserDoc.data() as ChirpUser;
-
 
         let repostedPosts: Post[] = [];
         if (repostedPostIds.length > 0) {
@@ -381,9 +377,9 @@ export default function ProfilePage() {
 
         const allPosts = [...originalPosts, ...repostedPosts];
         allPosts.sort((a, b) => {
-            const timeA = a.repostedAt || a.createdAt;
-            const timeB = b.repostedAt || b.createdAt;
-            return timeB.toMillis() - timeA.toMillis();
+            const timeA = a.repostedAt?.toMillis() || a.createdAt?.toMillis() || 0;
+            const timeB = b.repostedAt?.toMillis() || b.createdAt?.toMillis() || 0;
+            return timeB - timeA;
         });
         
         const finalPosts = allPosts.map(post => ({
@@ -541,6 +537,7 @@ export default function ProfilePage() {
             });
         } finally {
             setPostToDelete(null);
+            await fetchUserPosts();
         }
     };
     
@@ -585,6 +582,7 @@ export default function ProfilePage() {
             });
         } finally {
             setIsUpdating(false);
+             await fetchUserPosts();
         }
     };
 
@@ -864,3 +862,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
