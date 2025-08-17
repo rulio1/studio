@@ -149,77 +149,50 @@ export default function EditProfilePage() {
         if (!user || !isHandleAvailable) {
             toast({
                 title: "Não é possível salvar",
-                description: "O nome de usuário escolhido não está disponível ou outra validação falhou.",
+                description: "O nome de usuário escolhido não está disponível.",
                 variant: "destructive"
             });
             return;
         }
         setIsSaving(true);
-        
+    
         try {
-            const userDocRef = doc(db, 'users', user.uid);
-            let newAvatarUrl = null;
+            let avatarUrl = profileData.avatar;
             if (newAvatarFile) {
                 const storageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}`);
                 await uploadBytes(storageRef, newAvatarFile);
-                newAvatarUrl = await getDownloadURL(storageRef);
+                avatarUrl = await getDownloadURL(storageRef);
             }
-
-            const updateData: { [key: string]: any } = { 
+    
+            const handleChanged = profileData.handle !== originalHandle;
+    
+            const updateData: any = {
                 displayName: profileData.displayName,
                 bio: profileData.bio,
                 location: profileData.location,
+                avatar: avatarUrl,
             };
-
-            const handleChanged = profileData.handle !== originalHandle;
-
-            if (newAvatarUrl) {
-                updateData.avatar = newAvatarUrl;
-            }
+    
             if (handleChanged) {
-                const newHandle = `@${profileData.handle}`;
-                updateData.handle = newHandle;
+                updateData.handle = `@${profileData.handle}`;
                 updateData.searchableHandle = profileData.handle.toLowerCase();
             }
-
+    
+            const userDocRef = doc(db, 'users', user.uid);
             await updateDoc(userDocRef, updateData);
-
-            // Now, update posts and comments if needed
-            const contentUpdate: { [key: string]: any } = {};
-            if (newAvatarUrl) {
-                contentUpdate.avatar = newAvatarUrl;
-            }
-            if (handleChanged) {
-                contentUpdate.handle = updateData.handle;
-            }
-
-            if (Object.keys(contentUpdate).length > 0) {
-                const batch = writeBatch(db);
-                
-                const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
-                const commentsQuery = query(collection(db, "comments"), where("authorId", "==", user.uid));
-                
-                const [postsSnapshot, commentsSnapshot] = await Promise.all([
-                    getDocs(postsQuery),
-                    getDocs(commentsQuery),
-                ]);
-
-                postsSnapshot.forEach((postDoc) => {
-                    batch.update(postDoc.ref, contentUpdate);
-                });
-                commentsSnapshot.forEach((commentDoc) => {
-                     batch.update(commentDoc.ref, contentUpdate);
-                });
-
-                await batch.commit();
-            }
-
+    
+            // NOTE: In a production app, updating all posts and comments would ideally
+            // be handled by a backend function (e.g., a Cloud Function) triggered on
+            // user profile update. Doing this on the client can be slow and error-prone
+            // if the user has a lot of content. We are removing this from the client
+            // to fix the saving issue. New content will use the updated profile info.
+    
             toast({
                 title: "Perfil Salvo",
                 description: "Suas alterações foram salvas com sucesso.",
             });
             router.push(`/profile/${user.uid}`);
-
+    
         } catch (error) {
             console.error("Erro ao salvar perfil: ", error);
             toast({
@@ -231,7 +204,7 @@ export default function EditProfilePage() {
             setIsSaving(false);
         }
     };
-    
+
     if (isLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
@@ -260,7 +233,7 @@ export default function EditProfilePage() {
                 </Avatar>
                 <Button 
                     variant="ghost" 
-                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-full h-full w-full p-0"
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-full p-0"
                     onClick={() => avatarInputRef.current?.click()}>
                     <Upload className="h-8 w-8 text-white" />
                 </Button>
