@@ -80,6 +80,7 @@ interface ChirpUser {
     handle: string;
     avatar: string;
     savedPosts?: string[];
+    pinnedPostId?: string;
 }
 
 const PostContent = ({ content }: { content: string }) => {
@@ -457,6 +458,23 @@ export default function PostDetailPage() {
         }
     };
 
+    const handleTogglePinPost = async () => {
+        if (!user || !post) return;
+        const userRef = doc(db, 'users', user.uid);
+        const isPinned = chirpUser?.pinnedPostId === post.id;
+
+        try {
+            await updateDoc(userRef, {
+                pinnedPostId: isPinned ? null : post.id
+            });
+            toast({ title: isPinned ? 'Post desafixado do perfil!' : 'Post fixado no perfil!' });
+        } catch (error) {
+            console.error("Error pinning post:", error);
+            toast({ title: 'Erro ao fixar post', variant: 'destructive' });
+        }
+    };
+
+
     const handleEditCommentClick = (comment: Comment) => {
         setEditingComment(comment);
         setEditedCommentContent(comment.content);
@@ -574,9 +592,9 @@ export default function PostDetailPage() {
                                             Editar
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de fixar posts no perfil será adicionada em breve.'})}>
+                                        <DropdownMenuItem onClick={handleTogglePinPost}>
                                             <Pin className="mr-2 h-4 w-4"/>
-                                            Fixar no seu perfil
+                                            {chirpUser?.pinnedPostId === post.id ? 'Desafixar do perfil' : 'Fixar no seu perfil'}
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de adicionar posts aos destaques será adicionada em breve.'})}>
                                             <Sparkles className="mr-2 h-4 w-4"/>

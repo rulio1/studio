@@ -68,6 +68,7 @@ interface Post {
     hashtags?: string[];
     repostedBy?: { name: string; handle: string };
     repostedAt?: any;
+    isPinned?: boolean;
 }
 
 interface Reply {
@@ -98,6 +99,7 @@ interface ChirpUser {
     followers: string[];
     following: string[];
     savedPosts?: string[];
+    pinnedPostId?: string;
 }
 
 const PostContent = ({ content }: { content: string }) => {
@@ -127,7 +129,7 @@ const PostContent = ({ content }: { content: string }) => {
     );
 };
 
-const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, toast }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, toast: any }) => {
+const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, onPin, toast }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, toast: any }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
     const isOfficialAccount = post.handle.toLowerCase() === '@chirp' || post.handle.toLowerCase() === '@rulio';
@@ -149,6 +151,12 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, t
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-6">
                     <Repeat className="h-4 w-4" />
                     <span>{post.repostedBy.handle === chirpUser?.handle ? 'Você' : post.repostedBy.name} repostou</span>
+                </div>
+            )}
+             {post.isPinned && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-12">
+                    <Pin className="h-4 w-4" />
+                    <span>Post fixado</span>
                 </div>
             )}
             <div className="flex gap-4">
@@ -185,9 +193,9 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, t
                                             Editar
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de fixar posts no perfil será adicionada em breve.'})}>
+                                         <DropdownMenuItem onClick={onPin}>
                                             <Pin className="mr-2 h-4 w-4"/>
-                                            Fixar no seu perfil
+                                            {post.isPinned ? 'Desafixar do perfil' : 'Fixar no seu perfil'}
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de adicionar posts aos destaques será adicionada em breve.'})}>
                                             <Sparkles className="mr-2 h-4 w-4"/>
@@ -296,6 +304,7 @@ export default function ProfilePage() {
     const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
     const [profileUser, setProfileUser] = useState<ChirpUser | null>(null);
+    const [pinnedPost, setPinnedPost] = useState<Post | null>(null);
     const [userPosts, setUserPosts] = useState<Post[]>([]);
     const [userReplies, setUserReplies] = useState<Reply[]>([]);
     const [mediaPosts, setMediaPosts] = useState<Post[]>([]);
@@ -357,8 +366,23 @@ export default function ProfilePage() {
     }, [fetchProfileUser]);
     
      const fetchUserPosts = useCallback(async () => {
-        if (!profileId || !currentUser) return;
+        if (!profileId || !currentUser || !profileUser) return;
         setIsLoadingPosts(true);
+        setPinnedPost(null);
+
+        // Fetch Pinned Post
+        if (profileUser.pinnedPostId) {
+            const postDoc = await getDoc(doc(db, 'posts', profileUser.pinnedPostId));
+            if (postDoc.exists()) {
+                setPinnedPost({
+                    id: postDoc.id,
+                    ...postDoc.data(),
+                    isLiked: postDoc.data().likes.includes(currentUser?.uid || ''),
+                    isRetweeted: postDoc.data().retweets.includes(currentUser?.uid || ''),
+                    isPinned: true
+                } as Post);
+            }
+        }
     
         const postsQuery = query(collection(db, "posts"), where("authorId", "==", profileId));
         const repostsQuery = query(collection(db, "reposts"), where("userId", "==", profileId));
@@ -399,7 +423,7 @@ export default function ProfilePage() {
             }).filter(p => p !== null) as Post[];
         }
     
-        const allPosts = [...originalPosts, ...repostedPosts];
+        const allPosts = [...originalPosts, ...repostedPosts].filter(p => p.id !== profileUser.pinnedPostId);
         allPosts.sort((a, b) => {
             const timeA = a.repostedAt?.toMillis() || a.createdAt?.toMillis() || 0;
             const timeB = b.repostedAt?.toMillis() || b.createdAt?.toMillis() || 0;
@@ -416,10 +440,11 @@ export default function ProfilePage() {
         setIsLoadingPosts(false);
     
         setIsLoadingMedia(true);
-        setMediaPosts(finalPosts.filter(p => p.image));
+        const allPostsForMedia = [...(pinnedPost ? [pinnedPost] : []), ...finalPosts];
+        setMediaPosts(allPostsForMedia.filter(p => p.image));
         setIsLoadingMedia(false);
     
-    }, [profileId, currentUser]);
+    }, [profileId, currentUser, profileUser]);
 
     const fetchUserReplies = useCallback(async () => {
         if (!profileId) return;
@@ -464,7 +489,7 @@ export default function ProfilePage() {
 
 
     useEffect(() => {
-        if(profileId && currentUser) {
+        if(profileId && currentUser && profileUser) {
             fetchUserPosts();
             const unsubReplies = fetchUserReplies();
             const unsubLikes = fetchLikedPosts();
@@ -473,7 +498,7 @@ export default function ProfilePage() {
                 unsubLikes.then(u => u());
             };
         }
-    }, [profileId, currentUser, fetchUserPosts, fetchLikedPosts, fetchUserReplies]);
+    }, [profileId, currentUser, profileUser, fetchUserPosts, fetchLikedPosts, fetchUserReplies]);
 
     const handleFollow = async () => {
         if (!currentUser || !profileUser || !chirpUser) return;
@@ -676,9 +701,28 @@ export default function ProfilePage() {
         await batch.commit();
         fetchUserPosts();
     };
-    
 
-    const PostList = ({ posts, loading, emptyTitle, emptyDescription }: { posts: Post[], loading: boolean, emptyTitle: string, emptyDescription: string }) => {
+    const handleTogglePinPost = async (post: Post) => {
+        if (!currentUser) return;
+        const userRef = doc(db, 'users', currentUser.uid);
+        const isCurrentlyPinned = profileUser?.pinnedPostId === post.id;
+        
+        try {
+            await updateDoc(userRef, {
+                pinnedPostId: isCurrentlyPinned ? null : post.id
+            });
+            toast({
+                title: isCurrentlyPinned ? 'Post desafixado!' : 'Post fixado no perfil!',
+            });
+            // Refetch posts to update UI
+            await fetchUserPosts();
+        } catch (error) {
+            console.error("Error pinning/unpinning post: ", error);
+            toast({ title: 'Erro ao fixar post.', variant: 'destructive' });
+        }
+    };
+    
+    const PostList = ({ posts, loading, emptyTitle, emptyDescription, showPinnedPost = false }: { posts: Post[], loading: boolean, emptyTitle: string, emptyDescription: string, showPinnedPost?: boolean }) => {
         if (loading) {
             return (
                 <ul>
@@ -687,12 +731,29 @@ export default function ProfilePage() {
                 </ul>
             );
         }
-        if (posts.length === 0) {
+
+        const postsToShow = posts.filter(p => showPinnedPost ? true : p.id !== profileUser?.pinnedPostId);
+        
+        if (postsToShow.length === 0 && !pinnedPost) {
             return <EmptyState title={emptyTitle} description={emptyDescription} />;
         }
         return (
             <ul className="divide-y divide-border">
-                {posts.map((post) => (
+                {showPinnedPost && pinnedPost && (
+                    <PostItem 
+                        key={`${pinnedPost.id}-pinned`}
+                        post={{...pinnedPost, isPinned: true}}
+                        user={currentUser}
+                        chirpUser={chirpUser}
+                        onAction={handlePostAction}
+                        onDelete={setPostToDelete}
+                        onEdit={handleEditClick}
+                        onSave={handleSavePost}
+                        onPin={() => handleTogglePinPost(pinnedPost)}
+                        toast={toast}
+                    />
+                )}
+                {postsToShow.map((post) => (
                     <PostItem 
                         key={`${post.id}-${post.repostedAt?.toMillis() || ''}`}
                         post={post}
@@ -702,6 +763,7 @@ export default function ProfilePage() {
                         onDelete={setPostToDelete}
                         onEdit={handleEditClick}
                         onSave={handleSavePost}
+                        onPin={() => handleTogglePinPost(post)}
                         toast={toast}
                     />
                 ))}
@@ -749,7 +811,7 @@ export default function ProfilePage() {
                     {isOfficialAccount && <BadgeCheck className="h-5 w-5 text-primary" />}
                     {isOfficialAccount && <Bird className="h-5 w-5 text-primary" />}
                 </h1>
-                <p className="text-sm text-muted-foreground">{userPosts.length} posts</p>
+                <p className="text-sm text-muted-foreground">{userPosts.length + (pinnedPost ? 1 : 0)} posts</p>
             </div>
         </header>
         <main className="flex-1">
@@ -820,6 +882,7 @@ export default function ProfilePage() {
                     loading={isLoadingPosts} 
                     emptyTitle="Nenhum post ainda" 
                     emptyDescription="Quando este usuário postar, os posts aparecerão aqui."
+                    showPinnedPost={true}
                 />
             </TabsContent>
             <TabsContent value="replies" className="mt-0">

@@ -84,6 +84,7 @@ interface ChirpUser {
     followers: string[];
     following: string[];
     savedPosts?: string[];
+    pinnedPostId?: string;
 }
 
 export default function HomePage() {
@@ -314,6 +315,23 @@ export default function HomePage() {
         toast({ title: 'Post salvo!' });
     }
   };
+  
+  const handleTogglePinPost = async (postId: string) => {
+    if (!user) return;
+    const userRef = doc(db, 'users', user.uid);
+    const isPinned = chirpUser?.pinnedPostId === postId;
+
+    try {
+        await updateDoc(userRef, {
+            pinnedPostId: isPinned ? null : postId
+        });
+        toast({ title: isPinned ? 'Post desafixado do perfil!' : 'Post fixado no perfil!' });
+    } catch (error) {
+        console.error("Error pinning post:", error);
+        toast({ title: 'Erro ao fixar post', variant: 'destructive' });
+    }
+  };
+
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -409,9 +427,9 @@ export default function HomePage() {
                                         Editar
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de fixar posts no perfil será adicionada em breve.'})}>
+                                    <DropdownMenuItem onClick={() => handleTogglePinPost(post.id)}>
                                         <Pin className="mr-2 h-4 w-4"/>
-                                        Fixar no seu perfil
+                                        {chirpUser?.pinnedPostId === post.id ? 'Desafixar do perfil' : 'Fixar no seu perfil'}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de adicionar posts aos destaques será adicionada em breve.'})}>
                                         <Sparkles className="mr-2 h-4 w-4"/>
