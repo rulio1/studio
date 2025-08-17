@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp, deleteDoc, setDoc, documentId, addDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp, deleteDoc, setDoc, documentId, addDoc, runTransaction } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -37,6 +37,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 import { formatTimeAgo } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Poll from '@/components/poll';
 
 
 const EmptyState = ({ title, description }: { title: string, description: string }) => (
@@ -73,6 +74,11 @@ interface Post {
     isPinned?: boolean;
     isVerified?: boolean;
     isFirstPost?: boolean;
+    poll?: {
+        options: string[];
+        votes: number[];
+        voters: Record<string, number>;
+    } | null;
 }
 
 interface Reply {
@@ -134,7 +140,7 @@ const PostContent = ({ content }: { content: string }) => {
     );
 };
 
-const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, onPin, toast }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, toast: any }) => {
+const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, onPin, onVote, toast }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, onVote: (postId: string, optionIndex: number) => Promise<void>, toast: any }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
     
@@ -259,6 +265,18 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
                     <div className="mb-2 whitespace-pre-wrap">
                         <PostContent content={post.content} />
                     </div>
+                     {post.poll && user && (
+                        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                            <Poll 
+                                postId={post.id}
+                                options={post.poll.options}
+                                votes={post.poll.votes}
+                                voters={post.poll.voters}
+                                currentUserId={user.uid}
+                                onVote={onVote}
+                            />
+                        </div>
+                    )}
                      {post.image && (
                         <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border">
                             <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint="Imagem do perfil" />
@@ -670,7 +688,7 @@ export default function ProfilePage() {
         if (!currentUser || !chirpUser) return;
     
         const postRef = doc(db, 'posts', postId);
-        const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId) || mediaPosts.find(p => p.id === postId);
+        const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId) || mediaPosts.find(p => p.id === postId) || pinnedPost;
         if (!post) return;
     
         const isActioned = action === 'like' ? post.isLiked : post.retweets.includes(currentUser.uid);
@@ -722,7 +740,55 @@ export default function ProfilePage() {
         }
         await batch.commit();
         fetchUserPosts();
+        fetchLikedPosts();
     };
+    
+    const handleVote = async (postId: string, optionIndex: number) => {
+        if (!currentUser) return;
+        const postRef = doc(db, 'posts', postId);
+    
+        try {
+            await runTransaction(db, async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                if (!postDoc.exists()) {
+                    throw "Post não existe!";
+                }
+    
+                const postData = postDoc.data() as Post;
+                const poll = postData.poll;
+    
+                if (!poll) {
+                    throw "Enquete não existe neste post.";
+                }
+    
+                if (poll.voters && poll.voters[currentUser.uid] !== undefined) {
+                    toast({
+                        title: "Você já votou nesta enquete.",
+                        variant: "destructive"
+                    });
+                    return;
+                }
+    
+                const newVotes = [...poll.votes];
+                newVotes[optionIndex] += 1;
+    
+                const newVoters = { ...poll.voters, [currentUser.uid]: optionIndex };
+    
+                transaction.update(postRef, {
+                    'poll.votes': newVotes,
+                    'poll.voters': newVoters
+                });
+            });
+        } catch (error) {
+            console.error("Erro ao votar:", error);
+            toast({
+                title: "Erro ao votar",
+                description: "Não foi possível registrar seu voto. Tente novamente.",
+                variant: "destructive",
+            });
+        }
+    };
+
 
     const handleTogglePinPost = async (post: Post) => {
         if (!currentUser) return;
@@ -754,7 +820,7 @@ export default function ProfilePage() {
             );
         }
     
-        const displayPosts = showPinnedPost ? posts : posts.filter(p => p.id !== profileUser?.pinnedPostId);
+        const displayPosts = showPinnedPost ? posts : posts.filter(p => !p.isPinned);
     
         if (displayPosts.length === 0 && (!showPinnedPost || !pinnedPost)) {
             return <EmptyState title={emptyTitle} description={emptyDescription} />;
@@ -773,6 +839,7 @@ export default function ProfilePage() {
                         onEdit={handleEditClick}
                         onSave={handleSavePost}
                         onPin={() => handleTogglePinPost(pinnedPost)}
+                        onVote={handleVote}
                         toast={toast}
                     />
                 )}
@@ -787,6 +854,7 @@ export default function ProfilePage() {
                         onEdit={handleEditClick}
                         onSave={handleSavePost}
                         onPin={() => handleTogglePinPost(post)}
+                        onVote={handleVote}
                         toast={toast}
                     />
                 ))}
