@@ -17,6 +17,7 @@ import React from 'react';
 import { useDebounce } from 'use-debounce';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
+import { dataURItoFile } from '@/lib/utils';
 
 interface UserProfileData {
     displayName: string;
@@ -49,6 +50,10 @@ export default function EditProfilePage() {
     const [isHandleAvailable, setIsHandleAvailable] = useState(true);
     const [handleStatusMessage, setHandleStatusMessage] = useState('');
 
+    const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string>('');
+    const avatarInputRef = useRef<HTMLInputElement>(null);
+
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -67,6 +72,7 @@ export default function EditProfilePage() {
                             avatar: userData.avatar || '',
                             banner: userData.banner || '',
                         });
+                        setAvatarPreview(userData.avatar || '');
                         setOriginalHandle(handle);
                     } else {
                         toast({ title: "Usuário não encontrado.", variant: "destructive" });
@@ -123,6 +129,13 @@ export default function EditProfilePage() {
         }
     }, [debouncedHandle, checkHandleAvailability]);
 
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setNewAvatarFile(file);
+            setAvatarPreview(URL.createObjectURL(file));
+        }
+    };
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         let value = e.target.value;
@@ -132,11 +145,18 @@ export default function EditProfilePage() {
         setProfileData({ ...profileData, [e.target.id]: value });
     };
 
+    const uploadAvatar = async (file: File, userId: string): Promise<string> => {
+        const storageRef = ref(storage, `avatars/${userId}/${uuidv4()}`);
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+        return downloadURL;
+    }
+
     const handleSave = async () => {
         if (!user || !isHandleAvailable) {
             toast({
                 title: "Não é possível salvar",
-                description: "O nome de usuário escolhido não está disponível.",
+                description: "O nome de usuário escolhido não está disponível ou outra validação falhou.",
                 variant: "destructive"
             });
             return;
@@ -152,19 +172,25 @@ export default function EditProfilePage() {
                 bio: profileData.bio,
                 location: profileData.location,
             };
+            
+            if (newAvatarFile) {
+                const newAvatarUrl = await uploadAvatar(newAvatarFile, user.uid);
+                updateData.avatar = newAvatarUrl;
+            }
 
-            const contentUpdate: { [key: string]: any } = {};
             const handleChanged = profileData.handle !== originalHandle;
-
             if (handleChanged) {
                 const newHandle = `@${profileData.handle}`;
                 updateData.handle = newHandle;
                 updateData.searchableHandle = profileData.handle.toLowerCase();
-                contentUpdate.handle = newHandle;
             }
-            
+
             batch.update(userDocRef, updateData);
             
+            const contentUpdate: { [key: string]: any } = {};
+            if(newAvatarFile) contentUpdate.avatar = updateData.avatar;
+            if(handleChanged) contentUpdate.handle = updateData.handle;
+
             if (Object.keys(contentUpdate).length > 0) {
                 const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
                 const commentsQuery = query(collection(db, "comments"), where("authorId", "==", user.uid));
@@ -226,8 +252,21 @@ export default function EditProfilePage() {
         <div className="px-4">
             <div className="-mt-16 relative w-32">
                 <Avatar className="h-32 w-32 border-4 border-background">
-                    {profileData.avatar ? <AvatarImage src={profileData.avatar} alt={profileData.displayName} />: <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>}
+                    {avatarPreview ? <AvatarImage src={avatarPreview} alt={profileData.displayName} />: <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>}
                 </Avatar>
+                <Button 
+                    variant="ghost" 
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-full h-full w-full p-0"
+                    onClick={() => avatarInputRef.current?.click()}>
+                    <Upload className="h-8 w-8 text-white" />
+                </Button>
+                <Input 
+                    type="file" 
+                    ref={avatarInputRef} 
+                    className="hidden" 
+                    accept="image/png, image/jpeg"
+                    onChange={handleImageChange}
+                />
             </div>
         </div>
 
@@ -286,3 +325,4 @@ export default function EditProfilePage() {
     </div>
   );
 }
+
