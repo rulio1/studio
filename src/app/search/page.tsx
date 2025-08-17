@@ -171,7 +171,9 @@ export default function SearchPage() {
           }
       };
 
-      performSearch(debouncedSearchTerm);
+      if (debouncedSearchTerm) {
+        performSearch(debouncedSearchTerm);
+      }
   }, [debouncedSearchTerm]);
 
   const handleFollow = async (targetUserId: string, list: 'newUsers' | 'users') => {
