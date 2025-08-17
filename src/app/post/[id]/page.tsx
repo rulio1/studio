@@ -665,7 +665,7 @@ export default function PostDetailPage() {
                     </div>
                 </div>
                 
-                <div className="p-4 border-b">
+                <div className="p-4 m-4 border rounded-2xl bg-background/80 backdrop-blur-lg">
                      <div className="flex gap-4">
                         <Avatar>
                             <AvatarImage src={chirpUser?.avatar} alt={chirpUser?.handle} />
