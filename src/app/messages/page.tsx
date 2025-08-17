@@ -46,7 +46,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
     const [time, setTime] = useState('');
     
     useEffect(() => {
-        if (convo.lastMessage.timestamp) {
+        if (convo.lastMessage?.timestamp) {
             try {
                 setTime(formatTimeAgo(convo.lastMessage.timestamp.toDate()));
             } catch (e) {
@@ -68,8 +68,16 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
             className={`w-full p-4 hover:bg-muted/50 cursor-pointer flex items-center gap-4 ${isUnread ? 'border-l-2 border-primary' : ''}`}
         >
             <Avatar className="h-12 w-12">
-                <AvatarImage src={convo.otherUser.avatar} alt={convo.otherUser.name} />
-                <AvatarFallback>{convo.otherUser.name[0]}</AvatarFallback>
+                {isChirpAccount ? (
+                    <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+                        <Bird className="h-6 w-6 text-primary" />
+                    </div>
+                ) : (
+                    <>
+                        <AvatarImage src={convo.otherUser.avatar} alt={convo.otherUser.name} />
+                        <AvatarFallback>{convo.otherUser.name[0]}</AvatarFallback>
+                    </>
+                )}
             </Avatar>
             <div className="flex-1 overflow-hidden">
                 <div className="flex items-center justify-between">

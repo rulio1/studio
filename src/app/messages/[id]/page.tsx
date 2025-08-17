@@ -233,8 +233,16 @@ export default function ConversationPage() {
                 </Button>
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push(`/profile/${otherUser.uid}`)}>
                     <Avatar className="h-8 w-8">
-                        <AvatarImage src={otherUser.avatar} alt={otherUser.displayName} />
-                        <AvatarFallback>{otherUser.displayName[0]}</AvatarFallback>
+                         {isChirpAccount ? (
+                            <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+                                <Bird className="h-5 w-5 text-primary" />
+                            </div>
+                        ) : (
+                            <>
+                                <AvatarImage src={otherUser.avatar} alt={otherUser.displayName} />
+                                <AvatarFallback>{otherUser.displayName[0]}</AvatarFallback>
+                            </>
+                        )}
                     </Avatar>
                     <div>
                         <h1 className="text-lg font-bold flex items-center gap-1">
@@ -264,8 +272,16 @@ export default function ConversationPage() {
                             <div className={`flex items-start gap-3 ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
                             {message.senderId !== user?.uid && (
                                 <Avatar className="h-8 w-8">
-                                    <AvatarImage src={otherUser.avatar} alt={otherUser.displayName} />
-                                    <AvatarFallback>{otherUser.displayName[0]}</AvatarFallback>
+                                     {isChirpAccount ? (
+                                        <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+                                            <Bird className="h-5 w-5 text-primary" />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <AvatarImage src={otherUser.avatar} alt={otherUser.displayName} />
+                                            <AvatarFallback>{otherUser.displayName[0]}</AvatarFallback>
+                                        </>
+                                    )}
                                 </Avatar>
                             )}
                             <div className={`rounded-lg px-4 py-2 max-w-xs md:max-w-md ${isMyMessage ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>

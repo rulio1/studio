@@ -166,8 +166,16 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
             )}
             <div className="flex gap-4">
                  <Avatar className="cursor-pointer" onClick={(e) => {e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
-                    <AvatarImage src={post.avatar} alt={post.handle} />
-                    <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                    {isChirpAccount ? (
+                        <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-full">
+                            <Bird className="h-5 w-5 text-primary" />
+                        </div>
+                    ) : (
+                        <>
+                            <AvatarImage src={post.avatar} alt={post.handle} />
+                            <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                        </>
+                    )}
                 </Avatar>
                 <div className='w-full'>
                     <div className="flex items-center justify-between">
@@ -876,11 +884,11 @@ export default function ProfilePage() {
             </div>
              {isChirpAccount && (
                 <Card className="mt-4 border-primary/50">
-                    <CardHeader className="flex-row items-center gap-3 space-y-0 p-4">
-                        <Info className="h-5 w-5 text-primary" />
-                        <CardTitle className="text-base">Conta Oficial</CardTitle>
+                    <CardHeader className="flex-row items-center gap-3 space-y-0 p-3">
+                        <Info className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-sm">Conta Oficial</CardTitle>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0">
+                    <CardContent className="p-3 pt-0">
                         <p className="text-xs text-muted-foreground">Esta é a conta oficial do Chirp. Fique de olho para anúncios, dicas e atualizações importantes da plataforma.</p>
                     </CardContent>
                 </Card>
@@ -974,4 +982,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
