@@ -197,7 +197,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }:
                     </div>
                      {post.image && (
                         <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border">
-                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
+                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint="Imagem do post" />
                         </div>
                     )}
                     <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
@@ -284,7 +284,8 @@ export default function ProfilePage() {
                  const userDocRef = doc(db, "users", user.uid);
                  onSnapshot(userDocRef, (doc) => {
                      if (doc.exists()) {
-                         setChirpUser(doc.data() as ChirpUser);
+                        const userData = { uid: doc.id, ...doc.data() } as ChirpUser;
+                        setChirpUser(userData);
                      }
                  });
             } else {
@@ -321,29 +322,31 @@ export default function ProfilePage() {
     }, [fetchProfileUser]);
     
     const fetchUserPosts = useCallback(async () => {
-        if (!profileId) return;
+        if (!profileId || !profileUser) return;
         setIsLoadingPosts(true);
-    
-        // Fetch original posts
+
         const postsQuery = query(collection(db, "posts"), where("authorId", "==", profileId));
-        const postsSnapshot = await getDocs(postsQuery);
+        const repostsQuery = query(collection(db, "reposts"), where("userId", "==", profileId));
+
+        const [postsSnapshot, repostsSnapshot] = await Promise.all([
+            getDocs(postsQuery),
+            getDocs(repostsQuery)
+        ]);
+
         const originalPosts = postsSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
         } as Post));
-    
-        // Fetch reposts
-        const repostsQuery = query(collection(db, "reposts"), where("userId", "==", profileId));
-        const repostsSnapshot = await getDocs(repostsQuery);
+
         const repostedPostIds = repostsSnapshot.docs.map(doc => doc.data().postId);
         const repostsData = repostsSnapshot.docs.map(doc => doc.data());
-    
+
         let repostedPosts: Post[] = [];
         if (repostedPostIds.length > 0) {
             const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
             const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
             const postsMap = new Map(repostedPostsSnapshot.docs.map(doc => [doc.id, doc.data()]));
-            
+
             repostedPosts = repostsData.map(repost => {
                 const postData = postsMap.get(repost.postId);
                 if (!postData) return null;
@@ -352,14 +355,13 @@ export default function ProfilePage() {
                     ...postData,
                     repostedAt: repost.repostedAt,
                     repostedBy: {
-                        name: profileUser?.displayName || '',
-                        handle: profileUser?.handle || ''
+                        name: profileUser.displayName,
+                        handle: profileUser.handle
                     },
                 } as Post;
             }).filter(p => p !== null) as Post[];
         }
-    
-        // Merge and sort
+
         const allPosts = [...originalPosts, ...repostedPosts];
         allPosts.sort((a, b) => {
             const timeA = a.repostedAt || a.createdAt;
@@ -371,15 +373,15 @@ export default function ProfilePage() {
             ...post,
             isLiked: post.likes.includes(currentUser?.uid || ''),
             isRetweeted: post.retweets.includes(currentUser?.uid || ''),
-        }))
-    
+        }));
+
         setUserPosts(finalPosts);
         setIsLoadingPosts(false);
 
         setIsLoadingMedia(true);
         setMediaPosts(finalPosts.filter(p => p.image));
         setIsLoadingMedia(false);
-    
+
     }, [profileId, currentUser, profileUser]);
 
     const fetchUserReplies = useCallback(async () => {
@@ -651,7 +653,7 @@ export default function ProfilePage() {
             <ul className="divide-y divide-border">
                 {posts.map((post) => (
                     <PostItem 
-                        key={`${post.id}-${post.repostedAt || ''}`}
+                        key={`${post.id}-${post.repostedAt?.toMillis() || ''}`}
                         post={post}
                         user={currentUser}
                         chirpUser={chirpUser}
@@ -715,14 +717,14 @@ export default function ProfilePage() {
             alt="Banner"
             layout="fill"
             objectFit="cover"
-            data-ai-hint="concert crowd"
+            data-ai-hint="Imagem do perfil"
           />}
         </div>
         <div className="p-4">
             <div className="flex justify-between items-start">
                 <div className="-mt-20">
                     <Avatar className="h-32 w-32 border-4 border-background">
-                        <AvatarImage src={profileUser.avatar} data-ai-hint="pop star" alt={profileUser.displayName} />
+                        <AvatarImage src={profileUser.avatar} data-ai-hint="Imagem do perfil" alt={profileUser.displayName} />
                         <AvatarFallback className="text-4xl">{profileUser.displayName?.[0]}</AvatarFallback>
                     </Avatar>
                 </div>
@@ -791,7 +793,7 @@ export default function ProfilePage() {
                     posts={mediaPosts} 
                     loading={isLoadingMedia}
                     emptyTitle="Nenhuma mídia ainda" 
-                    emptyDescription="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui."
+                    description="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui."
                  />
             </TabsContent>
             <TabsContent value="likes" className="mt-0">
@@ -841,3 +843,5 @@ export default function ProfilePage() {
 }
 
   
+
+    

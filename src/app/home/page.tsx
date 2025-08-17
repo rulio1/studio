@@ -97,7 +97,7 @@ export default function HomePage() {
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editedContent, setEditedContent] = useState("");
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(isUpdating);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -123,30 +123,75 @@ export default function HomePage() {
     return () => unsubscribeAuth();
   }, [router]);
 
-  useEffect(() => {
-    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(50));
-    const unsubscribePosts = onSnapshot(q, (snapshot) => {
-        const postsData = snapshot.docs
-          .map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                ...data,
-                time: '', 
-                isLiked: data.likes.includes(auth.currentUser?.uid || ''),
-                isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
-            } as Post
-        }).filter(post => !post.communityId); 
-        
-        setAllPosts(postsData);
-        setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching posts:", error);
-        setIsLoading(false);
+  const fetchAllPosts = useCallback(async () => {
+    setIsLoading(true);
+
+    const postsQuery = query(
+      collection(db, "posts"),
+      where("communityId", "==", null)
+    );
+    const repostsQuery = query(collection(db, "reposts"));
+
+    const [postsSnapshot, repostsSnapshot] = await Promise.all([
+      getDocs(postsQuery),
+      getDocs(repostsQuery),
+    ]);
+
+    const originalPosts = postsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Post[];
+
+    const repostsData = repostsSnapshot.docs.map(doc => doc.data());
+    const repostedPostIds = repostsData.map(repost => repost.postId);
+
+    let repostedPosts: Post[] = [];
+    if (repostedPostIds.length > 0) {
+      const allUsersSnapshot = await getDocs(collection(db, 'users'));
+      const allUsersMap = new Map(allUsersSnapshot.docs.map(doc => [doc.id, doc.data() as ChirpUser]));
+
+      const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
+      const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
+      const postsMap = new Map(repostedPostsSnapshot.docs.map(doc => [doc.id, doc.data()]));
+
+      repostedPosts = repostsData.map(repost => {
+        const postData = postsMap.get(repost.postId);
+        const reposter = allUsersMap.get(repost.userId);
+        if (!postData || !reposter) return null;
+        return {
+          id: repost.postId,
+          ...postData,
+          repostedAt: repost.repostedAt,
+          repostedBy: {
+            name: reposter.displayName,
+            handle: reposter.handle,
+          },
+        } as Post;
+      }).filter(p => p !== null) as Post[];
+    }
+
+    const allCombinedPosts = [...originalPosts, ...repostedPosts];
+    allCombinedPosts.sort((a, b) => {
+      const timeA = a.repostedAt || a.createdAt;
+      const timeB = b.repostedAt || b.createdAt;
+      return timeB.toMillis() - timeA.toMillis();
     });
 
-    return () => unsubscribePosts();
-  }, []);
+    const uniquePosts = Array.from(new Map(allCombinedPosts.map(post => [post.id + (post.repostedAt || ''), post])).values());
+
+    const finalPosts = uniquePosts.map(post => ({
+      ...post,
+      isLiked: post.likes.includes(user?.uid || ''),
+      isRetweeted: post.retweets.includes(user?.uid || ''),
+    }));
+
+    setAllPosts(finalPosts);
+    setIsLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    fetchAllPosts();
+  }, [fetchAllPosts]);
 
  const fetchFollowingPosts = useCallback(async () => {
     if (!chirpUser || chirpUser.following.length === 0) {
@@ -282,6 +327,12 @@ export default function HomePage() {
             }
         }
         await batch.commit();
+        // Re-fetch all posts to reflect the change immediately
+        if (activeTab === 'for-you') {
+            fetchAllPosts();
+        } else {
+            fetchFollowingPosts();
+        }
     };
 
  const handleDeletePost = async () => {
@@ -527,7 +578,7 @@ export default function HomePage() {
     return (
         <ul className="divide-y divide-border">
             {posts.map((post) => (
-               <PostItem key={`${post.id}-${post.repostedAt || ''}`} post={post} />
+               <PostItem key={`${post.id}-${post.repostedAt?.toMillis() || ''}`} post={post} />
             ))}
         </ul>
     );
@@ -686,3 +737,5 @@ export default function HomePage() {
 }
 
   
+
+    
