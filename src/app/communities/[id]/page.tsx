@@ -74,7 +74,7 @@ function GifPicker({ onGifClick }: { onGifClick: (gif: IGif) => void }) {
     const [searchTerm, setSearchTerm] = useState('trending');
     
     const fetchGifs = (offset: number) => {
-        if (searchTerm.trim() === '') {
+        if (searchTerm.trim() === '' || searchTerm === 'trending') {
              return giphyFetch.trending({ offset, limit: 10 });
         }
         return giphyFetch.search(searchTerm, { offset, limit: 10 });
