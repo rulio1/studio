@@ -107,21 +107,29 @@ export default function SearchPage() {
           setIsSearching(true);
           
           try {
-              // Search users by searchableDisplayName
-              const userQuery = query(collection(db, 'users'), where('searchableDisplayName', '>=', formattedTerm), where('searchableDisplayName', '<=', formattedTerm + '\uf8ff'), limit(5));
+              // Search users by display name and handle
+              const nameQuery = query(collection(db, 'users'), where('searchableDisplayName', '>=', formattedTerm), where('searchableDisplayName', '<=', formattedTerm + '\uf8ff'), limit(5));
+              const handleQuery = query(collection(db, 'users'), where('searchableHandle', '>=', formattedTerm.replace('@', '')), where('searchableHandle', '<=', formattedTerm.replace('@', '') + '\uf8ff'), limit(5));
               
-              // Post search can remain case-sensitive for now or use a similar strategy if needed
+              // Post search
               const postQuery = query(collection(db, 'posts'), where('content', '>=', term.trim()), where('content', '<=', term.trim() + '\uf8ff'), limit(5));
 
-              const [userSnapshot, postSnapshot] = await Promise.all([
-                  getDocs(userQuery),
+              const [nameSnapshot, handleSnapshot, postSnapshot] = await Promise.all([
+                  getDocs(nameQuery),
+                  getDocs(handleQuery),
                   getDocs(postQuery)
               ]);
               
-              const usersData = userSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserSearchResult));
+              const nameUsers = nameSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserSearchResult));
+              const handleUsers = handleSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserSearchResult));
+              
+              // Merge and remove duplicates
+              const allUsers = [...nameUsers, ...handleUsers];
+              const uniqueUsers = Array.from(new Map(allUsers.map(user => [user.uid, user])).values());
+
               const postsData = postSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as PostSearchResult);
               
-              setUsers(usersData);
+              setUsers(uniqueUsers);
               setPosts(postsData);
 
           } catch (error) {
@@ -335,6 +343,3 @@ export default function SearchPage() {
     </>
   );
 }
-
-    
-    
