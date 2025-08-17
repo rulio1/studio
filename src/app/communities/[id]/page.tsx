@@ -9,19 +9,19 @@ import { auth, db, storage } from '@/lib/firebase';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Bird, Trash2, Edit, Save, Sparkles, X, BadgeCheck, ImageIcon, Smile, Film } from 'lucide-react';
+import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Bird, Trash2, Edit, Save, Sparkles, X, BadgeCheck, ImageIcon, Smile, Upload } from 'lucide-react';
 import PostSkeleton from '@/components/post-skeleton';
 import { formatTimeAgo } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { generatePost } from '@/ai/flows/post-generator-flow';
+import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 import React from 'react';
 import { fileToDataUri } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
-import { useDebounce } from 'use-debounce';
 
 interface Community {
     id: string;
@@ -63,81 +63,6 @@ interface ChirpUser {
     avatar: string;
     communities?: string[];
     savedPosts?: string[];
-}
-
-interface Gif {
-    id: string;
-    url: string;
-    title: string;
-    images: {
-        fixed_height: {
-            url: string;
-        }
-        original: {
-            url: string;
-        }
-    }
-}
-
-const GIPHY_API_KEY = 'Y8w1xO42S2G43y3y0dM9cNoZpXAZyq57';
-
-function GifPicker({ onGifClick }: { onGifClick: (gif: Gif) => void }) {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
-    const [gifs, setGifs] = useState<Gif[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchGifs = async () => {
-            setIsLoading(true);
-            const endpoint = debouncedSearchTerm
-                ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${debouncedSearchTerm}&limit=20`
-                : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=20`;
-
-            try {
-                const res = await fetch(endpoint);
-                const { data } = await res.json();
-                setGifs(data);
-            } catch (error) {
-                console.error("Failed to fetch GIFs", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchGifs();
-    }, [debouncedSearchTerm]);
-
-
-    return (
-        <div className="flex flex-col gap-2 p-2">
-            <Input
-                placeholder="Buscar GIFs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <div className="h-64 overflow-y-auto">
-                {isLoading ? (
-                    <div className="flex justify-center items-center h-full">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                        {gifs.map((gif) => (
-                            <div key={gif.id} className="cursor-pointer" onClick={() => onGifClick(gif)}>
-                                <Image
-                                    src={gif.images.fixed_height.url}
-                                    alt={gif.title}
-                                    width={200}
-                                    height={120}
-                                    className="w-full h-auto object-cover rounded"
-                                />
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
 }
 
 const PostContent = ({ content }: { content: string }) => {
@@ -241,6 +166,10 @@ export default function CommunityDetailPage() {
     const [showAiTextGenerator, setShowAiTextGenerator] = useState(false);
     const [aiTextPrompt, setAiTextPrompt] = useState('');
     const [isGeneratingText, setIsGeneratingText] = useState(false);
+    const [showAiImageGenerator, setShowAiImageGenerator] = useState(false);
+    const [aiImagePrompt, setAiImagePrompt] = useState('');
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -329,6 +258,9 @@ export default function CommunityDetailPage() {
         setAiTextPrompt('');
         setIsGeneratingText(false);
         setShowAiTextGenerator(false);
+        setAiImagePrompt('');
+        setIsGeneratingImage(false);
+        setShowAiImageGenerator(false);
         setPostImageDataUri(null);
         setPostImagePreview(null);
         setIsModalOpen(false);
@@ -443,14 +375,25 @@ export default function CommunityDetailPage() {
             setIsGeneratingText(false);
         }
     };
+
+    const handleGenerateImage = async () => {
+        if (!aiImagePrompt.trim()) return;
+        setIsGeneratingImage(true);
+        try {
+            const generatedDataUri = await generateImageFromPrompt(aiImagePrompt);
+            setPostImageDataUri(generatedDataUri);
+            setPostImagePreview(generatedDataUri);
+            toast({ title: "Imagem gerada com sucesso!" });
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Falha ao gerar a imagem", variant: "destructive" });
+        } finally {
+            setIsGeneratingImage(false);
+        }
+    };
     
     const onEmojiClick = (emojiData: EmojiClickData) => {
         setNewPostContent(prev => prev + emojiData.emoji);
-    };
-
-    const onGifClick = (gif: Gif) => {
-        setPostImagePreview(gif.images.original.url);
-        setPostImageDataUri(gif.images.original.url);
     };
     
     if (isLoading || !community) {
@@ -560,6 +503,21 @@ export default function CommunityDetailPage() {
                                         </Button>
                                     </div>
                                 )}
+                                 {showAiImageGenerator && (
+                                    <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
+                                        <Textarea 
+                                            placeholder="Descreva a imagem que você quer criar..."
+                                            className="text-sm focus-visible:ring-1 bg-background"
+                                            value={aiImagePrompt}
+                                            onChange={(e) => setAiImagePrompt(e.target.value)}
+                                            rows={2}
+                                        />
+                                        <Button onClick={handleGenerateImage} disabled={isGeneratingImage || !aiImagePrompt.trim()} className="self-end" size="sm">
+                                            {isGeneratingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Gerar Imagem
+                                        </Button>
+                                    </div>
+                                )}
                                 <div className="flex justify-between items-center mt-2 border-t pt-4">
                                     <div className="flex items-center gap-1">
                                         <Input
@@ -569,7 +527,10 @@ export default function CommunityDetailPage() {
                                             accept="image/png, image/jpeg, image/gif"
                                             onChange={handleImageChange}
                                         />
-                                        <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                                         <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                                            <Upload className="h-6 w-6 text-primary" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" onClick={() => setShowAiImageGenerator(!showAiImageGenerator)} disabled={isPosting}>
                                             <ImageIcon className="h-6 w-6 text-primary" />
                                         </Button>
                                         <Popover>
@@ -580,16 +541,6 @@ export default function CommunityDetailPage() {
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0 border-0">
                                                 <EmojiPicker onEmojiClick={onEmojiClick} />
-                                            </PopoverContent>
-                                        </Popover>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="ghost" size="icon" disabled={isPosting}>
-                                                    <Film className="h-6 w-6 text-primary" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto max-w-[450px] p-0 border-0 bg-background">
-                                                <GifPicker onGifClick={onGifClick} />
                                             </PopoverContent>
                                         </Popover>
                                         <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator);}} disabled={isPosting}>
@@ -609,3 +560,5 @@ export default function CommunityDetailPage() {
         </div>
     );
 }
+
+    

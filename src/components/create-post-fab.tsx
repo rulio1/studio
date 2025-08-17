@@ -13,7 +13,7 @@ export default function CreatePostFAB() {
     const [isOpen, setIsOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
-    const [modalMode, setModalMode] = useState<'post' | 'gif'>('post');
+    const [modalMode, setModalMode] = useState<'post' | 'image'>('post');
     const pathname = usePathname();
     const router = useRouter();
     const { user } = useAuth();
@@ -22,7 +22,7 @@ export default function CreatePostFAB() {
         setIsOpen(!isOpen);
     };
 
-    const openModal = (mode: 'post' | 'gif') => {
+    const openModal = (mode: 'post' | 'image') => {
         setModalMode(mode);
         setIsModalOpen(true);
         setIsOpen(false);
@@ -64,7 +64,7 @@ export default function CreatePostFAB() {
                     }`}
                 >
                     <Button
-                        onClick={() => openModal('gif')}
+                        onClick={() => openModal('image')}
                         aria-label="Post GIF or Image"
                         className="h-14 w-14 rounded-full bg-primary shadow-lg flex items-center justify-center text-primary-foreground"
                     >
@@ -99,3 +99,5 @@ export default function CreatePostFAB() {
         </>
     );
 }
+
+    

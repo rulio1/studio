@@ -7,10 +7,11 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { generatePost } from '@/ai/flows/post-generator-flow';
+import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 import { auth, db, storage } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Sparkles, Loader2, Plus, ImageIcon, X, Smile, Film } from 'lucide-react';
+import { Sparkles, Loader2, Plus, ImageIcon, X, Smile, Upload } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
@@ -18,7 +19,6 @@ import React from 'react';
 import { fileToDataUri } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
-import { useDebounce } from 'use-debounce';
 
 interface ChirpUser {
     uid: string;
@@ -27,85 +27,10 @@ interface ChirpUser {
     avatar: string;
 }
 
-interface Gif {
-    id: string;
-    url: string;
-    title: string;
-    images: {
-        fixed_height: {
-            url: string;
-        }
-        original: {
-            url: string;
-        }
-    }
-}
-
-const GIPHY_API_KEY = 'Y8w1xO42S2G43y3y0dM9cNoZpXAZyq57';
-
-function GifPicker({ onGifClick }: { onGifClick: (gif: Gif) => void }) {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
-    const [gifs, setGifs] = useState<Gif[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchGifs = async () => {
-            setIsLoading(true);
-            const endpoint = debouncedSearchTerm
-                ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${debouncedSearchTerm}&limit=20`
-                : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=20`;
-
-            try {
-                const res = await fetch(endpoint);
-                const { data } = await res.json();
-                setGifs(data);
-            } catch (error) {
-                console.error("Failed to fetch GIFs", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchGifs();
-    }, [debouncedSearchTerm]);
-
-
-    return (
-        <div className="flex flex-col gap-2 p-2">
-            <Input
-                placeholder="Buscar GIFs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <div className="h-64 overflow-y-auto">
-                {isLoading ? (
-                    <div className="flex justify-center items-center h-full">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                        {gifs.map((gif) => (
-                            <div key={gif.id} className="cursor-pointer" onClick={() => onGifClick(gif)}>
-                                <Image
-                                    src={gif.images.fixed_height.url}
-                                    alt={gif.title}
-                                    width={200}
-                                    height={120}
-                                    className="w-full h-auto object-cover rounded"
-                                />
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
 interface CreatePostModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    initialMode?: 'post' | 'gif';
+    initialMode?: 'post' | 'image';
 }
 
 export default function CreatePostModal({ open, onOpenChange, initialMode = 'post'}: CreatePostModalProps) {
@@ -121,12 +46,13 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const [showAiTextGenerator, setShowAiTextGenerator] = useState(false);
     const [aiTextPrompt, setAiTextPrompt] = useState('');
     const [isGeneratingText, setIsGeneratingText] = useState(false);
+    const [showAiImageGenerator, setShowAiImageGenerator] = useState(initialMode === 'image');
+    const [aiImagePrompt, setAiImagePrompt] = useState('');
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
 
-    const [isGifPickerOpen, setIsGifPickerOpen] = useState(false);
-    
     const { toast } = useToast();
 
      useEffect(() => {
@@ -149,8 +75,8 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     }, []);
 
     useEffect(() => {
-        if (open && initialMode === 'gif') {
-            setIsGifPickerOpen(true);
+        if (open && initialMode === 'image') {
+            setShowAiImageGenerator(true);
         }
     }, [open, initialMode]);
 
@@ -161,9 +87,11 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         setPostImagePreview(null);
         setIsGeneratingText(false);
         setShowAiTextGenerator(false);
+        setIsGeneratingImage(false);
+        setShowAiImageGenerator(false);
+        setAiImagePrompt('');
         onOpenChange(false);
         setIsPosting(false);
-        setIsGifPickerOpen(false);
     }
 
     const extractHashtags = (content: string) => {
@@ -291,14 +219,27 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         }
     };
     
-    const onEmojiClick = (emojiData: EmojiClickData) => {
-        setNewPostContent(prev => prev + emojiData.emoji);
+     const handleGenerateImage = async () => {
+        if (!aiImagePrompt.trim()) {
+             toast({ title: "O prompt não pode estar vazio", variant: "destructive"});
+            return;
+        }
+        setIsGeneratingImage(true);
+        try {
+            const generatedDataUri = await generateImageFromPrompt(aiImagePrompt);
+            setPostImageDataUri(generatedDataUri);
+            setPostImagePreview(generatedDataUri);
+            toast({ title: "Imagem gerada com sucesso!" });
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Falha ao gerar a imagem", variant: "destructive" });
+        } finally {
+            setIsGeneratingImage(false);
+        }
     };
 
-    const onGifClick = (gif: Gif) => {
-        setPostImagePreview(gif.images.original.url);
-        setPostImageDataUri(gif.images.original.url);
-        setIsGifPickerOpen(false);
+    const onEmojiClick = (emojiData: EmojiClickData) => {
+        setNewPostContent(prev => prev + emojiData.emoji);
     };
 
     return (
@@ -350,6 +291,22 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                             </Button>
                         </div>
                     )}
+                     {showAiImageGenerator && (
+                        <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
+                            <Textarea 
+                                placeholder="Descreva a imagem que você quer criar..."
+                                className="text-sm focus-visible:ring-1 bg-background"
+                                value={aiImagePrompt}
+                                onChange={(e) => setAiImagePrompt(e.target.value)}
+                                rows={2}
+                                disabled={isGeneratingImage}
+                            />
+                            <Button onClick={handleGenerateImage} disabled={isGeneratingImage || !aiImagePrompt.trim()} className="self-end" size="sm">
+                                {isGeneratingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Gerar Imagem
+                            </Button>
+                        </div>
+                    )}
 
                     <div className="flex justify-between items-center mt-2 border-t pt-4">
                         <div className="flex items-center gap-1">
@@ -360,10 +317,13 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                 accept="image/png, image/jpeg, image/gif"
                                 onChange={handleImageChange}
                             />
-                            <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                             <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                                <Upload className="h-6 w-6 text-primary" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => setShowAiImageGenerator(!showAiImageGenerator)} disabled={isPosting}>
                                 <ImageIcon className="h-6 w-6 text-primary" />
                             </Button>
-                                <Popover>
+                            <Popover>
                                 <PopoverTrigger asChild>
                                     <Button variant="ghost" size="icon" disabled={isPosting}>
                                         <Smile className="h-6 w-6 text-primary" />
@@ -371,16 +331,6 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0 border-0">
                                     <EmojiPicker onEmojiClick={onEmojiClick} />
-                                </PopoverContent>
-                            </Popover>
-                                <Popover open={isGifPickerOpen} onOpenChange={setIsGifPickerOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="icon" disabled={isPosting} data-test="gif-picker-trigger">
-                                        <Film className="h-6 w-6 text-primary" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto max-w-[450px] p-0 border-0 bg-background">
-                                    <GifPicker onGifClick={onGifClick} />
                                 </PopoverContent>
                             </Popover>
                             <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator);}} disabled={isPosting}>
@@ -398,3 +348,5 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         </Dialog>
     );
 }
+
+    
