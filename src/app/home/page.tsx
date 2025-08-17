@@ -651,7 +651,7 @@ export default function HomePage() {
               <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Para você</TabsTrigger>
               <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Seguindo</TabsTrigger>
             </TabsList>
-            <div className="sticky top-0 z-10 p-4 border-b bg-background/70 backdrop-blur-lg">
+            <div className="sticky top-28 z-10 p-4 mx-4 my-2 border rounded-2xl bg-background/70 backdrop-blur-lg">
                 <CreatePostForm />
             </div>
             <TabsContent value="for-you" className="mt-0">
@@ -697,3 +697,5 @@ export default function HomePage() {
     </>
   );
 }
+
+    
