@@ -20,6 +20,7 @@ interface ChirpUser {
     displayName: string;
     avatar: string;
     handle: string;
+    isVerified?: boolean;
 }
 
 interface Conversation {
@@ -29,6 +30,7 @@ interface Conversation {
         name: string;
         handle: string;
         avatar: string;
+        isVerified?: boolean;
     };
     lastMessage: {
         text: string;
@@ -42,7 +44,6 @@ interface Conversation {
 const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conversation; currentUserId: string | null; onActionClick: (convoId: string, action: 'pin' | 'archive' | 'delete') => void; }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
-    const isOfficialAccount = convo.otherUser.handle.toLowerCase() === '@chirp' || convo.otherUser.handle.toLowerCase() === '@rulio';
     
     useEffect(() => {
         if (convo.lastMessage.timestamp) {
@@ -73,7 +74,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
                     <div className="flex items-baseline gap-2">
                         <p className="font-bold truncate flex items-center gap-1">
                             {convo.otherUser.name}
-                            {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            {convo.otherUser.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">{convo.otherUser.handle}</p>
                     </div>
@@ -172,7 +173,8 @@ export default function MessagesPage() {
                         id: otherUserData.uid,
                         name: otherUserData.displayName,
                         handle: otherUserData.handle,
-                        avatar: otherUserData.avatar
+                        avatar: otherUserData.avatar,
+                        isVerified: otherUserData.isVerified || false,
                     },
                     lastMessage: {
                         ...conversationData.lastMessage,

@@ -56,6 +56,7 @@ interface Post {
     editedAt?: any;
     hashtags?: string[];
     mentions?: string[];
+    isVerified?: boolean;
 }
 
 interface Comment {
@@ -74,6 +75,7 @@ interface Comment {
     comments: number;
     views: number;
     isLiked: boolean;
+    isVerified?: boolean;
 }
 
 interface ChirpUser {
@@ -82,6 +84,7 @@ interface ChirpUser {
     avatar: string;
     savedPosts?: string[];
     pinnedPostId?: string;
+    isVerified?: boolean;
 }
 
 const ContentRenderer = ({ content }: { content: string }) => {
@@ -154,8 +157,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
     const router = useRouter();
     const {toast} = useToast();
     const [time, setTime] = useState('');
-    const isOfficialAccount = comment.handle.toLowerCase() === '@chirp' || comment.handle.toLowerCase() === '@rulio';
-
+    
     useEffect(() => {
         if (comment.createdAt) {
           try {
@@ -194,7 +196,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
                     <div className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
                         <p className="font-bold flex items-center gap-1">
                             {comment.author} 
-                            {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            {comment.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                         </p>
                         <p className="text-muted-foreground">{comment.handle} · {time}</p>
                          {comment.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
@@ -372,6 +374,7 @@ export default function PostDetailPage() {
                 retweets: [],
                 comments: 0,
                 views: 0,
+                isVerified: chirpUser.isVerified || false,
             });
 
             // Increment post's comment count
@@ -394,6 +397,7 @@ export default function PostDetailPage() {
                                 name: chirpUser.displayName,
                                 handle: chirpUser.handle,
                                 avatar: chirpUser.avatar,
+                                isVerified: chirpUser.isVerified || false,
                             },
                             type: 'mention',
                             text: 'mencionou você em uma resposta',
@@ -417,6 +421,7 @@ export default function PostDetailPage() {
                         name: chirpUser.displayName,
                         handle: chirpUser.handle,
                         avatar: chirpUser.avatar,
+                        isVerified: chirpUser.isVerified || false,
                     },
                     type: 'post',
                     text: 'respondeu ao seu post',
@@ -460,6 +465,7 @@ export default function PostDetailPage() {
                         name: chirpUser.displayName,
                         handle: chirpUser.handle,
                         avatar: chirpUser.avatar,
+                        isVerified: chirpUser.isVerified || false,
                     },
                     type: action,
                     text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
@@ -623,8 +629,6 @@ export default function PostDetailPage() {
         );
     }
     
-    const isOfficialAccount = post.handle.toLowerCase() === '@chirp' || post.handle.toLowerCase() === '@rulio';
-
     return (
         <div className="flex flex-col h-screen bg-background">
             <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
@@ -647,8 +651,7 @@ export default function PostDetailPage() {
                             <div>
                                 <p className="font-bold flex items-center gap-1">
                                     {post.author} 
-                                    {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
-                                    {isOfficialAccount && <Bird className="h-4 w-4 text-primary" />}
+                                    {post.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                                 </p>
                                 <p className="text-sm text-muted-foreground">{post.handle}</p>
                             </div>
@@ -852,5 +855,3 @@ export default function PostDetailPage() {
         </div>
     );
 }
-
-    

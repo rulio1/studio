@@ -21,6 +21,7 @@ interface Notification {
         name: string;
         avatar: string;
         handle: string;
+        isVerified?: boolean;
     };
     text: string;
     postContent?: string;
@@ -42,7 +43,6 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
     const router = useRouter();
     const { icon: Icon, color } = iconMap[notification.type] || iconMap.post;
     const [time, setTime] = useState('');
-    const isVerified = notification.fromUser.handle.toLowerCase() === '@chirp' || notification.fromUser.handle.toLowerCase() === '@rulio';
     
     useEffect(() => {
         if (notification.createdAt) {
@@ -82,7 +82,7 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
                 </div>
                 <p>
                     <span className="font-bold">{notification.fromUser.name}</span>
-                    {isVerified && <BadgeCheck className="inline-block h-4 w-4 text-primary ml-1" />}
+                    {notification.fromUser.isVerified && <BadgeCheck className="inline-block h-4 w-4 text-primary ml-1" />}
                     <span className="font-normal text-muted-foreground"> {notification.text}</span>
                 </p>
                 {notification.postContent && <p className="text-muted-foreground mt-1">{notification.postContent}</p>}
@@ -161,10 +161,7 @@ export default function NotificationsPage() {
     }, [notifications]);
 
     const verifiedNotifications = useMemo(() => {
-        return notifications.filter(n => 
-            n.fromUser.handle.toLowerCase() === '@chirp' || 
-            n.fromUser.handle.toLowerCase() === '@rulio'
-        );
+        return notifications.filter(n => n.fromUser.isVerified);
     }, [notifications]);
 
   return (

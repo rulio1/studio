@@ -69,6 +69,7 @@ interface Post {
     repostedBy?: { name: string; handle: string; avatar: string };
     repostedAt?: any;
     isPinned?: boolean;
+    isVerified?: boolean;
 }
 
 interface ChirpUser {
@@ -86,6 +87,7 @@ interface ChirpUser {
     following: string[];
     savedPosts?: string[];
     pinnedPostId?: string;
+    isVerified?: boolean;
 }
 
 export default function HomePage() {
@@ -434,8 +436,7 @@ export default function HomePage() {
   const PostItem = ({ post }: { post: Post }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
-    const isOfficialAccount = post.handle.toLowerCase() === '@chirp' || post.handle.toLowerCase() === '@rulio';
-
+    
     useEffect(() => {
       const timestamp = post.repostedAt || post.createdAt;
       if (timestamp) {
@@ -466,8 +467,7 @@ export default function HomePage() {
                     <div className="flex items-center gap-2 text-sm">
                         <p className="font-bold text-base flex items-center gap-1">
                             {post.author} 
-                            {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
-                            {isOfficialAccount && <Bird className="h-4 w-4 text-primary" />}
+                            {post.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                         </p>
                         <p className="text-muted-foreground">{post.handle} · {time}</p>
                         {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
@@ -649,8 +649,7 @@ export default function HomePage() {
                     <div className="flex flex-col">
                         <div className="flex items-center gap-1 font-bold text-lg">
                             {chirpUser.displayName}
-                            {chirpUser.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-5 w-5 text-primary" />}
-                            {chirpUser.handle.toLowerCase() === '@rulio' && <Bird className="h-5 w-5 text-primary" />}
+                            {chirpUser.isVerified && <BadgeCheck className="h-5 w-5 text-primary" />}
                         </div>
                         <p className="text-sm text-muted-foreground">{chirpUser.handle}</p>
                     </div>
@@ -758,7 +757,3 @@ export default function HomePage() {
     </>
   );
 }
-
-    
-
-    

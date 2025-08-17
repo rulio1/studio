@@ -18,6 +18,7 @@ interface ChirpUser {
     displayName: string;
     handle: string;
     avatar: string;
+    isVerified?: boolean;
 }
 
 interface Message {
@@ -218,8 +219,6 @@ export default function ConversationPage() {
             </div>
         );
     }
-    
-    const isOfficialAccount = otherUser.handle.toLowerCase() === '@chirp' || otherUser.handle.toLowerCase() === '@rulio';
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -237,7 +236,7 @@ export default function ConversationPage() {
                     <div>
                         <h1 className="text-lg font-bold flex items-center gap-1">
                             {otherUser.displayName}
-                            {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            {otherUser.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                         </h1>
                         <p className="text-xs text-muted-foreground">{otherUser.handle}</p>
                     </div>
@@ -299,4 +298,3 @@ export default function ConversationPage() {
     </div>
   );
 }
-

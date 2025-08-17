@@ -69,6 +69,7 @@ export default function RegisterPage() {
             following: [],
             communities: [],
             savedPosts: [],
+            isVerified: false,
         });
         
         toast({

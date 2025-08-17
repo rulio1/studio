@@ -69,6 +69,7 @@ interface Post {
     repostedBy?: { name: string; handle: string };
     repostedAt?: any;
     isPinned?: boolean;
+    isVerified?: boolean;
 }
 
 interface Reply {
@@ -81,7 +82,6 @@ interface Reply {
     time: string;
     content: string;
     createdAt: any;
-    postId: string;
 }
 
 interface ChirpUser {
@@ -100,6 +100,7 @@ interface ChirpUser {
     following: string[];
     savedPosts?: string[];
     pinnedPostId?: string;
+    isVerified?: boolean;
 }
 
 const PostContent = ({ content }: { content: string }) => {
@@ -132,8 +133,7 @@ const PostContent = ({ content }: { content: string }) => {
 const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, onPin, toast }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, toast: any }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
-    const isOfficialAccount = post.handle.toLowerCase() === '@chirp' || post.handle.toLowerCase() === '@rulio';
-
+    
     useEffect(() => {
         const timestamp = post.repostedAt || post.createdAt;
         if (timestamp) {
@@ -169,8 +169,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
                         <div className="flex items-center gap-2 text-sm">
                             <p className="font-bold text-base flex items-center gap-1">
                                 {post.author} 
-                                {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
-                                {isOfficialAccount && <Bird className="h-4 w-4 text-primary" />}
+                                {post.isVerified && <BadgeCheck className="h-4 w-4 text-primary" />}
                             </p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
                             {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
@@ -258,7 +257,6 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
 const ReplyItem = ({ reply }: { reply: Reply }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
-    const isOfficialAccount = reply.handle.toLowerCase() === '@chirp' || reply.handle.toLowerCase() === '@rulio';
 
     useEffect(() => {
         if (reply.createdAt) {
@@ -282,8 +280,6 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
                         <div className="flex items-center gap-2 text-sm">
                             <p className="font-bold text-base flex items-center gap-1">
                                 {reply.author}
-                                {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
-                                {isOfficialAccount && <Bird className="h-4 w-4 text-primary" />}
                             </p>
                             <p className="text-muted-foreground">{reply.handle} · {time}</p>
                         </div>
@@ -346,7 +342,7 @@ export default function ProfilePage() {
         const userDocRef = doc(db, 'users', profileId);
         const unsubscribe = onSnapshot(userDocRef, (userDoc) => {
              if (userDoc.exists()) {
-                const userData = { uid: userDoc.id, ...userDoc.data() } as ChirpUser;
+                const userData = { uid: userDoc.id, ...doc.data() } as ChirpUser;
                 setProfileUser(userData);
                 setIsFollowing(userData.followers?.includes(currentUser.uid));
             } else {
@@ -523,6 +519,7 @@ export default function ProfilePage() {
                     name: chirpUser.displayName,
                     handle: chirpUser.handle,
                     avatar: chirpUser.avatar,
+                    isVerified: chirpUser.isVerified || false,
                 },
                 type: 'follow',
                 text: 'seguiu você',
@@ -688,6 +685,7 @@ export default function ProfilePage() {
                         name: chirpUser.displayName,
                         handle: chirpUser.handle,
                         avatar: chirpUser.avatar,
+                        isVerified: chirpUser.isVerified || false,
                     },
                     type: action,
                     text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
@@ -797,7 +795,6 @@ export default function ProfilePage() {
     }
 
     const isOwnProfile = currentUser?.uid === profileUser.uid;
-    const isOfficialAccount = profileUser.handle.toLowerCase() === '@chirp' || profileUser.handle.toLowerCase() === '@rulio';
 
   return (
     <div className="animate-fade-in">
@@ -808,8 +805,7 @@ export default function ProfilePage() {
             <div>
                 <h1 className="text-xl font-bold flex items-center gap-1">
                     {profileUser.displayName}
-                    {isOfficialAccount && <BadgeCheck className="h-5 w-5 text-primary" />}
-                    {isOfficialAccount && <Bird className="h-5 w-5 text-primary" />}
+                    {profileUser.isVerified && <BadgeCheck className="h-5 w-5 text-primary" />}
                 </h1>
                 <p className="text-sm text-muted-foreground">{userPosts.length + (pinnedPost ? 1 : 0)} posts</p>
             </div>
@@ -850,8 +846,7 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-bold flex items-center gap-1">
                         {profileUser.displayName}
-                        {isOfficialAccount && <BadgeCheck className="h-6 w-6 text-primary" />}
-                        {isOfficialAccount && <Bird className="h-6 w-6 text-primary" />}
+                        {profileUser.isVerified && <BadgeCheck className="h-6 w-6 text-primary" />}
                     </h1>
                 </div>
                 <p className="text-muted-foreground">{profileUser.handle}</p>
