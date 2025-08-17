@@ -551,7 +551,7 @@ export default function CommunityDetailPage() {
                                                     <Film className="h-6 w-6 text-primary" />
                                                 </Button>
                                             </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-2 border-0 bg-background" style={{width: 580}}>
+                                            <PopoverContent className="w-auto max-w-[550px] p-0 border-0 bg-background">
                                                 <GifPicker onGifClick={onGifClick} />
                                             </PopoverContent>
                                         </Popover>
