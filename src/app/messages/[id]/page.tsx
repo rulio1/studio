@@ -275,7 +275,7 @@ export default function ConversationPage() {
                 })}
             </div>
         </ScrollArea>
-        <div className="fixed bottom-20 inset-x-4">
+        <div className="fixed bottom-24 inset-x-4">
             <div className="relative flex items-center rounded-2xl border bg-background/80 backdrop-blur-lg p-2">
                 <Input 
                     placeholder="Inicie uma nova mensagem"
