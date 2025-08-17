@@ -125,7 +125,7 @@ export default function FollowListDialog({ open, onOpenChange, title, userIds, c
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md bg-background/80 backdrop-blur-lg">
+            <DialogContent className="sm:max-w-md bg-background/80 backdrop-blur-lg rounded-2xl">
                 <DialogHeader className="flex-row items-center justify-between pr-6">
                     <DialogTitle>{title}</DialogTitle>
                     <DialogClose asChild>
