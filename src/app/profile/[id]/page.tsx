@@ -52,8 +52,6 @@ interface Post {
     handle: string;
     time: string;
     content: string;
-    image?: string;
-    imageHint?: string;
     comments: number;
     retweets: string[];
     likes: string[];
@@ -152,7 +150,6 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }:
                     </div>
                     <div className="mb-2 whitespace-pre-wrap">
                         <p>{post.content}</p>
-                        {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="mt-2 rounded-2xl border" />}
                     </div>
                     <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
                         <button className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></button>

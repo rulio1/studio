@@ -7,17 +7,12 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { generatePost } from '@/ai/flows/post-generator-flow';
-import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 import { auth, db, storage } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { ImageIcon, Sparkles, Loader2, X, Plus, ImageUp } from 'lucide-react';
-import Image from 'next/image';
+import { Sparkles, Loader2, Plus } from 'lucide-react';
 import { Button } from './ui/button';
 import React from 'react';
-import { dataURItoFile } from '@/lib/utils';
-import { v4 as uuidv4 } from 'uuid';
 
 interface ChirpUser {
     uid: string;
@@ -29,23 +24,17 @@ interface ChirpUser {
 export default function CreatePostModal() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPostContent, setNewPostContent] = useState('');
-    const [newPostImagePreview, setNewPostImagePreview] = useState<string | null>(null);
-    const [newPostFile, setNewPostFile] = useState<File | null>(null);
     const [isPosting, setIsPosting] = useState(false);
     
     // AI Generators State
     const [showAiTextGenerator, setShowAiTextGenerator] = useState(false);
     const [aiTextPrompt, setAiTextPrompt] = useState('');
     const [isGeneratingText, setIsGeneratingText] = useState(false);
-    const [showAiImageGenerator, setShowAiImageGenerator] = useState(false);
-    const [aiImagePrompt, setAiImagePrompt] = useState('');
-    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
     
     const { toast } = useToast();
-    const imageInputRef = React.useRef<HTMLInputElement>(null);
 
      useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -69,23 +58,18 @@ export default function CreatePostModal() {
 
     const resetModal = () => {
         setNewPostContent('');
-        setNewPostImagePreview(null);
-        setNewPostFile(null);
         setAiTextPrompt('');
-        setAiImagePrompt('');
         setIsGeneratingText(false);
-        setIsGeneratingImage(false);
         setShowAiTextGenerator(false);
-        setShowAiImageGenerator(false);
         setIsModalOpen(false);
         setIsPosting(false);
     }
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() && !newPostFile) {
+        if (!newPostContent.trim()) {
             toast({
                 title: "O post não pode estar vazio.",
-                description: "Por favor, escreva algo ou adicione uma imagem antes de postar.",
+                description: "Por favor, escreva algo antes de postar.",
                 variant: "destructive",
             });
             return;
@@ -102,16 +86,6 @@ export default function CreatePostModal() {
         setIsPosting(true);
 
         try {
-            let imageUrl = '';
-            let imageHint = '';
-
-            if (newPostFile) {
-                const imageRef = ref(storage, `posts/${user.uid}/${uuidv4()}_${newPostFile.name}`);
-                await uploadBytes(imageRef, newPostFile);
-                imageUrl = await getDownloadURL(imageRef);
-                imageHint = aiImagePrompt || 'user upload';
-            }
-
             await addDoc(collection(db, "posts"), {
                 authorId: user.uid,
                 author: chirpUser.displayName,
@@ -119,8 +93,8 @@ export default function CreatePostModal() {
                 avatar: chirpUser.avatar,
                 avatarFallback: chirpUser.displayName[0],
                 content: newPostContent,
-                image: imageUrl,
-                imageHint: imageUrl ? imageHint : '',
+                image: '',
+                imageHint: '',
                 communityId: null,
                 createdAt: serverTimestamp(),
                 comments: 0,
@@ -141,19 +115,6 @@ export default function CreatePostModal() {
             setIsPosting(false);
         }
     };
-
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            setNewPostFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setNewPostImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-            setAiImagePrompt(''); // Clear AI prompt if user uploads
-        }
-    };
     
     const handleGenerateText = async () => {
         if(!aiTextPrompt.trim()) {
@@ -170,25 +131,6 @@ export default function CreatePostModal() {
             toast({ title: "Falha ao gerar o post", description: "Por favor, tente novamente.", variant: "destructive" });
         } finally {
             setIsGeneratingText(false);
-        }
-    };
-
-    const handleGenerateImage = async () => {
-        if (!aiImagePrompt.trim()) return;
-        setIsGeneratingImage(true);
-        setNewPostFile(null); // Clear any user-uploaded file
-        setNewPostImagePreview(null);
-        try {
-            const imageDataUri = await generateImageFromPrompt(aiImagePrompt);
-            setNewPostImagePreview(imageDataUri);
-            const imageFile = dataURItoFile(imageDataUri, `${uuidv4()}.png`);
-            setNewPostFile(imageFile);
-            toast({ title: "Imagem gerada com sucesso!" });
-        } catch (error) {
-            console.error(error);
-            toast({ title: "Falha ao gerar a imagem", description: `${error}`, variant: "destructive" });
-        } finally {
-            setIsGeneratingImage(false);
         }
     };
 
@@ -219,14 +161,6 @@ export default function CreatePostModal() {
                                     rows={1}
                                     disabled={isPosting}
                                 />
-                                {newPostImagePreview && (
-                                    <div className="mt-4 relative">
-                                        <Image src={newPostImagePreview} width={500} height={300} alt="Pré-visualização" className="rounded-2xl border" />
-                                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => {if(!isPosting) {setNewPostImagePreview(null); setNewPostFile(null)}}}>
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                )}
                             </div>
                         </div>
 
@@ -246,39 +180,14 @@ export default function CreatePostModal() {
                                 </Button>
                             </div>
                         )}
-                        
-                        {showAiImageGenerator && (
-                            <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
-                                <Textarea 
-                                    placeholder="ex: Um astronauta surfando em um anel de Saturno"
-                                    className="text-sm focus-visible:ring-1 bg-background"
-                                    value={aiImagePrompt}
-                                    onChange={(e) => setAiImagePrompt(e.target.value)}
-                                    rows={2}
-                                    disabled={isGeneratingImage}
-                                />
-                                <Button onClick={handleGenerateImage} disabled={isGeneratingImage || !aiImagePrompt.trim()} className="self-end" size="sm">
-                                    {isGeneratingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Gerar Imagem
-                                </Button>
-                            </div>
-                        )}
-
 
                         <div className="flex justify-between items-center mt-2 border-t pt-4">
                             <div className="flex items-center gap-1">
-                                <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                                <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
-                                    <ImageIcon className="h-6 w-6 text-primary" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => {setShowAiImageGenerator(!showAiImageGenerator); setShowAiTextGenerator(false);}} disabled={isPosting}>
-                                    <ImageUp className="h-6 w-6 text-primary" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator); setShowAiImageGenerator(false);}} disabled={isPosting}>
+                                <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator);}} disabled={isPosting}>
                                     <Sparkles className="h-6 w-6 text-primary" />
                                 </Button>
                             </div>
-                            <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !newPostFile) || isPosting}>
+                            <Button onClick={handleCreatePost} disabled={!newPostContent.trim() || isPosting}>
                                 {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Postar
                             </Button>

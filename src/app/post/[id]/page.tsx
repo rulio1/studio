@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, Upload, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck } from 'lucide-react';
-import Image from 'next/image';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -43,8 +42,6 @@ interface Post {
     time: string;
     createdAt: any;
     content: string;
-    image?: string;
-    imageHint?: string;
     comments: number;
     retweets: string[];
     likes: string[];
@@ -475,9 +472,6 @@ export default function PostDetailPage() {
                         </DropdownMenu>
                     </div>
                     <p className="text-xl mb-4 whitespace-pre-wrap">{post.content}</p>
-                    {post.image && (
-                        <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="rounded-2xl border mb-4" />
-                    )}
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <p>{post.time}</p>
                         {post.editedAt && <p className="text-xs">(editado)</p>}
@@ -607,6 +601,3 @@ export default function PostDetailPage() {
         </div>
     );
 }
-
-    
-    

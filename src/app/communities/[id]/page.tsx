@@ -9,7 +9,7 @@ import { auth, db, storage } from '@/lib/firebase';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Upload, Bird, Trash2, Edit, Save, ImageIcon, Sparkles, X, ImageUp, BadgeCheck } from 'lucide-react';
+import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Bird, Trash2, Edit, Save, Sparkles, X, BadgeCheck } from 'lucide-react';
 import PostSkeleton from '@/components/post-skeleton';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,27 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { generatePost } from '@/ai/flows/post-generator-flow';
-import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { v4 as uuidv4 } from 'uuid';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import React from 'react';
-import { dataURItoFile } from '@/lib/utils';
 
 interface Community {
     id: string;
@@ -111,7 +91,6 @@ const PostItem = ({ post }: { post: Post }) => {
                     </div>
                     <div className="mb-2 whitespace-pre-wrap">
                         <p>{post.content}</p>
-                        {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="mt-2 rounded-2xl border" />}
                     </div>
                 </div>
             </div>
@@ -137,19 +116,12 @@ export default function CommunityDetailPage() {
     // Post creation modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newPostContent, setNewPostContent] = useState('');
-    const [newPostImagePreview, setNewPostImagePreview] = useState<string | null>(null);
-    const [newPostFile, setNewPostFile] = useState<File | null>(null);
     const [isPosting, setIsPosting] = useState(false);
-    const imageInputRef = React.useRef<HTMLInputElement>(null);
 
     // AI Generators State
     const [showAiTextGenerator, setShowAiTextGenerator] = useState(false);
     const [aiTextPrompt, setAiTextPrompt] = useState('');
     const [isGeneratingText, setIsGeneratingText] = useState(false);
-    const [showAiImageGenerator, setShowAiImageGenerator] = useState(false);
-    const [aiImagePrompt, setAiImagePrompt] = useState('');
-    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -235,22 +207,17 @@ export default function CommunityDetailPage() {
 
     const resetModal = () => {
         setNewPostContent('');
-        setNewPostImagePreview(null);
-        setNewPostFile(null);
         setAiTextPrompt('');
-        setAiImagePrompt('');
         setIsGeneratingText(false);
-        setIsGeneratingImage(false);
         setShowAiTextGenerator(false);
-        setShowAiImageGenerator(false);
         setIsModalOpen(false);
     }
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() && !newPostFile) {
+        if (!newPostContent.trim()) {
              toast({
                 title: "O post não pode estar vazio.",
-                description: "Por favor, escreva algo ou adicione uma imagem antes de postar.",
+                description: "Por favor, escreva algo antes de postar.",
                 variant: "destructive",
             });
             return;
@@ -259,16 +226,6 @@ export default function CommunityDetailPage() {
         setIsPosting(true);
 
         try {
-            let imageUrl = '';
-            let imageHint = '';
-            
-            if (newPostFile) {
-                 const imageRef = ref(storage, `posts/${user.uid}/${uuidv4()}_${newPostFile.name}`);
-                 await uploadBytes(imageRef, newPostFile);
-                 imageUrl = await getDownloadURL(imageRef);
-                 imageHint = aiImagePrompt || 'user upload';
-            }
-
             await addDoc(collection(db, "posts"), {
                 authorId: user.uid,
                 author: chirpUser.displayName,
@@ -276,8 +233,8 @@ export default function CommunityDetailPage() {
                 avatar: chirpUser.avatar,
                 avatarFallback: chirpUser.displayName[0],
                 content: newPostContent,
-                image: imageUrl,
-                imageHint: imageUrl ? imageHint : '',
+                image: '',
+                imageHint: '',
                 communityId: communityId,
                 createdAt: serverTimestamp(),
                 comments: 0,
@@ -296,17 +253,6 @@ export default function CommunityDetailPage() {
         }
     };
 
-
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            setNewPostFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => setNewPostImagePreview(reader.result as string);
-            reader.readAsDataURL(file);
-        }
-    };
-
     const handleGenerateText = async () => {
         if (!aiTextPrompt.trim()) return;
         setIsGeneratingText(true);
@@ -322,26 +268,6 @@ export default function CommunityDetailPage() {
         }
     };
     
-    const handleGenerateImage = async () => {
-        if (!aiImagePrompt.trim()) return;
-        setIsGeneratingImage(true);
-        setNewPostFile(null); // Clear any user-uploaded file
-        setNewPostImagePreview(null);
-        try {
-            const imageDataUri = await generateImageFromPrompt(aiImagePrompt);
-            setNewPostImagePreview(imageDataUri);
-            const imageFile = dataURItoFile(imageDataUri, `${uuidv4()}.png`);
-            setNewPostFile(imageFile);
-            toast({ title: "Imagem gerada com sucesso!" });
-        } catch (error) {
-            console.error(error);
-            toast({ title: "Falha ao gerar a imagem", description: `${error}`, variant: "destructive" });
-        } finally {
-            setIsGeneratingImage(false);
-        }
-    };
-
-
     if (isLoading || !community) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
@@ -425,14 +351,6 @@ export default function CommunityDetailPage() {
                                             onChange={(e) => setNewPostContent(e.target.value)}
                                             rows={5}
                                         />
-                                        {newPostImagePreview && (
-                                            <div className="mt-4 relative">
-                                                <Image src={newPostImagePreview} width={500} height={300} alt="Pré-visualização" className="rounded-2xl border" />
-                                                <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => {setNewPostImagePreview(null); setNewPostFile(null)}}>
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
 
@@ -451,35 +369,13 @@ export default function CommunityDetailPage() {
                                         </Button>
                                     </div>
                                 )}
-                                {showAiImageGenerator && (
-                                    <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
-                                        <Textarea 
-                                            placeholder="ex: Um astronauta surfando em um anel de Saturno"
-                                            className="text-sm focus-visible:ring-1 bg-background"
-                                            value={aiImagePrompt}
-                                            onChange={(e) => setAiImagePrompt(e.target.value)}
-                                            rows={2}
-                                        />
-                                        <Button onClick={handleGenerateImage} disabled={isGeneratingImage || !aiImagePrompt.trim()} className="self-end" size="sm">
-                                            {isGeneratingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Gerar Imagem
-                                        </Button>
-                                    </div>
-                                )}
                                 <div className="flex justify-between items-center mt-2 border-t pt-4">
                                     <div className="flex items-center gap-1">
-                                        <input type="file" ref={imageInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-                                        <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
-                                            <ImageIcon className="h-6 w-6 text-primary" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => {setShowAiImageGenerator(!showAiImageGenerator); setShowAiTextGenerator(false);}} disabled={isPosting}>
-                                            <ImageUp className="h-6 w-6 text-primary" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator); setShowAiImageGenerator(false);}} disabled={isPosting}>
+                                        <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator);}} disabled={isPosting}>
                                             <Sparkles className="h-6 w-6 text-primary" />
                                         </Button>
                                     </div>
-                                    <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !newPostFile) || isPosting}>
+                                    <Button onClick={handleCreatePost} disabled={!newPostContent.trim() || isPosting}>
                                         {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Postar
                                     </Button>
@@ -492,6 +388,3 @@ export default function CommunityDetailPage() {
         </div>
     );
 }
-
-    
-    
