@@ -48,13 +48,15 @@ export default function RegisterPage() {
             displayName: values.name,
         });
 
+        const handle = values.name.toLowerCase().replace(/[^a-z0-9_]/g, '');
         await setDoc(doc(db, "users", user.uid), {
             uid: user.uid,
             displayName: values.name,
             searchableDisplayName: values.name.toLowerCase(),
             email: values.email,
             createdAt: serverTimestamp(),
-            handle: `@${values.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+            handle: `@${handle}`,
+            searchableHandle: handle,
             avatar: `https://placehold.co/128x128.png?text=${values.name[0]}`,
             banner: 'https://placehold.co/600x200.png',
             bio: '',

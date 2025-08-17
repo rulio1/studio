@@ -12,12 +12,13 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import React from 'react';
 
 interface UserProfileData {
     displayName: string;
+    handle: string;
     bio: string;
     location: string;
     avatar: string;
@@ -30,9 +31,11 @@ export default function EditProfilePage() {
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [originalHandle, setOriginalHandle] = useState('');
     
     const [profileData, setProfileData] = useState<UserProfileData>({
         displayName: '',
+        handle: '',
         bio: '',
         location: '',
         avatar: '',
@@ -47,13 +50,16 @@ export default function EditProfilePage() {
                     const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
+                        const handle = userData.handle.startsWith('@') ? userData.handle.substring(1) : userData.handle;
                         setProfileData({
                             displayName: userData.displayName || '',
+                            handle: handle,
                             bio: userData.bio || '',
                             location: userData.location || '',
                             avatar: userData.avatar || '',
                             banner: userData.banner || '',
                         });
+                        setOriginalHandle(handle);
                     } else {
                         toast({ title: "Usuário não encontrado.", variant: "destructive" });
                         router.push('/login');
@@ -71,7 +77,11 @@ export default function EditProfilePage() {
     }, [router, toast]);
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setProfileData({ ...profileData, [e.target.id]: e.target.value });
+        let value = e.target.value;
+        if (e.target.id === 'handle') {
+             value = value.replace(/[^a-z0-9_]/gi, '').toLowerCase();
+        }
+        setProfileData({ ...profileData, [e.target.id]: value });
     };
 
     const handleSave = async () => {
@@ -79,11 +89,35 @@ export default function EditProfilePage() {
         setIsSaving(true);
         
         try {
+            const newHandle = profileData.handle;
+            const handleChanged = newHandle !== originalHandle;
+
+            if (handleChanged) {
+                if(newHandle.length < 3) {
+                    toast({ title: "Nome de usuário muito curto", description: "O nome de usuário deve ter pelo menos 3 caracteres.", variant: "destructive" });
+                    setIsSaving(false);
+                    return;
+                }
+                const usersRef = collection(db, "users");
+                const q = query(usersRef, where("searchableHandle", "==", newHandle));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    toast({ title: "Nome de usuário já existe", description: "Por favor, escolha outro nome de usuário.", variant: "destructive" });
+                    setIsSaving(false);
+                    return;
+                }
+            }
+            
             const updateData: { [key: string]: any } = { 
                 displayName: profileData.displayName,
                 bio: profileData.bio,
                 location: profileData.location,
             };
+
+            if (handleChanged) {
+                updateData.handle = `@${newHandle}`;
+                updateData.searchableHandle = newHandle;
+            }
 
             const userDocRef = doc(db, 'users', user.uid);
             await updateDoc(userDocRef, updateData);
@@ -152,6 +186,19 @@ export default function EditProfilePage() {
                     className="text-lg" 
                     disabled={isSaving}
                 />
+            </div>
+             <div className="grid gap-1.5">
+                <Label htmlFor="handle">Nome de usuário</Label>
+                 <div className="flex items-center rounded-md border border-input focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                    <span className="pl-3 text-muted-foreground">@</span>
+                    <Input 
+                        id="handle" 
+                        value={profileData.handle} 
+                        onChange={handleFormChange}
+                        className="text-lg border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                        disabled={isSaving}
+                    />
+                </div>
             </div>
              <div className="grid gap-1.5">
                 <Label htmlFor="bio">Bio</Label>
