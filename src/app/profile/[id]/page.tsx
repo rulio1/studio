@@ -876,12 +876,12 @@ export default function ProfilePage() {
             </div>
              {isChirpAccount && (
                 <Card className="mt-4 border-primary/50">
-                    <CardHeader className="flex-row items-center gap-4 space-y-0">
-                        <Info className="h-6 w-6 text-primary" />
-                        <CardTitle>Conta Oficial</CardTitle>
+                    <CardHeader className="flex-row items-center gap-3 space-y-0 p-4">
+                        <Info className="h-5 w-5 text-primary" />
+                        <CardTitle className="text-base">Conta Oficial</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">Esta é a conta oficial do Chirp. Fique de olho para anúncios, dicas e atualizações importantes da plataforma.</p>
+                    <CardContent className="p-4 pt-0">
+                        <p className="text-xs text-muted-foreground">Esta é a conta oficial do Chirp. Fique de olho para anúncios, dicas e atualizações importantes da plataforma.</p>
                     </CardContent>
                 </Card>
             )}
