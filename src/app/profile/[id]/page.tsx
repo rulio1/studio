@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp, deleteDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp, deleteDoc, setDoc, documentId, addDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -64,6 +64,8 @@ interface Post {
     editedAt?: any;
     communityId?: string | null;
     hashtags?: string[];
+    repostedBy?: { name: string; handle: string };
+    repostedAt?: any;
 }
 
 interface Reply {
@@ -123,23 +125,30 @@ const PostContent = ({ content }: { content: string }) => {
     );
 };
 
-const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet') => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void }) => {
+const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
     const isOfficialAccount = post.handle.toLowerCase() === '@chirp' || post.handle.toLowerCase() === '@rulio';
 
     useEffect(() => {
-        if (post.createdAt) {
+        const timestamp = post.repostedAt || post.createdAt;
+        if (timestamp) {
             try {
-                setTime(formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: ptBR }));
+                setTime(formatDistanceToNow(timestamp.toDate(), { addSuffix: true, locale: ptBR }));
             } catch (e) {
                 setTime('agora')
             }
         }
-    }, [post.createdAt]);
+    }, [post.createdAt, post.repostedAt]);
 
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
+             {post.repostedBy && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-6">
+                    <Repeat className="h-4 w-4" />
+                    <span>{post.repostedBy.handle === chirpUser?.handle ? 'Você' : post.repostedBy.name} repostou</span>
+                </div>
+            )}
             <div className="flex gap-4">
                  <Avatar className="cursor-pointer" onClick={(e) => {e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
                     <AvatarImage src={post.avatar} alt={post.handle} />
@@ -193,8 +202,8 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }:
                     )}
                     <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
                         <button className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></button>
-                        <button onClick={() => onAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}><Repeat className="h-5 w-5 hover:text-green-500 transition-colors" /><span>{post.retweets.length}</span></button>
-                        <button onClick={() => onAction(post.id, 'like')} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}><Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} /><span>{post.likes.length}</span></button>
+                        <button onClick={() => onAction(post.id, 'retweet', post.authorId)} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}><Repeat className="h-5 w-5 hover:text-green-500 transition-colors" /><span>{post.retweets.length}</span></button>
+                        <button onClick={() => onAction(post.id, 'like', post.authorId)} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}><Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} /><span>{post.likes.length}</span></button>
                         <div className="flex items-center gap-1"><BarChart2 className="h-5 w-5" /><span>{post.views}</span></div>
                     </div>
                 </div>
@@ -297,7 +306,6 @@ export default function ProfilePage() {
                 setIsFollowing(userData.followers?.includes(currentUser.uid));
             } else {
                 console.error("Usuário não encontrado!");
-                // router.push('/home');
             }
             setIsLoading(false);
         });
@@ -315,44 +323,78 @@ export default function ProfilePage() {
     const fetchUserPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingPosts(true);
-        const q = query(collection(db, "posts"), where("authorId", "==", profileId));
-        onSnapshot(q, (snapshot) => {
-            const posts = snapshot.docs.map(doc => {
-                 const data = doc.data();
-                 return {
-                    id: doc.id,
-                    ...data,
-                    time: '', // will be handled by PostItem
-                    isLiked: data.likes.includes(currentUser?.uid || ''),
-                    isRetweeted: data.retweets.includes(currentUser?.uid || ''),
-                 } as Post
-            });
-            posts.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-            setUserPosts(posts);
-            setIsLoadingPosts(false);
-
-            // Filter for media posts client-side
-            setIsLoadingMedia(true);
-            setMediaPosts(posts.filter(p => p.image));
-            setIsLoadingMedia(false);
+    
+        // Fetch original posts
+        const postsQuery = query(collection(db, "posts"), where("authorId", "==", profileId));
+        const postsSnapshot = await getDocs(postsQuery);
+        const originalPosts = postsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+        } as Post));
+    
+        // Fetch reposts
+        const repostsQuery = query(collection(db, "reposts"), where("userId", "==", profileId), orderBy("repostedAt", "desc"));
+        const repostsSnapshot = await getDocs(repostsQuery);
+        const repostedPostIds = repostsSnapshot.docs.map(doc => doc.data().postId);
+        const repostsData = repostsSnapshot.docs.map(doc => doc.data());
+    
+        let repostedPosts: Post[] = [];
+        if (repostedPostIds.length > 0) {
+            const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
+            const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
+            const postsMap = new Map(repostedPostsSnapshot.docs.map(doc => [doc.id, doc.data()]));
+            
+            repostedPosts = repostsData.map(repost => {
+                const postData = postsMap.get(repost.postId);
+                if (!postData) return null;
+                return {
+                    id: repost.postId,
+                    ...postData,
+                    repostedAt: repost.repostedAt,
+                    repostedBy: {
+                        name: profileUser?.displayName || '',
+                        handle: profileUser?.handle || ''
+                    },
+                } as Post;
+            }).filter(p => p !== null) as Post[];
+        }
+    
+        // Merge and sort
+        const allPosts = [...originalPosts, ...repostedPosts];
+        allPosts.sort((a, b) => {
+            const timeA = a.repostedAt || a.createdAt;
+            const timeB = b.repostedAt || b.createdAt;
+            return timeB.toMillis() - timeA.toMillis();
         });
-    }, [profileId, currentUser]);
+
+        const finalPosts = allPosts.map(post => ({
+            ...post,
+            isLiked: post.likes.includes(currentUser?.uid || ''),
+            isRetweeted: post.retweets.includes(currentUser?.uid || ''),
+        }))
+    
+        setUserPosts(finalPosts);
+        setIsLoadingPosts(false);
+
+        setIsLoadingMedia(true);
+        setMediaPosts(finalPosts.filter(p => p.image));
+        setIsLoadingMedia(false);
+    
+    }, [profileId, currentUser, profileUser]);
 
     const fetchUserReplies = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingReplies(true);
-        const q = query(collection(db, "comments"), where("authorId", "==", profileId));
+        const q = query(collection(db, "comments"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
         onSnapshot(q, (snapshot) => {
             const repliesData = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
                     id: doc.id,
                     ...data,
-                    time: '', // will be handled by ReplyItem
+                    time: '', 
                 } as Reply;
             });
-            // Sort client-side
-            repliesData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setUserReplies(repliesData);
             setIsLoadingReplies(false);
         });
@@ -362,19 +404,17 @@ export default function ProfilePage() {
     const fetchLikedPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingLikes(true);
-        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId));
+        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId), orderBy("createdAt", "desc"));
         onSnapshot(q, (snapshot) => {
             const posts = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
                     id: doc.id,
                     ...data,
-                    time: '', // will be handled by PostItem
                     isLiked: data.likes.includes(currentUser?.uid || ''),
                     isRetweeted: data.retweets.includes(currentUser?.uid || ''),
                 } as Post
             });
-            posts.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setLikedPosts(posts);
             setIsLoadingLikes(false);
         });
@@ -382,12 +422,12 @@ export default function ProfilePage() {
 
 
     useEffect(() => {
-        if(profileId) {
+        if(profileId && profileUser) {
             fetchUserPosts();
             fetchUserReplies();
             fetchLikedPosts();
         }
-    }, [profileId, fetchUserPosts, fetchLikedPosts, fetchUserReplies]);
+    }, [profileId, profileUser, fetchUserPosts, fetchLikedPosts, fetchUserReplies]);
 
     const handleFollow = async () => {
         if (!currentUser || !profileUser || !chirpUser) return;
@@ -535,25 +575,44 @@ export default function ProfilePage() {
         }
     };
 
-    const handlePostAction = async (postId: string, action: 'like' | 'retweet') => {
+    const handlePostAction = async (postId: string, action: 'like' | 'retweet', authorId: string) => {
         if (!currentUser || !chirpUser) return;
+    
         const postRef = doc(db, 'posts', postId);
         const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId) || mediaPosts.find(p => p.id === postId);
         if (!post) return;
-
-        const field = action === 'like' ? 'likes' : 'retweets';
+    
         const isActioned = action === 'like' ? post.isLiked : post.isRetweeted;
     
-        if(isActioned) {
-            await updateDoc(postRef, { [field]: arrayRemove(currentUser.uid) });
+        const batch = writeBatch(db);
+    
+        if (isActioned) {
+            const field = action === 'like' ? 'likes' : 'retweets';
+            batch.update(postRef, { [field]: arrayRemove(currentUser.uid) });
+    
+            if (action === 'retweet') {
+                const repostQuery = query(collection(db, 'reposts'), where('userId', '==', currentUser.uid), where('postId', '==', postId));
+                const repostSnapshot = await getDocs(repostQuery);
+                repostSnapshot.forEach(doc => batch.delete(doc.ref));
+            }
         } else {
-            const batch = writeBatch(db);
+            const field = action === 'like' ? 'likes' : 'retweets';
             batch.update(postRef, { [field]: arrayUnion(currentUser.uid) });
-
-            if (currentUser.uid !== post.authorId) {
+    
+            if (action === 'retweet') {
+                const repostRef = doc(collection(db, 'reposts'));
+                batch.set(repostRef, {
+                    userId: currentUser.uid,
+                    postId: postId,
+                    originalPostAuthorId: authorId,
+                    repostedAt: serverTimestamp()
+                });
+            }
+    
+            if (currentUser.uid !== authorId) {
                 const notificationRef = doc(collection(db, 'notifications'));
                 batch.set(notificationRef, {
-                    toUserId: post.authorId,
+                    toUserId: authorId,
                     fromUserId: currentUser.uid,
                     fromUser: {
                         name: chirpUser.displayName,
@@ -568,9 +627,11 @@ export default function ProfilePage() {
                     read: false,
                 });
             }
-            await batch.commit();
         }
+        await batch.commit();
+        fetchUserPosts(); // Re-fetch to update the view
     };
+    
 
     const PostList = ({ posts, loading, emptyTitle, emptyDescription }: { posts: Post[], loading: boolean, emptyTitle: string, emptyDescription: string }) => {
         if (loading) {
@@ -588,7 +649,7 @@ export default function ProfilePage() {
             <ul className="divide-y divide-border">
                 {posts.map((post) => (
                     <PostItem 
-                        key={post.id}
+                        key={`${post.id}-${post.repostedAt || ''}`}
                         post={post}
                         user={currentUser}
                         chirpUser={chirpUser}

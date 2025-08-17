@@ -181,43 +181,61 @@ export default function HomePage() {
     }
   }, [activeTab, fetchFollowingPosts, chirpUser]);
 
-  const handlePostAction = async (postId: string, action: 'like' | 'retweet') => {
-    if (!user || !chirpUser) return;
-      
-    const postRef = doc(db, "posts", postId);
-    const postToUpdate = allPosts.find(p => p.id === postId) || followingPosts.find(p => p.id === postId);
-    if (!postToUpdate) return;
-
-    const field = action === 'like' ? 'likes' : 'retweets';
-    const isActioned = action === 'like' ? postToUpdate.isLiked : postToUpdate.isRetweeted;
-
-    if (isActioned) {
-        await updateDoc(postRef, { [field]: arrayRemove(user.uid) });
-    } else {
+    const handlePostAction = async (postId: string, action: 'like' | 'retweet', authorId: string) => {
+        if (!user || !chirpUser) return;
+    
+        const postRef = doc(db, 'posts', postId);
+        const post = allPosts.find(p => p.id === postId) || followingPosts.find(p => p.id === postId);
+        if (!post) return;
+    
+        const isActioned = action === 'like' ? post.isLiked : post.isRetweeted;
+    
         const batch = writeBatch(db);
-        batch.update(postRef, { [field]: arrayUnion(user.uid) });
-        
-        if (user.uid !== postToUpdate.authorId) {
-            const notificationRef = doc(collection(db, 'notifications'));
-            batch.set(notificationRef, {
-                toUserId: postToUpdate.authorId,
-                fromUserId: user.uid,
-                fromUser: {
-                    name: chirpUser.displayName,
-                    handle: chirpUser.handle,
-                    avatar: chirpUser.avatar,
-                },
-                type: action,
-                text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
-                postContent: postToUpdate.content.substring(0, 50),
-                postId: postToUpdate.id,
-                createdAt: serverTimestamp(),
-                read: false,
-            });
+    
+        if (isActioned) {
+            const field = action === 'like' ? 'likes' : 'retweets';
+            batch.update(postRef, { [field]: arrayRemove(user.uid) });
+    
+            if (action === 'retweet') {
+                const repostQuery = query(collection(db, 'reposts'), where('userId', '==', user.uid), where('postId', '==', postId));
+                const repostSnapshot = await getDocs(repostQuery);
+                repostSnapshot.forEach(doc => batch.delete(doc.ref));
+            }
+        } else {
+            const field = action === 'like' ? 'likes' : 'retweets';
+            batch.update(postRef, { [field]: arrayUnion(user.uid) });
+    
+            if (action === 'retweet') {
+                const repostRef = doc(collection(db, 'reposts'));
+                batch.set(repostRef, {
+                    userId: user.uid,
+                    postId: postId,
+                    originalPostAuthorId: authorId,
+                    repostedAt: serverTimestamp()
+                });
+            }
+    
+            if (user.uid !== authorId) {
+                const notificationRef = doc(collection(db, 'notifications'));
+                batch.set(notificationRef, {
+                    toUserId: authorId,
+                    fromUserId: user.uid,
+                    fromUser: {
+                        name: chirpUser.displayName,
+                        handle: chirpUser.handle,
+                        avatar: chirpUser.avatar,
+                    },
+                    type: action,
+                    text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
+                    postContent: post.content.substring(0, 50),
+                    postId: post.id,
+                    createdAt: serverTimestamp(),
+                    read: false,
+                });
+            }
         }
         await batch.commit();
-    }
-};
+    };
 
  const handleDeletePost = async () => {
     if (!postToDelete) return;
@@ -406,11 +424,11 @@ export default function HomePage() {
                         <MessageCircle className="h-5 w-5 hover:text-primary transition-colors" />
                         <span>{post.comments}</span>
                     </div>
-                    <button onClick={() => handlePostAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
+                    <button onClick={() => handlePostAction(post.id, 'retweet', post.authorId)} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}>
                         <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
                         <span>{post.retweets.length}</span>
                     </button>
-                    <button onClick={() => handlePostAction(post.id, 'like')} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
+                    <button onClick={() => handlePostAction(post.id, 'like', post.authorId)} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
                         <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
                         <span>{post.likes.length}</span>
                     </button>
