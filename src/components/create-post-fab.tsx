@@ -6,13 +6,17 @@ import { Plus, Feather, ImageIcon, X, MailPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CreatePostModal from './create-post-modal';
 import { usePathname, useRouter } from 'next/navigation';
+import NewMessageModal from './new-message-modal';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function CreatePostFAB() {
     const [isOpen, setIsOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<'post' | 'gif'>('post');
     const pathname = usePathname();
     const router = useRouter();
+    const { user } = useAuth();
 
     const handleToggle = () => {
         setIsOpen(!isOpen);
@@ -25,20 +29,29 @@ export default function CreatePostFAB() {
     };
 
     const handleNewMessage = () => {
-        router.push('/search');
+        setIsNewMessageModalOpen(true);
     };
 
     if (pathname === '/messages') {
         return (
-             <div className="fixed bottom-24 right-4 z-50">
-                <Button
-                    onClick={handleNewMessage}
-                    aria-label="Nova Mensagem"
-                    className="h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 flex items-center justify-center text-primary-foreground"
-                >
-                    <MailPlus className="h-8 w-8" />
-                </Button>
-            </div>
+            <>
+                <div className="fixed bottom-24 right-4 z-50">
+                    <Button
+                        onClick={handleNewMessage}
+                        aria-label="Nova Mensagem"
+                        className="h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 flex items-center justify-center text-primary-foreground"
+                    >
+                        <MailPlus className="h-8 w-8" />
+                    </Button>
+                </div>
+                 {isNewMessageModalOpen && user && (
+                    <NewMessageModal
+                        open={isNewMessageModalOpen}
+                        onOpenChange={setIsNewMessageModalOpen}
+                        currentUser={user}
+                    />
+                )}
+            </>
         )
     }
 
@@ -46,23 +59,23 @@ export default function CreatePostFAB() {
         <>
             <div className="fixed bottom-24 right-4 z-50 flex flex-col items-center gap-4">
                  <div
-                    className={`absolute bottom-0 flex flex-col items-center gap-4 transition-all duration-300 ease-in-out ${
+                    className={`flex flex-col items-center gap-4 transition-all duration-300 ease-in-out ${
                         isOpen ? 'opacity-100 -translate-y-20' : 'opacity-0 translate-y-0 pointer-events-none'
                     }`}
                 >
+                    <Button
+                        onClick={() => openModal('gif')}
+                        aria-label="Post GIF or Image"
+                        className="h-14 w-14 rounded-full bg-primary shadow-lg flex items-center justify-center text-primary-foreground"
+                    >
+                        <ImageIcon className="h-6 w-6" />
+                    </Button>
                     <Button
                         onClick={() => openModal('post')}
                         aria-label="Create Post"
                         className="h-14 w-14 rounded-full bg-primary shadow-lg flex items-center justify-center text-primary-foreground"
                     >
                         <Feather className="h-6 w-6" />
-                    </Button>
-                     <Button
-                        onClick={() => openModal('gif')}
-                        aria-label="Post GIF or Image"
-                        className="h-14 w-14 rounded-full bg-primary shadow-lg flex items-center justify-center text-primary-foreground"
-                    >
-                        <ImageIcon className="h-6 w-6" />
                     </Button>
                 </div>
 

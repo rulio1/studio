@@ -12,6 +12,7 @@ import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, doc, getDoc, orderBy } from 'firebase/firestore';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import NewMessageModal from '@/components/new-message-modal';
 
 interface ChirpUser {
     uid: string;
@@ -88,6 +89,8 @@ export default function MessagesPage() {
     const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
+
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -179,7 +182,7 @@ export default function MessagesPage() {
             <Button variant="ghost" size="icon">
                 <Settings className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => router.push('/search')}>
+            <Button variant="ghost" size="icon" onClick={() => setIsNewMessageModalOpen(true)}>
                 <MailPlus className="h-5 w-5" />
             </Button>
           </div>
@@ -202,7 +205,7 @@ export default function MessagesPage() {
                 <MessageSquare className="mx-auto h-16 w-16 text-muted-foreground" />
                 <h2 className="mt-4 text-2xl font-bold">Sem mensagens ainda</h2>
                 <p className="mt-2 text-muted-foreground">Quando você tiver novas conversas, elas aparecerão aqui.</p>
-                 <Button className="mt-4" onClick={() => router.push('/search')}>Encontrar pessoas</Button>
+                 <Button className="mt-4" onClick={() => setIsNewMessageModalOpen(true)}>Encontrar pessoas</Button>
             </div>
         ) : (
              <ul className="divide-y divide-border">
@@ -210,6 +213,13 @@ export default function MessagesPage() {
                    <ConversationItem key={convo.id} convo={convo} currentUserId={user?.uid || null}/>
                 ))}
              </ul>
+        )}
+         {isNewMessageModalOpen && user && (
+            <NewMessageModal 
+                open={isNewMessageModalOpen}
+                onOpenChange={setIsNewMessageModalOpen}
+                currentUser={user}
+            />
         )}
     </>
   );
