@@ -42,7 +42,7 @@ const UserItem = ({ user, currentUser, onToggleFollow, onDialogClose }: { user: 
     const router = useRouter();
     const isFollowing = currentUser.following.includes(user.uid);
     const isCurrentUser = user.uid === currentUser.uid;
-    const isVerified = user.isVerified || user.handle === '@rulio';
+    const isVerified = user.isVerified || user.handle === '@rulio' || user.handle === '@chirp';
     const isChirpAccount = user.handle === '@chirp';
 
     const handleUserClick = () => {
