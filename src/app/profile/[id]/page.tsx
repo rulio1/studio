@@ -39,6 +39,7 @@ import { formatTimeAgo } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Poll from '@/components/poll';
 import { Badge } from '@/components/ui/badge';
+import FollowListDialog from '@/components/follow-list-dialog';
 
 
 const EmptyState = ({ title, description }: { title: string, description: string }) => (
@@ -357,6 +358,11 @@ export default function ProfilePage() {
     const [editingPost, setEditingPost] = useState<Post | null>(null);
     const [editedContent, setEditedContent] = useState("");
     const [isUpdating, setIsUpdating] = useState(false);
+
+    // Follow list dialog state
+    const [followListTitle, setFollowListTitle] = useState('');
+    const [followListUserIds, setFollowListUserIds] = useState<string[]>([]);
+    const [isFollowListOpen, setIsFollowListOpen] = useState(false);
     
     const isOwnProfile = currentUser?.uid === profileId;
 
@@ -552,56 +558,61 @@ export default function ProfilePage() {
 
         return () => unsubscribeAuth();
     }, [profileId, router, fetchUserPosts, fetchUserReplies, fetchLikedPosts, toast]);
-
-    const handleFollow = async () => {
-        if (!currentUser || !profileUser || !chirpUser) return;
-        
+    
+    const handleToggleFollow = async (targetUser: ChirpUser, currentChirpUser: ChirpUser, isCurrentlyFollowing: boolean) => {
+        if (!currentUser) return;
+    
         const batch = writeBatch(db);
         const currentUserRef = doc(db, 'users', currentUser.uid);
-        const profileUserRef = doc(db, 'users', profileUser.uid);
+        const targetUserRef = doc(db, 'users', targetUser.uid);
         const notificationRef = doc(collection(db, 'notifications'));
-
-        const newIsFollowing = !isFollowing;
-        setIsFollowing(newIsFollowing); // Optimistic update
-
-        if (newIsFollowing) {
-            batch.update(currentUserRef, { following: arrayUnion(profileUser.uid) });
-            batch.update(profileUserRef, { followers: arrayUnion(currentUser.uid) });
+    
+        if (isCurrentlyFollowing) {
+            batch.update(currentUserRef, { following: arrayRemove(targetUser.uid) });
+            batch.update(targetUserRef, { followers: arrayRemove(currentUser.uid) });
             batch.set(notificationRef, {
-                toUserId: profileUser.uid,
+                toUserId: targetUser.uid,
                 fromUserId: currentUser.uid,
                 fromUser: {
-                    name: chirpUser.displayName,
-                    handle: chirpUser.handle,
-                    avatar: chirpUser.avatar,
-                    isVerified: chirpUser.isVerified || false,
-                },
-                type: 'follow',
-                text: 'seguiu você',
-                createdAt: serverTimestamp(),
-                read: false,
-            });
-        } else {
-            batch.update(currentUserRef, { following: arrayRemove(profileUser.uid) });
-            batch.update(profileUserRef, { followers: arrayRemove(currentUser.uid) });
-             batch.set(notificationRef, {
-                toUserId: profileUser.uid,
-                fromUserId: currentUser.uid,
-                fromUser: {
-                    name: chirpUser.displayName,
-                    handle: chirpUser.handle,
-                    avatar: chirpUser.avatar,
-                    isVerified: chirpUser.isVerified || false,
+                    name: currentChirpUser.displayName,
+                    handle: currentChirpUser.handle,
+                    avatar: currentChirpUser.avatar,
+                    isVerified: currentChirpUser.isVerified || false,
                 },
                 type: 'unfollow',
                 text: 'deixou de seguir você',
                 createdAt: serverTimestamp(),
                 read: false,
             });
+        } else {
+            batch.update(currentUserRef, { following: arrayUnion(targetUser.uid) });
+            batch.update(targetUserRef, { followers: arrayUnion(currentUser.uid) });
+            batch.set(notificationRef, {
+                toUserId: targetUser.uid,
+                fromUserId: currentUser.uid,
+                fromUser: {
+                    name: currentChirpUser.displayName,
+                    handle: currentChirpUser.handle,
+                    avatar: currentChirpUser.avatar,
+                    isVerified: currentChirpUser.isVerified || false,
+                },
+                type: 'follow',
+                text: 'seguiu você',
+                createdAt: serverTimestamp(),
+                read: false,
+            });
         }
-        
+    
         await batch.commit();
-        setProfileUser(prev => prev ? { ...prev, followers: newIsFollowing ? [...(prev.followers || []), currentUser.uid] : (prev.followers || []).filter(id => id !== currentUser.uid) } : null);
+        
+        // Update local state for the main profile button
+        if (targetUser.uid === profileUser?.uid) {
+            setIsFollowing(!isCurrentlyFollowing);
+            setProfileUser(prev => prev ? { ...prev, followers: !isCurrentlyFollowing ? [...(prev.followers || []), currentUser.uid] : (prev.followers || []).filter(id => id !== currentUser.uid) } : null);
+        }
+    
+        // Update local state for the current user (affects the dialog)
+        setChirpUser(prev => prev ? { ...prev, following: !isCurrentlyFollowing ? prev.following.filter(id => id !== targetUser.uid) : [...(prev.following || []), targetUser.uid] } : null);
     };
 
     const handleStartConversation = async () => {
@@ -917,6 +928,20 @@ export default function ProfilePage() {
             </ul>
         );
     };
+    
+    const showFollowers = () => {
+        if (!profileUser) return;
+        setFollowListTitle('Seguidores');
+        setFollowListUserIds(profileUser.followers);
+        setIsFollowListOpen(true);
+    }
+    
+    const showFollowing = () => {
+        if (!profileUser) return;
+        setFollowListTitle('Seguindo');
+        setFollowListUserIds(profileUser.following);
+        setIsFollowListOpen(true);
+    }
 
     if (isLoading || !profileUser) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -980,7 +1005,7 @@ export default function ProfilePage() {
                     <div className='flex items-center gap-2 mt-4'>
                         <Button variant="ghost" size="icon" className="border rounded-full" onClick={handleStartConversation}><Mail /></Button>
                         <Button variant="ghost" size="icon" className="border rounded-full"><Bell /></Button>
-                        <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={handleFollow}>
+                        <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={() => handleToggleFollow(profileUser, chirpUser!, isFollowing)}>
                             {isFollowing ? 'Seguindo' : 'Seguir'}
                         </Button>
                     </div>
@@ -1016,8 +1041,8 @@ export default function ProfilePage() {
                 {profileUser.createdAt && <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /><span>Ingressou em {format(profileUser.createdAt.toDate(), 'MMMM yyyy', { locale: ptBR })}</span></div>}
             </div>
              <div className="flex gap-4 mt-4 text-sm">
-                <p className="hover:underline cursor-pointer"><span className="font-bold text-foreground">{profileUser.following?.length || 0}</span> Seguindo</p>
-                <p className="hover:underline cursor-pointer"><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> Seguidores</p>
+                <button onClick={showFollowing} className="hover:underline"><span className="font-bold text-foreground">{profileUser.following?.length || 0}</span> Seguindo</button>
+                <button onClick={showFollowers} className="hover:underline"><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> Seguidores</button>
             </div>
         </div>
 
@@ -1096,6 +1121,16 @@ export default function ProfilePage() {
                 </Button>
             </DialogContent>
         </Dialog>
+        {isFollowListOpen && chirpUser && (
+            <FollowListDialog
+                open={isFollowListOpen}
+                onOpenChange={setIsFollowListOpen}
+                title={followListTitle}
+                userIds={followListUserIds}
+                currentUser={chirpUser}
+                onToggleFollow={handleToggleFollow}
+            />
+        )}
     </div>
   );
 }
