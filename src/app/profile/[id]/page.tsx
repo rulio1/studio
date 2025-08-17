@@ -52,6 +52,8 @@ interface Post {
     handle: string;
     time: string;
     content: string;
+    image?: string;
+    imageHint?: string;
     comments: number;
     retweets: string[];
     likes: string[];
@@ -184,6 +186,11 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }:
                     <div className="mb-2 whitespace-pre-wrap">
                         <PostContent content={post.content} />
                     </div>
+                     {post.image && (
+                        <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border">
+                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
+                        </div>
+                    )}
                     <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
                         <button className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></button>
                         <button onClick={() => onAction(post.id, 'retweet')} className={`flex items-center gap-1 ${post.isRetweeted ? 'text-green-500' : ''}`}><Repeat className="h-5 w-5 hover:text-green-500 transition-colors" /><span>{post.retweets.length}</span></button>

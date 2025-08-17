@@ -228,10 +228,10 @@ export default function SearchPage() {
     
     if (isFollowing) {
         batch.update(currentUserRef, { following: arrayRemove(targetUserId) });
-        batch.update(targetUserRef, { followers: arrayRemove(currentUser.uid) });
+        batch.update(targetUserRef, { followers: arrayRemove(targetUserId) });
     } else {
         batch.update(currentUserRef, { following: arrayUnion(targetUserId) });
-        batch.update(targetUserRef, { followers: arrayUnion(currentUser.uid) });
+        batch.update(targetUserRef, { followers: arrayUnion(targetUserId) });
     }
     
     await batch.commit();
@@ -448,4 +448,3 @@ export default function SearchPage() {
     </>
   );
 }
-

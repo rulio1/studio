@@ -37,6 +37,7 @@ interface Post {
 
 interface ChirpUser {
     savedPosts?: string[];
+    handle?: string;
 }
 
 const PostContent = ({ content }: { content: string }) => {
