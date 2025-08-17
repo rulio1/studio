@@ -92,7 +92,7 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col pb-24">
         <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
             <div className="space-y-6">
                  {messages.length === 0 && (
@@ -132,16 +132,17 @@ export default function ChatPage() {
                 )}
             </div>
         </ScrollArea>
-        <div className="sticky bottom-0 bg-background/80 backdrop-blur-sm p-4 border-t">
-            <div className="flex items-center gap-2">
-                <Input 
+        <div className="fixed bottom-24 inset-x-4">
+            <div className="relative flex items-center rounded-2xl border bg-background/80 backdrop-blur-lg p-2">
+                 <Input 
                     placeholder="Pergunte qualquer coisa ao Chirp AI..." 
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                     disabled={isLoading}
+                    className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
-                <Button onClick={handleSend} disabled={isLoading || !input.trim()}>
+                <Button onClick={handleSend} disabled={isLoading || !input.trim()} size="icon" className="rounded-full">
                     <Send className="h-5 w-5" />
                 </Button>
             </div>

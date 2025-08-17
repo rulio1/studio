@@ -516,7 +516,7 @@ export default function CommunityDetailPage() {
                     <DialogTrigger asChild>
                          <div />
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[600px]">
+                    <DialogContent className="sm:max-w-xl bg-background/80 backdrop-blur-lg border rounded-2xl">
                         <DialogHeader>
                             <DialogTitle>Postar na comunidade {community.name}</DialogTitle>
                         </DialogHeader>
