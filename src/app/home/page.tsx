@@ -177,7 +177,7 @@ export default function HomePage() {
       return timeB.toMillis() - timeA.toMillis();
     });
 
-    const uniquePosts = Array.from(new Map(allCombinedPosts.map(post => [post.id + (post.repostedAt || ''), post])).values());
+    const uniquePosts = Array.from(new Map(allCombinedPosts.map(post => [post.id + (post.repostedAt?.toMillis() || ''), post])).values());
 
     const finalPosts = uniquePosts.map(post => ({
       ...post,
@@ -687,7 +687,7 @@ export default function HomePage() {
         </div>
       </header>
        <main className="flex-1">
-        <Tabs defaultValue="for-you" className="w-full" onValueChange={setActiveTab}>
+        <Tabs defaultValue="for-you" className="w-full" onValueChange={(value) => setActiveTab(value as 'for-you' | 'following')}>
             <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-14 bg-background/80 backdrop-blur-sm z-10">
               <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Para você</TabsTrigger>
               <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Seguindo</TabsTrigger>
@@ -735,9 +735,5 @@ export default function HomePage() {
     </>
   );
 }
-
-  
-
-    
 
     

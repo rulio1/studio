@@ -793,7 +793,7 @@ export default function ProfilePage() {
                     posts={mediaPosts} 
                     loading={isLoadingMedia}
                     emptyTitle="Nenhuma mídia ainda" 
-                    description="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui."
+                    emptyDescription="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui."
                  />
             </TabsContent>
             <TabsContent value="likes" className="mt-0">
@@ -801,7 +801,7 @@ export default function ProfilePage() {
                     posts={likedPosts} 
                     loading={isLoadingLikes}
                     emptyTitle="Nenhuma curtida ainda" 
-                    description="Quando este usuário curtir posts, eles aparecerão aqui."
+                    emptyDescription="Quando este usuário curtir posts, eles aparecerão aqui."
                  />
             </TabsContent>
         </Tabs>
@@ -841,7 +841,5 @@ export default function ProfilePage() {
     </>
   );
 }
-
-  
 
     
