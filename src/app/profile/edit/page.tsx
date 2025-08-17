@@ -10,11 +10,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, User as FirebaseUser, updateProfile } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 interface UserProfileData {
     displayName: string;
@@ -25,17 +28,22 @@ interface UserProfileData {
     banner: string;
 }
 
-// Helper function to convert a file to a Base64 Data URI
-const fileToDataUri = (file: File): Promise<string> => {
+function fileToDataUri(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => {
-            resolve(reader.result as string);
-        };
+        reader.onload = () => resolve(reader.result as string);
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
-};
+}
+
+function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number): Crop {
+    return centerCrop(
+        makeAspectCrop({ unit: '%', width: 90 }, aspect, mediaWidth, mediaHeight),
+        mediaWidth,
+        mediaHeight
+    );
+}
 
 export default function EditProfilePage() {
     const router = useRouter();
@@ -53,14 +61,20 @@ export default function EditProfilePage() {
         banner: '',
     });
 
-    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-    const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-    const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null);
-    const [newBannerFile, setNewBannerFile] = useState<File | null>(null);
+    const [newAvatarDataUri, setNewAvatarDataUri] = useState<string | null>(null);
+    const [newBannerDataUri, setNewBannerDataUri] = useState<string | null>(null);
     
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const bannerInputRef = useRef<HTMLInputElement>(null);
 
+    // Cropping state
+    const [crop, setCrop] = useState<Crop>();
+    const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+    const [imageToCrop, setImageToCrop] = useState('');
+    const [cropAspect, setCropAspect] = useState(1);
+    const [cropType, setCropType] = useState<'avatar' | 'banner' | null>(null);
+    const imgRef = useRef<HTMLImageElement>(null);
+    const [completedCrop, setCompletedCrop] = useState<Crop | null>(null);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -79,8 +93,6 @@ export default function EditProfilePage() {
                             banner: userData.banner || '',
                         };
                         setProfileData(initialData);
-                        setAvatarPreview(initialData.avatar);
-                        setBannerPreview(initialData.banner);
                     }
                 } catch (error) {
                      toast({ title: "Erro ao carregar perfil.", variant: "destructive" });
@@ -94,38 +106,78 @@ export default function EditProfilePage() {
         return () => unsubscribe();
     }, [router, toast]);
 
-    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
 
-        if (file.size > 1 * 1024 * 1024) {
-            toast({
-                title: 'Imagem muito grande',
-                description: 'Por favor, selecione uma imagem de avatar menor que 1MB.',
-                variant: 'destructive',
-            });
-            return;
-        }
-
-        setNewAvatarFile(file);
-        setAvatarPreview(URL.createObjectURL(file));
+    const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+        const { width, height } = e.currentTarget;
+        setCrop(centerAspectCrop(width, height, cropAspect));
     };
 
-    const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-         if (file.size > 2 * 1024 * 1024) { // Allow slightly larger banner
+        if (file.size > 4 * 1024 * 1024) { // 4MB limit
             toast({
                 title: 'Imagem muito grande',
-                description: 'Por favor, selecione uma imagem de capa menor que 2MB.',
+                description: 'Por favor, selecione uma imagem menor que 4MB.',
                 variant: 'destructive',
             });
             return;
         }
 
-        setNewBannerFile(file);
-        setBannerPreview(URL.createObjectURL(file));
+        const dataUri = await fileToDataUri(file);
+        setImageToCrop(dataUri);
+        setCropType(type);
+        setCropAspect(type === 'avatar' ? 1 / 1 : 3 / 1);
+        setIsCropModalOpen(true);
+         // Reset the input value to allow selecting the same file again
+        e.target.value = '';
+    };
+
+    const getCroppedImg = (): Promise<string | null> => {
+        const image = imgRef.current;
+        const canvas = document.createElement('canvas');
+        if (!image || !completedCrop) {
+            return Promise.resolve(null);
+        }
+
+        const scaleX = image.naturalWidth / image.width;
+        const scaleY = image.naturalHeight / image.height;
+        canvas.width = completedCrop.width * scaleX;
+        canvas.height = completedCrop.height * scaleY;
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+            return Promise.resolve(null);
+        }
+
+        ctx.drawImage(
+            image,
+            completedCrop.x * scaleX,
+            completedCrop.y * scaleY,
+            completedCrop.width * scaleX,
+            completedCrop.height * scaleY,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+        
+        return new Promise((resolve) => {
+            resolve(canvas.toDataURL('image/jpeg'));
+        });
+    };
+
+    const handleCropComplete = async () => {
+        const croppedDataUrl = await getCroppedImg();
+        if (croppedDataUrl) {
+            if (cropType === 'avatar') {
+                setNewAvatarDataUri(croppedDataUrl);
+            } else if (cropType === 'banner') {
+                setNewBannerDataUri(croppedDataUrl);
+            }
+        }
+        setIsCropModalOpen(false);
     };
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -137,33 +189,29 @@ export default function EditProfilePage() {
         setIsSaving(true);
         
         try {
-            let finalAvatarUrl = profileData.avatar;
-            if (newAvatarFile) {
-                finalAvatarUrl = await fileToDataUri(newAvatarFile);
-            }
-            
-            let finalBannerUrl = profileData.banner;
-            if (newBannerFile) {
-                finalBannerUrl = await fileToDataUri(newBannerFile);
-            }
-
-            const authUpdateData = {
-                displayName: profileData.displayName,
-            };
-
-            const firestoreUpdateData: any = {
+            const updateData: any = {
                 displayName: profileData.displayName,
                 searchableDisplayName: profileData.displayName.toLowerCase(),
                 handle: profileData.handle,
                 searchableHandle: profileData.handle.replace('@','').toLowerCase(),
                 bio: profileData.bio,
                 location: profileData.location,
-                avatar: finalAvatarUrl,
-                banner: finalBannerUrl,
             };
 
-            await updateProfile(user, authUpdateData);
-            await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
+            if (newAvatarDataUri) {
+                updateData.avatar = newAvatarDataUri;
+            }
+            if (newBannerDataUri) {
+                updateData.banner = newBannerDataUri;
+            }
+
+            // We only update the displayName in auth, as photoURL has size limits
+            // and the app reads the avatar from Firestore anyway.
+            if(user.displayName !== profileData.displayName) {
+                await updateProfile(user, { displayName: profileData.displayName });
+            }
+
+            await updateDoc(doc(db, 'users', user.uid), updateData);
             
             toast({
                 title: "Perfil Salvo!",
@@ -173,22 +221,15 @@ export default function EditProfilePage() {
             
         } catch (error) {
             console.error("Erro ao salvar perfil: ", error);
-            const firebaseError = error as {code?: string};
-            let description = "Não foi possível salvar as alterações do seu perfil.";
-             if (firebaseError.code === 'auth/invalid-profile-attribute') {
-                description = "Ocorreu um erro ao atualizar seu perfil de autenticação. Tente novamente."
-            }
-
             toast({
                 title: "Falha ao Salvar",
-                description: description,
+                description: "Não foi possível salvar as alterações do seu perfil.",
                 variant: 'destructive'
             });
         } finally {
             setIsSaving(false);
         }
     };
-
 
     if (isLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -211,7 +252,7 @@ export default function EditProfilePage() {
 
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
-             {bannerPreview && <Image src={bannerPreview} alt="Banner" layout="fill" objectFit="cover" />}
+             <Image src={newBannerDataUri || profileData.banner} alt="Banner" layout="fill" objectFit="cover" />
              <Button 
                 variant="ghost" 
                 className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity w-full h-full p-0"
@@ -224,14 +265,14 @@ export default function EditProfilePage() {
                 ref={bannerInputRef} 
                 className="hidden" 
                 accept="image/png, image/jpeg, image/gif"
-                onChange={handleBannerChange}
+                onChange={(e) => handleFileChange(e, 'banner')}
                 disabled={isSaving}
             />
         </div>
         <div className="px-4">
             <div className="-mt-16 relative w-32">
                 <Avatar className="h-32 w-32 border-4 border-background">
-                     <AvatarImage src={avatarPreview ?? undefined} alt={profileData.displayName} />
+                     <AvatarImage src={newAvatarDataUri || profileData.avatar} alt={profileData.displayName} />
                      <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>
                 </Avatar>
                 
@@ -248,7 +289,7 @@ export default function EditProfilePage() {
                     ref={avatarInputRef} 
                     className="hidden" 
                     accept="image/png, image/jpeg, image/gif"
-                    onChange={handleAvatarChange}
+                    onChange={(e) => handleFileChange(e, 'avatar')}
                     disabled={isSaving}
                 />
             </div>
@@ -298,6 +339,36 @@ export default function EditProfilePage() {
             </div>
         </div>
       </main>
+
+        <Dialog open={isCropModalOpen} onOpenChange={setIsCropModalOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Cortar Imagem</DialogTitle>
+                </DialogHeader>
+                {imageToCrop && (
+                    <ReactCrop
+                        crop={crop}
+                        onChange={(_, percentCrop) => setCrop(percentCrop)}
+                        onComplete={(c) => setCompletedCrop(c)}
+                        aspect={cropAspect}
+                    >
+                         <img
+                            ref={imgRef}
+                            alt="Crop me"
+                            src={imageToCrop}
+                            onLoad={onImageLoad}
+                            style={{ maxHeight: '70vh' }}
+                        />
+                    </ReactCrop>
+                )}
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Cancelar</Button>
+                    </DialogClose>
+                    <Button onClick={handleCropComplete}>Cortar</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
