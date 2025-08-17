@@ -9,7 +9,9 @@ import React, { useState, useEffect } from 'react';
 const titleMap: Record<string, string> = {
     'settings': 'Configurações e privacidade',
     'account': 'Sua Conta',
-    'change-password': 'Alterar Senha'
+    'change-password': 'Alterar Senha',
+    'deactivate': 'Desativar Conta',
+    'delete': 'Excluir Conta',
 };
 
 export default function SettingsLayout({
