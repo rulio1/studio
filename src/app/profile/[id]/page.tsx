@@ -479,10 +479,11 @@ export default function ProfilePage() {
 
 
     const fetchLikedPosts = useCallback(async () => {
-        if (!profileId) return;
+        if (!profileId || !currentUser) return;
         setIsLoadingLikes(true);
-        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId), orderBy("createdAt", "desc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+        try {
+            const q = query(collection(db, "posts"), where("likes", "array-contains", profileId), orderBy("createdAt", "desc"));
+            const snapshot = await getDocs(q);
             const posts = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
@@ -493,20 +494,21 @@ export default function ProfilePage() {
                 } as Post
             });
             setLikedPosts(posts);
+        } catch (error) {
+            console.error("Error fetching liked posts:", error);
+        } finally {
             setIsLoadingLikes(false);
-        });
-        return unsubscribe;
+        }
     }, [profileId, currentUser]);
 
 
     useEffect(() => {
         if(profileId && currentUser && profileUser) {
             fetchUserPosts();
+            fetchLikedPosts();
             const unsubReplies = fetchUserReplies();
-            const unsubLikes = fetchLikedPosts();
             return () => {
                 unsubReplies.then(u => u());
-                unsubLikes.then(u => u());
             };
         }
     }, [profileId, currentUser, profileUser, fetchUserPosts, fetchLikedPosts, fetchUserReplies]);
@@ -984,3 +986,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
