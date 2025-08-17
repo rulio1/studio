@@ -24,6 +24,7 @@ interface Post {
     content: string;
     image?: string;
     imageHint?: string;
+    location?: string;
     comments: number;
     retweets: string[];
     likes: string[];

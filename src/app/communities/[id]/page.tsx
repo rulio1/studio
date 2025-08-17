@@ -9,7 +9,7 @@ import { auth, db, storage } from '@/lib/firebase';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Bird, Trash2, Edit, Save, Sparkles, X, BadgeCheck, ImageIcon, Smile, Upload } from 'lucide-react';
+import { ArrowLeft, Loader2, MoreHorizontal, PenSquare, Repeat, Heart, MessageCircle, BarChart2, Bird, Trash2, Edit, Save, Sparkles, X, BadgeCheck, ImageIcon, Smile, Upload, MapPin } from 'lucide-react';
 import PostSkeleton from '@/components/post-skeleton';
 import { formatTimeAgo } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -45,6 +45,7 @@ interface Post {
     content: string;
     image?: string;
     imageHint?: string;
+    location?: string;
     comments: number;
     retweets: string[];
     likes: string[];
@@ -108,7 +109,7 @@ const PostItem = ({ post }: { post: Post }) => {
         }
     }, [post.createdAt]);
     
-    const isVerified = post.isVerified || post.handle === '@rulio';
+    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@chirp';
     const isChirpAccount = post.handle === '@chirp';
 
     return (
@@ -116,7 +117,7 @@ const PostItem = ({ post }: { post: Post }) => {
             <div className="flex gap-4">
                  <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
                     {isChirpAccount ? (
-                        <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                        <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-full">
                             <Bird className="h-5 w-5 text-primary" />
                         </div>
                     ) : (
@@ -171,6 +172,8 @@ export default function CommunityDetailPage() {
     const [isPosting, setIsPosting] = useState(false);
     const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
     const [postImageDataUri, setPostImageDataUri] = useState<string | null>(null);
+    const [location, setLocation] = useState('');
+    const [showLocationInput, setShowLocationInput] = useState(false);
     const imageInputRef = useRef<HTMLInputElement>(null);
 
     // AI Generators State
@@ -267,6 +270,8 @@ export default function CommunityDetailPage() {
     const resetModal = () => {
         setNewPostContent('');
         setAiTextPrompt('');
+        setLocation('');
+        setShowLocationInput(false);
         setIsGeneratingText(false);
         setShowAiTextGenerator(false);
         setAiImagePrompt('');
@@ -335,6 +340,7 @@ export default function CommunityDetailPage() {
                     avatar: chirpUser.avatar,
                     avatarFallback: chirpUser.displayName[0],
                     content: newPostContent,
+                    location: location,
                     hashtags: hashtags,
                     image: postImageDataUri || '',
                     imageHint: '',
@@ -499,7 +505,17 @@ export default function CommunityDetailPage() {
                                         )}
                                     </div>
                                 </div>
-
+                                {showLocationInput && (
+                                    <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
+                                        <MapPin className="h-5 w-5 text-primary" />
+                                        <Input 
+                                            placeholder="Adicionar localização"
+                                            className="bg-transparent border-b-2 border-primary focus-visible:ring-0 rounded-none"
+                                            value={location}
+                                            onChange={(e) => setLocation(e.target.value)}
+                                        />
+                                    </div>
+                                )}
                                  {showAiTextGenerator && (
                                     <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
                                         <Textarea 
@@ -555,6 +571,9 @@ export default function CommunityDetailPage() {
                                                 <EmojiPicker onEmojiClick={onEmojiClick} />
                                             </PopoverContent>
                                         </Popover>
+                                        <Button variant="ghost" size="icon" onClick={() => setShowLocationInput(!showLocationInput)} disabled={isPosting}>
+                                            <MapPin className="h-6 w-6 text-primary" />
+                                        </Button>
                                         <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator);}} disabled={isPosting}>
                                             <Sparkles className="h-6 w-6 text-primary" />
                                         </Button>

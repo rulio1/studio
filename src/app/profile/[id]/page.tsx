@@ -57,6 +57,7 @@ interface Post {
     content: string;
     image?: string;
     imageHint?: string;
+    location?: string;
     comments: number;
     retweets: string[];
     likes: string[];
@@ -147,7 +148,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
         }
     }, [post.createdAt, post.repostedAt]);
     
-    const isVerified = post.isVerified || post.handle === '@rulio';
+    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@chirp';
     const isChirpAccount = post.handle === '@chirp';
 
     return (
@@ -808,7 +809,7 @@ export default function ProfilePage() {
     }
 
     const isOwnProfile = currentUser?.uid === profileUser.uid;
-    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@rulio';
+    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@rulio' || profileUser.handle === '@chirp';
     const isChirpAccount = profileUser.handle === '@chirp';
 
 

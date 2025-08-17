@@ -55,6 +55,7 @@ interface Post {
     content: string;
     image?: string;
     imageHint?: string;
+    location?: string;
     comments: number;
     retweets: string[];
     likes: string[];
@@ -451,7 +452,7 @@ export default function HomePage() {
       }
     }, [post.createdAt, post.repostedAt]);
     
-    const isVerified = post.isVerified || post.handle === '@rulio';
+    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@chirp';
     const isChirpAccount = post.handle === '@chirp';
 
     return (
@@ -465,7 +466,7 @@ export default function HomePage() {
             <div className="flex gap-4">
                  <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
                     {isChirpAccount ? (
-                        <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                        <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-full">
                             <Bird className="h-5 w-5 text-primary" />
                         </div>
                     ) : (
@@ -635,7 +636,7 @@ export default function HomePage() {
       );
   }
   
-    const isChirpUserVerified = chirpUser.isVerified || chirpUser.handle === '@rulio';
+    const isChirpUserVerified = chirpUser.isVerified || chirpUser.handle === '@rulio' || chirpUser.handle === '@chirp';
     const isChirpAccount = chirpUser.handle === '@chirp';
 
 

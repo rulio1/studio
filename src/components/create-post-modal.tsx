@@ -11,7 +11,7 @@ import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 import { auth, db, storage } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, increment, query, where, getDocs, writeBatch, getDoc } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Sparkles, Loader2, Plus, ImageIcon, X, Smile, Upload } from 'lucide-react';
+import { Sparkles, Loader2, Plus, ImageIcon, X, Smile, Upload, MapPin } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
@@ -42,6 +42,8 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
     const [postImageDataUri, setPostImageDataUri] = useState<string | null>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const [location, setLocation] = useState('');
+    const [showLocationInput, setShowLocationInput] = useState(false);
 
     // AI Generators State
     const [showAiTextGenerator, setShowAiTextGenerator] = useState(false);
@@ -86,6 +88,8 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         setAiTextPrompt('');
         setPostImageDataUri(null);
         setPostImagePreview(null);
+        setLocation('');
+        setShowLocationInput(false);
         setIsGeneratingText(false);
         setShowAiTextGenerator(false);
         setIsGeneratingImage(false);
@@ -164,6 +168,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                 avatar: chirpUser.avatar,
                 avatarFallback: chirpUser.displayName[0],
                 content: newPostContent,
+                location: location,
                 hashtags: hashtags,
                 mentions: mentionedHandles,
                 image: postImageDataUri || '',
@@ -310,6 +315,18 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                         </div>
                     </div>
 
+                    {showLocationInput && (
+                        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
+                             <MapPin className="h-5 w-5 text-primary" />
+                             <Input 
+                                placeholder="Adicionar localização"
+                                className="bg-transparent border-b-2 border-primary focus-visible:ring-0 rounded-none"
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                             />
+                        </div>
+                    )}
+                    
                     {showAiTextGenerator && (
                         <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
                             <Textarea 
@@ -368,6 +385,9 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                     <EmojiPicker onEmojiClick={onEmojiClick} />
                                 </PopoverContent>
                             </Popover>
+                            <Button variant="ghost" size="icon" onClick={() => setShowLocationInput(!showLocationInput)} disabled={isPosting}>
+                                <MapPin className="h-6 w-6 text-primary" />
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator);}} disabled={isPosting}>
                                 <Sparkles className="h-6 w-6 text-primary" />
                             </Button>

@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird, Pin, Sparkles, Frown, Flag, BarChart3, Megaphone, UserRound } from 'lucide-react';
+import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird, Pin, Sparkles, Frown, Flag, BarChart3, Megaphone, UserRound, MapPin } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -47,6 +47,7 @@ interface Post {
     content: string;
     image?: string;
     imageHint?: string;
+    location?: string;
     comments: number;
     retweets: string[];
     likes: string[];
@@ -183,7 +184,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
         }
     };
     
-    const isVerified = comment.isVerified || comment.handle === '@rulio';
+    const isVerified = comment.isVerified || comment.handle === '@rulio' || comment.handle === '@chirp';
     const isChirpAccount = comment.handle === '@chirp';
 
     return (
@@ -641,7 +642,7 @@ export default function PostDetailPage() {
         );
     }
     
-    const isPostVerified = post.isVerified || post.handle === '@rulio';
+    const isPostVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@chirp';
     const isChirpAccount = post.handle === '@chirp';
 
     return (
@@ -743,6 +744,12 @@ export default function PostDetailPage() {
                     {post.image && (
                         <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border">
                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
+                        </div>
+                    )}
+                    {post.location && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
+                            <MapPin className="h-4 w-4" />
+                            <span>{post.location}</span>
                         </div>
                     )}
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
