@@ -124,12 +124,10 @@ export default function HomePage() {
   }, [router]);
 
   const fetchAllPosts = useCallback(async () => {
+    if (!user) return;
     setIsLoading(true);
 
-    const postsQuery = query(
-      collection(db, "posts"),
-      where("communityId", "==", null)
-    );
+    const postsQuery = query(collection(db, "posts"));
     const repostsQuery = query(collection(db, "reposts"));
 
     const [postsSnapshot, repostsSnapshot] = await Promise.all([
@@ -144,30 +142,44 @@ export default function HomePage() {
 
     const repostsData = repostsSnapshot.docs.map(doc => doc.data());
     const repostedPostIds = repostsData.map(repost => repost.postId);
-
+    const reposterIds = repostsData.map(repost => repost.userId);
+    
+    let allReferencedUserIds = [...reposterIds];
+    if (repostedPostIds.length > 0) {
+        const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
+        const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
+        repostedPostsSnapshot.forEach(doc => allReferencedUserIds.push(doc.data().authorId));
+    }
+    
+    // Fetch all users (authors and reposters) in one go
+    let usersMap = new Map();
+    if (allReferencedUserIds.length > 0) {
+        const uniqueUserIds = [...new Set(allReferencedUserIds)];
+        const usersQuery = query(collection(db, 'users'), where('uid', 'in', uniqueUserIds));
+        const usersSnapshot = await getDocs(usersQuery);
+        usersMap = new Map(usersSnapshot.docs.map(doc => [doc.id, doc.data() as ChirpUser]));
+    }
+    
     let repostedPosts: Post[] = [];
     if (repostedPostIds.length > 0) {
-      const allUsersSnapshot = await getDocs(collection(db, 'users'));
-      const allUsersMap = new Map(allUsersSnapshot.docs.map(doc => [doc.id, doc.data() as ChirpUser]));
+        const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
+        const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
+        const postsMap = new Map(repostedPostsSnapshot.docs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as Post]));
 
-      const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
-      const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
-      const postsMap = new Map(repostedPostsSnapshot.docs.map(doc => [doc.id, doc.data()]));
+        repostedPosts = repostsData.map(repost => {
+            const postData = postsMap.get(repost.postId);
+            const reposter = usersMap.get(repost.userId);
+            if (!postData || !reposter) return null;
 
-      repostedPosts = repostsData.map(repost => {
-        const postData = postsMap.get(repost.postId);
-        const reposter = allUsersMap.get(repost.userId);
-        if (!postData || !reposter) return null;
-        return {
-          id: repost.postId,
-          ...postData,
-          repostedAt: repost.repostedAt,
-          repostedBy: {
-            name: reposter.displayName,
-            handle: reposter.handle,
-          },
-        } as Post;
-      }).filter(p => p !== null) as Post[];
+            return {
+                ...postData,
+                repostedAt: repost.repostedAt,
+                repostedBy: {
+                    name: reposter.displayName,
+                    handle: reposter.handle,
+                },
+            } as Post;
+        }).filter(p => p !== null) as Post[];
     }
 
     const allCombinedPosts = [...originalPosts, ...repostedPosts];
@@ -181,20 +193,23 @@ export default function HomePage() {
 
     const finalPosts = uniquePosts.map(post => ({
       ...post,
-      isLiked: post.likes.includes(user?.uid || ''),
-      isRetweeted: post.retweets.includes(user?.uid || ''),
+      isLiked: post.likes.includes(user.uid || ''),
+      isRetweeted: post.retweets.includes(user.uid || ''),
     }));
 
     setAllPosts(finalPosts);
     setIsLoading(false);
   }, [user]);
 
+
   useEffect(() => {
-    fetchAllPosts();
-  }, [fetchAllPosts]);
+    if(user) {
+        fetchAllPosts();
+    }
+  }, [user, fetchAllPosts]);
 
  const fetchFollowingPosts = useCallback(async () => {
-    if (!chirpUser || chirpUser.following.length === 0) {
+    if (!chirpUser || !user || chirpUser.following.length === 0) {
         setFollowingPosts([]);
         setIsLoadingFollowing(false);
         return;
@@ -204,24 +219,25 @@ export default function HomePage() {
 
     const followingIds = chirpUser.following;
 
-    // Fetch original posts from users the current user is following
     const postsQuery = query(
         collection(db, "posts"), 
         where("authorId", "in", followingIds)
     );
-    const postsSnapshot = await getDocs(postsQuery);
+    const repostsQuery = query(collection(db, "reposts"), where("userId", "in", followingIds));
+
+    const [postsSnapshot, repostsSnapshot] = await Promise.all([
+        getDocs(postsQuery),
+        getDocs(repostsQuery)
+    ]);
+
     const originalPosts = postsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
     } as Post));
-
-    // Fetch reposts from users the current user is following
-    const repostsQuery = query(collection(db, "reposts"), where("userId", "in", followingIds));
-    const repostsSnapshot = await getDocs(repostsQuery);
-    const repostedPostIds = repostsSnapshot.docs.map(doc => doc.data().postId);
+    
     const repostsData = repostsSnapshot.docs.map(doc => doc.data());
+    const repostedPostIds = repostsData.map(repost => repost.postId);
 
-    // Fetch the actual post data for the reposted posts
     let repostedPosts: Post[] = [];
     if (repostedPostIds.length > 0) {
         const followingUsersQuery = query(collection(db, 'users'), where('uid', 'in', followingIds));
@@ -230,25 +246,23 @@ export default function HomePage() {
         
         const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
         const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
-        const postsMap = new Map(repostedPostsSnapshot.docs.map(doc => [doc.id, doc.data()]));
+        const postsMap = new Map(repostedPostsSnapshot.docs.map(doc => [doc.id, {id: doc.id, ...doc.data()}]));
         
         repostedPosts = repostsData.map(repost => {
             const postData = postsMap.get(repost.postId);
             const reposter = followingUsersMap.get(repost.userId);
             if (!postData || !reposter) return null;
             return {
-                id: repost.postId,
-                ...postData,
+                ...(postData as Post),
                 repostedAt: repost.repostedAt,
                 repostedBy: {
                     name: reposter.displayName,
                     handle: reposter.handle,
                 },
-            } as Post;
+            };
         }).filter(p => p !== null) as Post[];
     }
 
-    // Merge and sort
     const allPosts = [...originalPosts, ...repostedPosts];
     allPosts.sort((a, b) => {
         const timeA = a.repostedAt || a.createdAt;
@@ -256,10 +270,12 @@ export default function HomePage() {
         return timeB.toMillis() - timeA.toMillis();
     });
 
-    const finalPosts = allPosts.map(post => ({
+     const uniquePosts = Array.from(new Map(allPosts.map(post => [post.id + (post.repostedAt?.toMillis() || ''), post])).values());
+
+    const finalPosts = uniquePosts.map(post => ({
         ...post,
-        isLiked: post.likes.includes(user?.uid || ''),
-        isRetweeted: post.retweets.includes(user?.uid || ''),
+        isLiked: post.likes.includes(user.uid || ''),
+        isRetweeted: post.retweets.includes(user.uid || ''),
     }));
 
     setFollowingPosts(finalPosts);
@@ -735,5 +751,7 @@ export default function HomePage() {
     </>
   );
 }
+
+    
 
     
