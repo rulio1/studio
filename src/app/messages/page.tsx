@@ -52,11 +52,11 @@ const ConversationItem = ({ convo, currentUserId, onSwipeOpen, onActionClick, is
     }, [convo.lastMessage.timestamp]);
 
     const bind = useGesture({
-        onDrag: ({ down, movement: [mx], direction: [dx], event }) => {
-            event.stopPropagation();
+        onDrag: ({ down, movement: [mx], direction: [dx], tap }) => {
+            if (tap) return; // Prevent drag on simple tap
             if (itemRef.current) {
                 if (mx < 0 && dx < 0) { // Swiping left
-                    const newX = Math.max(mx, -200); // Limit swipe distance
+                    const newX = down ? mx : (mx < -100 ? -180 : 0);
                     itemRef.current.style.transform = `translateX(${newX}px)`;
                     if (newX < -50) {
                         onSwipeOpen(convo.id);
@@ -76,6 +76,18 @@ const ConversationItem = ({ convo, currentUserId, onSwipeOpen, onActionClick, is
                 }
             }
         },
+        onClick: (state) => {
+            // Only navigate if it was a tap (not a drag)
+            if (state.tap) {
+                router.push(`/messages/${convo.id}`);
+            }
+        },
+    }, {
+        drag: {
+            axis: 'x',
+            threshold: 20, // start dragging after 20px
+            filterTaps: true, // distinguish between tap and drag
+        }
     });
 
     // Reset style if another item is swiped
@@ -90,7 +102,7 @@ const ConversationItem = ({ convo, currentUserId, onSwipeOpen, onActionClick, is
     const messagePreview = `${isMyMessage ? 'Você: ' : ''}${convo.lastMessage.text}`;
 
     return (
-        <div className="relative overflow-hidden">
+        <div className="relative bg-background overflow-hidden">
             <div className="absolute top-0 right-0 h-full flex items-center z-0">
                  <button onClick={() => onActionClick(convo.id, 'pin')} className="h-full flex flex-col items-center justify-center bg-blue-500 text-white w-20 p-2"><Pin className="h-5 w-5 mb-1"/> <span className="text-xs">Fixar</span></button>
                 <button onClick={() => onActionClick(convo.id, 'archive')} className="h-full flex flex-col items-center justify-center bg-gray-500 text-white w-20 p-2"><Archive className="h-5 w-5 mb-1"/> <span className="text-xs">Arquivar</span></button>
@@ -99,8 +111,7 @@ const ConversationItem = ({ convo, currentUserId, onSwipeOpen, onActionClick, is
             <li 
                 ref={itemRef}
                 {...bind()}
-                onClick={() => router.push(`/messages/${convo.id}`)}
-                className={`w-full p-4 hover:bg-muted/50 cursor-pointer bg-background relative z-10 transition-transform duration-200 ease-in-out ${isUnread ? 'border-l-2 border-primary' : ''}`}
+                className={`w-full p-4 hover:bg-muted/50 cursor-pointer relative z-10 touch-pan-y transition-transform duration-200 ease-in-out ${isUnread ? 'border-l-2 border-primary' : ''}`}
             >
                 <div className="flex items-center gap-4">
                     <Avatar className="h-12 w-12">
