@@ -493,7 +493,7 @@ export default function HomePage() {
                       </Link>
                     </SheetClose>
                   </nav>
-                  <div className="p-4 border-t mt-auto">
+                  <div className="p-4 border-t mt-auto flex flex-col gap-2">
                     <SheetClose asChild>
                      <Link href="/chat" className="flex items-center gap-4 py-2 font-semibold rounded-md">
                         <Bot className="h-6 w-6" /> Abrir Chirp AI
@@ -505,7 +505,7 @@ export default function HomePage() {
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>
-                        <Button variant="destructive" className="flex items-center gap-4" onClick={handleSignOut}>
+                        <Button variant="destructive" className="self-center" onClick={handleSignOut}>
                             <LogOut className="h-6 w-6" />
                             Sair
                         </Button>
