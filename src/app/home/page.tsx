@@ -702,6 +702,11 @@ export default function HomePage() {
                         <User className="h-6 w-6" /> Perfil
                       </Link>
                     </SheetClose>
+                     <SheetClose asChild>
+                      <Link href="/communities" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                        <Users className="h-6 w-6" /> Comunidades
+                      </Link>
+                    </SheetClose>
                     <SheetClose asChild>
                        <Link href="/saved" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <Bookmark className="h-6 w-6" /> Itens Salvos

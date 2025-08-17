@@ -3,30 +3,52 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, Bell, Mail, Users } from 'lucide-react';
+import { Home, Search, Bell, Mail } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Badge } from './ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { Skeleton } from './ui/skeleton';
+
+interface ChirpUser {
+    uid: string;
+    avatar: string;
+    displayName: string;
+}
+
 
 export default function BottomNavBar() {
     const pathname = usePathname();
     const [user, setUser] = useState<FirebaseUser | null>(null);
+    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
     const [notificationCount, setNotificationCount] = useState(0);
     const [messageCount, setMessageCount] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
 
     const navItems = [
         { href: '/home', icon: Home, label: 'Início' },
         { href: '/search', icon: Search, label: 'Busca' },
-        { href: '/communities', icon: Users, label: 'Comunidades' },
         { href: '/notifications', icon: Bell, label: 'Notificações' },
         { href: '/messages', icon: Mail, label: 'Mensagens' },
     ];
 
-    useEffect(() => {
+     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
+            if (currentUser) {
+                const userDocRef = doc(db, 'users', currentUser.uid);
+                const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
+                    if (doc.exists()) {
+                        setChirpUser(doc.data() as ChirpUser);
+                    }
+                    setIsLoading(false);
+                });
+                return () => unsubscribeUser();
+            } else {
+                setIsLoading(false);
+            }
         });
         return () => unsubscribeAuth();
     }, []);
@@ -83,6 +105,18 @@ export default function BottomNavBar() {
                         )}
                     </Link>
                 ))}
+                 <div className="relative flex-1 flex justify-center items-center h-full rounded-full">
+                    {isLoading ? (
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                    ) : user && chirpUser ? (
+                        <Link href={`/profile/${user.uid}`} className={`transition-opacity hover:opacity-80 ${pathname === `/profile/${user.uid}` ? 'border-2 border-primary rounded-full p-0.5' : ''}`}>
+                             <Avatar className="h-8 w-8">
+                                <AvatarImage src={chirpUser.avatar} alt={chirpUser.displayName} />
+                                <AvatarFallback>{chirpUser.displayName?.[0]}</AvatarFallback>
+                            </Avatar>
+                        </Link>
+                    ) : null}
+                </div>
             </nav>
         </footer>
     );
