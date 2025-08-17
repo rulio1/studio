@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function SettingsLayout({
     children,
@@ -12,12 +12,14 @@ export default function SettingsLayout({
     children: React.ReactNode;
 }) {
     const router = useRouter();
+    const pathname = usePathname();
+    const [pageTitle, setPageTitle] = useState('Configurações');
 
-    // A simple regex to get the last part of the path for the title
-    const path = typeof window !== 'undefined' ? window.location.pathname : '';
-    const titlePath = path.split('/').pop();
-    const title = titlePath ? titlePath.charAt(0).toUpperCase() + titlePath.slice(1) : 'Configurações';
-    const pageTitle = title === 'Settings' ? 'Configurações e privacidade' : 'Sua Conta';
+    useEffect(() => {
+        const titlePath = pathname.split('/').pop();
+        const title = titlePath ? titlePath.charAt(0).toUpperCase() + titlePath.slice(1) : 'Configurações';
+        setPageTitle(title === 'Settings' ? 'Configurações e privacidade' : 'Sua Conta');
+    }, [pathname]);
     
     return (
         <div className="flex flex-col h-screen bg-background">
