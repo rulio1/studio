@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MailPlus, Search, Settings, Loader2, MessageSquare, Pin, Archive, Trash2, MoreHorizontal } from 'lucide-react';
+import { MailPlus, Search, Settings, Loader2, MessageSquare, Pin, Archive, Trash2, MoreHorizontal, BadgeCheck } from 'lucide-react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, doc, getDoc, orderBy, deleteDoc } from 'firebase/firestore';
@@ -42,6 +42,7 @@ interface Conversation {
 const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conversation; currentUserId: string | null; onActionClick: (convoId: string, action: 'pin' | 'archive' | 'delete') => void; }) => {
     const router = useRouter();
     const [time, setTime] = useState(() => convo.lastMessage.timestamp ? formatTimeAgo(convo.lastMessage.timestamp.toDate()) : '');
+    const isOfficialAccount = convo.otherUser.handle.toLowerCase() === '@chirp' || convo.otherUser.handle.toLowerCase() === '@rulio';
     
     useEffect(() => {
         if (convo.lastMessage.timestamp) {
@@ -66,7 +67,10 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
             <div className="flex-1 overflow-hidden">
                 <div className="flex items-center justify-between">
                     <div className="flex items-baseline gap-2">
-                        <p className="font-bold truncate">{convo.otherUser.name}</p>
+                        <p className="font-bold truncate flex items-center gap-1">
+                            {convo.otherUser.name}
+                            {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                        </p>
                         <p className="text-sm text-muted-foreground truncate">{convo.otherUser.handle}</p>
                     </div>
                     <p className="text-xs text-muted-foreground whitespace-nowrap">{time}</p>
