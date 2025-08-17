@@ -282,7 +282,18 @@ export default function SearchPage() {
         <li key={user.uid} className="p-4 hover:bg-muted/50">
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/profile/${user.uid}`)}>
-                    <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
+                    <Avatar className="h-12 w-12">
+                        {isChirpAccount ? (
+                             <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+                                <Bird className="h-6 w-6 text-primary" />
+                            </div>
+                        ) : (
+                            <>
+                                <AvatarImage src={user.avatar} />
+                                <AvatarFallback>{user.displayName[0]}</AvatarFallback>
+                            </>
+                        )}
+                    </Avatar>
                     <div>
                         <p className="font-bold flex items-center gap-1">
                             {user.displayName}
@@ -308,7 +319,9 @@ export default function SearchPage() {
     }}>
         <div className="flex gap-4">
             <Avatar>
-                <Bird className="h-full w-full text-primary p-1" />
+                <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                    <Bird className="h-5 w-5 text-primary" />
+                </div>
             </Avatar>
             <div className="w-full">
                 <div className="flex items-center gap-2 text-sm">

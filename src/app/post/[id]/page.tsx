@@ -190,9 +190,17 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
         <li className="p-4 flex gap-4 relative">
             {!isLastComment && <div className="absolute left-10 top-16 bottom-0 w-0.5 bg-border -translate-x-1/2"></div>}
             <div className="relative">
-                <Avatar className="h-12 w-12 cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
-                    <AvatarImage src={comment.avatar} alt={comment.handle} />
-                    <AvatarFallback>{comment.avatarFallback}</AvatarFallback>
+                 <Avatar className="h-12 w-12 cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
+                    {isChirpAccount ? (
+                        <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+                            <Bird className="h-6 w-6 text-primary" />
+                        </div>
+                    ) : (
+                        <>
+                            <AvatarImage src={comment.avatar} alt={comment.handle} />
+                            <AvatarFallback>{comment.avatarFallback}</AvatarFallback>
+                        </>
+                    )}
                 </Avatar>
             </div>
             <div className='w-full'>
@@ -651,9 +659,17 @@ export default function PostDetailPage() {
                 <div className="p-4 border-b">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
-                            <Avatar className="h-12 w-12">
-                                <AvatarImage src={post.avatar} alt={post.handle} />
-                                <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                             <Avatar className="h-12 w-12">
+                                {isChirpAccount ? (
+                                    <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+                                        <Bird className="h-6 w-6 text-primary" />
+                                    </div>
+                                ) : (
+                                    <>
+                                        <AvatarImage src={post.avatar} alt={post.handle} />
+                                        <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                                    </>
+                                )}
                             </Avatar>
                             <div>
                                 <p className="font-bold flex items-center gap-1">

@@ -114,9 +114,17 @@ const PostItem = ({ post }: { post: Post }) => {
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
             <div className="flex gap-4">
-                <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
-                    <AvatarImage src={post.avatar} alt={post.handle} />
-                    <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                 <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
+                    {isChirpAccount ? (
+                        <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                            <Bird className="h-5 w-5 text-primary" />
+                        </div>
+                    ) : (
+                        <>
+                            <AvatarImage src={post.avatar} alt={post.handle} />
+                            <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                        </>
+                    )}
                 </Avatar>
                 <div className='w-full'>
                     <div className="flex items-center justify-between">
