@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Search } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, getDoc, serverTimestamp, limit } from 'firebase/firestore';
 import { User as FirebaseUser } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
