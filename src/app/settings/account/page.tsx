@@ -35,7 +35,7 @@ export default function AccountSettingsPage() {
                 icon={Lock} 
                 title="Altere sua senha" 
                 description="Altere sua senha a qualquer momento."
-                onClick={() => alert('Funcionalidade de alteração de senha em breve!')}
+                onClick={() => router.push('/settings/account/change-password')}
             />
         </main>
     );

@@ -6,6 +6,12 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
+const titleMap: Record<string, string> = {
+    'settings': 'Configurações e privacidade',
+    'account': 'Sua Conta',
+    'change-password': 'Alterar Senha'
+};
+
 export default function SettingsLayout({
     children,
 }: {
@@ -16,9 +22,10 @@ export default function SettingsLayout({
     const [pageTitle, setPageTitle] = useState('Configurações');
 
     useEffect(() => {
-        const titlePath = pathname.split('/').pop();
-        const title = titlePath ? titlePath.charAt(0).toUpperCase() + titlePath.slice(1) : 'Configurações';
-        setPageTitle(title === 'Settings' ? 'Configurações e privacidade' : 'Sua Conta');
+        const pathSegments = pathname.split('/');
+        const lastSegment = pathSegments[pathSegments.length - 1];
+        const title = titleMap[lastSegment] || 'Configurações';
+        setPageTitle(title);
     }, [pathname]);
     
     return (
