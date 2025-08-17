@@ -4,18 +4,18 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, Settings, Star, Users, Heart, Loader2 } from 'lucide-react';
+import { Bell, Settings, Star, Users, Heart, Loader2, AtSign } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc } from 'firestore';
 import { formatTimeAgo } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 interface Notification {
     id: string;
-    type: 'like' | 'follow' | 'post' | 'retweet';
+    type: 'like' | 'follow' | 'post' | 'retweet' | 'mention';
     fromUserId: string;
     fromUser: {
         name: string;
@@ -34,6 +34,7 @@ const iconMap = {
     follow: { icon: Users, color: 'text-blue-500' },
     post: { icon: Star, color: 'text-purple-500' },
     retweet: { icon: Users, color: 'text-green-500' },
+    mention: { icon: AtSign, color: 'text-primary' },
 };
 
 const NotificationItem = ({ notification }: { notification: Notification }) => {
@@ -152,6 +153,10 @@ export default function NotificationsPage() {
         return () => unsubscribe();
     }, [user]);
 
+    const mentions = useMemo(() => {
+        return notifications.filter(n => n.type === 'mention');
+    }, [notifications]);
+
   return (
     <>
        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
@@ -190,10 +195,20 @@ export default function NotificationsPage() {
                 )}
             </TabsContent>
             <TabsContent value="mentions" className="mt-0">
-                <div className="p-8 text-center text-muted-foreground">
-                    <h3 className="font-bold text-2xl text-foreground">Nada para ver aqui — ainda</h3>
-                    <p>Quando alguém mencionar você, você encontrará aqui.</p>
-                </div>
+                 {isLoading ? (
+                    <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                ) : mentions.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground">
+                        <h3 className="font-bold text-2xl text-foreground">Nada para ver aqui — ainda</h3>
+                        <p>Quando alguém mencionar você, você encontrará aqui.</p>
+                    </div>
+                ) : (
+                     <ul className="divide-y divide-border">
+                        {mentions.map((item) => (
+                           <NotificationItem key={item.id} notification={item} />
+                        ))}
+                    </ul>
+                )}
             </TabsContent>
             <TabsContent value="verified" className="mt-0">
                  <div className="p-8 text-center text-muted-foreground">
@@ -205,3 +220,5 @@ export default function NotificationsPage() {
     </>
   );
 }
+
+    

@@ -31,7 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle as EditDialogTitle, DialogTitle as OtherDialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { formatTimeAgo } from '@/lib/utils';
 
@@ -722,7 +722,7 @@ export default function PostDetailPage() {
                 <Dialog open={isEditing} onOpenChange={setIsEditing}>
                     <DialogContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
                         <DialogHeader>
-                            <DialogTitle>Editar Post</DialogTitle>
+                            <EditDialogTitle>Editar Post</EditDialogTitle>
                         </DialogHeader>
                         <Textarea 
                             value={editedContent}
@@ -755,7 +755,7 @@ export default function PostDetailPage() {
                 <Dialog open={!!editingComment} onOpenChange={(open) => !open && setEditingComment(null)}>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Editar Comentário</DialogTitle>
+                            <OtherDialogTitle>Editar Comentário</OtherDialogTitle>
                         </DialogHeader>
                         <Textarea 
                             value={editedCommentContent}
@@ -773,3 +773,5 @@ export default function PostDetailPage() {
         </div>
     );
 }
+
+    

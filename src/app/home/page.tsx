@@ -37,12 +37,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Dialog, DialogContent, DialogHeader, DialogTitle as EditDialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle as EditDialogTitle, DialogTitle as OtherDialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { dataURItoFile } from '@/lib/utils';
-import { DialogTitle } from '@radix-ui/react-dialog';
 
 
 interface Post {
@@ -572,7 +571,7 @@ export default function HomePage() {
                 </Avatar>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0 flex flex-col">
-                 <DialogTitle className="sr-only">Menu Principal</DialogTitle>
+                 <OtherDialogTitle className="sr-only">Menu Principal</OtherDialogTitle>
                  <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
                     <X className="h-4 w-4" />
                     <span className="sr-only">Close</span>
@@ -696,5 +695,7 @@ export default function HomePage() {
     </>
   );
 }
+
+    
 
     
