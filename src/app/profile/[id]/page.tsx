@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Upload, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Upload, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -123,6 +123,7 @@ const PostContent = ({ content }: { content: string }) => {
 const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet') => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
+    const isOfficialAccount = post.handle.toLowerCase() === '@chirp' || post.handle.toLowerCase() === '@rulio';
 
     useEffect(() => {
         if (post.createdAt) {
@@ -144,7 +145,10 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }:
                 <div className='w-full'>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm">
-                            <p className="font-bold text-base flex items-center gap-1">{post.author} {post.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
+                            <p className="font-bold text-base flex items-center gap-1">
+                                {post.author} 
+                                {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            </p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
                             {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
                         </div>
@@ -194,6 +198,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }:
 const ReplyItem = ({ reply }: { reply: Reply }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
+    const isOfficialAccount = reply.handle.toLowerCase() === '@chirp' || reply.handle.toLowerCase() === '@rulio';
 
     useEffect(() => {
         if (reply.createdAt) {
@@ -215,7 +220,10 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
                 <div className='w-full'>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm">
-                            <p className="font-bold text-base flex items-center gap-1">{reply.author} {reply.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
+                            <p className="font-bold text-base flex items-center gap-1">
+                                {reply.author}
+                                {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            </p>
                             <p className="text-muted-foreground">{reply.handle} · {time}</p>
                         </div>
                     </div>
@@ -611,6 +619,7 @@ export default function ProfilePage() {
     }
 
     const isOwnProfile = currentUser?.uid === profileUser.uid;
+    const isOfficialAccount = profileUser.handle.toLowerCase() === '@chirp' || profileUser.handle.toLowerCase() === '@rulio';
 
   return (
     <>
@@ -619,7 +628,11 @@ export default function ProfilePage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-                <h1 className="text-xl font-bold flex items-center gap-1">{profileUser.displayName} {profileUser.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-5 w-5 text-primary" />}</h1>
+                <h1 className="text-xl font-bold flex items-center gap-1">
+                    {profileUser.displayName}
+                    {profileUser.handle.toLowerCase() === '@chirp' && <Bird className="h-5 w-5 text-primary" />}
+                    {isOfficialAccount && <BadgeCheck className="h-5 w-5 text-primary" />}
+                </h1>
                 <p className="text-sm text-muted-foreground">{userPosts.length} posts</p>
             </div>
         </header>
@@ -657,7 +670,11 @@ export default function ProfilePage() {
             </div>
             <div className="mt-4">
                 <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold flex items-center gap-1">{profileUser.displayName} {profileUser.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-6 w-6 text-primary" />}</h1>
+                    <h1 className="text-2xl font-bold flex items-center gap-1">
+                        {profileUser.displayName}
+                         {profileUser.handle.toLowerCase() === '@chirp' && <Bird className="h-6 w-6 text-primary" />}
+                        {isOfficialAccount && <BadgeCheck className="h-6 w-6 text-primary" />}
+                    </h1>
                 </div>
                 <p className="text-muted-foreground">{profileUser.handle}</p>
                 <p className="mt-2 whitespace-pre-wrap">{profileUser.bio}</p>

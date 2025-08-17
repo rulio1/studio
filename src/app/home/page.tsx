@@ -334,6 +334,7 @@ export default function HomePage() {
   const PostItem = ({ post }: { post: Post }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
+    const isOfficialAccount = post.handle.toLowerCase() === '@chirp' || post.handle.toLowerCase() === '@rulio';
 
     useEffect(() => {
       if (post.createdAt) {
@@ -356,7 +357,10 @@ export default function HomePage() {
                 <div className='w-full'>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm">
-                        <p className="font-bold text-base flex items-center gap-1">{post.author} {post.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
+                        <p className="font-bold text-base flex items-center gap-1">
+                            {post.author} 
+                            {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                        </p>
                         <p className="text-muted-foreground">{post.handle} · {time}</p>
                         {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
                     </div>
@@ -522,9 +526,16 @@ export default function HomePage() {
                         <Bookmark className="h-6 w-6" /> Itens Salvos
                       </Link>
                     </SheetClose>
-                    <div className="flex items-center gap-4 py-2 text-xl font-bold rounded-md text-muted-foreground cursor-not-allowed">
-                        <Radio className="h-6 w-6" /> Spaces <Badge variant="secondary" className="ml-auto">em breve</Badge>
-                      </div>
+                    <SheetClose asChild>
+                        <Link href="/spaces" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                            <Radio className="h-6 w-6" /> Spaces
+                        </Link>
+                    </SheetClose>
+                    <SheetClose asChild>
+                         <Link href="/jobs" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                            <Briefcase className="h-6 w-6" /> Vagas
+                        </Link>
+                    </SheetClose>
                   </nav>
                   <div className="p-4 border-t mt-auto flex flex-col gap-2">
                     <div className="flex items-center gap-4 py-2 font-semibold rounded-md text-muted-foreground cursor-not-allowed">

@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, Search, Settings, MessageCircle, Loader2, ArrowLeft, BadgeCheck } from 'lucide-react';
+import { MoreHorizontal, Search, Settings, MessageCircle, Loader2, ArrowLeft, BadgeCheck, Bird } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { collection, getDocs, query, where, limit, orderBy, doc, updateDoc, arrayUnion, arrayRemove, writeBatch, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
@@ -33,7 +33,36 @@ interface PostSearchResult {
     author: string;
     handle: string;
     content: string;
+    avatar?: string;
+    avatarFallback?: string;
 }
+
+const forYouPosts: PostSearchResult[] = [
+    {
+        id: '1',
+        author: 'Chirp',
+        handle: '@chirp',
+        content: 'Bem-vindo à nova aba "Para você"! Aqui você encontrará as últimas atualizações e novidades sobre o Chirp. #NovidadesChirp',
+        avatar: '/logo.svg',
+        avatarFallback: 'C',
+    },
+    {
+        id: '2',
+        author: 'Chirp',
+        handle: '@chirp',
+        content: 'Acabamos de lançar a busca por #hashtags! Agora você pode explorar tópicos e descobrir novos conteúdos com mais facilidade. Experimente!',
+        avatar: '/logo.svg',
+        avatarFallback: 'C',
+    },
+     {
+        id: '3',
+        author: 'Chirp',
+        handle: '@chirp',
+        content: 'Os "Tópicos do Momento" já estão funcionando! Fique de olho na aba de tendências para ver o que está bombando na plataforma. #Trending',
+        avatar: '/logo.svg',
+        avatarFallback: 'C',
+    }
+];
 
 const PostContent = ({ content }: { content: string }) => {
     const router = useRouter();
@@ -216,6 +245,7 @@ export default function SearchPage() {
 
   const renderUser = (user: UserSearchResult, list: 'newUsers' | 'users') => {
     const isFollowing = user.followers?.includes(currentUser?.uid || '');
+    const isOfficialAccount = user.handle.toLowerCase() === '@chirp' || user.handle.toLowerCase() === '@rulio';
     if (currentUser?.uid === user.uid) {
         return (
             <li key={user.uid} className="p-4 hover:bg-muted/50">
@@ -223,7 +253,10 @@ export default function SearchPage() {
                     <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/profile/${user.uid}`)}>
                         <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
                         <div>
-                            <p className="font-bold flex items-center gap-1">{user.displayName} {user.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
+                            <p className="font-bold flex items-center gap-1">
+                                {user.displayName}
+                                {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            </p>
                             <p className="text-sm text-muted-foreground">{user.handle}</p>
                             <p className="text-sm mt-1">{user.bio}</p>
                         </div>
@@ -240,7 +273,10 @@ export default function SearchPage() {
                 <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/profile/${user.uid}`)}>
                     <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
                     <div>
-                        <p className="font-bold flex items-center gap-1">{user.displayName} {user.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
+                        <p className="font-bold flex items-center gap-1">
+                            {user.displayName}
+                            {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                        </p>
                         <p className="text-sm text-muted-foreground">{user.handle}</p>
                         <p className="text-sm mt-1">{user.bio}</p>
                     </div>
@@ -252,6 +288,30 @@ export default function SearchPage() {
         </li>
     );
   };
+
+  const renderOfficialPost = (post: PostSearchResult) => (
+    <li key={post.id} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => {
+        if (post.content.includes('#hashtags')) {
+            setSearchTerm('#hashtags');
+        }
+    }}>
+        <div className="flex gap-4">
+            <Avatar>
+                <Bird className="h-full w-full text-primary p-1" />
+            </Avatar>
+            <div className="w-full">
+                <div className="flex items-center gap-2 text-sm">
+                    <p className="font-bold text-base flex items-center gap-1">
+                        {post.author} 
+                        <BadgeCheck className="h-4 w-4 text-primary" />
+                    </p>
+                    <p className="text-muted-foreground">{post.handle}</p>
+                </div>
+                <PostContent content={post.content} />
+            </div>
+        </div>
+    </li>
+  );
 
 
   const renderContent = () => {
@@ -317,7 +377,9 @@ export default function SearchPage() {
               <TabsTrigger value="new-users" className="flex-1">Novos Usuários</TabsTrigger>
             </TabsList>
             <TabsContent value="for-you" className="mt-0">
-                <div className="p-8 text-center text-muted-foreground">Conteúdo personalizado em breve!</div>
+                 <ul className="divide-y divide-border">
+                    {forYouPosts.map(renderOfficialPost)}
+                </ul>
             </TabsContent>
             <TabsContent value="trending" className="mt-0">
                 {isLoading ? (

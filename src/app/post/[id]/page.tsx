@@ -101,6 +101,7 @@ const PostContent = ({ content }: { content: string }) => {
 const CommentItem = ({ comment, user, onEdit, onDelete }: { comment: Comment, user: FirebaseUser | null, onEdit: (comment: Comment) => void, onDelete: (id: string) => void }) => {
     const router = useRouter();
     const [time, setTime] = useState(() => comment.createdAt ? format(comment.createdAt.toDate(), 'PP') : 'agora');
+    const isOfficialAccount = comment.handle.toLowerCase() === '@chirp' || comment.handle.toLowerCase() === '@rulio';
 
     useEffect(() => {
         if (comment.createdAt) {
@@ -118,7 +119,10 @@ const CommentItem = ({ comment, user, onEdit, onDelete }: { comment: Comment, us
                 <div className='w-full'>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
-                            <p className="font-bold flex items-center gap-1">{comment.author} {comment.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
+                            <p className="font-bold flex items-center gap-1">
+                                {comment.author} 
+                                {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                            </p>
                             <p className="text-muted-foreground">{comment.handle} · {time}</p>
                              {comment.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
                         </div>
@@ -457,6 +461,8 @@ export default function PostDetailPage() {
             </div>
         );
     }
+    
+    const isOfficialAccount = post.handle.toLowerCase() === '@chirp' || post.handle.toLowerCase() === '@rulio';
 
     return (
         <div className="flex flex-col h-screen bg-background">
@@ -478,7 +484,10 @@ export default function PostDetailPage() {
                                 <AvatarFallback>{post.avatarFallback}</AvatarFallback>
                             </Avatar>
                             <div>
-                                <p className="font-bold flex items-center gap-1">{post.author} {post.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-4 w-4 text-primary" />}</p>
+                                <p className="font-bold flex items-center gap-1">
+                                    {post.author} 
+                                    {isOfficialAccount && <BadgeCheck className="h-4 w-4 text-primary" />}
+                                </p>
                                 <p className="text-sm text-muted-foreground">{post.handle}</p>
                             </div>
                         </div>
