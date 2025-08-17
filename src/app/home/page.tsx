@@ -16,7 +16,7 @@ import PostSkeleton from '@/components/post-skeleton';
 import { useRouter } from 'next/navigation';
 import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
-import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch, deleteDoc, increment } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch, deleteDoc, increment, documentId } from 'firebase/firestore';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -66,6 +66,8 @@ interface Post {
     editedAt?: any;
     communityId?: string;
     hashtags?: string[];
+    repostedBy?: { name: string; handle: string };
+    repostedAt?: any;
 }
 
 interface ChirpUser {
@@ -146,7 +148,7 @@ export default function HomePage() {
     return () => unsubscribePosts();
   }, []);
 
-  const fetchFollowingPosts = useCallback(async () => {
+ const fetchFollowingPosts = useCallback(async () => {
     if (!chirpUser || chirpUser.following.length === 0) {
         setFollowingPosts([]);
         setIsLoadingFollowing(false);
@@ -154,26 +156,71 @@ export default function HomePage() {
     }
     
     setIsLoadingFollowing(true);
+
+    const followingIds = chirpUser.following;
+
+    // Fetch original posts from users the current user is following
     const postsQuery = query(
         collection(db, "posts"), 
-        where("authorId", "in", chirpUser.following),
-        orderBy("createdAt", "desc"),
-        limit(50)
+        where("authorId", "in", followingIds)
     );
-    const snapshot = await getDocs(postsQuery);
-    const postsData = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-            id: doc.id,
-            ...data,
-            time: '', 
-            isLiked: data.likes.includes(auth.currentUser?.uid || ''),
-            isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
-        } as Post
+    const postsSnapshot = await getDocs(postsQuery);
+    const originalPosts = postsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+    } as Post));
+
+    // Fetch reposts from users the current user is following
+    const repostsQuery = query(collection(db, "reposts"), where("userId", "in", followingIds));
+    const repostsSnapshot = await getDocs(repostsQuery);
+    const repostedPostIds = repostsSnapshot.docs.map(doc => doc.data().postId);
+    const repostsData = repostsSnapshot.docs.map(doc => doc.data());
+
+    // Fetch the actual post data for the reposted posts
+    let repostedPosts: Post[] = [];
+    if (repostedPostIds.length > 0) {
+        const followingUsersQuery = query(collection(db, 'users'), where('uid', 'in', followingIds));
+        const followingUsersSnapshot = await getDocs(followingUsersQuery);
+        const followingUsersMap = new Map(followingUsersSnapshot.docs.map(doc => [doc.id, doc.data() as ChirpUser]));
+        
+        const repostedPostsQuery = query(collection(db, "posts"), where(documentId(), "in", repostedPostIds));
+        const repostedPostsSnapshot = await getDocs(repostedPostsQuery);
+        const postsMap = new Map(repostedPostsSnapshot.docs.map(doc => [doc.id, doc.data()]));
+        
+        repostedPosts = repostsData.map(repost => {
+            const postData = postsMap.get(repost.postId);
+            const reposter = followingUsersMap.get(repost.userId);
+            if (!postData || !reposter) return null;
+            return {
+                id: repost.postId,
+                ...postData,
+                repostedAt: repost.repostedAt,
+                repostedBy: {
+                    name: reposter.displayName,
+                    handle: reposter.handle,
+                },
+            } as Post;
+        }).filter(p => p !== null) as Post[];
+    }
+
+    // Merge and sort
+    const allPosts = [...originalPosts, ...repostedPosts];
+    allPosts.sort((a, b) => {
+        const timeA = a.repostedAt || a.createdAt;
+        const timeB = b.repostedAt || b.createdAt;
+        return timeB.toMillis() - timeA.toMillis();
     });
-    setFollowingPosts(postsData);
+
+    const finalPosts = allPosts.map(post => ({
+        ...post,
+        isLiked: post.likes.includes(user?.uid || ''),
+        isRetweeted: post.retweets.includes(user?.uid || ''),
+    }));
+
+    setFollowingPosts(finalPosts);
     setIsLoadingFollowing(false);
-  }, [chirpUser]);
+}, [chirpUser, user]);
+
 
   useEffect(() => {
     if (activeTab === 'following' && chirpUser) {
@@ -356,18 +403,25 @@ export default function HomePage() {
     const isOfficialAccount = post.handle.toLowerCase() === '@chirp' || post.handle.toLowerCase() === '@rulio';
 
     useEffect(() => {
-      if (post.createdAt) {
+      const timestamp = post.repostedAt || post.createdAt;
+      if (timestamp) {
         try {
-            const date = post.createdAt.toDate();
+            const date = timestamp.toDate();
             setTime(formatDistanceToNow(date, { addSuffix: true, locale: ptBR }));
         } catch(e) {
             setTime('agora');
         }
       }
-    }, [post.createdAt]);
+    }, [post.createdAt, post.repostedAt]);
 
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => handlePostClick(post.id)}>
+             {post.repostedBy && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-6">
+                    <Repeat className="h-4 w-4" />
+                    <span>{post.repostedBy.handle === chirpUser?.handle ? 'Você' : post.repostedBy.name} repostou</span>
+                </div>
+            )}
             <div className="flex gap-4">
                 <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
                     <AvatarImage src={post.avatar} alt={post.handle} />
@@ -473,7 +527,7 @@ export default function HomePage() {
     return (
         <ul className="divide-y divide-border">
             {posts.map((post) => (
-               <PostItem key={post.id} post={post} />
+               <PostItem key={`${post.id}-${post.repostedAt || ''}`} post={post} />
             ))}
         </ul>
     );
@@ -630,3 +684,5 @@ export default function HomePage() {
     </>
   );
 }
+
+  

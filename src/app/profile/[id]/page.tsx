@@ -405,7 +405,7 @@ export default function ProfilePage() {
     const fetchLikedPosts = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingLikes(true);
-        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId), orderBy("createdAt", "desc"));
+        const q = query(collection(db, "posts"), where("likes", "array-contains", profileId));
         onSnapshot(q, (snapshot) => {
             const posts = snapshot.docs.map(doc => {
                 const data = doc.data();
@@ -416,6 +416,7 @@ export default function ProfilePage() {
                     isRetweeted: data.retweets.includes(currentUser?.uid || ''),
                 } as Post
             });
+             posts.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setLikedPosts(posts);
             setIsLoadingLikes(false);
         });
@@ -838,3 +839,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+  
