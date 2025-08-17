@@ -360,55 +360,47 @@ export default function ProfilePage() {
 
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                setCurrentUser(user);
-                 const userDocRef = doc(db, "users", user.uid);
-                 onSnapshot(userDocRef, (doc) => {
-                     if (doc.exists()) {
-                        const userData = { uid: doc.id, ...doc.data() } as ChirpUser;
-                        setChirpUser(userData);
-                        // Check if the profile user is in the current user's followers list
-                        if (profileUser) {
-                           setIsFollowedBy(userData.followers?.includes(profileUser.uid));
-                        }
-                     }
-                 });
-            } else {
+        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+            if (!user) {
                 router.push('/login');
+                return;
             }
-        });
-        return () => unsubscribe();
-    }, [router, profileUser]);
+            setCurrentUser(user);
 
-    const fetchProfileUser = useCallback(async () => {
-        if (!profileId || !currentUser) return;
-        setIsLoading(true);
-        
-        const userDocRef = doc(db, 'users', profileId);
-        const unsubscribe = onSnapshot(userDocRef, (userDoc) => {
-             if (userDoc.exists()) {
-                const userData = { uid: userDoc.id, ...userDoc.data() } as ChirpUser;
-                setProfileUser(userData);
-                setIsFollowing(userData.followers?.includes(currentUser.uid));
-                if (chirpUser) {
-                    setIsFollowedBy(chirpUser.followers?.includes(userData.uid));
+            const unsubscribes: (() => void)[] = [];
+
+            // Listen to current user's document
+            const userDocRef = doc(db, "users", user.uid);
+            const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
+                if (doc.exists()) {
+                    const userData = { uid: doc.id, ...doc.data() } as ChirpUser;
+                    setChirpUser(userData);
+                    if (profileUser) {
+                        setIsFollowing(profileUser.followers?.includes(user.uid));
+                    }
                 }
-            } else {
-                console.error("Usuário não encontrado!");
-            }
-            setIsLoading(false);
+            });
+            unsubscribes.push(unsubscribeUser);
+
+            // Listen to profile user's document
+            const profileDocRef = doc(db, 'users', profileId);
+            const unsubscribeProfile = onSnapshot(profileDocRef, (doc) => {
+                if (doc.exists()) {
+                    const profileData = { uid: doc.id, ...doc.data() } as ChirpUser;
+                    setProfileUser(profileData);
+                    if (chirpUser) {
+                        setIsFollowedBy(chirpUser.followers?.includes(profileId));
+                    }
+                    setIsLoading(false);
+                }
+            });
+            unsubscribes.push(unsubscribeProfile);
+
+            return () => unsubscribes.forEach(unsub => unsub());
         });
 
-        return unsubscribe;
-    }, [profileId, currentUser, chirpUser]);
-
-    useEffect(() => {
-        const unsub = fetchProfileUser();
-        return () => {
-            unsub.then(u => u && u());
-        }
-    }, [fetchProfileUser]);
+        return () => unsubscribeAuth();
+    }, [profileId, router]);
     
      const fetchUserPosts = useCallback(async () => {
         if (!profileId || !currentUser || !profileUser) return;
