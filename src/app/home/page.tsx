@@ -491,11 +491,9 @@ export default function HomePage() {
                     </SheetClose>
                   </nav>
                   <div className="p-4 border-t mt-auto flex flex-col gap-2">
-                    <SheetClose asChild>
-                     <Link href="/chat" className="flex items-center gap-4 py-2 font-semibold rounded-md">
-                        <Bot className="h-6 w-6" /> Abrir Chirp AI
-                      </Link>
-                    </SheetClose>
+                    <div className="flex items-center gap-4 py-2 font-semibold rounded-md text-muted-foreground cursor-not-allowed">
+                        <Bot className="h-6 w-6" /> Chirp AI <Badge variant="secondary" className="ml-auto">em breve</Badge>
+                    </div>
                     <SheetClose asChild>
                        <Link href="#" className="flex items-center gap-4 py-2 font-semibold rounded-md">
                         <Settings className="h-6 w-6" /> Configurações e privacidade
