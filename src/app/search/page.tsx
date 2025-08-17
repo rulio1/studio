@@ -9,7 +9,7 @@ import { MoreHorizontal, Search, Settings, MessageCircle, Loader2, ArrowLeft, Ba
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { collection, getDocs, query, where, limit, orderBy, doc, updateDoc, arrayUnion, arrayRemove, writeBatch, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
@@ -37,10 +37,39 @@ interface PostSearchResult {
     content: string;
 }
 
+const PostContent = ({ content }: { content: string }) => {
+    const router = useRouter();
+    const parts = content.split(/(#\w+)/g);
+    return (
+        <p className="mt-1">
+            {parts.map((part, index) => {
+                if (part.startsWith('#')) {
+                    const hashtag = part.substring(1);
+                    return (
+                        <a 
+                            key={index} 
+                            className="text-primary hover:underline"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/search?q=%23${hashtag}`);
+                            }}
+                        >
+                            {part}
+                        </a>
+                    );
+                }
+                return part;
+            })}
+        </p>
+    );
+};
 
 export default function SearchPage() {
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState('');
+  const searchParams = useSearchParams();
+  const queryFromUrl = searchParams.get('q');
+  
+  const [searchTerm, setSearchTerm] = useState(queryFromUrl || '');
   const [trends, setTrends] = useState<Trend[]>([]);
   const [users, setUsers] = useState<UserSearchResult[]>([]);
   const [newUsers, setNewUsers] = useState<UserSearchResult[]>([]);
@@ -107,30 +136,33 @@ export default function SearchPage() {
           setIsSearching(true);
           
           try {
-              // Search users by display name and handle
-              const nameQuery = query(collection(db, 'users'), where('searchableDisplayName', '>=', formattedTerm), where('searchableDisplayName', '<=', formattedTerm + '\uf8ff'), limit(5));
-              const handleQuery = query(collection(db, 'users'), where('searchableHandle', '>=', formattedTerm.replace('@', '')), where('searchableHandle', '<=', formattedTerm.replace('@', '') + '\uf8ff'), limit(5));
-              
-              // Post search
-              const postQuery = query(collection(db, 'posts'), where('content', '>=', term.trim()), where('content', '<=', term.trim() + '\uf8ff'), limit(5));
-
-              const [nameSnapshot, handleSnapshot, postSnapshot] = await Promise.all([
-                  getDocs(nameQuery),
-                  getDocs(handleQuery),
-                  getDocs(postQuery)
-              ]);
-              
-              const nameUsers = nameSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserSearchResult));
-              const handleUsers = handleSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserSearchResult));
-              
-              // Merge and remove duplicates
-              const allUsers = [...nameUsers, ...handleUsers];
-              const uniqueUsers = Array.from(new Map(allUsers.map(user => [user.uid, user])).values());
-
-              const postsData = postSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as PostSearchResult);
-              
-              setUsers(uniqueUsers);
-              setPosts(postsData);
+            if (formattedTerm.startsWith('#')) {
+                // Hashtag search
+                const hashtag = formattedTerm.substring(1);
+                const postQuery = query(collection(db, 'posts'), where('hashtags', 'array-contains', hashtag), limit(20));
+                const postSnapshot = await getDocs(postQuery);
+                const postsData = postSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as PostSearchResult);
+                setPosts(postsData);
+                setUsers([]);
+            } else {
+                // User and text search
+                const nameQuery = query(collection(db, 'users'), where('searchableDisplayName', '>=', formattedTerm), where('searchableDisplayName', '<=', formattedTerm + '\uf8ff'), limit(5));
+                const handleQuery = query(collection(db, 'users'), where('searchableHandle', '>=', formattedTerm.replace('@', '')), where('searchableHandle', '<=', formattedTerm.replace('@', '') + '\uf8ff'), limit(5));
+                
+                const [nameSnapshot, handleSnapshot] = await Promise.all([
+                    getDocs(nameQuery),
+                    getDocs(handleQuery),
+                ]);
+                
+                const nameUsers = nameSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserSearchResult));
+                const handleUsers = handleSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserSearchResult));
+                
+                // Merge and remove duplicates
+                const allUsers = [...nameUsers, ...handleUsers];
+                const uniqueUsers = Array.from(new Map(allUsers.map(user => [user.uid, user])).values());
+                setUsers(uniqueUsers);
+                setPosts([]); // Clear posts when not searching for hashtags
+            }
 
           } catch (error) {
               console.error("Erro na busca:", error);
@@ -255,7 +287,7 @@ export default function SearchPage() {
                             {posts.map((post) => (
                                 <li key={post.id} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground"><MessageCircle className="h-4 w-4" /> Post de {post.handle}</div>
-                                    <p className="mt-1">{post.content}</p>
+                                    <PostContent content={post.content} />
                                 </li>
                             ))}
                         </ul>
@@ -269,7 +301,7 @@ export default function SearchPage() {
                         <ul className="divide-y divide-border">{posts.map((post) => (
                             <li key={post.id} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground"><MessageCircle className="h-4 w-4" /> Post de {post.handle}</div>
-                                <p className="mt-1">{post.content}</p>
+                                <PostContent content={post.content} />
                             </li>
                         ))}</ul>
                 </TabsContent>
@@ -293,7 +325,7 @@ export default function SearchPage() {
                 ): (
                 <ul className="divide-y divide-border">
                 {filteredTrends.map((trend) => (
-                    <li key={trend.rank} className="p-4 hover:bg-muted/50 cursor-pointer">
+                    <li key={trend.rank} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => setSearchTerm(trend.topic)}>
                         <div className="flex items-start justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground">{trend.rank} · {trend.category}</p>

@@ -65,6 +65,16 @@ export default function CreatePostModal() {
         setIsPosting(false);
     }
 
+    const extractHashtags = (content: string) => {
+        const regex = /#([a-zA-Z0-9_]+)/g;
+        const matches = content.match(regex);
+        if (!matches) {
+            return [];
+        }
+        // Return unique hashtags in lowercase
+        return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
+    };
+
     const handleCreatePost = async () => {
         if (!newPostContent.trim()) {
             toast({
@@ -84,6 +94,7 @@ export default function CreatePostModal() {
         }
 
         setIsPosting(true);
+        const hashtags = extractHashtags(newPostContent);
 
         try {
             await addDoc(collection(db, "posts"), {
@@ -93,6 +104,7 @@ export default function CreatePostModal() {
                 avatar: chirpUser.avatar,
                 avatarFallback: chirpUser.displayName[0],
                 content: newPostContent,
+                hashtags: hashtags,
                 image: '',
                 imageHint: '',
                 communityId: null,

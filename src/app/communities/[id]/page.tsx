@@ -60,6 +60,32 @@ interface ChirpUser {
     savedPosts?: string[];
 }
 
+const PostContent = ({ content }: { content: string }) => {
+    const router = useRouter();
+    const parts = content.split(/(#\w+)/g);
+    return (
+        <p>
+            {parts.map((part, index) => {
+                if (part.startsWith('#')) {
+                    const hashtag = part.substring(1);
+                    return (
+                        <a 
+                            key={index} 
+                            className="text-primary hover:underline"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/search?q=%23${hashtag}`);
+                            }}
+                        >
+                            {part}
+                        </a>
+                    );
+                }
+                return part;
+            })}
+        </p>
+    );
+};
 
 const PostItem = ({ post }: { post: Post }) => {
     const router = useRouter();
@@ -90,7 +116,7 @@ const PostItem = ({ post }: { post: Post }) => {
                         </div>
                     </div>
                     <div className="mb-2 whitespace-pre-wrap">
-                        <p>{post.content}</p>
+                        <PostContent content={post.content} />
                     </div>
                 </div>
             </div>
@@ -212,6 +238,16 @@ export default function CommunityDetailPage() {
         setShowAiTextGenerator(false);
         setIsModalOpen(false);
     }
+    
+    const extractHashtags = (content: string) => {
+        const regex = /#([a-zA-Z0-9_]+)/g;
+        const matches = content.match(regex);
+        if (!matches) {
+            return [];
+        }
+        // Return unique hashtags in lowercase
+        return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
+    };
 
     const handleCreatePost = async () => {
         if (!newPostContent.trim()) {
@@ -224,6 +260,7 @@ export default function CommunityDetailPage() {
         }
         if (!user || !chirpUser) return;
         setIsPosting(true);
+        const hashtags = extractHashtags(newPostContent);
 
         try {
             await addDoc(collection(db, "posts"), {
@@ -233,6 +270,7 @@ export default function CommunityDetailPage() {
                 avatar: chirpUser.avatar,
                 avatarFallback: chirpUser.displayName[0],
                 content: newPostContent,
+                hashtags: hashtags,
                 image: '',
                 imageHint: '',
                 communityId: communityId,

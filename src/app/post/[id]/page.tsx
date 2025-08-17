@@ -71,6 +71,32 @@ interface ChirpUser {
     savedPosts?: string[];
 }
 
+const PostContent = ({ content }: { content: string }) => {
+    const router = useRouter();
+    const parts = content.split(/(#\w+)/g);
+    return (
+        <p className="text-xl mb-4 whitespace-pre-wrap">
+            {parts.map((part, index) => {
+                if (part.startsWith('#')) {
+                    const hashtag = part.substring(1);
+                    return (
+                        <a 
+                            key={index} 
+                            className="text-primary hover:underline"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/search?q=%23${hashtag}`);
+                            }}
+                        >
+                            {part}
+                        </a>
+                    );
+                }
+                return part;
+            })}
+        </p>
+    );
+};
 
 const CommentItem = ({ comment, user, onEdit, onDelete }: { comment: Comment, user: FirebaseUser | null, onEdit: (comment: Comment) => void, onDelete: (id: string) => void }) => {
     const router = useRouter();
@@ -312,14 +338,26 @@ export default function PostDetailPage() {
             setIsDeleteAlertOpen(false);
         }
     };
+    
+    const extractHashtags = (content: string) => {
+        const regex = /#([a-zA-Z0-9_]+)/g;
+        const matches = content.match(regex);
+        if (!matches) {
+            return [];
+        }
+        // Return unique hashtags in lowercase
+        return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
+    };
 
     const handleUpdatePost = async () => {
         if (!post || !editedContent.trim()) return;
         setIsUpdating(true);
+        const hashtags = extractHashtags(editedContent);
         try {
             const postRef = doc(db, "posts", post.id);
             await updateDoc(postRef, {
                 content: editedContent,
+                hashtags: hashtags,
                 editedAt: serverTimestamp()
             });
             setIsEditing(false);
@@ -471,7 +509,7 @@ export default function PostDetailPage() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
-                    <p className="text-xl mb-4 whitespace-pre-wrap">{post.content}</p>
+                    <PostContent content={post.content} />
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <p>{post.time}</p>
                         {post.editedAt && <p className="text-xs">(editado)</p>}

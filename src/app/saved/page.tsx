@@ -39,6 +39,33 @@ interface ChirpUser {
     savedPosts?: string[];
 }
 
+const PostContent = ({ content }: { content: string }) => {
+    const router = useRouter();
+    const parts = content.split(/(#\w+)/g);
+    return (
+        <p>
+            {parts.map((part, index) => {
+                if (part.startsWith('#')) {
+                    const hashtag = part.substring(1);
+                    return (
+                        <a 
+                            key={index} 
+                            className="text-primary hover:underline"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/search?q=%23${hashtag}`);
+                            }}
+                        >
+                            {part}
+                        </a>
+                    );
+                }
+                return part;
+            })}
+        </p>
+    );
+};
+
 const SavedPostItem = ({ post }: { post: Post }) => {
     const router = useRouter();
     const [time, setTime] = useState(() => post.createdAt ? format(post.createdAt.toDate(), "PP") : 'Agora');
@@ -65,7 +92,7 @@ const SavedPostItem = ({ post }: { post: Post }) => {
                         </div>
                     </div>
                     <div className="mb-2 whitespace-pre-wrap">
-                        <p>{post.content}</p>
+                        <PostContent content={post.content} />
                         {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="mt-2 rounded-2xl border" />}
                     </div>
                 </div>

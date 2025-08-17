@@ -93,6 +93,33 @@ interface ChirpUser {
     savedPosts?: string[];
 }
 
+const PostContent = ({ content }: { content: string }) => {
+    const router = useRouter();
+    const parts = content.split(/(#\w+)/g);
+    return (
+        <p>
+            {parts.map((part, index) => {
+                if (part.startsWith('#')) {
+                    const hashtag = part.substring(1);
+                    return (
+                        <a 
+                            key={index} 
+                            className="text-primary hover:underline"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/search?q=%23${hashtag}`);
+                            }}
+                        >
+                            {part}
+                        </a>
+                    );
+                }
+                return part;
+            })}
+        </p>
+    );
+};
+
 const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet') => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
@@ -149,7 +176,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave }:
                         </DropdownMenu>
                     </div>
                     <div className="mb-2 whitespace-pre-wrap">
-                        <p>{post.content}</p>
+                        <PostContent content={post.content} />
                     </div>
                     <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
                         <button className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></button>
@@ -438,13 +465,25 @@ export default function ProfilePage() {
         setEditedContent(post.content);
     };
 
+    const extractHashtags = (content: string) => {
+        const regex = /#([a-zA-Z0-9_]+)/g;
+        const matches = content.match(regex);
+        if (!matches) {
+            return [];
+        }
+        // Return unique hashtags in lowercase
+        return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
+    };
+
     const handleUpdatePost = async () => {
         if (!editingPost || !editedContent.trim()) return;
         setIsUpdating(true);
+        const hashtags = extractHashtags(editedContent);
         try {
             const postRef = doc(db, "posts", editingPost.id);
             await updateDoc(postRef, {
                 content: editedContent,
+                hashtags: hashtags,
                 editedAt: serverTimestamp()
             });
             setEditingPost(null);
