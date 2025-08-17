@@ -43,12 +43,17 @@ export default function ChatPage() {
         setIsLoading(true);
         
         let modelResponse = '';
+        setMessages(prev => [...prev, { role: 'model', content: '' }]);
 
         try {
             const stream = chat(newMessages);
             for await (const chunk of stream) {
                 modelResponse += chunk;
-                 setMessages([...newMessages, { role: 'model', content: modelResponse }]);
+                 setMessages(prev => {
+                    const updatedMessages = [...prev];
+                    updatedMessages[updatedMessages.length - 1].content = modelResponse;
+                    return updatedMessages;
+                 });
             }
         } catch (error) {
             console.error('Erro ao obter resposta da IA:', error);
