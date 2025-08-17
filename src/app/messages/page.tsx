@@ -41,12 +41,16 @@ interface Conversation {
 
 const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conversation; currentUserId: string | null; onActionClick: (convoId: string, action: 'pin' | 'archive' | 'delete') => void; }) => {
     const router = useRouter();
-    const [time, setTime] = useState(() => convo.lastMessage.timestamp ? formatTimeAgo(convo.lastMessage.timestamp.toDate()) : '');
+    const [time, setTime] = useState('');
     const isOfficialAccount = convo.otherUser.handle.toLowerCase() === '@chirp' || convo.otherUser.handle.toLowerCase() === '@rulio';
     
     useEffect(() => {
         if (convo.lastMessage.timestamp) {
-            setTime(formatTimeAgo(convo.lastMessage.timestamp.toDate()));
+            try {
+                setTime(formatTimeAgo(convo.lastMessage.timestamp.toDate()));
+            } catch (e) {
+                setTime('');
+            }
         }
     }, [convo.lastMessage.timestamp]);
 
