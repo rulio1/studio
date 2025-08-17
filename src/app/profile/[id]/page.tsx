@@ -333,7 +333,7 @@ export default function ProfilePage() {
         } as Post));
     
         // Fetch reposts
-        const repostsQuery = query(collection(db, "reposts"), where("userId", "==", profileId), orderBy("repostedAt", "desc"));
+        const repostsQuery = query(collection(db, "reposts"), where("userId", "==", profileId));
         const repostsSnapshot = await getDocs(repostsQuery);
         const repostedPostIds = repostsSnapshot.docs.map(doc => doc.data().postId);
         const repostsData = repostsSnapshot.docs.map(doc => doc.data());
