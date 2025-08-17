@@ -130,111 +130,43 @@ export default function HomePage() {
     return () => unsubscribeAuth();
   }, [router]);
 
-  const fetchAllPosts = useCallback(async () => {
+  const fetchAllPosts = useCallback(() => {
     if (!user) return;
     setIsLoading(true);
 
     const postsQuery = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-
     const unsubscribe = onSnapshot(postsQuery, async (postsSnapshot) => {
-        let allReferencedUserIds = new Set<string>();
-        postsSnapshot.docs.forEach(doc => allReferencedUserIds.add(doc.data().authorId));
-
-        const repostsQuery = query(collection(db, "reposts"), orderBy("repostedAt", "desc"));
-        const repostsSnapshot = await getDocs(repostsQuery);
-        const repostsData = repostsSnapshot.docs.map(doc => doc.data());
-        repostsData.forEach(repost => allReferencedUserIds.add(repost.userId));
-
-        let usersMap = new Map<string, ChirpUser>();
-        if (allReferencedUserIds.size > 0) {
-            const uniqueUserIds = Array.from(allReferencedUserIds);
-             const chunks = [];
-            for (let i = 0; i < uniqueUserIds.length; i += 30) {
-                chunks.push(uniqueUserIds.slice(i, i + 30));
-            }
-            const userSnapshots = await Promise.all(chunks.map(chunk => getDocs(query(collection(db, 'users'), where(documentId(), "in", chunk)))));
-            userSnapshots.forEach(snapshot => {
-                snapshot.docs.forEach(doc => usersMap.set(doc.id, { uid: doc.id, ...doc.data() } as ChirpUser));
-            });
+      const originalPosts = postsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        isLiked: doc.data().likes.includes(user.uid || ''),
+        isRetweeted: doc.data().retweets.includes(user.uid || ''),
+      })) as Post[];
+      
+      if (isLoading) {
+        setAllPosts(originalPosts);
+        setIsLoading(false);
+      } else {
+        const latestPostTime = allPosts[0]?.createdAt.toMillis() || 0;
+        const newPosts = originalPosts.filter(p => p.createdAt.toMillis() > latestPostTime);
+        if (newPosts.length > 0) {
+          setNewAllPosts(prev => [...newPosts, ...prev]);
+          if (mainContainerRef.current && mainContainerRef.current.scrollTop > 50) {
+            setShowNewPostsButton(true);
+          } else {
+            setAllPosts(originalPosts);
+          }
         }
-        
-        const originalPosts = postsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Post[];
-
-        const repostedPostIds = repostsData.map(repost => repost.postId);
-        let repostedPosts: Post[] = [];
-        if (repostedPostIds.length > 0) {
-            const chunks = [];
-            for (let i = 0; i < repostedPostIds.length; i += 30) {
-                chunks.push(repostedPostIds.slice(i, i + 30));
-            }
-
-            const repostedPostsSnapshots = await Promise.all(chunks.map(chunk => getDocs(query(collection(db, "posts"), where(documentId(), "in", chunk)))));
-            const postsMap = new Map<string, Post>();
-            repostedPostsSnapshots.forEach(snapshot => {
-                snapshot.docs.forEach(doc => postsMap.set(doc.id, { id: doc.id, ...doc.data() } as Post));
-            });
-
-            repostedPosts = repostsData.map(repost => {
-                const postData = postsMap.get(repost.postId);
-                const reposter = usersMap.get(repost.userId);
-                if (!postData || !reposter) return null;
-
-                return {
-                    ...postData,
-                    repostedAt: repost.repostedAt,
-                    repostedBy: {
-                        name: reposter.displayName,
-                        handle: reposter.handle,
-                        avatar: reposter.avatar,
-                    },
-                } as Post;
-            }).filter(p => p !== null) as Post[];
-        }
-
-        const allCombinedPosts = [...originalPosts, ...repostedPosts];
-        allCombinedPosts.sort((a, b) => {
-          const timeA = a.repostedAt?.toMillis() || a.createdAt?.toMillis() || 0;
-          const timeB = b.repostedAt?.toMillis() || b.createdAt?.toMillis() || 0;
-          return timeB - timeA;
-        });
-
-        const uniquePosts = Array.from(new Map(allCombinedPosts.map(post => [post.id + (post.repostedAt?.toMillis() || ''), post])).values());
-
-        const finalPosts = uniquePosts.map(post => ({
-          ...post,
-          isLiked: post.likes.includes(user.uid || ''),
-          isRetweeted: post.retweets.includes(user.uid || ''),
-        }));
-
-        if (isLoading) {
-            setAllPosts(finalPosts);
-            setIsLoading(false);
-        } else {
-             const latestPostTime = allPosts[0]?.createdAt.toMillis() || 0;
-            const newPosts = finalPosts.filter(p => p.createdAt.toMillis() > latestPostTime);
-            if (newPosts.length > 0) {
-                setNewAllPosts(prev => [...newPosts, ...prev]);
-                if (mainContainerRef.current && mainContainerRef.current.scrollTop > 50) {
-                     setShowNewPostsButton(true);
-                } else {
-                    setAllPosts(finalPosts);
-                }
-            }
-        }
+      }
     });
 
     return unsubscribe;
   }, [user, isLoading, allPosts]);
 
   useEffect(() => {
-    if(user) {
+    if (user) {
         const unsubscribe = fetchAllPosts();
-        return () => {
-            unsubscribe.then(u => u());
-        }
+        return () => unsubscribe();
     }
   }, [user, fetchAllPosts]);
 
@@ -243,7 +175,7 @@ export default function HomePage() {
         if (mainContainerRef.current && mainContainerRef.current.scrollTop === 0) {
             setShowNewPostsButton(false);
             if (newAllPosts.length > 0) {
-                setAllPosts(prev => [...newAllPosts, ...prev].sort((a, b) => (b.repostedAt || b.createdAt).toMillis() - (a.repostedAt || a.createdAt).toMillis()));
+                setAllPosts(prev => [...newAllPosts, ...prev].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
                 setNewAllPosts([]);
             }
         }
@@ -257,13 +189,13 @@ export default function HomePage() {
     if (mainContainerRef.current) {
         mainContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    setAllPosts(prev => [...newAllPosts, ...prev].sort((a, b) => (b.repostedAt || b.createdAt).toMillis() - (a.repostedAt || a.createdAt).toMillis()));
+    setAllPosts(prev => [...newAllPosts, ...prev].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
     setNewAllPosts([]);
     setShowNewPostsButton(false);
   }
 
 
- const fetchFollowingPosts = useCallback(async () => {
+ const fetchFollowingPosts = useCallback(() => {
     if (!chirpUser || !user || chirpUser.following.length === 0) {
         setFollowingPosts([]);
         setIsLoadingFollowing(false);
@@ -276,89 +208,26 @@ export default function HomePage() {
     const feedUserIds = [...new Set([...followingIds, user.uid])];
 
     const postsQuery = query(collection(db, "posts"), where("authorId", "in", feedUserIds), orderBy("createdAt", "desc"));
-
     const unsubscribe = onSnapshot(postsQuery, async (postsSnapshot) => {
-         const originalPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
+         const originalPosts = postsSnapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data(),
+            isLiked: doc.data().likes.includes(user.uid || ''),
+            isRetweeted: doc.data().retweets.includes(user.uid || ''),
+        } as Post));
 
-        const repostsQuery = query(collection(db, "reposts"), where("userId", "in", feedUserIds), orderBy("repostedAt", "desc"));
-        const repostsSnapshot = await getDocs(repostsQuery);
-        const repostsData = repostsSnapshot.docs.map(doc => doc.data());
-        
-        let allReferencedUserIds = new Set<string>();
-        feedUserIds.forEach(id => allReferencedUserIds.add(id));
-        originalPosts.forEach(p => allReferencedUserIds.add(p.authorId));
-
-        let usersMap = new Map<string, ChirpUser>();
-        if(allReferencedUserIds.size > 0){
-            const userChunks = [];
-            const uniqueUserIds = Array.from(allReferencedUserIds);
-            for (let i = 0; i < uniqueUserIds.length; i += 30) {
-                userChunks.push(uniqueUserIds.slice(i, i + 30));
-            }
-            const userSnapshots = await Promise.all(userChunks.map(chunk => getDocs(query(collection(db, 'users'), where(documentId(), 'in', chunk)))));
-            userSnapshots.forEach(snapshot => {
-                snapshot.docs.forEach(doc => usersMap.set(doc.id, { uid: doc.id, ...doc.data() } as ChirpUser));
-            });
-        }
-        
-        const repostedPostIds = repostsData.map(repost => repost.postId);
-        let repostedPosts: Post[] = [];
-        if (repostedPostIds.length > 0) {
-            const postChunks = [];
-            const uniquePostIds = [...new Set(repostedPostIds)];
-            for (let i = 0; i < uniquePostIds.length; i += 30) {
-                postChunks.push(uniquePostIds.slice(i, i + 30));
-            }
-
-            const repostedPostsSnapshots = await Promise.all(postChunks.map(chunk => getDocs(query(collection(db, "posts"), where(documentId(), "in", chunk)))));
-            const postsMap = new Map<string, Post>();
-            repostedPostsSnapshots.forEach(snapshot => {
-                snapshot.docs.forEach(doc => postsMap.set(doc.id, {id: doc.id, ...doc.data()} as Post));
-            });
-            
-            repostedPosts = repostsData.map(repost => {
-                const postData = postsMap.get(repost.postId);
-                const reposter = usersMap.get(repost.userId);
-                if (!postData || !reposter) return null;
-                return {
-                    ...postData,
-                    repostedAt: repost.repostedAt,
-                    repostedBy: {
-                        name: reposter.displayName,
-                        handle: reposter.handle,
-                        avatar: reposter.avatar,
-                    },
-                };
-            }).filter(p => p !== null) as Post[];
-        }
-
-        const allPosts = [...originalPosts, ...repostedPosts];
-        allPosts.sort((a, b) => {
-            const timeA = a.repostedAt?.toMillis() || a.createdAt?.toMillis() || 0;
-            const timeB = b.repostedAt?.toMillis() || b.createdAt?.toMillis() || 0;
-            return timeB - timeA;
-        });
-
-        const uniquePosts = Array.from(new Map(allPosts.map(post => [post.id + (post.repostedAt?.toMillis() || ''), post])).values());
-
-        const finalPosts = uniquePosts.map(post => ({
-            ...post,
-            isLiked: post.likes.includes(user.uid || ''),
-            isRetweeted: post.retweets.includes(user.uid || ''),
-        }));
-        
         if (isLoadingFollowing) {
-            setFollowingPosts(finalPosts);
+            setFollowingPosts(originalPosts);
             setIsLoadingFollowing(false);
         } else {
             const latestPostTime = followingPosts[0]?.createdAt.toMillis() || 0;
-            const newPosts = finalPosts.filter(p => p.createdAt.toMillis() > latestPostTime);
-             if (newPosts.length > 0) {
+            const newPosts = originalPosts.filter(p => p.createdAt.toMillis() > latestPostTime);
+            if (newPosts.length > 0) {
                 setNewFollowingPosts(prev => [...newPosts, ...prev]);
                 if (mainContainerRef.current && mainContainerRef.current.scrollTop > 50) {
                      setShowNewPostsButton(true);
                 } else {
-                    setFollowingPosts(finalPosts);
+                    setFollowingPosts(originalPosts);
                 }
             }
         }
@@ -370,9 +239,7 @@ export default function HomePage() {
   useEffect(() => {
     if (activeTab === 'following' && chirpUser) {
         const unsubscribe = fetchFollowingPosts();
-        return () => {
-             unsubscribe.then(u => u());
-        }
+        return () => unsubscribe();
     }
   }, [activeTab, fetchFollowingPosts, chirpUser]);
 
@@ -890,5 +757,3 @@ export default function HomePage() {
     </>
   );
 }
-
-    
