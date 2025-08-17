@@ -800,7 +800,7 @@ export default function ProfilePage() {
     const isOfficialAccount = profileUser.handle.toLowerCase() === '@chirp' || profileUser.handle.toLowerCase() === '@rulio';
 
   return (
-    <>
+    <div className="animate-fade-in">
         <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm flex items-center gap-4 px-4 py-2 border-b">
              <Button size="icon" variant="ghost" className="rounded-full" onClick={() => router.back()}>
               <ArrowLeft className="h-5 w-5" />
@@ -943,6 +943,6 @@ export default function ProfilePage() {
                 </Button>
             </DialogContent>
         </Dialog>
-    </>
+    </div>
   );
 }
