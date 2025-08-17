@@ -17,7 +17,6 @@ import React from 'react';
 import { useDebounce } from 'use-debounce';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
-import { dataURItoFile } from '@/lib/utils';
 
 interface UserProfileData {
     displayName: string;
@@ -91,14 +90,16 @@ export default function EditProfilePage() {
     }, [router, toast]);
 
     const checkHandleAvailability = useCallback(async (handle: string) => {
-        if (handle === originalHandle) {
+        if (!handle || handle === originalHandle) {
             setHandleStatusMessage('');
             setIsHandleAvailable(true);
+            setIsCheckingHandle(false);
             return;
         }
         if (handle.length < 3) {
             setHandleStatusMessage('O nome de usuário deve ter pelo menos 3 caracteres.');
             setIsHandleAvailable(false);
+            setIsCheckingHandle(false);
             return;
         }
 
@@ -124,10 +125,13 @@ export default function EditProfilePage() {
     }, [originalHandle]);
 
      useEffect(() => {
-        if (debouncedHandle) {
+        if (debouncedHandle !== originalHandle) {
             checkHandleAvailability(debouncedHandle);
+        } else {
+            setHandleStatusMessage('');
+            setIsHandleAvailable(true);
         }
-    }, [debouncedHandle, checkHandleAvailability]);
+    }, [debouncedHandle, originalHandle, checkHandleAvailability]);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -146,10 +150,10 @@ export default function EditProfilePage() {
     };
 
     const handleSave = async () => {
-        if (!user || !isHandleAvailable) {
+        if (!user || !isHandleAvailable || isCheckingHandle) {
             toast({
                 title: "Não é possível salvar",
-                description: "O nome de usuário escolhido não está disponível.",
+                description: isCheckingHandle ? "Aguarde a verificação do nome de usuário." : "O nome de usuário escolhido não está disponível.",
                 variant: "destructive"
             });
             return;
@@ -159,39 +163,31 @@ export default function EditProfilePage() {
         try {
             let newAvatarUrl = profileData.avatar;
     
-            // 1. Upload new avatar if it exists
             if (newAvatarFile) {
                 const storageRef = ref(storage, `avatars/${user.uid}/${uuidv4()}`);
-                await uploadBytes(storageRef, newAvatarFile);
-                newAvatarUrl = await getDownloadURL(storageRef);
+                const uploadResult = await uploadBytes(storageRef, newAvatarFile);
+                newAvatarUrl = await getDownloadURL(uploadResult.ref);
             }
     
-            // 2. Prepare data for Firestore and Auth updates
             const firestoreUpdateData: any = {
                 displayName: profileData.displayName,
                 bio: profileData.bio,
                 location: profileData.location,
-                avatar: newAvatarUrl, // Use the new URL
+                avatar: newAvatarUrl,
+                handle: `@${profileData.handle}`,
+                searchableHandle: profileData.handle.toLowerCase(),
             };
     
             const authUpdateData: any = {
                 displayName: profileData.displayName,
                 photoURL: newAvatarUrl,
             };
-            
-            if (profileData.handle !== originalHandle) {
-                firestoreUpdateData.handle = `@${profileData.handle}`;
-                firestoreUpdateData.searchableHandle = profileData.handle.toLowerCase();
-            }
     
-            // 3. Perform updates
-            const userDocRef = doc(db, 'users', user.uid);
             await updateProfile(user, authUpdateData);
-            await updateDoc(userDocRef, firestoreUpdateData);
-    
-            // NOTE: Batch updating all posts/comments is removed from client-side
-            // to prevent performance issues and timeouts. This should be handled
-            // by a backend function in a production environment.
+            await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
+
+            // Note: Batch updating posts/comments on the client is removed to prevent timeouts.
+            // This is best handled by a server-side function.
     
             toast({
                 title: "Perfil Salvo!",
@@ -239,7 +235,8 @@ export default function EditProfilePage() {
                 </Avatar>
                 <Button 
                     variant="ghost" 
-                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-full"
+                    size="icon"
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-full h-full w-full"
                     onClick={() => avatarInputRef.current?.click()}>
                     <Upload className="h-8 w-8 text-white" />
                 </Button>
@@ -249,6 +246,7 @@ export default function EditProfilePage() {
                     className="hidden" 
                     accept="image/png, image/jpeg"
                     onChange={handleImageChange}
+                    disabled={isSaving}
                 />
             </div>
         </div>
@@ -308,5 +306,3 @@ export default function EditProfilePage() {
     </div>
   );
 }
-
-    
