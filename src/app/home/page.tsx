@@ -39,7 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -451,27 +451,26 @@ export default function HomePage() {
                 </Avatar>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0 animate-slide-in-from-bottom">
-                <SheetHeader className="p-4 border-b">
-                  <SheetTitle className="sr-only">Menu</SheetTitle>
-                  <div className="flex items-center justify-between">
-                    <Avatar className="h-10 w-10" onClick={() => router.push(`/profile/${user.uid}`)}>
-                       <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
-                       <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
-                    </Avatar>
-                    <Button variant="outline" onClick={handleSignOut}>Sair</Button>
-                  </div>
-                  <div className="mt-4">
-                    <p className="font-bold text-lg flex items-center gap-1">
-                        {chirpUser.displayName}
-                        {chirpUser.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-5 w-5 text-primary" />}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{chirpUser.handle}</p>
-                  </div>
-                  <div className="flex gap-4 mt-2 text-sm">
-                    <p><span className="font-bold">{chirpUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
-                    <p><span className="font-bold">{chirpUser.followers?.length || 0}</span> <span className="text-muted-foreground">Seguidores</span></p>
-                  </div>
-                </SheetHeader>
+                 <div className="p-4 border-b">
+                    <div className="flex items-center justify-between mb-4">
+                        <Avatar className="h-10 w-10" onClick={() => router.push(`/profile/${user.uid}`)}>
+                        <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
+                        <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
+                        </Avatar>
+                        <Button variant="outline" onClick={handleSignOut}>Sair</Button>
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-1">
+                            <p className="font-bold text-lg">{chirpUser.displayName}</p>
+                            {chirpUser.handle.toLowerCase() === '@rulio' && <BadgeCheck className="h-5 w-5 text-primary" />}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{chirpUser.handle}</p>
+                    </div>
+                    <div className="flex gap-4 mt-2 text-sm">
+                        <p><span className="font-bold">{chirpUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
+                        <p><span className="font-bold">{chirpUser.followers?.length || 0}</span> <span className="text-muted-foreground">Seguidores</span></p>
+                    </div>
+                </div>
                 <nav className="flex-1 flex flex-col gap-2 p-4">
                       <Link href={`/profile/${user.uid}`} className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <User className="h-6 w-6" /> Perfil
@@ -548,4 +547,3 @@ export default function HomePage() {
     </>
   );
 }
-
