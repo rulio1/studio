@@ -8,7 +8,7 @@ export default function LandingPage() {
       <header className="container mx-auto h-16 flex items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2">
           <Bird className="h-6 w-6 text-primary" />
-          <span className="font-bold font-headline text-lg">Chirp</span>
+          <span className="font-bold font-headline text-lg">Zispr</span>
         </Link>
         <nav className="flex items-center gap-2">
           <Button variant="ghost" asChild>
@@ -25,7 +25,7 @@ export default function LandingPage() {
             <div className="flex flex-col items-center space-y-4 text-center">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none font-headline">
-                  Participe da Conversa no Chirp
+                  Participe da Conversa no Zispr
                 </h1>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
                   Descubra o que está acontecendo no mundo e conecte-se com pessoas de todos os lugares.
@@ -41,7 +41,7 @@ export default function LandingPage() {
         </section>
       </main>
       <footer className="flex items-center justify-center p-4 border-t">
-        <p className="text-xs text-muted-foreground">&copy; 2024 Chirp Inc. Todos os direitos reservados.</p>
+        <p className="text-xs text-muted-foreground">&copy; 2024 Zispr Inc. Todos os direitos reservados.</p>
       </footer>
     </div>
   );

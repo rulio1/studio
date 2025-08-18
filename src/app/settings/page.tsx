@@ -60,13 +60,13 @@ export default function SettingsPage() {
                  <Card className="mt-6">
                     <CardHeader>
                         <CardTitle>Privacidade e Segurança</CardTitle>
-                        <CardDescription>Gerencie quais informações você permite que outras pessoas no Chirp vejam.</CardDescription>
+                        <CardDescription>Gerencie quais informações você permite que outras pessoas no Zispr vejam.</CardDescription>
                     </CardHeader>
                     <CardContent>
                           <SettingsItem 
                             icon={Lock} 
                             title="Público e marcação" 
-                            description="Gerencie quais informações você permite que outras pessoas no Chirp vejam."
+                            description="Gerencie quais informações você permite que outras pessoas no Zispr vejam."
                             onClick={() => alert('Página de público e marcação em breve!')}
                         />
                     </CardContent>

@@ -9,7 +9,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <div className="mb-8 flex justify-center">
           <Link href="/" className="flex items-center gap-2 text-foreground">
             <Bird className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold font-headline">Chirp</span>
+            <span className="text-2xl font-bold font-headline">Zispr</span>
           </Link>
         </div>
         {children}

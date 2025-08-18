@@ -42,35 +42,35 @@ interface PostSearchResult {
 const forYouPosts: PostSearchResult[] = [
     {
         id: '1',
-        author: 'Chirp',
-        handle: '@chirp',
-        content: 'Bem-vindo à nova aba "Para você"! Aqui você encontrará as últimas atualizações e novidades sobre o Chirp. #NovidadesChirp',
+        author: 'Zispr',
+        handle: '@zispr',
+        content: 'Bem-vindo à nova aba "Para você"! Aqui você encontrará as últimas atualizações e novidades sobre o Zispr. #NovidadesZispr',
         avatar: '/logo.svg',
-        avatarFallback: 'C',
+        avatarFallback: 'Z',
     },
     {
         id: '2',
-        author: 'Chirp',
-        handle: '@chirp',
+        author: 'Zispr',
+        handle: '@zispr',
         content: 'Acabamos de lançar a busca por #hashtags! Agora você pode explorar tópicos e descobrir novos conteúdos com mais facilidade. Experimente!',
         avatar: '/logo.svg',
-        avatarFallback: 'C',
+        avatarFallback: 'Z',
     },
      {
         id: '3',
-        author: 'Chirp',
-        handle: '@chirp',
+        author: 'Zispr',
+        handle: '@zispr',
         content: 'Os "Tópicos do Momento" já estão funcionando! Fique de olho na aba de tendências para ver o que está bombando na plataforma. #Trending',
         avatar: '/logo.svg',
-        avatarFallback: 'C',
+        avatarFallback: 'Z',
     },
     {
         id: '4',
-        author: 'Chirp',
-        handle: '@chirp',
-        content: 'Agora você pode postar com imagens! Dê vida aos seus posts e compartilhe seus momentos com mais cores. #ImagensNoChirp',
+        author: 'Zispr',
+        handle: '@zispr',
+        content: 'Agora você pode postar com imagens! Dê vida aos seus posts e compartilhe seus momentos com mais cores. #ImagensNoZispr',
         avatar: '/logo.svg',
-        avatarFallback: 'C',
+        avatarFallback: 'Z',
     }
 ];
 
@@ -261,7 +261,7 @@ function SearchPageClient({
   const renderUser = (user: UserSearchResult, list: 'newUsers' | 'users') => {
     const isFollowing = user.followers?.includes(currentUser?.uid || '');
     const isVerified = user.isVerified || user.handle === '@rulio';
-    const isChirpAccount = user.handle === '@chirp';
+    const isZisprAccount = user.handle === '@zispr';
 
     if (currentUser?.uid === user.uid) {
         return (
@@ -272,7 +272,7 @@ function SearchPageClient({
                         <div>
                             <p className="font-bold flex items-center gap-1">
                                 {user.displayName}
-                                {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                             </p>
                             <p className="text-sm text-muted-foreground">{user.handle}</p>
                             <p className="text-sm mt-1">{user.bio}</p>
@@ -289,7 +289,7 @@ function SearchPageClient({
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/profile/${user.uid}`)}>
                     <Avatar className="h-12 w-12">
-                        {isChirpAccount ? (
+                        {isZisprAccount ? (
                              <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
                                 <Bird className="h-6 w-6 text-primary" />
                             </div>
@@ -303,7 +303,7 @@ function SearchPageClient({
                     <div>
                         <p className="font-bold flex items-center gap-1">
                             {user.displayName}
-                            {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                         </p>
                         <p className="text-sm text-muted-foreground">{user.handle}</p>
                         <p className="text-sm mt-1">{user.bio}</p>

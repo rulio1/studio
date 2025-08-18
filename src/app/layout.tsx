@@ -5,7 +5,7 @@ import MainLayout from '@/components/main-layout';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'Chirp',
+  title: 'Zispr',
   description: 'O melhor lugar para se conectar com o mundo. Participe da conversa.',
 };
 

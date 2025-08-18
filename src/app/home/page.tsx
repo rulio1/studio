@@ -80,7 +80,7 @@ interface Post {
     } | null;
 }
 
-interface ChirpUser {
+interface ZisprUser {
     uid: string;
     displayName: string;
     email: string;
@@ -104,7 +104,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(true);
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+  const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
   const [activeTab, setActiveTab] = useState('for-you');
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
@@ -120,7 +120,7 @@ export default function HomePage() {
             const userDocRef = doc(db, "users", user.uid);
             const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
                  if(doc.exists()){
-                    setChirpUser({ uid: doc.id, ...doc.data() } as ChirpUser);
+                    setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
                 } else {
                     router.push('/login');
                 }
@@ -161,7 +161,7 @@ export default function HomePage() {
   }, [user, fetchAllPosts]);
 
  const fetchFollowingPosts = useCallback(() => {
-    if (!chirpUser || !user || chirpUser.following.length === 0) {
+    if (!zisprUser || !user || zisprUser.following.length === 0) {
         setFollowingPosts([]);
         setIsLoadingFollowing(false);
         return;
@@ -169,7 +169,7 @@ export default function HomePage() {
     
     setIsLoadingFollowing(true);
 
-    const followingIds = chirpUser.following;
+    const followingIds = zisprUser.following;
     const feedUserIds = [...new Set([...followingIds, user.uid])];
 
     const q = query(collection(db, "posts"), where("authorId", "in", feedUserIds), orderBy("createdAt", "desc"));
@@ -185,17 +185,17 @@ export default function HomePage() {
     });
 
     return unsubscribe;
-}, [chirpUser, user]);
+}, [zisprUser, user]);
 
   useEffect(() => {
-    if (activeTab === 'following' && chirpUser) {
+    if (activeTab === 'following' && zisprUser) {
         const unsubscribe = fetchFollowingPosts();
         return () => unsubscribe && unsubscribe();
     }
-  }, [activeTab, fetchFollowingPosts, chirpUser]);
+  }, [activeTab, fetchFollowingPosts, zisprUser]);
 
     const handlePostAction = async (postId: string, action: 'like' | 'retweet', authorId: string) => {
-        if (!user || !chirpUser) return;
+        if (!user || !zisprUser) return;
     
         const postRef = doc(db, 'posts', postId);
         const post = allPosts.find(p => p.id === postId) || followingPosts.find(p => p.id === postId);
@@ -234,10 +234,10 @@ export default function HomePage() {
                     toUserId: authorId,
                     fromUserId: user.uid,
                     fromUser: {
-                        name: chirpUser.displayName,
-                        handle: chirpUser.handle,
-                        avatar: chirpUser.avatar,
-                        isVerified: chirpUser.isVerified || false,
+                        name: zisprUser.displayName,
+                        handle: zisprUser.handle,
+                        avatar: zisprUser.avatar,
+                        isVerified: zisprUser.isVerified || false,
                     },
                     type: action,
                     text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
@@ -321,10 +321,10 @@ export default function HomePage() {
                         toUserId: mentionedUserId,
                         fromUserId: user.uid,
                         fromUser: {
-                            name: chirpUser?.displayName,
-                            handle: chirpUser?.handle,
-                            avatar: chirpUser?.avatar,
-                            isVerified: chirpUser?.isVerified || false,
+                            name: zisprUser?.displayName,
+                            handle: zisprUser?.handle,
+                            avatar: zisprUser?.avatar,
+                            isVerified: zisprUser?.isVerified || false,
                         },
                         type: 'mention',
                         text: 'mencionou você em um post',
@@ -359,7 +359,7 @@ export default function HomePage() {
   const handleSavePost = async (postId: string) => {
     if (!user) return;
     const userRef = doc(db, 'users', user.uid);
-    const isSaved = chirpUser?.savedPosts?.includes(postId);
+    const isSaved = zisprUser?.savedPosts?.includes(postId);
 
     if (isSaved) {
         await updateDoc(userRef, { savedPosts: arrayRemove(postId) });
@@ -373,7 +373,7 @@ export default function HomePage() {
   const handleTogglePinPost = async (postId: string) => {
     if (!user) return;
     const userRef = doc(db, 'users', user.uid);
-    const isPinned = chirpUser?.pinnedPostId === postId;
+    const isPinned = zisprUser?.pinnedPostId === postId;
 
     try {
         await updateDoc(userRef, {
@@ -507,8 +507,8 @@ export default function HomePage() {
       }
     }, [post.createdAt, post.repostedAt]);
     
-    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@chirp';
-    const isChirpAccount = post.handle === '@chirp';
+    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@zispr';
+    const isZisprAccount = post.handle === '@zispr';
 
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
@@ -518,7 +518,7 @@ export default function HomePage() {
              {post.repostedBy && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-6">
                     <Repeat className="h-4 w-4" />
-                    <span>{post.repostedBy.handle === chirpUser?.handle ? 'Você' : post.repostedBy.name} repostou</span>
+                    <span>{post.repostedBy.handle === zisprUser?.handle ? 'Você' : post.repostedBy.name} repostou</span>
                 </div>
             )}
             {post.isFirstPost && (
@@ -529,7 +529,7 @@ export default function HomePage() {
             )}
             <div className="flex gap-4">
                  <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
-                    {isChirpAccount ? (
+                    {isZisprAccount ? (
                         <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-full">
                             <Bird className="h-5 w-5 text-primary" />
                         </div>
@@ -545,7 +545,7 @@ export default function HomePage() {
                     <div className="flex items-center gap-2 text-sm">
                         <p className="font-bold text-base flex items-center gap-1">
                             {post.author} 
-                            {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                         </p>
                         <p className="text-muted-foreground">{post.handle} · {time}</p>
                         {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
@@ -570,7 +570,7 @@ export default function HomePage() {
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => handleTogglePinPost(post.id)}>
                                         <Pin className="mr-2 h-4 w-4"/>
-                                        {chirpUser?.pinnedPostId === post.id ? 'Desafixar do perfil' : 'Fixar no seu perfil'}
+                                        {zisprUser?.pinnedPostId === post.id ? 'Desafixar do perfil' : 'Fixar no seu perfil'}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de adicionar posts aos destaques será adicionada em breve.'})}>
                                         <Sparkles className="mr-2 h-4 w-4"/>
@@ -581,7 +581,7 @@ export default function HomePage() {
                                 <>
                                     <DropdownMenuItem onClick={() => handleSavePost(post.id)}>
                                         <Save className="mr-2 h-4 w-4"/>
-                                        {chirpUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
+                                        {zisprUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
@@ -691,7 +691,7 @@ export default function HomePage() {
   };
 
 
-  if (isLoading || !user || !chirpUser) {
+  if (isLoading || !user || !zisprUser) {
       return (
         <div className="flex flex-col h-screen bg-background relative animate-fade-in">
              <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
@@ -712,8 +712,8 @@ export default function HomePage() {
       );
   }
   
-    const isChirpUserVerified = chirpUser.isVerified || chirpUser.handle === '@rulio' || chirpUser.handle === '@chirp';
-    const isChirpAccount = chirpUser.handle === '@chirp';
+    const isZisprUserVerified = zisprUser.isVerified || zisprUser.handle === '@rulio' || zisprUser.handle === '@zispr';
+    const isZisprAccount = zisprUser.handle === '@zispr';
 
 
   return (
@@ -723,8 +723,8 @@ export default function HomePage() {
             <Sheet>
               <SheetTrigger asChild>
                 <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
-                  <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
+                  <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
+                  <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
                 </Avatar>
               </SheetTrigger>
               <SheetContent side="left" className="w-80 p-0 flex flex-col bg-background">
@@ -736,20 +736,20 @@ export default function HomePage() {
                  <div className="p-4 border-b">
                     <div className="flex justify-between items-center mb-4">
                          <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
-                            <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
-                            <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
+                            <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
+                            <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
                         </Avatar>
                     </div>
                     <div className="flex flex-col">
                         <div className="flex items-center gap-1 font-bold text-lg">
-                            {chirpUser.displayName}
-                            {isChirpAccount ? <Bird className="h-5 w-5 text-primary" /> : (isChirpUserVerified && <BadgeCheck className="h-5 w-5 text-primary" />)}
+                            {zisprUser.displayName}
+                            {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className="h-5 w-5 text-primary" />)}
                         </div>
-                        <p className="text-sm text-muted-foreground">{chirpUser.handle}</p>
+                        <p className="text-sm text-muted-foreground">{zisprUser.handle}</p>
                     </div>
                     <div className="flex gap-4 mt-2 text-sm">
-                        <p><span className="font-bold">{chirpUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
-                        <p><span className="font-bold">{chirpUser.followers?.length || 0}</span> <span className="text-muted-foreground">Seguidores</span></p>
+                        <p><span className="font-bold">{zisprUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
+                        <p><span className="font-bold">{zisprUser.followers?.length || 0}</span> <span className="text-muted-foreground">Seguidores</span></p>
                     </div>
                 </div>
                  <nav className="flex-1 flex flex-col gap-2 p-4">
@@ -777,7 +777,7 @@ export default function HomePage() {
                   <div className="p-4 border-t mt-auto flex flex-col gap-2">
                     <SheetClose asChild>
                       <Link href="/chat" className="flex items-center gap-4 py-2 font-semibold rounded-md">
-                        <Bot className="h-6 w-6" /> Chirp AI
+                        <Bot className="h-6 w-6" /> Zispr AI
                       </Link>
                     </SheetClose>
                     <SheetClose asChild>

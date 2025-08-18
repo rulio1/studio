@@ -27,7 +27,7 @@ interface Community {
     isJoined?: boolean;
 }
 
-interface ChirpUser {
+interface ZisprUser {
     uid: string;
     communities?: string[];
 }
@@ -63,7 +63,7 @@ export default function CommunitiesPage() {
     const [discoverCommunities, setDiscoverCommunities] = useState<Community[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
 
      useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -72,7 +72,7 @@ export default function CommunitiesPage() {
                  const userDocRef = doc(db, 'users', currentUser.uid);
                 const unsubUser = onSnapshot(userDocRef, (userDoc) => {
                     if (userDoc.exists()) {
-                        setChirpUser({ uid: userDoc.id, ...userDoc.data() } as ChirpUser);
+                        setZisprUser({ uid: userDoc.id, ...userDoc.data() } as ZisprUser);
                     }
                 });
                 return () => unsubUser();
@@ -84,7 +84,7 @@ export default function CommunitiesPage() {
     }, [router]);
 
     const fetchCommunities = useCallback(async () => {
-        if (!chirpUser) return;
+        if (!zisprUser) return;
         setIsLoading(true);
         try {
             const featuredQuery = query(collection(db, 'communities'), limit(2));
@@ -95,7 +95,7 @@ export default function CommunitiesPage() {
                 getDocs(discoverQuery)
             ]);
 
-            const userCommunityIds = new Set(chirpUser.communities || []);
+            const userCommunityIds = new Set(zisprUser.communities || []);
 
             const featuredData = featuredSnapshot.docs.map(doc => ({ 
                 id: doc.id, 
@@ -116,7 +116,7 @@ export default function CommunitiesPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [chirpUser]);
+    }, [zisprUser]);
 
     useEffect(() => {
         fetchCommunities();

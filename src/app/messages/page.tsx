@@ -15,7 +15,7 @@ import NewMessageModal from '@/components/new-message-modal';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
-interface ChirpUser {
+interface ZisprUser {
     uid: string;
     displayName: string;
     avatar: string;
@@ -60,7 +60,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
     const isUnread = convo.unreadCount > 0;
     const messagePreview = `${isMyMessage ? 'Você: ' : ''}${convo.lastMessage.text}`;
     const isVerified = convo.otherUser.isVerified || convo.otherUser.handle === '@rulio';
-    const isChirpAccount = convo.otherUser.handle === '@chirp';
+    const isZisprAccount = convo.otherUser.handle === '@zispr';
 
     return (
          <li 
@@ -68,7 +68,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
             className={`w-full p-4 hover:bg-muted/50 cursor-pointer flex items-center gap-4 ${isUnread ? 'border-l-2 border-primary' : ''}`}
         >
             <Avatar className="h-12 w-12">
-                {isChirpAccount ? (
+                {isZisprAccount ? (
                     <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
                         <Bird className="h-6 w-6 text-primary" />
                     </div>
@@ -84,7 +84,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
                     <div className="flex items-baseline gap-2">
                         <p className="font-bold truncate flex items-center gap-1">
                             {convo.otherUser.name}
-                            {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">{convo.otherUser.handle}</p>
                     </div>
@@ -129,7 +129,7 @@ export default function MessagesPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
@@ -142,7 +142,7 @@ export default function MessagesPage() {
                 setUser(currentUser);
                  const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
                 if (userDoc.exists()) {
-                    setChirpUser(userDoc.data() as ChirpUser);
+                    setZisprUser(userDoc.data() as ZisprUser);
                 }
             } else {
                 router.push('/login');
@@ -244,10 +244,10 @@ export default function MessagesPage() {
     <>
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
-           {chirpUser && (
+           {zisprUser && (
                 <Avatar className="h-8 w-8 cursor-pointer" onClick={() => user && router.push(`/profile/${user.uid}`)}>
-                    <AvatarImage src={chirpUser.avatar} alt={chirpUser.displayName} />
-                    <AvatarFallback>{chirpUser.displayName?.[0] || 'U'}</AvatarFallback>
+                    <AvatarImage src={zisprUser.avatar} alt={zisprUser.displayName} />
+                    <AvatarFallback>{zisprUser.displayName?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
            )}
           <div className="flex-1">

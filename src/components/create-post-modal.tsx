@@ -21,7 +21,7 @@ import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
 
-interface ChirpUser {
+interface ZisprUser {
     uid: string;
     displayName: string;
     handle: string;
@@ -59,7 +59,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const [pollData, setPollData] = useState<PollData | null>(null);
     
     const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
 
     const { toast } = useToast();
 
@@ -70,13 +70,13 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                 const userDocRef = doc(db, "users", currentUser.uid);
                 const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
                     if (doc.exists()) {
-                        setChirpUser(doc.data() as ChirpUser);
+                        setZisprUser(doc.data() as ZisprUser);
                     }
                 });
                 return () => unsubscribeUser();
             } else {
                 setUser(null);
-                setChirpUser(null);
+                setZisprUser(null);
             }
         });
         return () => unsubscribe();
@@ -151,7 +151,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
             });
             return;
         }
-        if (!user || !chirpUser) {
+        if (!user || !zisprUser) {
              toast({
                 title: "Usuário não autenticado.",
                 description: "Por favor, faça login para postar.",
@@ -183,10 +183,10 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                 // 1. Set the main post data
                 transaction.set(postRef, {
                     authorId: user.uid,
-                    author: chirpUser.displayName,
-                    handle: chirpUser.handle,
-                    avatar: chirpUser.avatar,
-                    avatarFallback: chirpUser.displayName[0],
+                    author: zisprUser.displayName,
+                    handle: zisprUser.handle,
+                    avatar: zisprUser.avatar,
+                    avatarFallback: zisprUser.displayName[0],
                     content: newPostContent,
                     location: location,
                     hashtags: hashtags,
@@ -199,30 +199,30 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     retweets: [],
                     likes: [],
                     views: 0,
-                    isVerified: chirpUser.isVerified || false,
+                    isVerified: zisprUser.isVerified || false,
                     isFirstPost: isFirstPost,
                     poll: finalPollData
                 });
 
                 // 2. Handle first post notification
                 if (isFirstPost) {
-                    const chirpOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@chirp'), limit(1));
-                    const chirpUserSnapshot = await getDocs(chirpOfficialUserQuery); 
+                    const zisprOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@zispr'), limit(1));
+                    const zisprUserSnapshot = await getDocs(zisprOfficialUserQuery); 
                     
-                    if (!chirpUserSnapshot.empty) {
-                        const chirpUserData = chirpUserSnapshot.docs[0].data();
+                    if (!zisprUserSnapshot.empty) {
+                        const zisprUserData = zisprUserSnapshot.docs[0].data();
                         const notificationRef = doc(collection(db, 'notifications'));
                         transaction.set(notificationRef, {
                             toUserId: user.uid,
-                            fromUserId: chirpUserSnapshot.docs[0].id,
+                            fromUserId: zisprUserSnapshot.docs[0].id,
                             fromUser: {
-                                name: chirpUserData.displayName,
-                                handle: chirpUserData.handle,
-                                avatar: chirpUserData.avatar,
+                                name: zisprUserData.displayName,
+                                handle: zisprUserData.handle,
+                                avatar: zisprUserData.avatar,
                                 isVerified: true,
                             },
                             type: 'post',
-                            text: 'Bem-vindo ao Chirp! Adoramos seu primeiro post.',
+                            text: 'Bem-vindo ao Zispr! Adoramos seu primeiro post.',
                             postContent: newPostContent.substring(0, 50),
                             postId: postRef.id,
                             createdAt: serverTimestamp(),
@@ -249,10 +249,10 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                     toUserId: mentionedUserId,
                                     fromUserId: user.uid,
                                     fromUser: {
-                                        name: chirpUser.displayName,
-                                        handle: chirpUser.handle,
-                                        avatar: chirpUser.avatar,
-                                        isVerified: chirpUser.isVerified || false,
+                                        name: zisprUser.displayName,
+                                        handle: zisprUser.handle,
+                                        avatar: zisprUser.avatar,
+                                        isVerified: zisprUser.isVerified || false,
                                     },
                                     type: 'mention',
                                     text: 'mencionou você em um post',
@@ -342,12 +342,12 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                 <DialogHeader>
                 <DialogTitle>Criar Post</DialogTitle>
                 </DialogHeader>
-                    {chirpUser ? (
+                    {zisprUser ? (
                 <div className="flex flex-col gap-4">
                     <div className="flex gap-4">
                         <Avatar>
-                            <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
-                            <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
+                            <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
+                            <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
                         </Avatar>
                         <div className="w-full">
                             <Textarea 

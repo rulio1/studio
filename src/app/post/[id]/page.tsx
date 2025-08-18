@@ -87,7 +87,7 @@ interface Comment {
     postId: string;
 }
 
-interface ChirpUser {
+interface ZisprUser {
     displayName: string;
     handle: string;
     avatar: string;
@@ -191,15 +191,15 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
         }
     };
     
-    const isVerified = comment.isVerified || comment.handle === '@rulio' || comment.handle === '@chirp';
-    const isChirpAccount = comment.handle === '@chirp';
+    const isVerified = comment.isVerified || comment.handle === '@rulio' || comment.handle === '@zispr';
+    const isZisprAccount = comment.handle === '@zispr';
 
     return (
         <li className="p-4 flex gap-4 relative">
             {!isLastComment && <div className="absolute left-10 top-16 bottom-0 w-0.5 bg-border -translate-x-1/2"></div>}
             <div className="relative">
                  <Avatar className="h-12 w-12 cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
-                    {isChirpAccount ? (
+                    {isZisprAccount ? (
                         <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
                             <Bird className="h-6 w-6 text-primary" />
                         </div>
@@ -216,7 +216,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
                     <div className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
                         <p className="font-bold flex items-center gap-1">
                             {comment.author} 
-                            {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                         </p>
                         <p className="text-muted-foreground">{comment.handle} · {time}</p>
                          {comment.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
@@ -278,7 +278,7 @@ export default function PostDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isReplying, setIsReplying] = useState(false);
     const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     
     // State for post actions
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -299,7 +299,7 @@ export default function PostDetailPage() {
                 setUser(currentUser);
                 const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
                 if (userDoc.exists()) {
-                    setChirpUser(userDoc.data() as ChirpUser);
+                    setZisprUser(userDoc.data() as ZisprUser);
                 }
             } else {
                 router.push('/login');
@@ -422,7 +422,7 @@ export default function PostDetailPage() {
     };
 
     const handleReply = async () => {
-        if (!newComment.trim() || !user || !chirpUser || !post || isReplying) return;
+        if (!newComment.trim() || !user || !zisprUser || !post || isReplying) return;
         
         setIsReplying(true);
         try {
@@ -434,17 +434,17 @@ export default function PostDetailPage() {
             batch.set(commentRef, {
                  postId: post.id,
                 authorId: user.uid,
-                author: chirpUser.displayName,
-                handle: chirpUser.handle,
-                avatar: chirpUser.avatar,
-                avatarFallback: chirpUser.displayName[0],
+                author: zisprUser.displayName,
+                handle: zisprUser.handle,
+                avatar: zisprUser.avatar,
+                avatarFallback: zisprUser.displayName[0],
                 content: newComment,
                 createdAt: serverTimestamp(),
                 likes: [],
                 retweets: [],
                 comments: 0,
                 views: 0,
-                isVerified: chirpUser.isVerified || false,
+                isVerified: zisprUser.isVerified || false,
             });
 
             // Increment post's comment count
@@ -464,10 +464,10 @@ export default function PostDetailPage() {
                             toUserId: mentionedUserId,
                             fromUserId: user.uid,
                             fromUser: {
-                                name: chirpUser.displayName,
-                                handle: chirpUser.handle,
-                                avatar: chirpUser.avatar,
-                                isVerified: chirpUser.isVerified || false,
+                                name: zisprUser.displayName,
+                                handle: zisprUser.handle,
+                                avatar: zisprUser.avatar,
+                                isVerified: zisprUser.isVerified || false,
                             },
                             type: 'mention',
                             text: 'mencionou você em uma resposta',
@@ -488,10 +488,10 @@ export default function PostDetailPage() {
                      toUserId: post.authorId,
                     fromUserId: user.uid,
                     fromUser: {
-                        name: chirpUser.displayName,
-                        handle: chirpUser.handle,
-                        avatar: chirpUser.avatar,
-                        isVerified: chirpUser.isVerified || false,
+                        name: zisprUser.displayName,
+                        handle: zisprUser.handle,
+                        avatar: zisprUser.avatar,
+                        isVerified: zisprUser.isVerified || false,
                     },
                     type: 'post',
                     text: 'respondeu ao seu post',
@@ -512,7 +512,7 @@ export default function PostDetailPage() {
     };
     
     const handlePostAction = async (action: 'like' | 'retweet') => {
-        if (!user || !post || !chirpUser) return;
+        if (!user || !post || !zisprUser) return;
     
         const postRef = doc(db, "posts", post.id);
         const field = action === 'like' ? 'likes' : 'retweets';
@@ -532,10 +532,10 @@ export default function PostDetailPage() {
                     toUserId: post.authorId,
                     fromUserId: user.uid,
                     fromUser: {
-                        name: chirpUser.displayName,
-                        handle: chirpUser.handle,
-                        avatar: chirpUser.avatar,
-                        isVerified: chirpUser.isVerified || false,
+                        name: zisprUser.displayName,
+                        handle: zisprUser.handle,
+                        avatar: zisprUser.avatar,
+                        isVerified: zisprUser.isVerified || false,
                     },
                     type: action,
                     text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
@@ -595,9 +595,9 @@ export default function PostDetailPage() {
     };
     
     const handleSavePost = async (postId: string) => {
-        if (!user || !chirpUser) return;
+        if (!user || !zisprUser) return;
         const userRef = doc(db, 'users', user.uid);
-        const isSaved = chirpUser.savedPosts?.includes(postId);
+        const isSaved = zisprUser.savedPosts?.includes(postId);
 
         try {
             if (isSaved) {
@@ -616,7 +616,7 @@ export default function PostDetailPage() {
     const handleTogglePinPost = async () => {
         if (!user || !post) return;
         const userRef = doc(db, 'users', user.uid);
-        const isPinned = chirpUser?.pinnedPostId === post.id;
+        const isPinned = zisprUser?.pinnedPostId === post.id;
 
         try {
             await updateDoc(userRef, {
@@ -699,8 +699,8 @@ export default function PostDetailPage() {
         );
     }
     
-    const isPostVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@chirp';
-    const isChirpAccount = post.handle === '@chirp';
+    const isPostVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@zispr';
+    const isZisprAccount = post.handle === '@zispr';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
     return (
@@ -719,7 +719,7 @@ export default function PostDetailPage() {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
                              <Avatar className="h-12 w-12">
-                                {isChirpAccount ? (
+                                {isZisprAccount ? (
                                     <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
                                         <Bird className="h-6 w-6 text-primary" />
                                     </div>
@@ -733,7 +733,7 @@ export default function PostDetailPage() {
                             <div>
                                 <p className="font-bold flex items-center gap-1">
                                     {post.author} 
-                                    {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                                 </p>
                                 <p className="text-sm text-muted-foreground">{post.handle}</p>
                             </div>
@@ -758,7 +758,7 @@ export default function PostDetailPage() {
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem onClick={handleTogglePinPost}>
                                             <Pin className="mr-2 h-4 w-4"/>
-                                            {chirpUser?.pinnedPostId === post.id ? 'Desafixar do perfil' : 'Fixar no seu perfil'}
+                                            {zisprUser?.pinnedPostId === post.id ? 'Desafixar do perfil' : 'Fixar no seu perfil'}
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de adicionar posts aos destaques será adicionada em breve.'})}>
                                             <Sparkles className="mr-2 h-4 w-4"/>
@@ -769,7 +769,7 @@ export default function PostDetailPage() {
                                     <>
                                         <DropdownMenuItem onClick={() => handleSavePost(post.id)}>
                                             <Save className="mr-2 h-4 w-4"/>
-                                            {chirpUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
+                                            {zisprUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
@@ -850,8 +850,8 @@ export default function PostDetailPage() {
                 <div className="p-4 m-4 border rounded-2xl bg-background/80 backdrop-blur-lg">
                      <div className="flex gap-4">
                         <Avatar>
-                            <AvatarImage src={chirpUser?.avatar} alt={chirpUser?.handle} />
-                            <AvatarFallback>{chirpUser?.displayName[0]}</AvatarFallback>
+                            <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
+                            <AvatarFallback>{zisprUser?.displayName[0]}</AvatarFallback>
                         </Avatar>
                         <div className="w-full">
                             <Textarea 

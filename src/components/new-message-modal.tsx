@@ -116,7 +116,7 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                         <ul className="divide-y divide-border">
                             {results.map(user => {
                                 const isVerified = user.isVerified || user.handle === '@rulio';
-                                const isChirpAccount = user.handle === '@chirp';
+                                const isZisprAccount = user.handle === '@zispr';
                                 return (
                                     <li key={user.uid}>
                                         <button 
@@ -131,7 +131,7 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                                             <div>
                                                 <p className="font-semibold flex items-center gap-1">
                                                     {user.displayName}
-                                                    {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                                                 </p>
                                                 <p className="text-sm text-muted-foreground">{user.handle}</p>
                                             </div>

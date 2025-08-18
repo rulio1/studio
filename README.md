@@ -1,6 +1,6 @@
-# Chirp 🐦
+# Zispr 🐦
 
-Bem-vindo ao Chirpp, uma moderna plataforma de mídia social construída com Next.js e Firebase. Este repositório contém o código-fonte de um aplicativo web completo, demonstrando a criação de uma experiência social interativa e em tempo real.
+Bem-vindo ao Zispr, uma moderna plataforma de mídia social construída com Next.js e Firebase. Este repositório contém o código-fonte de um aplicativo web completo, demonstrando a criação de uma experiência social interativa e em tempo real.
 
 ## ✨ Funcionalidades
 
@@ -14,7 +14,7 @@ Bem-vindo ao Chirpp, uma moderna plataforma de mídia social construída com Nex
 - **Busca Inteligente**: Encontre usuários e posts por nome, @handle ou #hashtag.
 - **Notificações**: Receba notificações sobre curtidas, novos seguidores, menções e mais.
 - **Integração com IA (Genkit)**:
-  - **Chirp AI**: Um assistente de IA para conversar e tirar dúvidas.
+  - **Zispr AI**: Um assistente de IA para conversar e tirar dúvidas.
   - **Geração de Posts e Imagens**: Crie conteúdo para posts e imagens usando IA.
 
 ## 🛠️ Tecnologias Utilizadas
@@ -31,8 +31,8 @@ Bem-vindo ao Chirpp, uma moderna plataforma de mídia social construída com Nex
 
 1. **Clone o repositório:**
    ```bash
-   git clone https://github.com/rulio1/chirp-app.git
-   cd chirp-app
+   git clone https://github.com/rulio1/zispr-app.git
+   cd zispr-app
    ```
 
 2. **Instale as dependências:**

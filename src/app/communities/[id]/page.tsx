@@ -59,7 +59,7 @@ interface Post {
     isFirstPost?: boolean;
 }
 
-interface ChirpUser {
+interface ZisprUser {
     uid: string;
     displayName: string;
     handle: string;
@@ -110,8 +110,8 @@ const PostItem = ({ post }: { post: Post }) => {
         }
     }, [post.createdAt]);
     
-    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@chirp';
-    const isChirpAccount = post.handle === '@chirp';
+    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@zispr';
+    const isZisprAccount = post.handle === '@zispr';
 
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
@@ -123,7 +123,7 @@ const PostItem = ({ post }: { post: Post }) => {
             )}
             <div className="flex gap-4">
                  <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
-                    {isChirpAccount ? (
+                    {isZisprAccount ? (
                         <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-full">
                             <Bird className="h-5 w-5 text-primary" />
                         </div>
@@ -139,7 +139,7 @@ const PostItem = ({ post }: { post: Post }) => {
                         <div className="flex items-center gap-2 text-sm">
                             <p className="font-bold text-base flex items-center gap-1">
                                 {post.author} 
-                                {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                             </p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
                         </div>
@@ -170,7 +170,7 @@ export default function CommunityDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingPosts, setIsLoadingPosts] = useState(true);
     const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [isMember, setIsMember] = useState(false);
     
     // Post creation modal state
@@ -199,8 +199,8 @@ export default function CommunityDetailPage() {
                 const userDocRef = doc(db, 'users', currentUser.uid);
                 const unsubUser = onSnapshot(userDocRef, (userDoc) => {
                     if (userDoc.exists()) {
-                        const userData = { uid: userDoc.id, ...userDoc.data() } as ChirpUser;
-                        setChirpUser(userData);
+                        const userData = { uid: userDoc.id, ...userDoc.data() } as ZisprUser;
+                        setZisprUser(userData);
                         setIsMember(userData.communities?.includes(communityId) ?? false);
                     }
                 });
@@ -326,7 +326,7 @@ export default function CommunityDetailPage() {
             });
             return;
         }
-        if (!user || !chirpUser) return;
+        if (!user || !zisprUser) return;
         setIsPosting(true);
         
         try {
@@ -347,10 +347,10 @@ export default function CommunityDetailPage() {
                 // Create the new post
                 transaction.set(postRef, {
                     authorId: user.uid,
-                    author: chirpUser.displayName,
-                    handle: chirpUser.handle,
-                    avatar: chirpUser.avatar,
-                    avatarFallback: chirpUser.displayName[0],
+                    author: zisprUser.displayName,
+                    handle: zisprUser.handle,
+                    avatar: zisprUser.avatar,
+                    avatarFallback: zisprUser.displayName[0],
                     content: newPostContent,
                     location: location,
                     hashtags: hashtags,
@@ -362,7 +362,7 @@ export default function CommunityDetailPage() {
                     retweets: [],
                     likes: [],
                     views: 0,
-                    isVerified: chirpUser.isVerified || false,
+                    isVerified: zisprUser.isVerified || false,
                     isFirstPost: isFirstPost,
                 });
 
@@ -383,23 +383,23 @@ export default function CommunityDetailPage() {
 
                 // Handle First Post Notification
                 if (isFirstPost) {
-                    const chirpOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@chirp'), limit(1));
-                    const chirpUserSnapshot = await getDocs(chirpOfficialUserQuery);
+                    const zisprOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@zispr'), limit(1));
+                    const zisprUserSnapshot = await getDocs(zisprOfficialUserQuery);
 
-                    if (!chirpUserSnapshot.empty) {
-                        const chirpUserData = chirpUserSnapshot.docs[0].data();
+                    if (!zisprUserSnapshot.empty) {
+                        const zisprUserData = zisprUserSnapshot.docs[0].data();
                         const notificationRef = doc(collection(db, 'notifications'));
                         transaction.set(notificationRef, {
                             toUserId: user.uid,
-                            fromUserId: chirpUserSnapshot.docs[0].id,
+                            fromUserId: zisprUserSnapshot.docs[0].id,
                             fromUser: {
-                                name: chirpUserData.displayName,
-                                handle: chirpUserData.handle,
-                                avatar: chirpUserData.avatar,
+                                name: zisprUserData.displayName,
+                                handle: zisprUserData.handle,
+                                avatar: zisprUserData.avatar,
                                 isVerified: true,
                             },
                             type: 'post',
-                            text: 'Bem-vindo ao Chirp! Adoramos seu primeiro post.',
+                            text: 'Bem-vindo ao Zispr! Adoramos seu primeiro post.',
                             postContent: newPostContent.substring(0, 50),
                             postId: postRef.id,
                             createdAt: serverTimestamp(),
@@ -521,12 +521,12 @@ export default function CommunityDetailPage() {
                         <DialogHeader>
                             <DialogTitle>Postar na comunidade {community.name}</DialogTitle>
                         </DialogHeader>
-                         {chirpUser ? (
+                         {zisprUser ? (
                             <div className="flex flex-col gap-4">
                                 <div className="flex gap-4">
                                     <Avatar>
-                                        <AvatarImage src={chirpUser.avatar} alt={chirpUser.handle} />
-                                        <AvatarFallback>{chirpUser.displayName[0]}</AvatarFallback>
+                                        <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
+                                        <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
                                     </Avatar>
                                     <div className="w-full">
                                         <Textarea

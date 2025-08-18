@@ -13,7 +13,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, updateDoc, increment, setDoc, arrayUnion } from 'firebase/firestore';
 
 
-interface ChirpUser {
+interface ZisprUser {
     uid: string;
     displayName: string;
     handle: string;
@@ -42,7 +42,7 @@ export default function ConversationPage() {
     const conversationId = params.id as string;
     
     const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [otherUser, setOtherUser] = useState<ChirpUser | null>(null);
+    const [otherUser, setOtherUser] = useState<ZisprUser | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [newMessage, setNewMessage] = useState('');
@@ -67,7 +67,7 @@ export default function ConversationPage() {
                     const otherUserId = conversationId.replace(currentUser.uid, '').replace('_', '');
                     const userDoc = await getDoc(doc(db, 'users', otherUserId));
                     if (userDoc.exists()) {
-                        setOtherUser({ uid: userDoc.id, ...userDoc.data() } as ChirpUser);
+                        setOtherUser({ uid: userDoc.id, ...userDoc.data() } as ZisprUser);
                     }
                 } catch (error) {
                     console.error("Erro ao buscar dados do usuário:", error);
@@ -221,7 +221,7 @@ export default function ConversationPage() {
     }
     
     const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@rulio';
-    const isChirpAccount = otherUser.handle === '@chirp';
+    const isZisprAccount = otherUser.handle === '@zispr';
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -233,7 +233,7 @@ export default function ConversationPage() {
                 </Button>
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push(`/profile/${otherUser.uid}`)}>
                     <Avatar className="h-8 w-8">
-                         {isChirpAccount ? (
+                         {isZisprAccount ? (
                             <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
                                 <Bird className="h-5 w-5 text-primary" />
                             </div>
@@ -247,7 +247,7 @@ export default function ConversationPage() {
                     <div>
                         <h1 className="text-lg font-bold flex items-center gap-1">
                             {otherUser.displayName}
-                            {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isOtherUserVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isOtherUserVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                         </h1>
                         <p className="text-xs text-muted-foreground">{otherUser.handle}</p>
                     </div>
@@ -272,7 +272,7 @@ export default function ConversationPage() {
                             <div className={`flex items-start gap-3 ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
                             {message.senderId !== user?.uid && (
                                 <Avatar className="h-8 w-8">
-                                     {isChirpAccount ? (
+                                     {isZisprAccount ? (
                                         <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
                                             <Bird className="h-5 w-5 text-primary" />
                                         </div>

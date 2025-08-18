@@ -13,7 +13,7 @@ import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc
 import { formatTimeAgo } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
-interface ChirpUser {
+interface ZisprUser {
     uid: string;
     following?: string[];
 }
@@ -45,7 +45,7 @@ const iconMap = {
     unfollow: { icon: UserX, color: 'text-muted-foreground' },
 };
 
-const NotificationItem = ({ notification, chirpUser, handleFollowBack }: { notification: Notification, chirpUser: ChirpUser | null, handleFollowBack: (userId: string) => Promise<void> }) => {
+const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notification: Notification, zisprUser: ZisprUser | null, handleFollowBack: (userId: string) => Promise<void> }) => {
     const router = useRouter();
     const { icon: Icon, color } = iconMap[notification.type] || iconMap.post;
     const [time, setTime] = useState('');
@@ -60,10 +60,10 @@ const NotificationItem = ({ notification, chirpUser, handleFollowBack }: { notif
                 setTime('agora');
             }
         }
-        if (chirpUser && chirpUser.following?.includes(notification.fromUserId)) {
+        if (zisprUser && zisprUser.following?.includes(notification.fromUserId)) {
             setIsFollowing(true);
         }
-    }, [notification, chirpUser]);
+    }, [notification, zisprUser]);
     
     const handleItemClick = () => {
         if (notification.type === 'follow' || notification.type === 'unfollow') {
@@ -85,7 +85,7 @@ const NotificationItem = ({ notification, chirpUser, handleFollowBack }: { notif
     };
 
     const isVerified = notification.fromUser.isVerified || notification.fromUser.handle === '@rulio';
-    const isChirpAccount = notification.fromUser.handle === '@chirp';
+    const isZisprAccount = notification.fromUser.handle === '@zispr';
 
     return (
         <li className={`p-4 flex gap-4 hover:bg-muted/50 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`} onClick={handleItemClick}>
@@ -101,7 +101,7 @@ const NotificationItem = ({ notification, chirpUser, handleFollowBack }: { notif
                 </div>
                 <p>
                     <span className="font-bold">{notification.fromUser.name}</span>
-                    {isChirpAccount ? <Bird className="inline-block h-4 w-4 text-primary ml-1" /> : (isVerified && <BadgeCheck className="inline-block h-4 w-4 text-primary ml-1" />)}
+                    {isZisprAccount ? <Bird className="inline-block h-4 w-4 text-primary ml-1" /> : (isVerified && <BadgeCheck className="inline-block h-4 w-4 text-primary ml-1" />)}
                     <span className="font-normal text-muted-foreground"> {notification.text}</span>
                 </p>
                 {notification.postContent && <p className="text-muted-foreground mt-1">{notification.postContent}</p>}
@@ -120,7 +120,7 @@ const NotificationItem = ({ notification, chirpUser, handleFollowBack }: { notif
 
 export default function NotificationsPage() {
     const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -131,13 +131,13 @@ export default function NotificationsPage() {
                 const userDocRef = doc(db, 'users', currentUser.uid);
                 const unsubUser = onSnapshot(userDocRef, (doc) => {
                     if (doc.exists()) {
-                        setChirpUser({ uid: doc.id, ...doc.data() } as ChirpUser);
+                        setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
                     }
                 });
                 return () => unsubUser();
             } else {
                 setUser(null);
-                setChirpUser(null);
+                setZisprUser(null);
                 setIsLoading(false);
             }
         });
@@ -208,7 +208,7 @@ export default function NotificationsPage() {
     }, [notifications]);
 
     const verifiedNotifications = useMemo(() => {
-        return notifications.filter(n => n.fromUser.isVerified || n.fromUser.handle === '@chirp' || n.fromUser.handle === '@rulio');
+        return notifications.filter(n => n.fromUser.isVerified || n.fromUser.handle === '@zispr' || n.fromUser.handle === '@rulio');
     }, [notifications]);
 
   return (
@@ -241,7 +241,7 @@ export default function NotificationsPage() {
                 ) : (
                     <ul className="divide-y divide-border">
                         {notifications.map((item) => (
-                           <NotificationItem key={item.id} notification={item} chirpUser={chirpUser} handleFollowBack={handleFollowBack} />
+                           <NotificationItem key={item.id} notification={item} zisprUser={zisprUser} handleFollowBack={handleFollowBack} />
                         ))}
                     </ul>
                 )}
@@ -257,7 +257,7 @@ export default function NotificationsPage() {
                 ) : (
                     <ul className="divide-y divide-border">
                         {verifiedNotifications.map((item) => (
-                           <NotificationItem key={item.id} notification={item} chirpUser={chirpUser} handleFollowBack={handleFollowBack} />
+                           <NotificationItem key={item.id} notification={item} zisprUser={zisprUser} handleFollowBack={handleFollowBack} />
                         ))}
                     </ul>
                 )}
@@ -273,7 +273,7 @@ export default function NotificationsPage() {
                 ) : (
                      <ul className="divide-y divide-border">
                         {mentions.map((item) => (
-                           <NotificationItem key={item.id} notification={item} chirpUser={chirpUser} handleFollowBack={handleFollowBack} />
+                           <NotificationItem key={item.id} notification={item} zisprUser={zisprUser} handleFollowBack={handleFollowBack} />
                         ))}
                     </ul>
                 )}

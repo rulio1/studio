@@ -96,7 +96,7 @@ interface Reply {
     postId: string;
 }
 
-interface ChirpUser {
+interface ZisprUser {
     uid: string;
     displayName: string;
     email: string;
@@ -142,7 +142,7 @@ const PostContent = ({ content }: { content: string }) => {
     );
 };
 
-const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, onPin, onVote, toast }: { post: Post, user: FirebaseUser | null, chirpUser: ChirpUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, onVote: (postId: string, optionIndex: number) => Promise<void>, toast: any }) => {
+const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, onPin, onVote, toast }: { post: Post, user: FirebaseUser | null, zisprUser: ZisprUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, onVote: (postId: string, optionIndex: number) => Promise<void>, toast: any }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
     
@@ -157,8 +157,8 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
         }
     }, [post.createdAt, post.repostedAt]);
     
-    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@chirpp';
-    const isChirpAccount = post.handle === '@chirpp';
+    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@zispr';
+    const isZisprAccount = post.handle === '@zispr';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
     return (
@@ -166,7 +166,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
              {post.repostedBy && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-6">
                     <Repeat className="h-4 w-4" />
-                    <span>{post.repostedBy.handle === chirpUser?.handle ? 'Você' : post.repostedBy.name} repostou</span>
+                    <span>{post.repostedBy.handle === zisprUser?.handle ? 'Você' : post.repostedBy.name} repostou</span>
                 </div>
             )}
              {post.isPinned && (
@@ -183,7 +183,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
             )}
             <div className="flex gap-4">
                  <Avatar className="cursor-pointer" onClick={(e) => {e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
-                    {isChirpAccount ? (
+                    {isZisprAccount ? (
                         <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-full">
                             <Bird className="h-5 w-5 text-primary" />
                         </div>
@@ -199,7 +199,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
                         <div className="flex items-center gap-2 text-sm">
                             <p className="font-bold text-base flex items-center gap-1">
                                 {post.author} 
-                                {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                             </p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
                             {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
@@ -235,7 +235,7 @@ const PostItem = ({ post, user, chirpUser, onAction, onDelete, onEdit, onSave, o
                                     <>
                                         <DropdownMenuItem onClick={() => onSave(post.id)}>
                                             <Save className="mr-2 h-4 w-4"/>
-                                            {chirpUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
+                                            {zisprUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
@@ -340,8 +340,8 @@ export default function ProfilePage() {
     const { toast } = useToast();
 
     const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
-    const [profileUser, setProfileUser] = useState<ChirpUser | null>(null);
+    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
+    const [profileUser, setProfileUser] = useState<ZisprUser | null>(null);
     const [pinnedPost, setPinnedPost] = useState<Post | null>(null);
     const [userPosts, setUserPosts] = useState<Post[]>([]);
     const [userReplies, setUserReplies] = useState<Reply[]>([]);
@@ -366,7 +366,7 @@ export default function ProfilePage() {
     
     const isOwnProfile = currentUser?.uid === profileId;
 
-    const fetchUserPosts = useCallback(async (userToFetch: FirebaseUser, profileData: ChirpUser) => {
+    const fetchUserPosts = useCallback(async (userToFetch: FirebaseUser, profileData: ZisprUser) => {
         if (!userToFetch || !profileData) return;
         setIsLoadingPosts(true);
         setPinnedPost(null);
@@ -528,14 +528,14 @@ export default function ProfilePage() {
                     setIsLoading(false);
                     return;
                 }
-                const profileData = { uid: profileDoc.id, ...profileDoc.data() } as ChirpUser;
+                const profileData = { uid: profileDoc.id, ...profileDoc.data() } as ZisprUser;
                 setProfileUser(profileData);
                 
                 const userDocRef = doc(db, "users", user.uid);
                 const userDoc = await getDoc(userDocRef);
                 if (userDoc.exists()) {
-                    const currentUserData = { uid: userDoc.id, ...userDoc.data() } as ChirpUser;
-                    setChirpUser(currentUserData);
+                    const currentUserData = { uid: userDoc.id, ...userDoc.data() } as ZisprUser;
+                    setZisprUser(currentUserData);
                     setIsFollowing(profileData.followers?.includes(user.uid));
                     setIsFollowedBy(currentUserData.followers?.includes(profileId));
                 }
@@ -559,7 +559,7 @@ export default function ProfilePage() {
         return () => unsubscribeAuth();
     }, [profileId, router, fetchUserPosts, fetchUserReplies, fetchLikedPosts, toast]);
     
-    const handleToggleFollow = async (targetUser: ChirpUser, currentChirpUser: ChirpUser, isCurrentlyFollowing: boolean) => {
+    const handleToggleFollow = async (targetUser: ZisprUser, currentZisprUser: ZisprUser, isCurrentlyFollowing: boolean) => {
         if (!currentUser) return;
     
         const batch = writeBatch(db);
@@ -574,10 +574,10 @@ export default function ProfilePage() {
                 toUserId: targetUser.uid,
                 fromUserId: currentUser.uid,
                 fromUser: {
-                    name: currentChirpUser.displayName,
-                    handle: currentChirpUser.handle,
-                    avatar: currentChirpUser.avatar,
-                    isVerified: currentChirpUser.isVerified || false,
+                    name: currentZisprUser.displayName,
+                    handle: currentZisprUser.handle,
+                    avatar: currentZisprUser.avatar,
+                    isVerified: currentZisprUser.isVerified || false,
                 },
                 type: 'unfollow',
                 text: 'deixou de seguir você',
@@ -591,10 +591,10 @@ export default function ProfilePage() {
                 toUserId: targetUser.uid,
                 fromUserId: currentUser.uid,
                 fromUser: {
-                    name: currentChirpUser.displayName,
-                    handle: currentChirpUser.handle,
-                    avatar: currentChirpUser.avatar,
-                    isVerified: currentChirpUser.isVerified || false,
+                    name: currentZisprUser.displayName,
+                    handle: currentZisprUser.handle,
+                    avatar: currentZisprUser.avatar,
+                    isVerified: currentZisprUser.isVerified || false,
                 },
                 type: 'follow',
                 text: 'seguiu você',
@@ -612,7 +612,7 @@ export default function ProfilePage() {
         }
     
         // Update local state for the current user (affects the dialog)
-        setChirpUser(prev => prev ? { ...prev, following: !isCurrentlyFollowing ? prev.following.filter(id => id !== targetUser.uid) : [...(prev.following || []), targetUser.uid] } : null);
+        setZisprUser(prev => prev ? { ...prev, following: !isCurrentlyFollowing ? prev.following.filter(id => id !== targetUser.uid) : [...(prev.following || []), targetUser.uid] } : null);
     };
 
     const handleStartConversation = async () => {
@@ -715,21 +715,21 @@ export default function ProfilePage() {
     const handleSavePost = async (postId: string) => {
         if (!currentUser) return;
         const userRef = doc(db, 'users', currentUser.uid);
-        const isSaved = chirpUser?.savedPosts?.includes(postId);
+        const isSaved = zisprUser?.savedPosts?.includes(postId);
 
         if (isSaved) {
             await updateDoc(userRef, { savedPosts: arrayRemove(postId) });
-            setChirpUser(prev => prev ? {...prev, savedPosts: prev.savedPosts?.filter(id => id !== postId)} : null);
+            setZisprUser(prev => prev ? {...prev, savedPosts: prev.savedPosts?.filter(id => id !== postId)} : null);
             toast({ title: 'Post removido dos salvos' });
         } else {
             await updateDoc(userRef, { savedPosts: arrayUnion(postId) });
-            setChirpUser(prev => prev ? {...prev, savedPosts: [...(prev.savedPosts || []), postId]} : null);
+            setZisprUser(prev => prev ? {...prev, savedPosts: [...(prev.savedPosts || []), postId]} : null);
             toast({ title: 'Post salvo!' });
         }
     };
 
     const handlePostAction = async (postId: string, action: 'like' | 'retweet', authorId: string) => {
-        if (!currentUser || !chirpUser) return;
+        if (!currentUser || !zisprUser) return;
     
         const postRef = doc(db, 'posts', postId);
         const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId) || mediaPosts.find(p => p.id === postId) || (pinnedPost?.id === postId ? pinnedPost : null);
@@ -768,10 +768,10 @@ export default function ProfilePage() {
                     toUserId: authorId,
                     fromUserId: currentUser.uid,
                     fromUser: {
-                        name: chirpUser.displayName,
-                        handle: chirpUser.handle,
-                        avatar: chirpUser.avatar,
-                        isVerified: chirpUser.isVerified || false,
+                        name: zisprUser.displayName,
+                        handle: zisprUser.handle,
+                        avatar: zisprUser.avatar,
+                        isVerified: zisprUser.isVerified || false,
                     },
                     type: action,
                     text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
@@ -879,7 +879,7 @@ export default function ProfilePage() {
                         key={`${pinnedPost.id}-pinned`}
                         post={{...pinnedPost, isPinned: true}}
                         user={currentUser}
-                        chirpUser={chirpUser}
+                        zisprUser={zisprUser}
                         onAction={handlePostAction}
                         onDelete={setPostToDelete}
                         onEdit={handleEditClick}
@@ -894,7 +894,7 @@ export default function ProfilePage() {
                         key={`${post.id}-${post.repostedAt?.toMillis() || ''}`}
                         post={post}
                         user={currentUser}
-                        chirpUser={chirpUser}
+                        zisprUser={zisprUser}
                         onAction={handlePostAction}
                         onDelete={setPostToDelete}
                         onEdit={handleEditClick}
@@ -947,8 +947,8 @@ export default function ProfilePage() {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
-    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@rulio' || profileUser.handle === '@chirpp';
-    const isChirpAccount = profileUser.handle === '@chirpp';
+    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@rulio' || profileUser.handle === '@zispr';
+    const isZisprAccount = profileUser.handle === '@zispr';
 
 
   return (
@@ -960,14 +960,14 @@ export default function ProfilePage() {
             <div>
                 <h1 className="text-xl font-bold flex items-center gap-1">
                     {profileUser.displayName}
-                    {isChirpAccount ? <Bird className="h-5 w-5 text-primary" /> : (isProfileVerified && <BadgeCheck className="h-5 w-5 text-primary" />)}
+                    {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isProfileVerified && <BadgeCheck className="h-5 w-5 text-primary" />)}
                 </h1>
                 <p className="text-sm text-muted-foreground">{userPosts.length + (pinnedPost ? 1 : 0)} posts</p>
             </div>
         </header>
         <main className="flex-1">
         <div className="relative h-48 bg-muted">
-           {isChirpAccount ? (
+           {isZisprAccount ? (
                 <div className="w-full h-full bg-primary flex items-center justify-center">
                     <Bird className="h-24 w-24 text-primary-foreground" />
                 </div>
@@ -985,7 +985,7 @@ export default function ProfilePage() {
             <div className="flex justify-between items-start">
                 <div className="-mt-20">
                     <Avatar className="h-32 w-32 border-4 border-background bg-muted">
-                        {isChirpAccount ? (
+                        {isZisprAccount ? (
                             <div className="w-full h-full flex items-center justify-center">
                                 <Bird className="h-16 w-16 text-primary" />
                             </div>
@@ -1005,7 +1005,7 @@ export default function ProfilePage() {
                     <div className='flex items-center gap-2 mt-4'>
                         <Button variant="ghost" size="icon" className="border rounded-full" onClick={handleStartConversation}><Mail /></Button>
                         <Button variant="ghost" size="icon" className="border rounded-full"><Bell /></Button>
-                        <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={() => handleToggleFollow(profileUser, chirpUser!, isFollowing)}>
+                        <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={() => handleToggleFollow(profileUser, zisprUser!, isFollowing)}>
                             {isFollowing ? 'Seguindo' : 'Seguir'}
                         </Button>
                     </div>
@@ -1015,7 +1015,7 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-bold flex items-center gap-1">
                         {profileUser.displayName}
-                        {isChirpAccount ? <Bird className="h-6 w-6 text-primary" /> : (isProfileVerified && <BadgeCheck className="h-6 w-6 text-primary" />)}
+                        {isZisprAccount ? <Bird className="h-6 w-6 text-primary" /> : (isProfileVerified && <BadgeCheck className="h-6 w-6 text-primary" />)}
                     </h1>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1024,14 +1024,14 @@ export default function ProfilePage() {
                 </div>
                 <p className="mt-2 whitespace-pre-wrap">{profileUser.bio}</p>
             </div>
-             {isChirpAccount && (
+             {isZisprAccount && (
                 <Card className="mt-4 border-primary/50">
                     <CardHeader className="flex-row items-center gap-3 space-y-0 p-3">
                         <Info className="h-4 w-4 text-primary" />
                         <CardTitle className="text-sm">Conta Oficial</CardTitle>
                     </CardHeader>
                     <CardContent className="p-3 pt-0">
-                        <p className="text-xs text-muted-foreground">Esta é a conta oficial do Chirpp. Fique de olho para anúncios, dicas e atualizações importantes da plataforma.</p>
+                        <p className="text-xs text-muted-foreground">Esta é a conta oficial do Zispr. Fique de olho para anúncios, dicas e atualizações importantes da plataforma.</p>
                     </CardContent>
                 </Card>
             )}
@@ -1121,13 +1121,13 @@ export default function ProfilePage() {
                 </Button>
             </DialogContent>
         </Dialog>
-        {isFollowListOpen && chirpUser && (
+        {isFollowListOpen && zisprUser && (
             <FollowListDialog
                 open={isFollowListOpen}
                 onOpenChange={setIsFollowListOpen}
                 title={followListTitle}
                 userIds={followListUserIds}
-                currentUser={chirpUser}
+                currentUser={zisprUser}
                 onToggleFollow={handleToggleFollow}
             />
         )}

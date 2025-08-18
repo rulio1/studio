@@ -20,7 +20,7 @@ interface User {
     isVerified?: boolean;
 }
 
-interface ChirpUser {
+interface ZisprUser {
     uid: string;
     displayName: string;
     handle: string;
@@ -34,16 +34,16 @@ interface FollowListDialogProps {
     onOpenChange: (open: boolean) => void;
     title: string;
     userIds: string[];
-    currentUser: ChirpUser;
-    onToggleFollow: (targetUser: User, currentChirpUser: ChirpUser, isCurrentlyFollowing: boolean) => Promise<void>;
+    currentUser: ZisprUser;
+    onToggleFollow: (targetUser: User, currentZisprUser: ZisprUser, isCurrentlyFollowing: boolean) => Promise<void>;
 }
 
-const UserItem = ({ user, currentUser, onToggleFollow, onDialogClose }: { user: User, currentUser: ChirpUser, onToggleFollow: (targetUser: User, currentChirpUser: ChirpUser, isCurrentlyFollowing: boolean) => Promise<void>, onDialogClose: () => void }) => {
+const UserItem = ({ user, currentUser, onToggleFollow, onDialogClose }: { user: User, currentUser: ZisprUser, onToggleFollow: (targetUser: User, currentZisprUser: ZisprUser, isCurrentlyFollowing: boolean) => Promise<void>, onDialogClose: () => void }) => {
     const router = useRouter();
     const isFollowing = currentUser.following.includes(user.uid);
     const isCurrentUser = user.uid === currentUser.uid;
-    const isVerified = user.isVerified || user.handle === '@rulio' || user.handle === '@chirp';
-    const isChirpAccount = user.handle === '@chirp';
+    const isVerified = user.isVerified || user.handle === '@rulio' || user.handle === '@zispr';
+    const isZisprAccount = user.handle === '@zispr';
 
     const handleUserClick = () => {
         onDialogClose();
@@ -54,7 +54,7 @@ const UserItem = ({ user, currentUser, onToggleFollow, onDialogClose }: { user: 
         <div className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg">
             <div className="flex items-center gap-3 cursor-pointer" onClick={handleUserClick}>
                 <Avatar className="h-10 w-10">
-                     {isChirpAccount ? (
+                     {isZisprAccount ? (
                             <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
                                 <Bird className="h-5 w-5 text-primary" />
                             </div>
@@ -68,7 +68,7 @@ const UserItem = ({ user, currentUser, onToggleFollow, onDialogClose }: { user: 
                 <div>
                     <p className="font-bold flex items-center gap-1">
                         {user.displayName}
-                        {isChirpAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                        {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                     </p>
                     <p className="text-sm text-muted-foreground">{user.handle}</p>
                 </div>

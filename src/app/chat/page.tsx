@@ -85,7 +85,7 @@ export default function ChatPage() {
                     <AvatarFallback><Bot /></AvatarFallback>
                 </Avatar>
                 <div>
-                    <h1 className="text-lg font-bold">Chirp AI</h1>
+                    <h1 className="text-lg font-bold">Zispr AI</h1>
                     <p className="text-xs text-muted-foreground">Assistente de IA</p>
                 </div>
             </div>
@@ -98,7 +98,7 @@ export default function ChatPage() {
                  {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                         <Bot className="h-16 w-16 mb-4" />
-                        <h2 className="text-2xl font-bold text-foreground">Chirp AI está aqui para ajudar</h2>
+                        <h2 className="text-2xl font-bold text-foreground">Zispr AI está aqui para ajudar</h2>
                         <p>Pergunte-me qualquer coisa, ou apenas diga oi!</p>
                     </div>
                  )}
@@ -135,7 +135,7 @@ export default function ChatPage() {
         <div className="fixed bottom-24 inset-x-4">
             <div className="relative flex items-center rounded-2xl border bg-background/80 backdrop-blur-lg p-2">
                  <Input 
-                    placeholder="Pergunte qualquer coisa ao Chirp AI..." 
+                    placeholder="Pergunte qualquer coisa ao Zispr AI..." 
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
