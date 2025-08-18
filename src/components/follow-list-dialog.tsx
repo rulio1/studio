@@ -42,8 +42,8 @@ const UserItem = ({ user, currentUser, onToggleFollow, onDialogClose }: { user: 
     const router = useRouter();
     const isFollowing = currentUser.following.includes(user.uid);
     const isCurrentUser = user.uid === currentUser.uid;
-    const isVerified = user.isVerified || user.handle === '@rulio' || user.handle === '@zispr';
-    const isZisprAccount = user.handle === '@zispr';
+    const isZisprAccount = user.handle === '@Zispr';
+    const isVerified = user.isVerified || user.handle === '@rulio' || isZisprAccount;
 
     const handleUserClick = () => {
         onDialogClose();

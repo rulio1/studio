@@ -110,8 +110,8 @@ const PostItem = ({ post }: { post: Post }) => {
         }
     }, [post.createdAt]);
     
-    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@zispr';
-    const isZisprAccount = post.handle === '@zispr';
+    const isZisprAccount = post.handle === '@Zispr';
+    const isVerified = post.isVerified || post.handle === '@rulio' || isZisprAccount;
 
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
@@ -383,7 +383,7 @@ export default function CommunityDetailPage() {
 
                 // Handle First Post Notification
                 if (isFirstPost) {
-                    const zisprOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@zispr'), limit(1));
+                    const zisprOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@Zispr'), limit(1));
                     const zisprUserSnapshot = await getDocs(zisprOfficialUserQuery);
 
                     if (!zisprUserSnapshot.empty) {

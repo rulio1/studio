@@ -206,7 +206,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
 
                 // 2. Handle first post notification
                 if (isFirstPost) {
-                    const zisprOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@zispr'), limit(1));
+                    const zisprOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@Zispr'), limit(1));
                     const zisprUserSnapshot = await getDocs(zisprOfficialUserQuery); 
                     
                     if (!zisprUserSnapshot.empty) {

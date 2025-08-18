@@ -59,8 +59,8 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
     const isMyMessage = convo.lastMessage.senderId === currentUserId;
     const isUnread = convo.unreadCount > 0;
     const messagePreview = `${isMyMessage ? 'Você: ' : ''}${convo.lastMessage.text}`;
-    const isVerified = convo.otherUser.isVerified || convo.otherUser.handle === '@rulio';
-    const isZisprAccount = convo.otherUser.handle === '@zispr';
+    const isZisprAccount = convo.otherUser.handle === '@Zispr';
+    const isVerified = convo.otherUser.isVerified || convo.otherUser.handle === '@rulio' || isZisprAccount;
 
     return (
          <li 

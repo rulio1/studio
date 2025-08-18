@@ -507,9 +507,8 @@ export default function HomePage() {
       }
     }, [post.createdAt, post.repostedAt]);
     
-    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@zispr';
-    const isZisprAccount = post.handle === '@zispr';
-
+    const isZisprAccount = post.handle === '@Zispr';
+    const isVerified = post.isVerified || post.handle === '@rulio' || isZisprAccount;
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
 
@@ -712,8 +711,8 @@ export default function HomePage() {
       );
   }
   
-    const isZisprUserVerified = zisprUser.isVerified || zisprUser.handle === '@rulio' || zisprUser.handle === '@zispr';
-    const isZisprAccount = zisprUser.handle === '@zispr';
+    const isZisprAccount = zisprUser.handle === '@Zispr';
+    const isZisprUserVerified = zisprUser.isVerified || zisprUser.handle === '@rulio' || isZisprAccount;
 
 
   return (

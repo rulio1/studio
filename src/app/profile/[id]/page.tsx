@@ -157,8 +157,8 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
         }
     }, [post.createdAt, post.repostedAt]);
     
-    const isVerified = post.isVerified || post.handle === '@rulio' || post.handle === '@zispr';
-    const isZisprAccount = post.handle === '@zispr';
+    const isZisprAccount = post.handle === '@Zispr';
+    const isVerified = post.isVerified || post.handle === '@rulio' || isZisprAccount;
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
     return (
@@ -947,8 +947,8 @@ export default function ProfilePage() {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
-    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@rulio' || profileUser.handle === '@zispr';
-    const isZisprAccount = profileUser.handle === '@zispr';
+    const isZisprAccount = profileUser.handle === '@Zispr';
+    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@rulio' || isZisprAccount;
 
 
   return (

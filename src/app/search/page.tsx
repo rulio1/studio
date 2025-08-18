@@ -43,7 +43,7 @@ const forYouPosts: PostSearchResult[] = [
     {
         id: '1',
         author: 'Zispr',
-        handle: '@zispr',
+        handle: '@Zispr',
         content: 'Bem-vindo à nova aba "Para você"! Aqui você encontrará as últimas atualizações e novidades sobre o Zispr. #NovidadesZispr',
         avatar: '/logo.svg',
         avatarFallback: 'Z',
@@ -51,7 +51,7 @@ const forYouPosts: PostSearchResult[] = [
     {
         id: '2',
         author: 'Zispr',
-        handle: '@zispr',
+        handle: '@Zispr',
         content: 'Acabamos de lançar a busca por #hashtags! Agora você pode explorar tópicos e descobrir novos conteúdos com mais facilidade. Experimente!',
         avatar: '/logo.svg',
         avatarFallback: 'Z',
@@ -59,7 +59,7 @@ const forYouPosts: PostSearchResult[] = [
      {
         id: '3',
         author: 'Zispr',
-        handle: '@zispr',
+        handle: '@Zispr',
         content: 'Os "Tópicos do Momento" já estão funcionando! Fique de olho na aba de tendências para ver o que está bombando na plataforma. #Trending',
         avatar: '/logo.svg',
         avatarFallback: 'Z',
@@ -67,7 +67,7 @@ const forYouPosts: PostSearchResult[] = [
     {
         id: '4',
         author: 'Zispr',
-        handle: '@zispr',
+        handle: '@Zispr',
         content: 'Agora você pode postar com imagens! Dê vida aos seus posts e compartilhe seus momentos com mais cores. #ImagensNoZispr',
         avatar: '/logo.svg',
         avatarFallback: 'Z',
@@ -260,8 +260,8 @@ function SearchPageClient({
 
   const renderUser = (user: UserSearchResult, list: 'newUsers' | 'users') => {
     const isFollowing = user.followers?.includes(currentUser?.uid || '');
-    const isVerified = user.isVerified || user.handle === '@rulio';
-    const isZisprAccount = user.handle === '@zispr';
+    const isZisprAccount = user.handle === '@Zispr';
+    const isVerified = user.isVerified || user.handle === '@rulio' || isZisprAccount;
 
     if (currentUser?.uid === user.uid) {
         return (
