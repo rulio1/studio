@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,9 +8,10 @@ import { MoreHorizontal, Search, Settings, MessageCircle, Loader2, ArrowLeft, Ba
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { collection, getDocs, query, where, limit, orderBy, doc, updateDoc, arrayUnion, arrayRemove, writeBatch, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import SearchLoading from './loading';
 
 
 interface Trend {
@@ -100,12 +100,15 @@ const PostContent = ({ content }: { content: string }) => {
     );
 };
 
-export default function SearchPageClient() {
+function SearchPageClient({
+    searchParams,
+}: {
+    searchParams?: { [key: string]: string | string[] | undefined };
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const queryFromUrl = searchParams.get('q');
+  const queryFromUrl = searchParams?.q || '';
   
-  const [searchTerm, setSearchTerm] = useState(queryFromUrl || '');
+  const [searchTerm, setSearchTerm] = useState(typeof queryFromUrl === 'string' ? queryFromUrl : '');
   const [trends, setTrends] = useState<Trend[]>([]);
   const [users, setUsers] = useState<UserSearchResult[]>([]);
   const [newUsers, setNewUsers] = useState<UserSearchResult[]>([]);
@@ -211,8 +214,9 @@ export default function SearchPageClient() {
 
       if (debouncedSearchTerm) {
         performSearch(debouncedSearchTerm);
+        router.push(`/search?q=${debouncedSearchTerm}`);
       }
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, router]);
 
   const handleFollow = async (targetUserId: string, list: 'newUsers' | 'users') => {
     if (!currentUser) return;
@@ -461,4 +465,16 @@ export default function SearchPageClient() {
       {renderContent()}
     </>
   );
+}
+
+export default function SearchPage({
+  searchParams,
+}: {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}) {
+    return (
+        <Suspense fallback={<SearchLoading />}>
+            <SearchPageClient searchParams={searchParams} />
+        </Suspense>
+    )
 }
