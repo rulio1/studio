@@ -41,7 +41,7 @@ export default function LandingPage() {
         </section>
       </main>
       <footer className="flex items-center justify-center p-4 border-t">
-        <p className="text-xs text-muted-foreground">&copy; 2024-2025 Zispr Inc. Todos os direitos reservados. Desenvolvido por Rulio.</p>
+        <p className="text-xs text-muted-foreground">&copy; 2025 Zispr Inc. Todos os direitos reservados. Desenvolvido por Rulio.</p>
       </footer>
     </div>
   );
