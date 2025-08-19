@@ -40,7 +40,7 @@ export default function LandingPage() {
           </div>
         </section>
       </main>
-      <footer className="w-full border-t p-4 md:pb-4 text-center">
+      <footer className="w-full border-t p-4 pb-8 text-center md:pb-4">
         <p className="text-xs text-muted-foreground">
             &copy; 2025 Zispr Inc. Todos os direitos reservados.
             <br />
