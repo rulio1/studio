@@ -50,41 +50,43 @@ export default function DesktopLanding() {
           <Bird className="h-64 w-64 text-primary" />
         </div>
         <div className="flex flex-1 flex-col justify-center px-16">
-          <Bird className="h-12 w-12 text-primary mb-8" />
-          <h1 className="text-5xl font-extrabold tracking-tighter font-headline whitespace-nowrap min-h-[80px]">
-            {currentPhrase}
-            <span className="opacity-50 animate-pulse">|</span>
-          </h1>
-          <h2 className="text-3xl font-bold mb-8">
-            Inscreva-se no <span className="animated-zispr">Zispr</span> hoje mesmo.
-          </h2>
-
-          <div className="w-full max-w-sm space-y-4">
-             <Button asChild className="w-full rounded-full" size="lg">
-              <Link href="/register">Inscreva-se</Link>
-            </Button>
-
-            <div className="relative">
-               <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-               </div>
-               <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">ou</span>
-               </div>
-            </div>
-
-            <p className="text-sm text-muted-foreground">
-                Já tem uma conta?
-            </p>
-
-            <Button variant="outline" asChild className="w-full rounded-full" size="lg">
-              <Link href="/login">Entrar</Link>
-            </Button>
+          <div className="w-full max-w-sm">
+              <Bird className="h-12 w-12 text-primary mb-8" />
+              <h1 className="text-5xl font-extrabold tracking-tighter font-headline min-h-[80px] whitespace-nowrap">
+                {currentPhrase}
+                <span className="opacity-50 animate-pulse">|</span>
+              </h1>
+              <h2 className="text-3xl font-bold mb-8">
+                Inscreva-se no <span className="animated-zispr">Zispr</span> hoje mesmo.
+              </h2>
+    
+              <div className="space-y-4">
+                 <Button asChild className="w-full rounded-full" size="lg">
+                  <Link href="/register">Inscreva-se</Link>
+                </Button>
+    
+                <div className="relative">
+                   <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                   </div>
+                   <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">ou</span>
+                   </div>
+                </div>
+    
+                <p className="text-sm text-muted-foreground">
+                    Já tem uma conta?
+                </p>
+    
+                <Button variant="outline" asChild className="w-full rounded-full" size="lg">
+                  <Link href="/login">Entrar</Link>
+                </Button>
+              </div>
           </div>
         </div>
       </main>
-      <footer className="w-full py-4 px-8">
-        <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+       <footer className="w-full py-4 px-8">
+         <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
             <Link href="/privacy" className="hover:underline">Sobre</Link>
             <Link href="/privacy" className="hover:underline">Baixe o aplicativo Zispr</Link>
             <Link href="/privacy" className="hover:underline">Central de Ajuda</Link>
