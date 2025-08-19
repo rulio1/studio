@@ -157,13 +157,14 @@ export default function EditProfilePage() {
             console.log("Atualização em massa em segundo plano concluída com sucesso.");
         } catch (error) {
             console.error("Erro na atualização em massa em segundo plano: ", error);
+            // This error is logged but not shown to the user, as the main profile save succeeded.
         }
     };
     
     const handleSave = async () => {
         if (!user) return;
         setIsSaving(true);
-    
+
         try {
             const userRef = doc(db, 'users', user.uid);
             
@@ -179,8 +180,10 @@ export default function EditProfilePage() {
                 firestoreUpdateData.banner = newBannerDataUri;
             }
     
+            // Main profile update
             await updateDoc(userRef, firestoreUpdateData);
     
+            // Auth profile update
             if (user.displayName !== firestoreUpdateData.displayName || user.photoURL !== firestoreUpdateData.avatar) {
                 await updateProfile(user, {
                     displayName: firestoreUpdateData.displayName,
@@ -193,6 +196,7 @@ export default function EditProfilePage() {
                 description: 'Suas alterações foram salvas com sucesso.',
             });
             
+            // Run batch update in background without awaiting it or catching its specific errors here
             runUpdateBatchInBackground(user.uid, firestoreUpdateData);
 
             router.push(`/profile/${user.uid}`);
