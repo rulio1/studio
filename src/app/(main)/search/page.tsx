@@ -39,41 +39,6 @@ interface PostSearchResult {
     avatarFallback?: string;
 }
 
-const forYouPosts: PostSearchResult[] = [
-    {
-        id: '1',
-        author: 'Zispr',
-        handle: '@Zispr',
-        content: 'Bem-vindo à nova aba "Para você"! Aqui você encontrará as últimas atualizações e novidades sobre o Zispr. #NovidadesZispr',
-        avatar: '/logo.svg',
-        avatarFallback: 'Z',
-    },
-    {
-        id: '2',
-        author: 'Zispr',
-        handle: '@Zispr',
-        content: 'Acabamos de lançar a busca por #hashtags! Agora você pode explorar tópicos e descobrir novos conteúdos com mais facilidade. Experimente!',
-        avatar: '/logo.svg',
-        avatarFallback: 'Z',
-    },
-     {
-        id: '3',
-        author: 'Zispr',
-        handle: '@Zispr',
-        content: 'Os "Tópicos do Momento" já estão funcionando! Fique de olho na aba de tendências para ver o que está bombando na plataforma. #Trending',
-        avatar: '/logo.svg',
-        avatarFallback: 'Z',
-    },
-    {
-        id: '4',
-        author: 'Zispr',
-        handle: '@Zispr',
-        content: 'Agora você pode postar com imagens! Dê vida aos seus posts e compartilhe seus momentos com mais cores. #ImagensNoZispr',
-        avatar: '/logo.svg',
-        avatarFallback: 'Z',
-    }
-];
-
 const PostContent = ({ content }: { content: string }) => {
     const router = useRouter();
     const parts = content.split(/(#\w+)/g);
@@ -318,33 +283,6 @@ function SearchPageClient({
     );
   };
 
-  const renderOfficialPost = (post: PostSearchResult) => (
-    <li key={post.id} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => {
-        if (post.content.includes('#hashtags')) {
-            setSearchTerm('#hashtags');
-        }
-    }}>
-        <div className="flex gap-4">
-            <Avatar>
-                <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                    <Bird className="h-5 w-5 text-primary" />
-                </div>
-            </Avatar>
-            <div className="w-full">
-                <div className="flex items-center gap-2 text-sm">
-                    <p className="font-bold text-base flex items-center gap-1">
-                        {post.author} 
-                        <Bird className="h-4 w-4 text-primary" />
-                    </p>
-                    <p className="text-muted-foreground">{post.handle}</p>
-                </div>
-                <PostContent content={post.content} />
-            </div>
-        </div>
-    </li>
-  );
-
-
   const renderContent = () => {
     if (debouncedSearchTerm) {
          if (isSearching) {
@@ -401,17 +339,11 @@ function SearchPageClient({
     }
     
     return (
-        <Tabs defaultValue="for-you" className="w-full">
+        <Tabs defaultValue="trending" className="w-full">
             <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10 px-4">
-              <TabsTrigger value="for-you" className="flex-1">Para você</TabsTrigger>
               <TabsTrigger value="trending" className="flex-1">Tópicos do momento</TabsTrigger>
               <TabsTrigger value="new-users" className="flex-1">Novos Usuários</TabsTrigger>
             </TabsList>
-            <TabsContent value="for-you" className="mt-0">
-                 <ul className="divide-y divide-border">
-                    {forYouPosts.map(renderOfficialPost)}
-                </ul>
-            </TabsContent>
             <TabsContent value="trending" className="mt-0">
                 {isLoading ? (
                     <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
