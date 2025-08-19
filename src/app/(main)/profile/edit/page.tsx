@@ -132,7 +132,6 @@ export default function EditProfilePage() {
                 location: profileData.location,
             };
 
-            // Use new image if available, otherwise keep the old one
             if (newAvatarDataUri) {
                 firestoreUpdateData.avatar = newAvatarDataUri;
             }
@@ -143,12 +142,13 @@ export default function EditProfilePage() {
             const userRef = doc(db, 'users', user.uid);
             await updateDoc(userRef, firestoreUpdateData);
             
-            // Also update the displayName in Firebase Auth if it has changed
-            if (user.displayName !== profileData.displayName) {
-                await updateProfile(user, { displayName: profileData.displayName });
+            if (user.displayName !== profileData.displayName || (newAvatarDataUri && user.photoURL !== newAvatarDataUri)) {
+                await updateProfile(user, { 
+                    displayName: profileData.displayName,
+                    photoURL: newAvatarDataUri || user.photoURL,
+                 });
             }
 
-            // --- Update user's data across all posts and comments ---
             const batch = writeBatch(db);
             const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
             const commentsQuery = query(collection(db, "comments"), where("authorId", "==", user.uid));
@@ -158,13 +158,16 @@ export default function EditProfilePage() {
                 getDocs(commentsQuery)
             ]);
 
-            const updatedAuthorData = {
+            const updatedAuthorData: any = {
                 author: firestoreUpdateData.displayName,
                 handle: firestoreUpdateData.handle,
-                avatar: firestoreUpdateData.avatar || profileData.avatar,
                 isVerified: profileData.isVerified,
                 avatarFallback: firestoreUpdateData.displayName[0],
             };
+
+            if (firestoreUpdateData.avatar) {
+                updatedAuthorData.avatar = firestoreUpdateData.avatar;
+            }
 
             postsSnapshot.forEach(postDoc => {
                 batch.update(postDoc.ref, updatedAuthorData);
@@ -175,7 +178,6 @@ export default function EditProfilePage() {
             });
 
             await batch.commit();
-            // --- End of update logic ---
     
             toast({
                 title: 'Perfil Salvo!',
@@ -201,7 +203,7 @@ export default function EditProfilePage() {
         } else if (cropperData?.type === 'banner') {
             setNewBannerDataUri(croppedImageUri);
         }
-        setCropperData(null); // Close cropper modal
+        setCropperData(null);
     };
 
     if (isLoading) {
@@ -323,5 +325,4 @@ export default function EditProfilePage() {
     )}
     </>
   );
-
-    
+}
