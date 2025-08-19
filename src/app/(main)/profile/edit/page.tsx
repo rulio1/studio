@@ -16,6 +16,8 @@ import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
+import { fileToDataUri } from '@/lib/utils';
+
 
 interface UserProfileData {
     displayName: string;
@@ -26,16 +28,6 @@ interface UserProfileData {
     banner: string;
     isVerified?: boolean;
 }
-
-function fileToDataUri(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
 
 export default function EditProfilePage() {
     const router = useRouter();
@@ -107,12 +99,15 @@ export default function EditProfilePage() {
             return;
         }
 
-        const dataUri = await fileToDataUri(file);
-        setCropperData({
-            image: dataUri,
-            type: type,
-        });
-
+        try {
+            const dataUri = await fileToDataUri(file);
+            setCropperData({
+                image: dataUri,
+                type: type,
+            });
+        } catch (error) {
+            toast({ title: "Erro ao ler arquivo", description: "Não foi possível carregar a imagem.", variant: "destructive" });
+        }
         e.target.value = '';
     };
 
@@ -125,73 +120,62 @@ export default function EditProfilePage() {
         setIsSaving(true);
     
         try {
+            const userRef = doc(db, 'users', user.uid);
+    
+            // 1. Prepare os dados de atualização para o documento do usuário
             const firestoreUpdateData: any = {
                 displayName: profileData.displayName,
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
                 bio: profileData.bio,
                 location: profileData.location,
+                avatar: newAvatarDataUri || profileData.avatar,
+                banner: newBannerDataUri || profileData.banner,
             };
-
-            if (newAvatarDataUri) {
-                firestoreUpdateData.avatar = newAvatarDataUri;
-            }
-            if (newBannerDataUri) {
-                firestoreUpdateData.banner = newBannerDataUri;
-            }
     
-            const userRef = doc(db, 'users', user.uid);
+            // 2. Atualize o documento do usuário principal
             await updateDoc(userRef, firestoreUpdateData);
-            
+    
+            // 3. Atualize o perfil de autenticação do Firebase (se necessário)
             if (user.displayName !== profileData.displayName || (newAvatarDataUri && user.photoURL !== newAvatarDataUri)) {
-                await updateProfile(user, { 
+                await updateProfile(user, {
                     displayName: profileData.displayName,
                     photoURL: newAvatarDataUri || user.photoURL,
-                 });
+                });
             }
-
+    
+            // 4. Inicie a atualização em massa para consistência de dados
             const batch = writeBatch(db);
-            const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
-            const commentsQuery = query(collection(db, "comments"), where("authorId", "==", user.uid));
-            const notificationsQuery = query(collection(db, "notifications"), where("fromUserId", "==", user.uid));
-
-            
-            const [postsSnapshot, commentsSnapshot, notificationsSnapshot] = await Promise.all([
-                getDocs(postsQuery),
-                getDocs(commentsQuery),
-                getDocs(notificationsQuery)
-            ]);
-
-            const updatedAuthorData: any = {
+    
+            // Dados para atualizar em outros documentos
+            const updatedAuthorInfo = {
                 author: firestoreUpdateData.displayName,
                 handle: firestoreUpdateData.handle,
-                isVerified: profileData.isVerified,
-                avatarFallback: firestoreUpdateData.displayName[0],
-            };
-
-            const updatedFromUserData = {
-                name: firestoreUpdateData.displayName,
-                handle: firestoreUpdateData.handle,
-                avatar: newAvatarDataUri || profileData.avatar,
+                avatar: firestoreUpdateData.avatar,
                 isVerified: profileData.isVerified,
             };
-
-            if (firestoreUpdateData.avatar) {
-                updatedAuthorData.avatar = firestoreUpdateData.avatar;
-            }
-
+    
+            // Atualizar posts do usuário
+            const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
+            const postsSnapshot = await getDocs(postsQuery);
             postsSnapshot.forEach(postDoc => {
-                batch.update(postDoc.ref, updatedAuthorData);
+                batch.update(postDoc.ref, updatedAuthorInfo);
             });
-
+    
+            // Atualizar comentários do usuário
+            const commentsQuery = query(collection(db, "comments"), where("authorId", "==", user.uid));
+            const commentsSnapshot = await getDocs(commentsQuery);
             commentsSnapshot.forEach(commentDoc => {
-                batch.update(commentDoc.ref, updatedAuthorData);
+                batch.update(commentDoc.ref, updatedAuthorInfo);
             });
-
+    
+            // Atualizar notificações enviadas pelo usuário
+            const notificationsQuery = query(collection(db, "notifications"), where("fromUserId", "==", user.uid));
+            const notificationsSnapshot = await getDocs(notificationsQuery);
             notificationsSnapshot.forEach(notificationDoc => {
-                batch.update(notificationDoc.ref, { fromUser: updatedFromUserData });
+                batch.update(notificationDoc.ref, { fromUser: updatedAuthorInfo });
             });
-
-
+    
+            // 5. Commite a atualização em massa
             await batch.commit();
     
             toast({
@@ -204,7 +188,7 @@ export default function EditProfilePage() {
             console.error('Erro ao salvar perfil: ', error);
             toast({
                 title: 'Falha ao Salvar',
-                description: 'Não foi possível salvar as alterações do seu perfil.',
+                description: 'Não foi possível salvar as alterações do seu perfil. Por favor, tente novamente.',
                 variant: 'destructive',
             });
         } finally {
@@ -215,8 +199,10 @@ export default function EditProfilePage() {
     const handleCropComplete = (croppedImageUri: string) => {
         if (cropperData?.type === 'avatar') {
             setNewAvatarDataUri(croppedImageUri);
+            setProfileData(prev => ({...prev, avatar: croppedImageUri})); // Update preview
         } else if (cropperData?.type === 'banner') {
             setNewBannerDataUri(croppedImageUri);
+             setProfileData(prev => ({...prev, banner: croppedImageUri})); // Update preview
         }
         setCropperData(null);
     };
@@ -243,7 +229,7 @@ export default function EditProfilePage() {
 
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
-             <Image src={newBannerDataUri || profileData.banner || 'https://placehold.co/600x200.png'} alt="Banner" layout="fill" objectFit="cover" />
+             <Image src={profileData.banner || 'https://placehold.co/600x200.png'} alt="Banner" layout="fill" objectFit="cover" />
              <Button 
                 variant="ghost" 
                 className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity w-full h-full p-0"
@@ -263,7 +249,7 @@ export default function EditProfilePage() {
         <div className="px-4">
             <div className="-mt-16 relative w-32">
                 <Avatar className="h-32 w-32 border-4 border-background">
-                     <AvatarImage src={newAvatarDataUri || profileData.avatar} alt={profileData.displayName} />
+                     <AvatarImage src={profileData.avatar} alt={profileData.displayName} />
                      <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>
                 </Avatar>
                 
