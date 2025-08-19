@@ -204,7 +204,10 @@ export default function CommunityDetailPage() {
     }, [router]);
     
     useEffect(() => {
-        if (!user) return;
+        if (!user) {
+            setZisprUser(null);
+            return;
+        }
         const userDocRef = doc(db, 'users', user.uid);
         const unsubUser = onSnapshot(userDocRef, (userDoc) => {
             if (userDoc.exists()) {
@@ -216,10 +219,9 @@ export default function CommunityDetailPage() {
         return () => unsubUser();
     }, [user, communityId]);
 
-    const fetchCommunityData = useCallback(() => {
-        if (!communityId || !auth.currentUser) return () => {};
+    const fetchCommunityData = useCallback((currentCommunityId: string) => {
         setIsLoading(true);
-        const communityDocRef = doc(db, 'communities', communityId);
+        const communityDocRef = doc(db, 'communities', currentCommunityId);
         const unsubscribe = onSnapshot(communityDocRef, (doc) => {
             if (doc.exists()) {
                 setCommunity({ id: doc.id, ...doc.data() } as Community);
@@ -230,22 +232,20 @@ export default function CommunityDetailPage() {
             setIsLoading(false);
         });
         return unsubscribe;
-    }, [communityId, router, toast]);
+    }, [router, toast]);
 
-    const fetchCommunityPosts = useCallback(() => {
-        if (!communityId || !auth.currentUser) return () => {};
+    const fetchCommunityPosts = useCallback((currentCommunityId: string, currentUser: FirebaseUser) => {
         setIsLoadingPosts(true);
-        const q = query(collection(db, "posts"), where("communityId", "==", communityId));
+        const q = query(collection(db, "posts"), where("communityId", "==", currentCommunityId));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            if (!auth.currentUser) return; // Add guard
             const postsData = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
                     id: doc.id,
                     ...data,
                     time: '', // Will be set in PostItem component
-                    isLiked: data.likes.includes(auth.currentUser?.uid || ''),
-                    isRetweeted: data.retweets.includes(auth.currentUser?.uid || ''),
+                    isLiked: data.likes.includes(currentUser.uid),
+                    isRetweeted: data.retweets.includes(currentUser.uid),
                 } as Post;
             });
             postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
@@ -256,17 +256,21 @@ export default function CommunityDetailPage() {
             setIsLoadingPosts(false);
         });
         return unsubscribe;
-    }, [communityId]);
+    }, []);
     
     useEffect(() => {
-        if (!user) return;
-        const unsubCommunity = fetchCommunityData();
-        const unsubPosts = fetchCommunityPosts();
+        if (!user || !communityId) {
+            setIsLoading(false);
+            setIsLoadingPosts(false);
+            return;
+        }
+        const unsubCommunity = fetchCommunityData(communityId as string);
+        const unsubPosts = fetchCommunityPosts(communityId as string, user);
         return () => {
              unsubCommunity();
              unsubPosts();
         };
-    }, [user, fetchCommunityData, fetchCommunityPosts]);
+    }, [user, communityId, fetchCommunityData, fetchCommunityPosts]);
 
     const handleJoinLeaveCommunity = async () => {
         if (!user) return;
@@ -642,5 +646,7 @@ export default function CommunityDetailPage() {
         </div>
     );
 }
+
+    
 
     

@@ -137,7 +137,10 @@ export default function NotificationsPage() {
     }, [router]);
     
     useEffect(() => {
-        if(!user) return;
+        if(!user) {
+            setZisprUser(null);
+            return;
+        };
         const userDocRef = doc(db, 'users', user.uid);
         const unsubUser = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
@@ -179,7 +182,6 @@ export default function NotificationsPage() {
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            if (!auth.currentUser) return; // Add guard
             const notifs = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
@@ -290,5 +292,7 @@ export default function NotificationsPage() {
     </Tabs>
   );
 }
+
+    
 
     

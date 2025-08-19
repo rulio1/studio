@@ -126,13 +126,15 @@ export default function HomePage() {
   }, [router]);
   
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+        setZisprUser(null);
+        return;
+    }
     const userDocRef = doc(db, "users", user.uid);
     const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
          if(doc.exists()){
             setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
         } else {
-            // This might happen briefly on logout, prevent pushing to login again if user is already null
             if (auth.currentUser) {
               router.push('/login');
             }
@@ -142,18 +144,16 @@ export default function HomePage() {
   }, [user, router]);
 
 
-  const fetchAllPosts = useCallback(() => {
-    if (!user) return () => {};
+ const fetchAllPosts = useCallback((currentUser: FirebaseUser) => {
     setIsLoading(true);
 
     const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        if (!auth.currentUser) return; // Add guard
-        const postsData = snapshot.docs.map(doc => ({ 
-            id: doc.id, 
+        const postsData = snapshot.docs.map(doc => ({
+            id: doc.id,
             ...doc.data(),
-            isLiked: doc.data().likes.includes(auth.currentUser.uid || ''),
-            isRetweeted: doc.data().retweets.includes(auth.currentUser.uid || ''),
+            isLiked: doc.data().likes.includes(currentUser.uid),
+            isRetweeted: doc.data().retweets.includes(currentUser.uid),
         } as Post));
         setAllPosts(postsData);
         setIsLoading(false);
@@ -163,17 +163,20 @@ export default function HomePage() {
     });
 
     return unsubscribe;
-  }, [user]);
+}, []);
 
-  useEffect(() => {
+useEffect(() => {
     if (user) {
-        const unsubscribe = fetchAllPosts();
+        const unsubscribe = fetchAllPosts(user);
         return () => unsubscribe();
+    } else {
+        setAllPosts([]);
+        setIsLoading(false);
     }
-  }, [user, fetchAllPosts]);
+}, [user, fetchAllPosts]);
 
- const fetchFollowingPosts = useCallback(() => {
-    if (!zisprUser || !user || zisprUser.following.length === 0) {
+ const fetchFollowingPosts = useCallback((currentUser: FirebaseUser, currentUserData: ZisprUser) => {
+    if (currentUserData.following.length === 0) {
         setFollowingPosts([]);
         setIsLoadingFollowing(false);
         return () => {};
@@ -181,17 +184,16 @@ export default function HomePage() {
     
     setIsLoadingFollowing(true);
 
-    const followingIds = zisprUser.following;
-    const feedUserIds = [...new Set([...followingIds, user.uid])];
+    const followingIds = currentUserData.following;
+    const feedUserIds = [...new Set([...followingIds, currentUser.uid])];
 
     const q = query(collection(db, "posts"), where("authorId", "in", feedUserIds), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        if (!auth.currentUser) return; // Add guard
-        const postsData = snapshot.docs.map(doc => ({ 
-            id: doc.id, 
+        const postsData = snapshot.docs.map(doc => ({
+            id: doc.id,
             ...doc.data(),
-            isLiked: doc.data().likes.includes(auth.currentUser.uid || ''),
-            isRetweeted: doc.data().retweets.includes(auth.currentUser.uid || ''),
+            isLiked: doc.data().likes.includes(currentUser.uid),
+            isRetweeted: doc.data().retweets.includes(currentUser.uid),
         } as Post));
         setFollowingPosts(postsData);
         setIsLoadingFollowing(false);
@@ -201,12 +203,15 @@ export default function HomePage() {
     });
 
     return unsubscribe;
-}, [zisprUser, user]);
+}, []);
 
   useEffect(() => {
     if (activeTab === 'following' && zisprUser && user) {
-        const unsubscribe = fetchFollowingPosts();
+        const unsubscribe = fetchFollowingPosts(user, zisprUser);
         return () => unsubscribe();
+    } else if (activeTab === 'following') {
+        setFollowingPosts([]);
+        setIsLoadingFollowing(false);
     }
   }, [activeTab, fetchFollowingPosts, zisprUser, user]);
 
@@ -866,3 +871,5 @@ export default function HomePage() {
     </>
   );
 }
+
+    

@@ -64,7 +64,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
     const isVerified = convo.otherUser.isVerified || convo.otherUser.handle === '@rulio' || isZisprAccount;
 
     return (
-         <li 
+         <div
             onClick={() => router.push(`/messages/${convo.id}`)}
             className={`w-full p-4 hover:bg-muted/50 cursor-pointer flex items-center gap-4 ${isUnread ? 'border-l-2 border-primary' : ''}`}
         >
@@ -121,7 +121,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
-        </li>
+        </div>
     );
 };
 
@@ -156,7 +156,7 @@ export default function MessagesPage() {
         if (!user) {
             setConversations([]);
             setIsLoading(false);
-            return;
+            return () => {};
         }
         
         setIsLoading(true);
@@ -166,7 +166,8 @@ export default function MessagesPage() {
         );
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
-            if (!auth.currentUser) {
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
                 setConversations([]);
                 setIsLoading(false);
                 return;
@@ -302,7 +303,7 @@ export default function MessagesPage() {
                  <Button className="mt-4" onClick={() => setIsNewMessageModalOpen(true)}>Encontrar pessoas</Button>
             </div>
         ) : (
-             <ul className="divide-y divide-border">
+             <div className="divide-y divide-border">
                 {filteredConversations.map((convo) => (
                    <ConversationItem 
                         key={convo.id} 
@@ -311,7 +312,7 @@ export default function MessagesPage() {
                         onActionClick={handleActionClick}
                     />
                 ))}
-             </ul>
+             </div>
         )}
          {isNewMessageModalOpen && user && (
             <NewMessageModal 
@@ -323,5 +324,7 @@ export default function MessagesPage() {
     </>
   );
 }
+
+    
 
     

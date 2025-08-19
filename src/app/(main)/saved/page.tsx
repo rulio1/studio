@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, query, where, limit, orderBy, updateDoc, arrayUnion, arrayRemove, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, limit, orderBy, updateDoc, arrayUnion, arrayRemove, deleteDoc, onSnapshot, documentId } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, Bookmark, MessageCircle, Repeat, Heart, BarChart2, Upload, MoreHorizontal, Save, Trash2, Edit } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -121,7 +121,10 @@ export default function SavedPage() {
     }, [router]);
     
     useEffect(() => {
-        if (!user) return;
+        if (!user) {
+            setChirpUser(null);
+            return;
+        }
         const userDocRef = doc(db, 'users', user.uid);
         const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
@@ -135,46 +138,53 @@ export default function SavedPage() {
 
 
     useEffect(() => {
-        if (!user || !chirpUser) return;
-            
-        const fetchSavedPosts = async () => {
-            if (!chirpUser.savedPosts || chirpUser.savedPosts.length === 0) {
-                setSavedPosts([]);
+        if (!user || !chirpUser?.savedPosts || chirpUser.savedPosts.length === 0) {
+            setSavedPosts([]);
+            setIsLoading(false);
+            return () => {};
+        }
+
+        setIsLoading(true);
+        const savedPostIds = chirpUser.savedPosts;
+        
+        // Firestore 'in' query supports up to 30 elements. Chunking is necessary.
+        const chunks = [];
+        for (let i = 0; i < savedPostIds.length; i += 30) {
+            chunks.push(savedPostIds.slice(i, i + 30));
+        }
+
+        const unsubscribes = chunks.map(chunk => {
+             const q = query(collection(db, "posts"), where(documentId(), 'in', chunk));
+             return onSnapshot(q, (snapshot) => {
+                const postsData = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        ...data,
+                        time: '', // will be set in SavedPostItem
+                        isLiked: data.likes.includes(user.uid),
+                        isRetweeted: data.retweets.includes(user.uid),
+                    } as Post;
+                });
+
+                // This logic needs to be improved to handle updates from multiple listeners
+                // For simplicity here, we'll merge new data with existing data
+                setSavedPosts(prevPosts => {
+                    const postMap = new Map(prevPosts.map(p => [p.id, p]));
+                    postsData.forEach(p => postMap.set(p.id, p));
+                    const allPosts = Array.from(postMap.values());
+                    allPosts.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+                    return allPosts.filter(p => savedPostIds.includes(p.id));
+                });
                 setIsLoading(false);
-                return;
-            }
-
-            setIsLoading(true);
-            try {
-                // Firestore 'in' query has a limit of 30 elements in an array. Chunking is needed for more.
-                const postPromises = chirpUser.savedPosts.map(postId => getDoc(doc(db, 'posts', postId)));
-                const postDocs = await Promise.all(postPromises);
-                
-                const postsData = postDocs
-                    .filter(doc => doc.exists())
-                    .map(doc => {
-                        const data = doc.data() as Omit<Post, 'id' | 'isLiked' | 'isRetweeted' | 'time' | 'createdAt'> & { createdAt: any };
-                        return {
-                            id: doc.id,
-                            ...data,
-                            time: '', // will be set in SavedPostItem
-                            isLiked: data.likes.includes(user.uid),
-                            isRetweeted: data.retweets.includes(user.uid),
-                        } as Post;
-                    });
-                
-                // Sort by creation date descending
-                postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-
-                setSavedPosts(postsData);
-            } catch (error) {
-                console.error("Erro ao buscar posts salvos:", error);
-            } finally {
+            }, (error) => {
+                console.error("Error fetching saved posts chunk:", error);
                 setIsLoading(false);
-            }
-        };
+            });
+        });
+        
+        return () => unsubscribes.forEach(unsub => unsub());
 
-        fetchSavedPosts();
     }, [user, chirpUser]);
 
 
@@ -214,3 +224,5 @@ export default function SavedPage() {
         </div>
     );
 }
+
+    
