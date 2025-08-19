@@ -26,7 +26,7 @@ export default function LandingPage() {
             <div className="flex flex-col items-center space-y-4 text-center">
               <div className="space-y-2">
                 <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl/none font-headline">
-                  Participe da Conversa no <span className="animated-zispr">Zispr</span>
+                  Participe da Conversa no <span className="animated-zispr text-5xl sm:text-6xl md:text-7xl lg:text-8xl">Zispr</span>
                 </h1>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
                   Descubra o que está acontecendo no mundo e conecte-se com pessoas de todos os lugares.
