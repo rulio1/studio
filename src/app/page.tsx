@@ -1,9 +1,48 @@
 
+'use client';
+
 import { Bird } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
+
+const phrases = [
+  'Participe da Conversa',
+  'Conecte-se com o Mundo',
+  'Descubra o que Acontece',
+  'Compartilhe suas Ideias',
+];
 
 export default function LandingPage() {
+  const [index, setIndex] = useState(0);
+  const [subIndex, setSubIndex] = useState(0);
+  const [reverse, setReverse] = useState(false);
+  const [currentPhrase, setCurrentPhrase] = useState('');
+
+  useEffect(() => {
+    if (subIndex === phrases[index].length + 1 && !reverse) {
+      setTimeout(() => setReverse(true), 1000); // Pause before deleting
+      return;
+    }
+
+    if (subIndex === 0 && reverse) {
+      setReverse(false);
+      setIndex((prevIndex) => (prevIndex + 1) % phrases.length);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setSubIndex((prevSubIndex) => prevSubIndex + (reverse ? -1 : 1));
+    }, reverse ? 75 : 150); // Faster deleting
+
+    return () => clearTimeout(timeout);
+  }, [subIndex, index, reverse]);
+
+  useEffect(() => {
+    setCurrentPhrase(phrases[index].substring(0, subIndex));
+  }, [subIndex, index]);
+
+
   return (
     <div className="flex min-h-svh flex-col bg-background animate-fade-in">
       <header className="container mx-auto h-16 flex items-center justify-between px-4 md:px-6">
@@ -25,9 +64,10 @@ export default function LandingPage() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center space-y-4 text-center">
               <div className="space-y-2">
-                <h1 className="flex flex-col items-center font-bold tracking-tighter font-headline">
+                 <h1 className="flex flex-col items-center font-bold tracking-tighter font-headline min-h-[120px] sm:min-h-[150px] md:min-h-[180px]">
                   <span className="text-3xl sm:text-4xl md:text-5xl whitespace-nowrap">
-                    Participe da Conversa no
+                    {currentPhrase}
+                    <span className="opacity-50 animate-pulse">|</span>
                   </span>
                   <span className="animated-zispr text-6xl sm:text-7xl md:text-8xl">
                     Zispr
@@ -64,5 +104,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    
