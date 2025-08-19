@@ -68,7 +68,8 @@ export default function EditProfilePage() {
             if (currentUser) {
                 setUser(currentUser);
                 try {
-                    const userDoc = await getDoc(db, 'users', currentUser.uid));
+                    const userDocRef = doc(db, 'users', currentUser.uid);
+                    const userDoc = await getDoc(userDocRef);
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
                         const initialData = {
@@ -316,4 +317,3 @@ export default function EditProfilePage() {
   );
 }
 
-    
