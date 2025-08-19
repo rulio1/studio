@@ -126,41 +126,27 @@ export default function EditProfilePage() {
         try {
             const firestoreUpdateData: any = {
                 displayName: profileData.displayName,
-                handle: profileData.handle,
+                handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
+                searchableDisplayName: profileData.displayName.toLowerCase(),
+                searchableHandle: profileData.handle.replace('@', '').toLowerCase(),
                 bio: profileData.bio,
                 location: profileData.location,
             };
-    
-            const authUpdateData: { displayName?: string; photoURL?: string } = {};
-    
-            if (user.displayName !== profileData.displayName) {
-                authUpdateData.displayName = profileData.displayName;
+
+            // Use new image if available, otherwise keep the old one
+            if (newAvatarDataUri) {
+                firestoreUpdateData.avatar = newAvatarDataUri;
+            }
+            if (newBannerDataUri) {
+                firestoreUpdateData.banner = newBannerDataUri;
             }
     
-            // Only upload if a new avatar data URI exists (is not null and starts with 'data:image')
-            if (newAvatarDataUri && newAvatarDataUri.startsWith('data:image')) {
-                const avatarRef = storageRef(storage, `avatars/${user.uid}/${uuidv4()}`);
-                const snapshot = await uploadString(avatarRef, newAvatarDataUri, 'data_url');
-                const downloadURL = await getDownloadURL(snapshot.ref);
-                firestoreUpdateData.avatar = downloadURL;
-                authUpdateData.photoURL = downloadURL;
-            }
-    
-            // Only upload if a new banner data URI exists (is not null and starts with 'data:image')
-            if (newBannerDataUri && newBannerDataUri.startsWith('data:image')) {
-                const bannerRef = storageRef(storage, `banners/${user.uid}/${uuidv4()}`);
-                const snapshot = await uploadString(bannerRef, newBannerDataUri, 'data_url');
-                const downloadURL = await getDownloadURL(snapshot.ref);
-                firestoreUpdateData.banner = downloadURL;
-            }
-    
-            // Update Auth profile only if there are changes
-            if (Object.keys(authUpdateData).length > 0) {
-                await updateProfile(user, authUpdateData);
-            }
-    
-            // Update Firestore document
             await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
+            
+            // Also update the displayName in Firebase Auth if it has changed
+            if (user.displayName !== profileData.displayName) {
+                await updateProfile(user, { displayName: profileData.displayName });
+            }
     
             toast({
                 title: 'Perfil Salvo!',
@@ -308,7 +294,5 @@ export default function EditProfilePage() {
     )}
     </>
   );
-
-    
 
     
