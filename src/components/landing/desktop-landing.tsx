@@ -4,8 +4,45 @@
 import { Bird } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
+
+const phrases = [
+  'Participe da Conversa',
+  'Conecte-se com o Mundo',
+  'Descubra o que Acontece',
+  'Compartilhe suas Ideias',
+];
 
 export default function DesktopLanding() {
+    const [index, setIndex] = useState(0);
+    const [subIndex, setSubIndex] = useState(0);
+    const [reverse, setReverse] = useState(false);
+    const [currentPhrase, setCurrentPhrase] = useState('');
+
+    useEffect(() => {
+        if (subIndex === phrases[index].length + 1 && !reverse) {
+            setTimeout(() => setReverse(true), 1000); // Pause before deleting
+            return;
+        }
+
+        if (subIndex === 0 && reverse) {
+            setReverse(false);
+            setIndex((prevIndex) => (prevIndex + 1) % phrases.length);
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            setSubIndex((prevSubIndex) => prevSubIndex + (reverse ? -1 : 1));
+        }, reverse ? 75 : 150); // Faster deleting
+
+        return () => clearTimeout(timeout);
+    }, [subIndex, index, reverse]);
+
+    useEffect(() => {
+        setCurrentPhrase(phrases[index].substring(0, subIndex));
+    }, [subIndex, index]);
+
+
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground animate-fade-in">
       <main className="flex flex-1">
@@ -14,8 +51,9 @@ export default function DesktopLanding() {
         </div>
         <div className="flex flex-1 flex-col justify-center px-16">
           <Bird className="h-12 w-12 text-primary mb-8" />
-          <h1 className="text-6xl font-extrabold tracking-tighter font-headline mb-4">
-            Participe da Conversa
+          <h1 className="text-6xl font-extrabold tracking-tighter font-headline mb-4 min-h-[80px]">
+            {currentPhrase}
+            <span className="opacity-50 animate-pulse">|</span>
           </h1>
           <h2 className="text-3xl font-bold mb-8">
             Inscreva-se no Zispr hoje mesmo.
