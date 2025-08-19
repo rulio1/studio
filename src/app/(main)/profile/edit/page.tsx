@@ -126,9 +126,7 @@ export default function EditProfilePage() {
         try {
             const firestoreUpdateData: any = {
                 displayName: profileData.displayName,
-                searchableDisplayName: profileData.displayName.toLowerCase(),
                 handle: profileData.handle,
-                searchableHandle: profileData.handle.replace('@','').toLowerCase(),
                 bio: profileData.bio,
                 location: profileData.location,
             };
@@ -310,5 +308,7 @@ export default function EditProfilePage() {
     )}
     </>
   );
+
+    
 
     
