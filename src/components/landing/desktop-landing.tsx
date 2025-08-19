@@ -51,12 +51,12 @@ export default function DesktopLanding() {
         </div>
         <div className="flex flex-1 flex-col justify-center px-16">
           <Bird className="h-12 w-12 text-primary mb-8" />
-          <h1 className="text-5xl font-extrabold tracking-tighter font-headline mb-4 whitespace-nowrap">
+          <h1 className="text-5xl font-extrabold tracking-tighter font-headline whitespace-nowrap">
             {currentPhrase}
             <span className="opacity-50 animate-pulse">|</span>
           </h1>
           <h2 className="text-3xl font-bold mb-8">
-            Inscreva-se no Zispr hoje mesmo.
+            Inscreva-se no <span className="animated-zispr">Zispr</span> hoje mesmo.
           </h2>
 
           <div className="w-full max-w-sm space-y-4">
