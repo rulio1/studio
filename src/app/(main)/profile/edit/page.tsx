@@ -121,6 +121,7 @@ export default function EditProfilePage() {
         try {
             const batch = writeBatch(db);
 
+            // Prepare the new data structure for related documents
             const updatedAuthorInfo = {
                 author: updatedData.displayName,
                 handle: updatedData.handle,
@@ -128,18 +129,21 @@ export default function EditProfilePage() {
                 isVerified: updatedData.isVerified,
             };
 
+            // Update user's own posts
             const postsQuery = query(collection(db, "posts"), where("authorId", "==", userId));
             const postsSnapshot = await getDocs(postsQuery);
             postsSnapshot.forEach(postDoc => {
                 batch.update(postDoc.ref, updatedAuthorInfo);
             });
 
+            // Update user's own comments
             const commentsQuery = query(collection(db, "comments"), where("authorId", "==", userId));
             const commentsSnapshot = await getDocs(commentsQuery);
             commentsSnapshot.forEach(commentDoc => {
                 batch.update(commentDoc.ref, updatedAuthorInfo);
             });
             
+            // Update notifications sent by the user
             const fromUser = {
                 name: updatedData.displayName,
                 handle: updatedData.handle,
@@ -157,7 +161,7 @@ export default function EditProfilePage() {
             console.log("Atualização em massa em segundo plano concluída com sucesso.");
         } catch (error) {
             console.error("Erro na atualização em massa em segundo plano: ", error);
-            // Não notificar o usuário, pois a operação principal foi bem-sucedida.
+            // This error is not shown to the user to avoid confusion.
         }
     };
     
@@ -170,7 +174,6 @@ export default function EditProfilePage() {
             let avatarUrl = profileData.avatar;
             let bannerUrl = profileData.banner;
     
-            // Apenas faz upload se um novo arquivo foi selecionado (é um data URI)
             if (newAvatarDataUri?.startsWith('data:image')) {
                 const avatarStorageRef = storageRef(storage, `avatars/${user.uid}/${uuidv4()}`);
                 const snapshot = await uploadString(avatarStorageRef, newAvatarDataUri, 'data_url');
@@ -190,13 +193,11 @@ export default function EditProfilePage() {
                 location: profileData.location,
                 avatar: avatarUrl,
                 banner: bannerUrl,
-                isVerified: profileData.isVerified,
+                isVerified: profileData.isVerified || false,
             };
     
-            // Atualiza o documento principal do usuário
             await updateDoc(userRef, firestoreUpdateData);
     
-            // Atualiza o perfil de autenticação do Firebase
             if (user.displayName !== firestoreUpdateData.displayName || user.photoURL !== avatarUrl) {
                 await updateProfile(user, {
                     displayName: firestoreUpdateData.displayName,
@@ -210,7 +211,6 @@ export default function EditProfilePage() {
             });
             router.push(`/profile/${user.uid}`);
             
-            // Inicia a atualização em massa em segundo plano sem esperar pela conclusão
             runUpdateBatchInBackground(user.uid, firestoreUpdateData);
     
         } catch (error: any) {
