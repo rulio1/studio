@@ -125,7 +125,7 @@ export default function EditProfilePage() {
     const handleSave = async () => {
         if (!user) return;
         setIsSaving(true);
-        
+    
         try {
             const firestoreUpdateData: any = {
                 displayName: profileData.displayName,
@@ -135,13 +135,14 @@ export default function EditProfilePage() {
                 bio: profileData.bio,
                 location: profileData.location,
             };
-            
-            const authUpdateData: { displayName?: string, photoURL?: string } = {};
-
+    
+            const authUpdateData: { displayName?: string; photoURL?: string } = {};
+    
             if (user.displayName !== profileData.displayName) {
                 authUpdateData.displayName = profileData.displayName;
             }
-            
+    
+            // Only upload if a new avatar data URI exists (is not null and starts with 'data:image')
             if (newAvatarDataUri) {
                 const avatarRef = storageRef(storage, `avatars/${user.uid}/${uuidv4()}`);
                 const snapshot = await uploadString(avatarRef, newAvatarDataUri, 'data_url');
@@ -149,38 +150,35 @@ export default function EditProfilePage() {
                 firestoreUpdateData.avatar = downloadURL;
                 authUpdateData.photoURL = downloadURL;
             }
-
+    
+            // Only upload if a new banner data URI exists (is not null and starts with 'data:image')
             if (newBannerDataUri) {
                 const bannerRef = storageRef(storage, `banners/${user.uid}/${uuidv4()}`);
                 const snapshot = await uploadString(bannerRef, newBannerDataUri, 'data_url');
                 const downloadURL = await getDownloadURL(snapshot.ref);
                 firestoreUpdateData.banner = downloadURL;
             }
-
+    
             // Update Auth profile only if there are changes
             if (Object.keys(authUpdateData).length > 0) {
                 await updateProfile(user, authUpdateData);
             }
-            
+    
             // Update Firestore document
             await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
-            
+    
             toast({
-                title: "Perfil Salvo!",
-                description: "Suas alterações foram salvas com sucesso.",
+                title: 'Perfil Salvo!',
+                description: 'Suas alterações foram salvas com sucesso.',
             });
             router.push(`/profile/${user.uid}`);
-            
+    
         } catch (error: any) {
-            console.error("Erro ao salvar perfil: ", error);
-            let description = "Não foi possível salvar as alterações do seu perfil.";
-            if(error.code === 'auth/invalid-profile-attribute'){
-                description = "URL da foto é muito longa ou inválida. Tente novamente.";
-            }
+            console.error('Erro ao salvar perfil: ', error);
             toast({
-                title: "Falha ao Salvar",
-                description,
-                variant: 'destructive'
+                title: 'Falha ao Salvar',
+                description: 'Não foi possível salvar as alterações do seu perfil.',
+                variant: 'destructive',
             });
         } finally {
             setIsSaving(false);
@@ -316,4 +314,3 @@ export default function EditProfilePage() {
     </>
   );
 }
-
