@@ -196,24 +196,28 @@ export default function CommunityDetailPage() {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                const userDocRef = doc(db, 'users', currentUser.uid);
-                const unsubUser = onSnapshot(userDocRef, (userDoc) => {
-                    if (userDoc.exists()) {
-                        const userData = { uid: userDoc.id, ...userDoc.data() } as ZisprUser;
-                        setZisprUser(userData);
-                        setIsMember(userData.communities?.includes(communityId) ?? false);
-                    }
-                });
-                return () => unsubUser();
             } else {
                 router.push('/login');
             }
         });
         return () => unsubscribe();
-    }, [router, communityId]);
+    }, [router]);
+    
+    useEffect(() => {
+        if (!user) return;
+        const userDocRef = doc(db, 'users', user.uid);
+        const unsubUser = onSnapshot(userDocRef, (userDoc) => {
+            if (userDoc.exists()) {
+                const userData = { uid: userDoc.id, ...userDoc.data() } as ZisprUser;
+                setZisprUser(userData);
+                setIsMember(userData.communities?.includes(communityId) ?? false);
+            }
+        });
+        return () => unsubUser();
+    }, [user, communityId]);
 
     const fetchCommunityData = useCallback(() => {
-        if (!communityId) return () => {};
+        if (!communityId || !auth.currentUser) return () => {};
         setIsLoading(true);
         const communityDocRef = doc(db, 'communities', communityId);
         const unsubscribe = onSnapshot(communityDocRef, (doc) => {
@@ -233,6 +237,7 @@ export default function CommunityDetailPage() {
         setIsLoadingPosts(true);
         const q = query(collection(db, "posts"), where("communityId", "==", communityId));
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (!auth.currentUser) return; // Add guard
             const postsData = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
@@ -246,18 +251,22 @@ export default function CommunityDetailPage() {
             postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setPosts(postsData);
             setIsLoadingPosts(false);
+        }, (error) => {
+            console.error("Error fetching community posts:", error);
+            setIsLoadingPosts(false);
         });
         return unsubscribe;
     }, [communityId]);
     
     useEffect(() => {
+        if (!user) return;
         const unsubCommunity = fetchCommunityData();
         const unsubPosts = fetchCommunityPosts();
         return () => {
              unsubCommunity();
              unsubPosts();
         };
-    }, [fetchCommunityData, fetchCommunityPosts]);
+    }, [user, fetchCommunityData, fetchCommunityPosts]);
 
     const handleJoinLeaveCommunity = async () => {
         if (!user) return;
@@ -633,3 +642,5 @@ export default function CommunityDetailPage() {
         </div>
     );
 }
+
+    

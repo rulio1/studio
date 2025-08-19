@@ -153,7 +153,11 @@ export default function MessagesPage() {
     }, [router]);
     
     useEffect(() => {
-        if (!user) return;
+        if (!user) {
+            setConversations([]);
+            setIsLoading(false);
+            return;
+        }
         
         setIsLoading(true);
         const q = query(
@@ -162,6 +166,12 @@ export default function MessagesPage() {
         );
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
+            if (!auth.currentUser) {
+                setConversations([]);
+                setIsLoading(false);
+                return;
+            };
+
             if (snapshot.empty) {
                 setConversations([]);
                 setIsLoading(false);
@@ -203,6 +213,9 @@ export default function MessagesPage() {
             });
 
             setConversations(resolvedConvs);
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching conversations:", error);
             setIsLoading(false);
         });
         
@@ -310,3 +323,5 @@ export default function MessagesPage() {
     </>
   );
 }
+
+    

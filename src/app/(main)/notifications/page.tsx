@@ -119,6 +119,7 @@ const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notif
 
 
 export default function NotificationsPage() {
+    const router = useRouter();
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -129,13 +130,11 @@ export default function NotificationsPage() {
             if (currentUser) {
                 setUser(currentUser);
             } else {
-                setUser(null);
-                setZisprUser(null);
-                setIsLoading(false);
+                router.push('/login');
             }
         });
         return () => unsubscribeAuth();
-    }, []);
+    }, [router]);
     
     useEffect(() => {
         if(!user) return;
@@ -148,7 +147,7 @@ export default function NotificationsPage() {
         return () => unsubUser();
     }, [user])
 
-    const markNotificationsAsRead = async (userId: string) => {
+    const markNotificationsAsRead = useCallback(async (userId: string) => {
         const unreadQuery = query(
             collection(db, "notifications"),
             where("toUserId", "==", userId),
@@ -162,10 +161,14 @@ export default function NotificationsPage() {
             batch.update(doc.ref, { read: true });
         });
         await batch.commit();
-    };
+    }, []);
 
     useEffect(() => {
-        if (!user) return () => {};
+        if (!user) {
+            setNotifications([]);
+            setIsLoading(false);
+            return () => {};
+        }
         
         markNotificationsAsRead(user.uid);
 
@@ -176,6 +179,7 @@ export default function NotificationsPage() {
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (!auth.currentUser) return; // Add guard
             const notifs = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
@@ -194,7 +198,7 @@ export default function NotificationsPage() {
         });
 
         return () => unsubscribe();
-    }, [user]);
+    }, [user, markNotificationsAsRead]);
 
     const handleFollowBack = useCallback(async (targetUserId: string) => {
         if (!user) return;
@@ -286,3 +290,5 @@ export default function NotificationsPage() {
     </Tabs>
   );
 }
+
+    

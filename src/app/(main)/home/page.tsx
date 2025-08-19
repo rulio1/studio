@@ -109,7 +109,7 @@ export default function HomePage() {
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editedContent, setEditedContent] = useState("");
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(isUpdating);
   const { toast } = useToast();
   const router = useRouter();
   
@@ -132,7 +132,10 @@ export default function HomePage() {
          if(doc.exists()){
             setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
         } else {
-            router.push('/login');
+            // This might happen briefly on logout, prevent pushing to login again if user is already null
+            if (auth.currentUser) {
+              router.push('/login');
+            }
         }
     });
     return () => unsubscribeUser();
@@ -145,13 +148,17 @@ export default function HomePage() {
 
     const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
+        if (!auth.currentUser) return; // Add guard
         const postsData = snapshot.docs.map(doc => ({ 
             id: doc.id, 
             ...doc.data(),
-            isLiked: doc.data().likes.includes(user.uid || ''),
-            isRetweeted: doc.data().retweets.includes(user.uid || ''),
+            isLiked: doc.data().likes.includes(auth.currentUser.uid || ''),
+            isRetweeted: doc.data().retweets.includes(auth.currentUser.uid || ''),
         } as Post));
         setAllPosts(postsData);
+        setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching all posts:", error);
         setIsLoading(false);
     });
 
@@ -179,13 +186,17 @@ export default function HomePage() {
 
     const q = query(collection(db, "posts"), where("authorId", "in", feedUserIds), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
+        if (!auth.currentUser) return; // Add guard
         const postsData = snapshot.docs.map(doc => ({ 
             id: doc.id, 
             ...doc.data(),
-            isLiked: doc.data().likes.includes(user.uid || ''),
-            isRetweeted: doc.data().retweets.includes(user.uid || ''),
+            isLiked: doc.data().likes.includes(auth.currentUser.uid || ''),
+            isRetweeted: doc.data().retweets.includes(auth.currentUser.uid || ''),
         } as Post));
         setFollowingPosts(postsData);
+        setIsLoadingFollowing(false);
+    }, (error) => {
+        console.error("Error fetching following posts:", error);
         setIsLoadingFollowing(false);
     });
 
@@ -193,11 +204,11 @@ export default function HomePage() {
 }, [zisprUser, user]);
 
   useEffect(() => {
-    if (activeTab === 'following' && zisprUser) {
+    if (activeTab === 'following' && zisprUser && user) {
         const unsubscribe = fetchFollowingPosts();
         return () => unsubscribe();
     }
-  }, [activeTab, fetchFollowingPosts, zisprUser]);
+  }, [activeTab, fetchFollowingPosts, zisprUser, user]);
 
     const handlePostAction = async (postId: string, action: 'like' | 'retweet', authorId: string) => {
         if (!user || !zisprUser) return;
@@ -855,3 +866,5 @@ export default function HomePage() {
     </>
   );
 }
+
+    

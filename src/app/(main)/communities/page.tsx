@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -89,7 +90,7 @@ export default function CommunitiesPage() {
 
 
     const fetchCommunities = useCallback(async () => {
-        if (!zisprUser) return;
+        if (!zisprUser || !auth.currentUser) return;
         setIsLoading(true);
         try {
             const featuredQuery = query(collection(db, 'communities'), limit(2));
@@ -231,3 +232,5 @@ export default function CommunitiesPage() {
         </>
     );
 }
+
+    
