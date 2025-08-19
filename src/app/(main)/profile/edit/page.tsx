@@ -121,7 +121,7 @@ export default function EditProfilePage() {
         setIsSaving(true);
         
         try {
-            const updateData: any = {
+            const firestoreUpdateData: any = {
                 displayName: profileData.displayName,
                 searchableDisplayName: profileData.displayName.toLowerCase(),
                 handle: profileData.handle,
@@ -129,19 +129,28 @@ export default function EditProfilePage() {
                 bio: profileData.bio,
                 location: profileData.location,
             };
+            
+            const authUpdateData: { displayName?: string, photoURL?: string } = {};
+
+            if (user.displayName !== profileData.displayName) {
+                authUpdateData.displayName = profileData.displayName;
+            }
 
             if (newAvatarDataUri) {
-                updateData.avatar = newAvatarDataUri;
+                firestoreUpdateData.avatar = newAvatarDataUri;
+                authUpdateData.photoURL = newAvatarDataUri;
             }
             if (newBannerDataUri) {
-                updateData.banner = newBannerDataUri;
+                firestoreUpdateData.banner = newBannerDataUri;
             }
 
-            if(user.displayName !== profileData.displayName) {
-                await updateProfile(user, { displayName: profileData.displayName });
+            // Update Firebase Auth profile if there are changes
+            if (Object.keys(authUpdateData).length > 0) {
+                await updateProfile(user, authUpdateData);
             }
-
-            await updateDoc(doc(db, 'users', user.uid), updateData);
+            
+            // Update Firestore document
+            await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
             
             toast({
                 title: "Perfil Salvo!",
