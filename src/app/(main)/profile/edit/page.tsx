@@ -11,7 +11,7 @@ import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, updateProfile } from 'firebase/auth';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
@@ -115,52 +115,6 @@ export default function EditProfilePage() {
         setProfileData({ ...profileData, [e.target.id]: e.target.value });
     };
     
-    const runUpdateBatchInBackground = async (userId: string, updatedData: any) => {
-        try {
-            const batch = writeBatch(db);
-            const updatedAuthorInfo = {
-                author: updatedData.displayName,
-                handle: updatedData.handle,
-                avatar: updatedData.avatar,
-                isVerified: updatedData.isVerified,
-            };
-    
-            // Update user's own posts
-            const postsQuery = query(collection(db, "posts"), where("authorId", "==", userId));
-            const postsSnapshot = await getDocs(postsQuery);
-            postsSnapshot.forEach(postDoc => {
-                batch.update(postDoc.ref, updatedAuthorInfo);
-            });
-    
-            // Update user's own comments
-            const commentsQuery = query(collection(db, "comments"), where("authorId", "==", userId));
-            const commentsSnapshot = await getDocs(commentsQuery);
-            commentsSnapshot.forEach(commentDoc => {
-                batch.update(commentDoc.ref, updatedAuthorInfo);
-            });
-    
-            // Update notifications sent by the user
-            const fromUser = {
-                name: updatedData.displayName,
-                handle: updatedData.handle,
-                avatar: updatedData.avatar,
-                isVerified: updatedData.isVerified,
-            };
-    
-            const notificationsQuery = query(collection(db, "notifications"), where("fromUserId", "==", userId));
-            const notificationsSnapshot = await getDocs(notificationsQuery);
-            notificationsSnapshot.forEach(notificationDoc => {
-                batch.update(notificationDoc.ref, { fromUser });
-            });
-    
-            await batch.commit();
-            console.log("Atualização em massa em segundo plano concluída com sucesso.");
-        } catch (error) {
-            console.error("Erro na atualização em massa em segundo plano: ", error);
-            // This error is logged but not shown to the user, as the main profile save succeeded.
-        }
-    };
-    
     const handleSave = async () => {
         if (!user) return;
         setIsSaving(true);
@@ -178,10 +132,8 @@ export default function EditProfilePage() {
                 banner: newBannerDataUri || profileData.banner,
             };
             
-            // Main profile update
             await updateDoc(userRef, firestoreUpdateData);
     
-            // Auth profile update
             if (user.displayName !== firestoreUpdateData.displayName || user.photoURL !== firestoreUpdateData.avatar) {
                 await updateProfile(user, {
                     displayName: firestoreUpdateData.displayName,
@@ -194,10 +146,6 @@ export default function EditProfilePage() {
                 description: 'Suas alterações foram salvas com sucesso.',
             });
             
-            // Run batch update in background without awaiting it.
-            // This prevents UI blocking and handles errors silently in the console.
-            runUpdateBatchInBackground(user.uid, firestoreUpdateData);
-
             router.push(`/profile/${user.uid}`);
     
         } catch (error: any) {
