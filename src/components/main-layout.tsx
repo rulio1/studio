@@ -15,7 +15,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         setIsClient(true);
     }, []);
 
-    const noLayoutPages = ['/login', '/register', '/'];
+    const noLayoutPages = ['/login', '/register', '/', '/privacy'];
     if (noLayoutPages.includes(pathname)) {
         return <>{children}</>;
     }
