@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -166,7 +165,7 @@ export default function NotificationsPage() {
     };
 
     useEffect(() => {
-        if (!user) return;
+        if (!user) return () => {};
         
         markNotificationsAsRead(user.uid);
 
@@ -287,5 +286,3 @@ export default function NotificationsPage() {
     </Tabs>
   );
 }
-
-    

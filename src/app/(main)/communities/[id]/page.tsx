@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -213,7 +212,8 @@ export default function CommunityDetailPage() {
         return () => unsubscribe();
     }, [router, communityId]);
 
-    const fetchCommunityData = useCallback(async () => {
+    const fetchCommunityData = useCallback(() => {
+        if (!communityId) return () => {};
         setIsLoading(true);
         const communityDocRef = doc(db, 'communities', communityId);
         const unsubscribe = onSnapshot(communityDocRef, (doc) => {
@@ -228,7 +228,8 @@ export default function CommunityDetailPage() {
         return unsubscribe;
     }, [communityId, router, toast]);
 
-    const fetchCommunityPosts = useCallback(async () => {
+    const fetchCommunityPosts = useCallback(() => {
+        if (!communityId || !auth.currentUser) return () => {};
         setIsLoadingPosts(true);
         const q = query(collection(db, "posts"), where("communityId", "==", communityId));
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -253,8 +254,8 @@ export default function CommunityDetailPage() {
         const unsubCommunity = fetchCommunityData();
         const unsubPosts = fetchCommunityPosts();
         return () => {
-             unsubCommunity.then(u => u());
-             unsubPosts.then(u => u());
+             unsubCommunity();
+             unsubPosts();
         };
     }, [fetchCommunityData, fetchCommunityPosts]);
 

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -35,6 +34,7 @@ interface Conversation {
         senderId: string;
     };
     lastMessageReadBy?: string[];
+    unreadCounts?: Record<string, number>;
 }
 
 export default function ConversationPage() {
@@ -99,7 +99,7 @@ export default function ConversationPage() {
         
         // Reset unread count for the current user
         const unreadCountKey = `unreadCounts.${user.uid}`;
-        if (conversation.hasOwnProperty('unreadCounts') && conversation.unreadCounts[user.uid] > 0) {
+        if (conversation.unreadCounts && conversation.unreadCounts.hasOwnProperty(user.uid) && conversation.unreadCounts[user.uid] > 0) {
             updateDoc(conversationRef, { [unreadCountKey]: 0 });
         }
 
@@ -107,7 +107,7 @@ export default function ConversationPage() {
 
 
     useEffect(() => {
-        if (!conversationId) return;
+        if (!conversationId) return () => {};
 
         const q = query(collection(db, 'conversations', conversationId, 'messages'), orderBy('createdAt', 'asc'));
         const unsubscribeMessages = onSnapshot(q, (snapshot) => {

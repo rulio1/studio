@@ -48,8 +48,17 @@ export default function BottomNavBar() {
     }, []);
 
     useEffect(() => {
-        if (!user) return;
+        if (!user) {
+            // Reset counts and user info on logout
+            setChirpUser(null);
+            setNotificationCount(0);
+            setMessageCount(0);
+            setIsLoading(false);
+            return;
+        }
         
+        setIsLoading(true);
+
         // User listener
         const userDocRef = doc(db, 'users', user.uid);
         const unsubscribeUser = onSnapshot(userDocRef, (doc) => {

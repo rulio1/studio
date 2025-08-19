@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -136,8 +135,10 @@ export default function SavedPage() {
 
 
     useEffect(() => {
+        if (!user || !chirpUser) return;
+            
         const fetchSavedPosts = async () => {
-            if (!user || !chirpUser || !chirpUser.savedPosts || chirpUser.savedPosts.length === 0) {
+            if (!chirpUser.savedPosts || chirpUser.savedPosts.length === 0) {
                 setSavedPosts([]);
                 setIsLoading(false);
                 return;
@@ -173,9 +174,7 @@ export default function SavedPage() {
             }
         };
 
-        if (user && chirpUser) {
-            fetchSavedPosts();
-        }
+        fetchSavedPosts();
     }, [user, chirpUser]);
 
 

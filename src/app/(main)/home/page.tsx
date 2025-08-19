@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -141,7 +140,7 @@ export default function HomePage() {
 
 
   const fetchAllPosts = useCallback(() => {
-    if (!user) return;
+    if (!user) return () => {};
     setIsLoading(true);
 
     const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
@@ -162,7 +161,7 @@ export default function HomePage() {
   useEffect(() => {
     if (user) {
         const unsubscribe = fetchAllPosts();
-        return () => unsubscribe && unsubscribe();
+        return () => unsubscribe();
     }
   }, [user, fetchAllPosts]);
 
@@ -170,7 +169,7 @@ export default function HomePage() {
     if (!zisprUser || !user || zisprUser.following.length === 0) {
         setFollowingPosts([]);
         setIsLoadingFollowing(false);
-        return;
+        return () => {};
     }
     
     setIsLoadingFollowing(true);
@@ -196,7 +195,7 @@ export default function HomePage() {
   useEffect(() => {
     if (activeTab === 'following' && zisprUser) {
         const unsubscribe = fetchFollowingPosts();
-        return () => unsubscribe && unsubscribe();
+        return () => unsubscribe();
     }
   }, [activeTab, fetchFollowingPosts, zisprUser]);
 

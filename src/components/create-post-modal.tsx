@@ -65,22 +65,24 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
 
      useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            if (currentUser) {
-                setUser(currentUser);
-                const userDocRef = doc(db, "users", currentUser.uid);
-                const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
-                    if (doc.exists()) {
-                        setZisprUser(doc.data() as ZisprUser);
-                    }
-                });
-                return () => unsubscribeUser();
-            } else {
-                setUser(null);
+            setUser(currentUser);
+            if (!currentUser) {
                 setZisprUser(null);
             }
         });
         return () => unsubscribe();
     }, []);
+
+    useEffect(() => {
+        if (!user) return;
+        const userDocRef = doc(db, "users", user.uid);
+        const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
+            if (doc.exists()) {
+                setZisprUser(doc.data() as ZisprUser);
+            }
+        });
+        return () => unsubscribeUser();
+    }, [user]);
 
     useEffect(() => {
         if (open && initialMode === 'image') {
