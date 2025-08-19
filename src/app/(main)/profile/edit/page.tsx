@@ -143,7 +143,7 @@ export default function EditProfilePage() {
             }
     
             // Only upload if a new avatar data URI exists (is not null and starts with 'data:image')
-            if (newAvatarDataUri) {
+            if (newAvatarDataUri && newAvatarDataUri.startsWith('data:image')) {
                 const avatarRef = storageRef(storage, `avatars/${user.uid}/${uuidv4()}`);
                 const snapshot = await uploadString(avatarRef, newAvatarDataUri, 'data_url');
                 const downloadURL = await getDownloadURL(snapshot.ref);
@@ -152,7 +152,7 @@ export default function EditProfilePage() {
             }
     
             // Only upload if a new banner data URI exists (is not null and starts with 'data:image')
-            if (newBannerDataUri) {
+            if (newBannerDataUri && newBannerDataUri.startsWith('data:image')) {
                 const bannerRef = storageRef(storage, `banners/${user.uid}/${uuidv4()}`);
                 const snapshot = await uploadString(bannerRef, newBannerDataUri, 'data_url');
                 const downloadURL = await getDownloadURL(snapshot.ref);
