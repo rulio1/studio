@@ -9,7 +9,7 @@ export default function PrivacyPolicyPage() {
     const router = useRouter();
 
     return (
-        <div className="bg-background text-foreground min-h-screen">
+        <div className="bg-background text-foreground min-h-svh">
              <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                 <div className="flex items-center gap-4 px-4 py-2">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
