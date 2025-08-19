@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 
 export default function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background animate-fade-in">
+    <div className="flex min-h-svh flex-col bg-background animate-fade-in">
       <header className="container mx-auto h-16 flex items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2">
           <Bird className="h-6 w-6 text-primary" />
