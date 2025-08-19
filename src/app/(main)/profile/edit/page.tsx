@@ -9,16 +9,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
-import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 import { fileToDataUri } from '@/lib/utils';
-import { v4 as uuidv4 } from 'uuid';
 
 
 interface UserProfileData {
@@ -116,33 +114,31 @@ export default function EditProfilePage() {
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setProfileData({ ...profileData, [e.target.id]: e.target.value });
     };
-
+    
     const runUpdateBatchInBackground = async (userId: string, updatedData: any) => {
         try {
             const batch = writeBatch(db);
-
-            // Prepare the new data structure for related documents
             const updatedAuthorInfo = {
                 author: updatedData.displayName,
                 handle: updatedData.handle,
                 avatar: updatedData.avatar,
                 isVerified: updatedData.isVerified,
             };
-
+    
             // Update user's own posts
             const postsQuery = query(collection(db, "posts"), where("authorId", "==", userId));
             const postsSnapshot = await getDocs(postsQuery);
             postsSnapshot.forEach(postDoc => {
                 batch.update(postDoc.ref, updatedAuthorInfo);
             });
-
+    
             // Update user's own comments
             const commentsQuery = query(collection(db, "comments"), where("authorId", "==", userId));
             const commentsSnapshot = await getDocs(commentsQuery);
             commentsSnapshot.forEach(commentDoc => {
                 batch.update(commentDoc.ref, updatedAuthorInfo);
             });
-            
+    
             // Update notifications sent by the user
             const fromUser = {
                 name: updatedData.displayName,
@@ -150,18 +146,17 @@ export default function EditProfilePage() {
                 avatar: updatedData.avatar,
                 isVerified: updatedData.isVerified,
             };
-
+    
             const notificationsQuery = query(collection(db, "notifications"), where("fromUserId", "==", userId));
             const notificationsSnapshot = await getDocs(notificationsQuery);
             notificationsSnapshot.forEach(notificationDoc => {
                 batch.update(notificationDoc.ref, { fromUser });
             });
-
+    
             await batch.commit();
             console.log("Atualização em massa em segundo plano concluída com sucesso.");
         } catch (error) {
             console.error("Erro na atualização em massa em segundo plano: ", error);
-            // This error is not shown to the user to avoid confusion.
         }
     };
     
@@ -171,37 +166,25 @@ export default function EditProfilePage() {
     
         try {
             const userRef = doc(db, 'users', user.uid);
-            let avatarUrl = profileData.avatar;
-            let bannerUrl = profileData.banner;
-    
-            if (newAvatarDataUri?.startsWith('data:image')) {
-                const avatarStorageRef = storageRef(storage, `avatars/${user.uid}/${uuidv4()}`);
-                const snapshot = await uploadString(avatarStorageRef, newAvatarDataUri, 'data_url');
-                avatarUrl = await getDownloadURL(snapshot.ref);
-            }
-    
-            if (newBannerDataUri?.startsWith('data:image')) {
-                const bannerStorageRef = storageRef(storage, `banners/${user.uid}/${uuidv4()}`);
-                const snapshot = await uploadString(bannerStorageRef, newBannerDataUri, 'data_url');
-                bannerUrl = await getDownloadURL(snapshot.ref);
-            }
-    
+            
             const firestoreUpdateData = {
-                displayName: profileData.displayName,
+                ...profileData,
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
-                bio: profileData.bio,
-                location: profileData.location,
-                avatar: avatarUrl,
-                banner: bannerUrl,
-                isVerified: profileData.isVerified || false,
             };
+    
+            if (newAvatarDataUri) {
+                firestoreUpdateData.avatar = newAvatarDataUri;
+            }
+            if (newBannerDataUri) {
+                firestoreUpdateData.banner = newBannerDataUri;
+            }
     
             await updateDoc(userRef, firestoreUpdateData);
     
-            if (user.displayName !== firestoreUpdateData.displayName || user.photoURL !== avatarUrl) {
+            if (user.displayName !== firestoreUpdateData.displayName || user.photoURL !== firestoreUpdateData.avatar) {
                 await updateProfile(user, {
                     displayName: firestoreUpdateData.displayName,
-                    photoURL: avatarUrl,
+                    photoURL: firestoreUpdateData.avatar,
                 });
             }
     
@@ -209,9 +192,11 @@ export default function EditProfilePage() {
                 title: 'Perfil Salvo!',
                 description: 'Suas alterações foram salvas com sucesso.',
             });
-            router.push(`/profile/${user.uid}`);
             
+            // Run mass update in background without waiting
             runUpdateBatchInBackground(user.uid, firestoreUpdateData);
+
+            router.push(`/profile/${user.uid}`);
     
         } catch (error: any) {
             console.error('Erro ao salvar perfil: ', error);
@@ -228,10 +213,10 @@ export default function EditProfilePage() {
     const handleCropComplete = (croppedImageUri: string) => {
         if (cropperData?.type === 'avatar') {
             setNewAvatarDataUri(croppedImageUri);
-            setProfileData(prev => ({...prev, avatar: croppedImageUri})); // Update preview
+            setProfileData(prev => ({...prev, avatar: croppedImageUri}));
         } else if (cropperData?.type === 'banner') {
             setNewBannerDataUri(croppedImageUri);
-             setProfileData(prev => ({...prev, banner: croppedImageUri})); // Update preview
+             setProfileData(prev => ({...prev, banner: croppedImageUri}));
         }
         setCropperData(null);
     };
