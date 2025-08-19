@@ -11,13 +11,11 @@ import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, updateProfile } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { getDownloadURL, ref as storageRef, uploadString } from 'firebase/storage';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
-import { v4 as uuidv4 } from 'uuid';
 
 interface UserProfileData {
     displayName: string;
@@ -26,6 +24,7 @@ interface UserProfileData {
     location: string;
     avatar: string;
     banner: string;
+    isVerified?: boolean;
 }
 
 function fileToDataUri(file: File): Promise<string> {
@@ -52,6 +51,7 @@ export default function EditProfilePage() {
         location: '',
         avatar: '',
         banner: '',
+        isVerified: false,
     });
     
     const [newAvatarDataUri, setNewAvatarDataUri] = useState<string | null>(null);
@@ -70,13 +70,14 @@ export default function EditProfilePage() {
                     const userDoc = await getDoc(userDocRef);
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
-                        const initialData = {
+                        const initialData: UserProfileData = {
                             displayName: userData.displayName || '',
                             handle: userData.handle || '',
                             bio: userData.bio || '',
                             location: userData.location || '',
                             avatar: userData.avatar || '',
                             banner: userData.banner || '',
+                            isVerified: userData.isVerified || false,
                         };
                         setProfileData(initialData);
                     }
@@ -127,8 +128,6 @@ export default function EditProfilePage() {
             const firestoreUpdateData: any = {
                 displayName: profileData.displayName,
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
-                searchableDisplayName: profileData.displayName.toLowerCase(),
-                searchableHandle: profileData.handle.replace('@', '').toLowerCase(),
                 bio: profileData.bio,
                 location: profileData.location,
             };
@@ -141,12 +140,42 @@ export default function EditProfilePage() {
                 firestoreUpdateData.banner = newBannerDataUri;
             }
     
-            await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
+            const userRef = doc(db, 'users', user.uid);
+            await updateDoc(userRef, firestoreUpdateData);
             
             // Also update the displayName in Firebase Auth if it has changed
             if (user.displayName !== profileData.displayName) {
                 await updateProfile(user, { displayName: profileData.displayName });
             }
+
+            // --- Update user's data across all posts and comments ---
+            const batch = writeBatch(db);
+            const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
+            const commentsQuery = query(collection(db, "comments"), where("authorId", "==", user.uid));
+            
+            const [postsSnapshot, commentsSnapshot] = await Promise.all([
+                getDocs(postsQuery),
+                getDocs(commentsQuery)
+            ]);
+
+            const updatedAuthorData = {
+                author: firestoreUpdateData.displayName,
+                handle: firestoreUpdateData.handle,
+                avatar: firestoreUpdateData.avatar || profileData.avatar,
+                isVerified: profileData.isVerified,
+                avatarFallback: firestoreUpdateData.displayName[0],
+            };
+
+            postsSnapshot.forEach(postDoc => {
+                batch.update(postDoc.ref, updatedAuthorData);
+            });
+
+            commentsSnapshot.forEach(commentDoc => {
+                batch.update(commentDoc.ref, updatedAuthorData);
+            });
+
+            await batch.commit();
+            // --- End of update logic ---
     
             toast({
                 title: 'Perfil Salvo!',
