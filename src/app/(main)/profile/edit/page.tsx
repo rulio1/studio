@@ -141,14 +141,16 @@ export default function EditProfilePage() {
             if (user.displayName !== profileData.displayName) {
                 authUpdateData.displayName = profileData.displayName;
             }
-
+            
             if (newAvatarDataUri) {
                 firestoreUpdateData.avatar = newAvatarDataUri;
                 authUpdateData.photoURL = newAvatarDataUri;
             }
+
             if (newBannerDataUri) {
                 firestoreUpdateData.banner = newBannerDataUri;
             }
+
 
             // Update Firebase Auth profile if there are changes
             if (Object.keys(authUpdateData).length > 0) {
