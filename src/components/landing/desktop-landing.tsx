@@ -51,7 +51,7 @@ export default function DesktopLanding() {
                 <Bird className="h-48 w-48 text-primary-foreground fill-white" />
             </div>
         </div>
-        <div className="flex flex-1 flex-col justify-center px-16">
+        <div className="flex flex-1 flex-col items-center justify-center px-16">
           <div className="w-full max-w-sm">
               <div className="w-full flex justify-center mb-8">
                 <Bird className="h-12 w-12 text-primary" />
@@ -89,28 +89,20 @@ export default function DesktopLanding() {
           </div>
         </div>
       </main>
-       <footer className="w-full py-4 px-8">
-         <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-            <Link href="/privacy" className="hover:underline">Sobre</Link>
-            <Link href="/privacy" className="hover:underline">Baixe o aplicativo Zispr</Link>
-            <Link href="/privacy" className="hover:underline">Central de Ajuda</Link>
-            <Link href="/privacy" className="hover:underline">Termos de Serviço</Link>
-            <Link href="/privacy" className="hover:underline">Política de Privacidade</Link>
-            <Link href="/privacy" className="hover:underline">Política de Cookies</Link>
-            <Link href="/privacy" className="hover:underline">Acessibilidade</Link>
-            <Link href="/privacy" className="hover:underline">Informações de Anúncios</Link>
-            <Link href="/privacy" className="hover:underline">Blog</Link>
-            <Link href="/privacy" className="hover:underline">Status</Link>
-            <Link href="/privacy" className="hover:underline">Carreiras</Link>
-            <Link href="/privacy" className="hover:underline">Recursos da Marca</Link>
-            <Link href="/privacy" className="hover:underline">Publicidade</Link>
-            <Link href="/privacy" className="hover:underline">Marketing</Link>
-            <Link href="/privacy" className="hover:underline">Zispr para Empresas</Link>
-            <Link href="/privacy" className="hover:underline">Desenvolvedores</Link>
-            <Link href="/privacy" className="hover:underline">Diretório</Link>
-            <Link href="/privacy" className="hover:underline">Configurações</Link>
-            <span className="ml-4">&copy; 2025 Zispr, Inc.</span>
-        </nav>
+       <footer className="w-full py-4 px-8 text-center">
+         <p className="text-xs text-muted-foreground">
+            &copy; 2025 Zispr Inc. Todos os direitos reservados.
+            <br />
+            Desenvolvido por{' '}
+            <a 
+                href="https://www.instagram.com/ru.li.o/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="underline hover:text-primary"
+            >
+                Rulio
+            </a>.
+        </p>
       </footer>
     </div>
   );
