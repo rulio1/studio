@@ -152,10 +152,13 @@ export default function EditProfilePage() {
             const batch = writeBatch(db);
             const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
             const commentsQuery = query(collection(db, "comments"), where("authorId", "==", user.uid));
+            const notificationsQuery = query(collection(db, "notifications"), where("fromUserId", "==", user.uid));
+
             
-            const [postsSnapshot, commentsSnapshot] = await Promise.all([
+            const [postsSnapshot, commentsSnapshot, notificationsSnapshot] = await Promise.all([
                 getDocs(postsQuery),
-                getDocs(commentsQuery)
+                getDocs(commentsQuery),
+                getDocs(notificationsQuery)
             ]);
 
             const updatedAuthorData: any = {
@@ -163,6 +166,13 @@ export default function EditProfilePage() {
                 handle: firestoreUpdateData.handle,
                 isVerified: profileData.isVerified,
                 avatarFallback: firestoreUpdateData.displayName[0],
+            };
+
+            const updatedFromUserData = {
+                name: firestoreUpdateData.displayName,
+                handle: firestoreUpdateData.handle,
+                avatar: newAvatarDataUri || profileData.avatar,
+                isVerified: profileData.isVerified,
             };
 
             if (firestoreUpdateData.avatar) {
@@ -176,6 +186,11 @@ export default function EditProfilePage() {
             commentsSnapshot.forEach(commentDoc => {
                 batch.update(commentDoc.ref, updatedAuthorData);
             });
+
+            notificationsSnapshot.forEach(notificationDoc => {
+                batch.update(notificationDoc.ref, { fromUser: updatedFromUserData });
+            });
+
 
             await batch.commit();
     
