@@ -12,11 +12,13 @@ import { useRouter } from 'next/navigation';
 import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 import { fileToDataUri } from '@/lib/utils';
+import { v4 as uuidv4 } from 'uuid';
 
 
 interface UserProfileData {
@@ -115,75 +117,101 @@ export default function EditProfilePage() {
         setProfileData({ ...profileData, [e.target.id]: e.target.value });
     };
 
+    const runUpdateBatchInBackground = async (userId: string, updatedData: any) => {
+        try {
+            const batch = writeBatch(db);
+
+            const updatedAuthorInfo = {
+                author: updatedData.displayName,
+                handle: updatedData.handle,
+                avatar: updatedData.avatar,
+                isVerified: updatedData.isVerified,
+            };
+
+            const postsQuery = query(collection(db, "posts"), where("authorId", "==", userId));
+            const postsSnapshot = await getDocs(postsQuery);
+            postsSnapshot.forEach(postDoc => {
+                batch.update(postDoc.ref, updatedAuthorInfo);
+            });
+
+            const commentsQuery = query(collection(db, "comments"), where("authorId", "==", userId));
+            const commentsSnapshot = await getDocs(commentsQuery);
+            commentsSnapshot.forEach(commentDoc => {
+                batch.update(commentDoc.ref, updatedAuthorInfo);
+            });
+            
+            const fromUser = {
+                name: updatedData.displayName,
+                handle: updatedData.handle,
+                avatar: updatedData.avatar,
+                isVerified: updatedData.isVerified,
+            };
+
+            const notificationsQuery = query(collection(db, "notifications"), where("fromUserId", "==", userId));
+            const notificationsSnapshot = await getDocs(notificationsQuery);
+            notificationsSnapshot.forEach(notificationDoc => {
+                batch.update(notificationDoc.ref, { fromUser });
+            });
+
+            await batch.commit();
+            console.log("Atualização em massa em segundo plano concluída com sucesso.");
+        } catch (error) {
+            console.error("Erro na atualização em massa em segundo plano: ", error);
+            // Não notificar o usuário, pois a operação principal foi bem-sucedida.
+        }
+    };
+    
     const handleSave = async () => {
         if (!user) return;
         setIsSaving(true);
     
         try {
             const userRef = doc(db, 'users', user.uid);
+            let avatarUrl = profileData.avatar;
+            let bannerUrl = profileData.banner;
     
-            // 1. Prepare os dados de atualização para o documento do usuário
+            // Apenas faz upload se um novo arquivo foi selecionado (é um data URI)
+            if (newAvatarDataUri?.startsWith('data:image')) {
+                const avatarStorageRef = storageRef(storage, `avatars/${user.uid}/${uuidv4()}`);
+                const snapshot = await uploadString(avatarStorageRef, newAvatarDataUri, 'data_url');
+                avatarUrl = await getDownloadURL(snapshot.ref);
+            }
+    
+            if (newBannerDataUri?.startsWith('data:image')) {
+                const bannerStorageRef = storageRef(storage, `banners/${user.uid}/${uuidv4()}`);
+                const snapshot = await uploadString(bannerStorageRef, newBannerDataUri, 'data_url');
+                bannerUrl = await getDownloadURL(snapshot.ref);
+            }
+    
             const firestoreUpdateData = {
                 displayName: profileData.displayName,
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
                 bio: profileData.bio,
                 location: profileData.location,
-                avatar: newAvatarDataUri || profileData.avatar,
-                banner: newBannerDataUri || profileData.banner,
+                avatar: avatarUrl,
+                banner: bannerUrl,
                 isVerified: profileData.isVerified,
             };
     
-            // 2. Atualize o documento do usuário principal
+            // Atualiza o documento principal do usuário
             await updateDoc(userRef, firestoreUpdateData);
     
-            // 3. Atualize o perfil de autenticação do Firebase (se necessário)
-            if (user.displayName !== firestoreUpdateData.displayName || (newAvatarDataUri && user.photoURL !== newAvatarDataUri)) {
+            // Atualiza o perfil de autenticação do Firebase
+            if (user.displayName !== firestoreUpdateData.displayName || user.photoURL !== avatarUrl) {
                 await updateProfile(user, {
                     displayName: firestoreUpdateData.displayName,
-                    photoURL: newAvatarDataUri || user.photoURL,
+                    photoURL: avatarUrl,
                 });
             }
-    
-            // 4. Inicie a atualização em massa para consistência de dados
-            const batch = writeBatch(db);
-    
-            // Dados para atualizar em outros documentos
-            const updatedAuthorInfo = {
-                author: firestoreUpdateData.displayName,
-                handle: firestoreUpdateData.handle,
-                avatar: firestoreUpdateData.avatar,
-                isVerified: firestoreUpdateData.isVerified,
-            };
-    
-            // Atualizar posts do usuário
-            const postsQuery = query(collection(db, "posts"), where("authorId", "==", user.uid));
-            const postsSnapshot = await getDocs(postsQuery);
-            postsSnapshot.forEach(postDoc => {
-                batch.update(postDoc.ref, updatedAuthorInfo);
-            });
-    
-            // Atualizar comentários do usuário
-            const commentsQuery = query(collection(db, "comments"), where("authorId", "==", user.uid));
-            const commentsSnapshot = await getDocs(commentsQuery);
-            commentsSnapshot.forEach(commentDoc => {
-                batch.update(commentDoc.ref, updatedAuthorInfo);
-            });
-    
-            // Atualizar notificações enviadas PELO usuário
-            const notificationsQuery = query(collection(db, "notifications"), where("fromUserId", "==", user.uid));
-            const notificationsSnapshot = await getDocs(notificationsQuery);
-            notificationsSnapshot.forEach(notificationDoc => {
-                batch.update(notificationDoc.ref, { fromUser: updatedAuthorInfo });
-            });
-    
-            // 5. Commite a atualização em massa
-            await batch.commit();
     
             toast({
                 title: 'Perfil Salvo!',
                 description: 'Suas alterações foram salvas com sucesso.',
             });
             router.push(`/profile/${user.uid}`);
+            
+            // Inicia a atualização em massa em segundo plano sem esperar pela conclusão
+            runUpdateBatchInBackground(user.uid, firestoreUpdateData);
     
         } catch (error: any) {
             console.error('Erro ao salvar perfil: ', error);
