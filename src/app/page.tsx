@@ -40,8 +40,20 @@ export default function LandingPage() {
           </div>
         </section>
       </main>
-      <footer className="flex items-center justify-center p-4 border-t">
-        <p className="text-xs text-muted-foreground">&copy; 2025 Zispr Inc. Todos os direitos reservados. Desenvolvido por Rulio.</p>
+      <footer className="w-full border-t p-4 pb-16 md:pb-4 text-center">
+        <p className="text-xs text-muted-foreground">
+            &copy; 2025 Zispr Inc. Todos os direitos reservados.
+            <br />
+            Desenvolvido por{' '}
+            <a 
+                href="https://www.instagram.com/ru.li.o/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="underline hover:text-primary"
+            >
+                Rulio
+            </a>.
+        </p>
       </footer>
     </div>
   );
