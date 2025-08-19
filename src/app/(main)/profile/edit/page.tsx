@@ -54,11 +54,9 @@ export default function EditProfilePage() {
         banner: '',
     });
     
-    // These hold the final data URIs to be uploaded
     const [newAvatarDataUri, setNewAvatarDataUri] = useState<string | null>(null);
     const [newBannerDataUri, setNewBannerDataUri] = useState<string | null>(null);
 
-    // Cropper state
     const [cropperData, setCropperData] = useState<ImageCropperData | null>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +112,6 @@ export default function EditProfilePage() {
             type: type,
         });
 
-        // Reset the input so the same file can be chosen again
         e.target.value = '';
     };
 
@@ -313,4 +310,5 @@ export default function EditProfilePage() {
     )}
     </>
   );
-}
+
+    
