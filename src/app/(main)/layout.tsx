@@ -20,13 +20,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
+                setIsLoading(false);
             } else {
-                // If no user is logged in, redirect to login page
-                // This prevents flashes of content or permission errors
+                // If no user is logged in, redirect to login page immediately.
+                // This prevents flashes of content or permission errors from child components.
                 router.push('/login');
             }
-            // Only stop loading once the auth state is determined
-            setIsLoading(false);
         });
 
         return () => unsubscribe();
@@ -38,6 +37,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         '/chat',
         '/profile/edit',
         '/communities/create',
+        '/privacy',
     ];
 
     const showFab = !fabBlacklist.some(path => pathname.startsWith(path) && pathname !== '/messages');
@@ -46,8 +46,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         return <HomeLoading />;
     }
     
+    // Although the useEffect handles redirection, this is a fallback to ensure
+    // children are not rendered without a user, which can cause Firestore permission errors.
     if (!user) {
-        // This will be briefly shown while redirecting
         return <HomeLoading />;
     }
 
