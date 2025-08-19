@@ -54,8 +54,7 @@ export default function EditProfilePage() {
         banner: '',
     });
     
-    const [newAvatarPreview, setNewAvatarPreview] = useState<string | null>(null);
-    const [newBannerPreview, setNewBannerPreview] = useState<string | null>(null);
+    // These hold the final data URIs to be uploaded
     const [newAvatarDataUri, setNewAvatarDataUri] = useState<string | null>(null);
     const [newBannerDataUri, setNewBannerDataUri] = useState<string | null>(null);
 
@@ -81,8 +80,6 @@ export default function EditProfilePage() {
                             banner: userData.banner || '',
                         };
                         setProfileData(initialData);
-                        setNewAvatarPreview(initialData.avatar);
-                        setNewBannerPreview(initialData.banner);
                     }
                 } catch (error) {
                      toast({ title: "Erro ao carregar perfil.", variant: "destructive" });
@@ -116,7 +113,6 @@ export default function EditProfilePage() {
             type: type,
         });
 
-        // Reset the input value to allow selecting the same file again
         e.target.value = '';
     };
 
@@ -145,7 +141,6 @@ export default function EditProfilePage() {
             }
             
             if (newAvatarDataUri) {
-                // Upload avatar to Storage and get URL
                 const avatarRef = storageRef(storage, `avatars/${user.uid}/${uuidv4()}`);
                 const snapshot = await uploadString(avatarRef, newAvatarDataUri, 'data_url');
                 const downloadURL = await getDownloadURL(snapshot.ref);
@@ -155,7 +150,6 @@ export default function EditProfilePage() {
             }
 
             if (newBannerDataUri) {
-                 // Upload banner to Storage and get URL
                 const bannerRef = storageRef(storage, `banners/${user.uid}/${uuidv4()}`);
                 const snapshot = await uploadString(bannerRef, newBannerDataUri, 'data_url');
                 const downloadURL = await getDownloadURL(snapshot.ref);
@@ -163,12 +157,10 @@ export default function EditProfilePage() {
                 firestoreUpdateData.banner = downloadURL;
             }
 
-            // Update Firebase Auth profile if there are changes
             if (Object.keys(authUpdateData).length > 0) {
                 await updateProfile(user, authUpdateData);
             }
             
-            // Update Firestore document
             await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
             
             toast({
@@ -177,11 +169,15 @@ export default function EditProfilePage() {
             });
             router.push(`/profile/${user.uid}`);
             
-        } catch (error) {
+        } catch (error: any) {
             console.error("Erro ao salvar perfil: ", error);
+            let description = "Não foi possível salvar as alterações do seu perfil.";
+            if(error.code === 'auth/invalid-profile-attribute'){
+                description = "URL da foto é muito longa ou inválida. Tente novamente.";
+            }
             toast({
                 title: "Falha ao Salvar",
-                description: "Não foi possível salvar as alterações do seu perfil.",
+                description,
                 variant: 'destructive'
             });
         } finally {
@@ -191,15 +187,12 @@ export default function EditProfilePage() {
     
     const handleCropComplete = (croppedImageUri: string) => {
         if (cropperData?.type === 'avatar') {
-            setNewAvatarPreview(croppedImageUri);
             setNewAvatarDataUri(croppedImageUri);
         } else if (cropperData?.type === 'banner') {
-            setNewBannerPreview(croppedImageUri);
             setNewBannerDataUri(croppedImageUri);
         }
         setCropperData(null); // Close cropper modal
     };
-
 
     if (isLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -223,7 +216,7 @@ export default function EditProfilePage() {
 
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
-             <Image src={newBannerPreview || profileData.banner} alt="Banner" layout="fill" objectFit="cover" />
+             <Image src={newBannerDataUri || profileData.banner} alt="Banner" layout="fill" objectFit="cover" />
              <Button 
                 variant="ghost" 
                 className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity w-full h-full p-0"
@@ -243,7 +236,7 @@ export default function EditProfilePage() {
         <div className="px-4">
             <div className="-mt-16 relative w-32">
                 <Avatar className="h-32 w-32 border-4 border-background">
-                     <AvatarImage src={newAvatarPreview || profileData.avatar} alt={profileData.displayName} />
+                     <AvatarImage src={newAvatarDataUri || profileData.avatar} alt={profileData.displayName} />
                      <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>
                 </Avatar>
                 
