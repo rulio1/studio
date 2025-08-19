@@ -26,7 +26,7 @@ export default function LandingPage() {
             <div className="flex flex-col items-center space-y-4 text-center">
               <div className="space-y-2">
                 <h1 className="flex flex-col items-center font-bold tracking-tighter font-headline">
-                  <span className="text-4xl sm:text-5xl md:text-6xl whitespace-nowrap">
+                  <span className="text-3xl sm:text-4xl md:text-5xl whitespace-nowrap">
                     Participe da Conversa no
                   </span>
                   <span className="animated-zispr text-6xl sm:text-7xl md:text-8xl">
