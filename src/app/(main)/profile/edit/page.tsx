@@ -164,22 +164,20 @@ export default function EditProfilePage() {
     const handleSave = async () => {
         if (!user) return;
         setIsSaving(true);
-
+    
         try {
             const userRef = doc(db, 'users', user.uid);
             
             const firestoreUpdateData = {
-                ...profileData,
+                displayName: profileData.displayName,
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
+                bio: profileData.bio,
+                location: profileData.location,
+                isVerified: profileData.isVerified,
+                avatar: newAvatarDataUri || profileData.avatar,
+                banner: newBannerDataUri || profileData.banner,
             };
-    
-            if (newAvatarDataUri) {
-                firestoreUpdateData.avatar = newAvatarDataUri;
-            }
-            if (newBannerDataUri) {
-                firestoreUpdateData.banner = newBannerDataUri;
-            }
-    
+            
             // Main profile update
             await updateDoc(userRef, firestoreUpdateData);
     
@@ -196,7 +194,8 @@ export default function EditProfilePage() {
                 description: 'Suas alterações foram salvas com sucesso.',
             });
             
-            // Run batch update in background without awaiting it or catching its specific errors here
+            // Run batch update in background without awaiting it.
+            // This prevents UI blocking and handles errors silently in the console.
             runUpdateBatchInBackground(user.uid, firestoreUpdateData);
 
             router.push(`/profile/${user.uid}`);
