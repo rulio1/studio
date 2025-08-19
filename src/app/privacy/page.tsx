@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
             </header>
             <main className="p-6 prose prose-invert max-w-4xl mx-auto">
                 <h2 className="font-bold text-2xl mt-4">Política de Privacidade do Zispr</h2>
-                <p className="text-muted-foreground">Última atualização: 19 de Agosto de 2024</p>
+                <p className="text-muted-foreground">Última atualização: 19 de Agosto de 2025</p>
 
                 <p>
                     Bem-vindo à Política de Privacidade do Zispr. Nós valorizamos sua privacidade e a segurança das suas informações. Esta política descreve como coletamos, usamos, processamos e divulgamos suas informações, incluindo dados pessoais, em conjunto com seu acesso e uso da plataforma Zispr.
