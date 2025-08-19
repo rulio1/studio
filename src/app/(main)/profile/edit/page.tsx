@@ -9,13 +9,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getDownloadURL, ref as storageRef, uploadString } from 'firebase/storage';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
+import { v4 as uuidv4 } from 'uuid';
 
 interface UserProfileData {
     displayName: string;
@@ -143,14 +145,23 @@ export default function EditProfilePage() {
             }
             
             if (newAvatarDataUri) {
-                firestoreUpdateData.avatar = newAvatarDataUri;
-                authUpdateData.photoURL = newAvatarDataUri;
+                // Upload avatar to Storage and get URL
+                const avatarRef = storageRef(storage, `avatars/${user.uid}/${uuidv4()}`);
+                const snapshot = await uploadString(avatarRef, newAvatarDataUri, 'data_url');
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                
+                firestoreUpdateData.avatar = downloadURL;
+                authUpdateData.photoURL = downloadURL;
             }
 
             if (newBannerDataUri) {
-                firestoreUpdateData.banner = newBannerDataUri;
-            }
+                 // Upload banner to Storage and get URL
+                const bannerRef = storageRef(storage, `banners/${user.uid}/${uuidv4()}`);
+                const snapshot = await uploadString(bannerRef, newBannerDataUri, 'data_url');
+                const downloadURL = await getDownloadURL(snapshot.ref);
 
+                firestoreUpdateData.banner = downloadURL;
+            }
 
             // Update Firebase Auth profile if there are changes
             if (Object.keys(authUpdateData).length > 0) {
