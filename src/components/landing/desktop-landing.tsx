@@ -15,7 +15,7 @@ export default function DesktopLanding() {
         <div className="flex flex-1 flex-col justify-center px-16">
           <Bird className="h-12 w-12 text-primary mb-8" />
           <h1 className="text-6xl font-extrabold tracking-tighter font-headline mb-4">
-            Acontecendo agora
+            Participe da Conversa
           </h1>
           <h2 className="text-3xl font-bold mb-8">
             Inscreva-se no Zispr hoje mesmo.
