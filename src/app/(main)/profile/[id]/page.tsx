@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -1079,7 +1078,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-2">
                         <Gift className="h-4 w-4" />
                         <span>
-                            Nascido em {format(profileUser.birthDate.toDate(), "dd 'de' MMM", { locale: ptBR })}
+                            {format(profileUser.birthDate.toDate(), "dd 'de' MMM", { locale: ptBR })}
                             {getZodiacSign(profileUser.birthDate.toDate())}
                         </span>
                     </div>
