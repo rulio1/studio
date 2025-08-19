@@ -51,7 +51,7 @@ export default function LandingPage() {
           <span className="font-bold font-headline text-lg">Zispr</span>
         </Link>
         <nav className="flex items-center gap-2">
-          <Button variant="outline" className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20" asChild>
+          <Button variant="outline" className="bg-background/50 backdrop-blur-sm" asChild>
             <Link href="/login">Entrar</Link>
           </Button>
           <Button asChild>
