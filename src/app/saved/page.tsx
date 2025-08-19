@@ -113,25 +113,30 @@ export default function SavedPage() {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                const userDocRef = doc(db, 'users', currentUser.uid);
-                const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
-                    if (doc.exists()) {
-                        setChirpUser(doc.data() as ChirpUser);
-                    } else {
-                        router.push('/login');
-                    }
-                });
-                return () => unsubscribeUser();
             } else {
                 router.push('/login');
             }
         });
         return () => unsubscribe();
     }, [router]);
+    
+    useEffect(() => {
+        if (!user) return;
+        const userDocRef = doc(db, 'users', user.uid);
+        const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
+            if (doc.exists()) {
+                setChirpUser(doc.data() as ChirpUser);
+            } else {
+                router.push('/login');
+            }
+        });
+        return () => unsubscribeUser();
+    }, [user, router]);
+
 
     useEffect(() => {
         const fetchSavedPosts = async () => {
-            if (!user || !chirpUser?.savedPosts || chirpUser.savedPosts.length === 0) {
+            if (!user || !chirpUser || !chirpUser.savedPosts || chirpUser.savedPosts.length === 0) {
                 setSavedPosts([]);
                 setIsLoading(false);
                 return;

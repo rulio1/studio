@@ -69,19 +69,24 @@ export default function CommunitiesPage() {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                 const userDocRef = doc(db, 'users', currentUser.uid);
-                const unsubUser = onSnapshot(userDocRef, (userDoc) => {
-                    if (userDoc.exists()) {
-                        setZisprUser({ uid: userDoc.id, ...userDoc.data() } as ZisprUser);
-                    }
-                });
-                return () => unsubUser();
             } else {
                 router.push('/login');
             }
         });
         return () => unsubscribe();
     }, [router]);
+    
+    useEffect(() => {
+        if (!user) return;
+        const userDocRef = doc(db, 'users', user.uid);
+        const unsubUser = onSnapshot(userDocRef, (userDoc) => {
+            if (userDoc.exists()) {
+                setZisprUser({ uid: userDoc.id, ...userDoc.data() } as ZisprUser);
+            }
+        });
+        return () => unsubUser();
+    }, [user]);
+
 
     const fetchCommunities = useCallback(async () => {
         if (!zisprUser) return;
@@ -119,8 +124,10 @@ export default function CommunitiesPage() {
     }, [zisprUser]);
 
     useEffect(() => {
-        fetchCommunities();
-    }, [fetchCommunities]);
+        if(zisprUser) {
+            fetchCommunities();
+        }
+    }, [zisprUser, fetchCommunities]);
     
     const handleJoinLeaveCommunity = async (communityId: string, isJoined: boolean) => {
         if (!user) return;

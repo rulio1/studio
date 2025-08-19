@@ -40,16 +40,7 @@ export default function BottomNavBar() {
      useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
-            if (currentUser) {
-                const userDocRef = doc(db, 'users', currentUser.uid);
-                const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
-                    if (doc.exists()) {
-                        setChirpUser(doc.data() as ChirpUser);
-                    }
-                    setIsLoading(false);
-                });
-                return () => unsubscribeUser();
-            } else {
+            if (!currentUser) {
                 setIsLoading(false);
             }
         });
@@ -57,37 +48,47 @@ export default function BottomNavBar() {
     }, []);
 
     useEffect(() => {
-        if (user) {
-            // Notifications listener
-            const notificationsQuery = query(
-                collection(db, "notifications"),
-                where("toUserId", "==", user.uid),
-                where("read", "==", false)
-            );
-            const unsubscribeNotifications = onSnapshot(notificationsQuery, (snapshot) => {
-                setNotificationCount(snapshot.size);
-            });
+        if (!user) return;
+        
+        // User listener
+        const userDocRef = doc(db, 'users', user.uid);
+        const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
+            if (doc.exists()) {
+                setChirpUser(doc.data() as ChirpUser);
+            }
+            setIsLoading(false);
+        });
 
-            // Messages listener
-            const conversationsQuery = query(
-                collection(db, "conversations"),
-                where("participants", "array-contains", user.uid)
-            );
-            const unsubscribeMessages = onSnapshot(conversationsQuery, (snapshot) => {
-                let totalUnread = 0;
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const unread = data.unreadCounts?.[user.uid] || 0;
-                    totalUnread += unread;
-                });
-                setMessageCount(totalUnread);
-            });
+        // Notifications listener
+        const notificationsQuery = query(
+            collection(db, "notifications"),
+            where("toUserId", "==", user.uid),
+            where("read", "==", false)
+        );
+        const unsubscribeNotifications = onSnapshot(notificationsQuery, (snapshot) => {
+            setNotificationCount(snapshot.size);
+        });
 
-            return () => {
-                unsubscribeNotifications();
-                unsubscribeMessages();
-            };
-        }
+        // Messages listener
+        const conversationsQuery = query(
+            collection(db, "conversations"),
+            where("participants", "array-contains", user.uid)
+        );
+        const unsubscribeMessages = onSnapshot(conversationsQuery, (snapshot) => {
+            let totalUnread = 0;
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const unread = data.unreadCounts?.[user.uid] || 0;
+                totalUnread += unread;
+            });
+            setMessageCount(totalUnread);
+        });
+
+        return () => {
+            unsubscribeUser();
+            unsubscribeNotifications();
+            unsubscribeMessages();
+        };
     }, [user]);
 
     return (

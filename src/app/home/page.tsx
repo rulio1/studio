@@ -114,18 +114,9 @@ export default function HomePage() {
   const router = useRouter();
   
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            setUser(user);
-            const userDocRef = doc(db, "users", user.uid);
-            const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
-                 if(doc.exists()){
-                    setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
-                } else {
-                    router.push('/login');
-                }
-            });
-            return () => unsubscribeUser();
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+        if (currentUser) {
+            setUser(currentUser);
         } else {
             router.push('/login');
         }
@@ -133,6 +124,20 @@ export default function HomePage() {
 
     return () => unsubscribeAuth();
   }, [router]);
+  
+  useEffect(() => {
+    if (!user) return;
+    const userDocRef = doc(db, "users", user.uid);
+    const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
+         if(doc.exists()){
+            setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
+        } else {
+            router.push('/login');
+        }
+    });
+    return () => unsubscribeUser();
+  }, [user, router]);
+
 
   const fetchAllPosts = useCallback(() => {
     if (!user) return;

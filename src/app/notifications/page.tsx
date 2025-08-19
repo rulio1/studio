@@ -128,13 +128,6 @@ export default function NotificationsPage() {
         const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                const userDocRef = doc(db, 'users', currentUser.uid);
-                const unsubUser = onSnapshot(userDocRef, (doc) => {
-                    if (doc.exists()) {
-                        setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
-                    }
-                });
-                return () => unsubUser();
             } else {
                 setUser(null);
                 setZisprUser(null);
@@ -143,6 +136,17 @@ export default function NotificationsPage() {
         });
         return () => unsubscribeAuth();
     }, []);
+    
+    useEffect(() => {
+        if(!user) return;
+        const userDocRef = doc(db, 'users', user.uid);
+        const unsubUser = onSnapshot(userDocRef, (doc) => {
+            if (doc.exists()) {
+                setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
+            }
+        });
+        return () => unsubUser();
+    }, [user])
 
     const markNotificationsAsRead = async (userId: string) => {
         const unreadQuery = query(
