@@ -16,8 +16,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }, []);
 
     const noLayoutPages = ['/login', '/register', '/', '/privacy'];
-    if (noLayoutPages.includes(pathname)) {
+    const shouldHideLayout = noLayoutPages.includes(pathname);
+
+    if (shouldHideLayout) {
         return <>{children}</>;
+    }
+    
+    // During server-side rendering or before the client has mounted,
+    // we render nothing to avoid hydration mismatches.
+    if (!isClient) {
+        return null;
     }
     
     // Pages where the FAB should not be shown
@@ -35,12 +43,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <main className="flex-1 min-w-0 pb-24 md:pb-0">
                 {children}
             </main>
-            {isClient && (
-                <>
-                    {showFab && <CreatePostFAB />}
-                    <BottomNavBar />
-                </>
-            )}
+            {showFab && <CreatePostFAB />}
+            <BottomNavBar />
         </div>
     );
 }
