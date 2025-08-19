@@ -86,7 +86,7 @@ export default function DesktopLanding() {
           </div>
         </section>
       </main>
-      <footer className="w-full p-4 text-center mt-auto flex flex-col items-center">
+      <footer className="w-full p-4 text-center flex flex-col items-center">
         <p className="text-xs text-muted-foreground">
           &copy; 2025 Zispr Inc. Todos os direitos reservados.
           <br />
