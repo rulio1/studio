@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
+import { useState, useMemo, useEffect, useCallback, Suspense, use } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -107,7 +107,8 @@ function SearchPageClient({
     searchParams?: { [key: string]: string | string[] | undefined };
 }) {
   const router = useRouter();
-  const queryFromUrl = searchParams?.q || '';
+  const unwrappedSearchParams = searchParams ? use(searchParams) : {};
+  const queryFromUrl = unwrappedSearchParams.q || '';
   
   const [searchTerm, setSearchTerm] = useState(typeof queryFromUrl === 'string' ? queryFromUrl : '');
   const [trends, setTrends] = useState<Trend[]>([]);
