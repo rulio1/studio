@@ -9,6 +9,8 @@ import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import DesktopSidebar from '@/components/desktop-sidebar';
+import RightSidebar from '@/components/right-sidebar';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -21,8 +23,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             if (currentUser) {
                 setUser(currentUser);
             } else {
-                // If no user is logged in, redirect to login page immediately.
-                // This prevents flashes of content or permission errors from child components.
                 router.push('/login');
             }
             setIsLoading(false);
@@ -31,7 +31,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         return () => unsubscribe();
     }, [router]);
 
-    // Pages where the FAB should not be shown
+    // Pages where the FAB should not be shown on mobile
     const fabBlacklist = [
         '/messages/',
         '/chat',
@@ -42,19 +42,41 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
     const showFab = !fabBlacklist.some(path => pathname.startsWith(path) && pathname !== '/messages');
     
-    // While the useEffect handles redirection, this is a safeguard to ensure
-    // children are not rendered without a user, which can cause Firestore permission errors.
     if (isLoading || !user) {
         return <HomeLoading />;
     }
 
+    // Hide sidebars on specific pages for a more focused view
+    const hideSidebars = [
+        '/chat',
+        '/profile/edit',
+        '/settings'
+    ].some(path => pathname.startsWith(path));
+
+    if (hideSidebars) {
+         return (
+            <div className="flex min-h-svh justify-center">
+                <main className="w-full md:max-w-2xl md:border-x">
+                    {children}
+                </main>
+                 <div className="md:hidden">
+                    <BottomNavBar />
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="flex min-h-svh">
-            <main className="flex-1 min-w-0 pb-24 md:pb-0">
+        <div className="flex min-h-svh justify-center">
+            <DesktopSidebar />
+            <main className="flex-1 min-w-0 pb-24 md:pb-0 max-w-2xl border-x">
                 {children}
             </main>
-            {showFab && <CreatePostFAB />}
-            <BottomNavBar />
+            <RightSidebar />
+            <div className="md:hidden">
+                {showFab && <CreatePostFAB />}
+                <BottomNavBar />
+            </div>
         </div>
     );
 }
