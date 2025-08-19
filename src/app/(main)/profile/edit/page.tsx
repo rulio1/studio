@@ -193,7 +193,6 @@ export default function EditProfilePage() {
                 description: 'Suas alterações foram salvas com sucesso.',
             });
             
-            // Run mass update in background without waiting
             runUpdateBatchInBackground(user.uid, firestoreUpdateData);
 
             router.push(`/profile/${user.uid}`);
