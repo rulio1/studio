@@ -53,7 +53,7 @@ export default function DesktopLanding() {
         </div>
         <div className="flex flex-1 items-center justify-center px-16">
           <div className="w-full max-w-sm">
-              <div className="flex w-full justify-start mb-8">
+              <div className="flex w-full justify-center mb-8">
                 <Bird className="h-12 w-12 text-primary" />
               </div>
               <h1 className="text-4xl font-extrabold tracking-tighter font-headline whitespace-nowrap">
