@@ -123,22 +123,23 @@ export default function EditProfilePage() {
             const userRef = doc(db, 'users', user.uid);
     
             // 1. Prepare os dados de atualização para o documento do usuário
-            const firestoreUpdateData: any = {
+            const firestoreUpdateData = {
                 displayName: profileData.displayName,
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
                 bio: profileData.bio,
                 location: profileData.location,
                 avatar: newAvatarDataUri || profileData.avatar,
                 banner: newBannerDataUri || profileData.banner,
+                isVerified: profileData.isVerified,
             };
     
             // 2. Atualize o documento do usuário principal
             await updateDoc(userRef, firestoreUpdateData);
     
             // 3. Atualize o perfil de autenticação do Firebase (se necessário)
-            if (user.displayName !== profileData.displayName || (newAvatarDataUri && user.photoURL !== newAvatarDataUri)) {
+            if (user.displayName !== firestoreUpdateData.displayName || (newAvatarDataUri && user.photoURL !== newAvatarDataUri)) {
                 await updateProfile(user, {
-                    displayName: profileData.displayName,
+                    displayName: firestoreUpdateData.displayName,
                     photoURL: newAvatarDataUri || user.photoURL,
                 });
             }
@@ -151,7 +152,7 @@ export default function EditProfilePage() {
                 author: firestoreUpdateData.displayName,
                 handle: firestoreUpdateData.handle,
                 avatar: firestoreUpdateData.avatar,
-                isVerified: profileData.isVerified,
+                isVerified: firestoreUpdateData.isVerified,
             };
     
             // Atualizar posts do usuário
@@ -168,7 +169,7 @@ export default function EditProfilePage() {
                 batch.update(commentDoc.ref, updatedAuthorInfo);
             });
     
-            // Atualizar notificações enviadas pelo usuário
+            // Atualizar notificações enviadas PELO usuário
             const notificationsQuery = query(collection(db, "notifications"), where("fromUserId", "==", user.uid));
             const notificationsSnapshot = await getDocs(notificationsQuery);
             notificationsSnapshot.forEach(notificationDoc => {
