@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,6 +15,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
+import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 
 interface UserProfileData {
     displayName: string;
@@ -51,10 +51,14 @@ export default function EditProfilePage() {
         avatar: '',
         banner: '',
     });
-
+    
+    const [newAvatarPreview, setNewAvatarPreview] = useState<string | null>(null);
+    const [newBannerPreview, setNewBannerPreview] = useState<string | null>(null);
     const [newAvatarDataUri, setNewAvatarDataUri] = useState<string | null>(null);
     const [newBannerDataUri, setNewBannerDataUri] = useState<string | null>(null);
-    
+
+    // Cropper state
+    const [cropperData, setCropperData] = useState<ImageCropperData | null>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,6 +79,8 @@ export default function EditProfilePage() {
                             banner: userData.banner || '',
                         };
                         setProfileData(initialData);
+                        setNewAvatarPreview(initialData.avatar);
+                        setNewBannerPreview(initialData.banner);
                     }
                 } catch (error) {
                      toast({ title: "Erro ao carregar perfil.", variant: "destructive" });
@@ -103,12 +109,12 @@ export default function EditProfilePage() {
         }
 
         const dataUri = await fileToDataUri(file);
-        if (type === 'avatar') {
-            setNewAvatarDataUri(dataUri);
-        } else {
-            setNewBannerDataUri(dataUri);
-        }
-         // Reset the input value to allow selecting the same file again
+        setCropperData({
+            image: dataUri,
+            type: type,
+        });
+
+        // Reset the input value to allow selecting the same file again
         e.target.value = '';
     };
 
@@ -169,12 +175,25 @@ export default function EditProfilePage() {
             setIsSaving(false);
         }
     };
+    
+    const handleCropComplete = (croppedImageUri: string) => {
+        if (cropperData?.type === 'avatar') {
+            setNewAvatarPreview(croppedImageUri);
+            setNewAvatarDataUri(croppedImageUri);
+        } else if (cropperData?.type === 'banner') {
+            setNewBannerPreview(croppedImageUri);
+            setNewBannerDataUri(croppedImageUri);
+        }
+        setCropperData(null); // Close cropper modal
+    };
+
 
     if (isLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
   return (
+    <>
     <div className="flex flex-col h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2">
@@ -191,7 +210,7 @@ export default function EditProfilePage() {
 
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
-             <Image src={newBannerDataUri || profileData.banner} alt="Banner" layout="fill" objectFit="cover" />
+             <Image src={newBannerPreview || profileData.banner} alt="Banner" layout="fill" objectFit="cover" />
              <Button 
                 variant="ghost" 
                 className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity w-full h-full p-0"
@@ -211,7 +230,7 @@ export default function EditProfilePage() {
         <div className="px-4">
             <div className="-mt-16 relative w-32">
                 <Avatar className="h-32 w-32 border-4 border-background">
-                     <AvatarImage src={newAvatarDataUri || profileData.avatar} alt={profileData.displayName} />
+                     <AvatarImage src={newAvatarPreview || profileData.avatar} alt={profileData.displayName} />
                      <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>
                 </Avatar>
                 
@@ -279,5 +298,13 @@ export default function EditProfilePage() {
         </div>
       </main>
     </div>
+    {cropperData && (
+        <ImageCropper
+            data={cropperData}
+            onComplete={handleCropComplete}
+            onCancel={() => setCropperData(null)}
+        />
+    )}
+    </>
   );
 }
