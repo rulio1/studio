@@ -46,13 +46,17 @@ export default function DesktopLanding() {
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground animate-fade-in">
       <main className="flex flex-1">
-        <div className="flex flex-1 items-center justify-center">
-          <Bird className="h-64 w-64 text-primary" />
+        <div className="flex flex-1 items-center justify-center p-8">
+            <div className="flex items-center justify-center bg-primary rounded-lg h-64 w-64">
+                <Bird className="h-48 w-48 text-primary-foreground fill-white" />
+            </div>
         </div>
         <div className="flex flex-1 flex-col justify-center px-16">
           <div className="w-full max-w-sm">
-              <Bird className="h-12 w-12 text-primary mb-8" />
-              <h1 className="text-5xl font-extrabold tracking-tighter font-headline min-h-[80px] whitespace-nowrap">
+              <div className="w-full flex justify-center mb-8">
+                <Bird className="h-12 w-12 text-primary" />
+              </div>
+              <h1 className="text-5xl font-extrabold tracking-tighter font-headline whitespace-nowrap">
                 {currentPhrase}
                 <span className="opacity-50 animate-pulse">|</span>
               </h1>
