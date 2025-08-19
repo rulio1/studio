@@ -68,7 +68,7 @@ export default function EditProfilePage() {
             if (currentUser) {
                 setUser(currentUser);
                 try {
-                    const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                    const userDoc = await getDoc(db, 'users', currentUser.uid));
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
                         const initialData = {
@@ -113,6 +113,7 @@ export default function EditProfilePage() {
             type: type,
         });
 
+        // Reset the input so the same file can be chosen again
         e.target.value = '';
     };
 
@@ -144,7 +145,6 @@ export default function EditProfilePage() {
                 const avatarRef = storageRef(storage, `avatars/${user.uid}/${uuidv4()}`);
                 const snapshot = await uploadString(avatarRef, newAvatarDataUri, 'data_url');
                 const downloadURL = await getDownloadURL(snapshot.ref);
-                
                 firestoreUpdateData.avatar = downloadURL;
                 authUpdateData.photoURL = downloadURL;
             }
@@ -153,14 +153,15 @@ export default function EditProfilePage() {
                 const bannerRef = storageRef(storage, `banners/${user.uid}/${uuidv4()}`);
                 const snapshot = await uploadString(bannerRef, newBannerDataUri, 'data_url');
                 const downloadURL = await getDownloadURL(snapshot.ref);
-
                 firestoreUpdateData.banner = downloadURL;
             }
 
+            // Update Auth profile only if there are changes
             if (Object.keys(authUpdateData).length > 0) {
                 await updateProfile(user, authUpdateData);
             }
             
+            // Update Firestore document
             await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
             
             toast({
@@ -216,7 +217,7 @@ export default function EditProfilePage() {
 
       <main className="flex-1 overflow-y-auto">
         <div className="relative h-48 bg-muted">
-             <Image src={newBannerDataUri || profileData.banner} alt="Banner" layout="fill" objectFit="cover" />
+             <Image src={newBannerDataUri || profileData.banner || 'https://placehold.co/600x200.png'} alt="Banner" layout="fill" objectFit="cover" />
              <Button 
                 variant="ghost" 
                 className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity w-full h-full p-0"
@@ -314,3 +315,5 @@ export default function EditProfilePage() {
     </>
   );
 }
+
+    
