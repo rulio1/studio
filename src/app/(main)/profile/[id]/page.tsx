@@ -116,6 +116,43 @@ interface ZisprUser {
     isVerified?: boolean;
 }
 
+const getZodiacSign = (date: Date) => {
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    let sign = '';
+
+    if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) sign = 'Aquarius';
+    else if ((month === 2 && day >= 19) || (month === 3 && day <= 20)) sign = 'Pisces';
+    else if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) sign = 'Aries';
+    else if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) sign = 'Taurus';
+    else if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) sign = 'Gemini';
+    else if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) sign = 'Cancer';
+    else if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) sign = 'Leo';
+    else if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) sign = 'Virgo';
+    else if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) sign = 'Libra';
+    else if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) sign = 'Scorpio';
+    else if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) sign = 'Sagittarius';
+    else if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) sign = 'Capricorn';
+    
+    const props = { className: "h-4 w-4 inline-block ml-2", fill:"currentColor"};
+
+    switch (sign) {
+        case 'Aries': return <svg {...props} viewBox="0 0 24 24"><path d="M4 9a2 2 0 1 1 4 0v10M16 9a2 2 0 1 0 4 0v10M8 9h8"/></svg>;
+        case 'Taurus': return <svg {...props} viewBox="0 0 24 24"><circle cx="12" cy="14" r="5" /><path d="M12 4a5 5 0 0 1 5 5h-10a5 5 0 0 1 5-5z"/></svg>;
+        case 'Gemini': return <svg {...props} viewBox="0 0 24 24"><path d="M6 3v18M18 3v18M4 9h16M4 15h16"/></svg>;
+        case 'Cancer': return <svg {...props} viewBox="0 0 24 24"><circle cx="7" cy="12" r="3" /><circle cx="17" cy="12" r="3" /><path d="M7 15a7 7 0 0 0 10 0M7 9a7 7 0 0 1 10 0"/></svg>;
+        case 'Leo': return <svg {...props} viewBox="0 0 24 24"><circle cx="8" cy="8" r="4"/><path d="M8 12c-2.67 0-5.33 1.34-8 4v4h16v-4c-2.67-2.66-5.33-4-8-4z"/><path d="M18 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>;
+        case 'Virgo': return <svg {...props} viewBox="0 0 24 24"><path d="M4 3v12a4 4 0 0 0 4 4h1M9 3v12a4 4 0 0 0 4 4h1M14 3v12a4 4 0 0 0 4 4h1"/></svg>;
+        case 'Libra': return <svg {...props} viewBox="0 0 24 24"><path d="M4 15h16M4 9h16"/><circle cx="12" cy="7" r="2" /><circle cx="12" cy="17" r="2"/></svg>;
+        case 'Scorpio': return <svg {...props} viewBox="0 0 24 24"><path d="M4 3v12a4 4 0 0 0 4 4h1M9 3v12a4 4 0 0 0 4 4h1M14 3v12a4 4 0 0 0 4 4h1l2-2"/></svg>;
+        case 'Sagittarius': return <svg {...props} viewBox="0 0 24 24"><path d="M9 3l10 10m-10 0l10-10m-5 5h11"/></svg>;
+        case 'Capricorn': return <svg {...props} viewBox="0 0 24 24"><path d="M4 9h4l2 5-2 5H4V9zm8 0h4l2 5-2 5h-4V9z"/></svg>;
+        case 'Aquarius': return <svg {...props} viewBox="0 0 24 24"><path d="M3 12h18m-1 4l-2-4m-12 0l2 4M3 8h18"/></svg>;
+        case 'Pisces': return <svg {...props} viewBox="0 0 24 24"><path d="M7 4a4 4 0 0 1 0 8M17 12a4 4 0 0 1 0 8M3 8h18"/></svg>;
+        default: return null;
+    }
+}
+
 const PostContent = ({ content }: { content: string }) => {
     const router = useRouter();
     const parts = content.split(/(#\w+)/g);
@@ -1038,7 +1075,15 @@ export default function ProfilePage() {
             )}
             <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-muted-foreground text-sm">
                 {profileUser.location && <div className="flex items-center gap-2"><MapPin className="h-4 w-4" /><span>{profileUser.location}</span></div>}
-                {profileUser.birthDate && <div className="flex items-center gap-2"><Gift className="h-4 w-4" /><span>Nascido em {format(profileUser.birthDate.toDate(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span></div>}
+                {profileUser.birthDate && (
+                    <div className="flex items-center gap-2">
+                        <Gift className="h-4 w-4" />
+                        <span>
+                            Nascido em {format(profileUser.birthDate.toDate(), "dd 'de' MMM", { locale: ptBR })}
+                            {getZodiacSign(profileUser.birthDate.toDate())}
+                        </span>
+                    </div>
+                )}
                 {profileUser.createdAt && <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /><span>Ingressou em {format(profileUser.createdAt.toDate(), 'MMMM yyyy', { locale: ptBR })}</span></div>}
             </div>
              <div className="flex gap-4 mt-4 text-sm">
