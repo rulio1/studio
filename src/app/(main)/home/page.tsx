@@ -118,6 +118,7 @@ export default function HomePage() {
         if (currentUser) {
             setUser(currentUser);
         } else {
+            setUser(null);
             router.push('/login');
         }
     });
@@ -135,8 +136,10 @@ export default function HomePage() {
          if(doc.exists()){
             setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
         } else {
-            if (auth.currentUser) {
-              router.push('/login');
+            // This might happen if user document is deleted but auth record still exists
+            // We should log them out.
+             if (auth.currentUser) {
+                signOut(auth).then(() => router.push('/login'));
             }
         }
     });
@@ -176,7 +179,7 @@ useEffect(() => {
 }, [user, fetchAllPosts]);
 
  const fetchFollowingPosts = useCallback((currentUser: FirebaseUser, currentUserData: ZisprUser) => {
-    if (currentUserData.following.length === 0) {
+    if (!currentUserData || currentUserData.following.length === 0) {
         setFollowingPosts([]);
         setIsLoadingFollowing(false);
         return () => {};
@@ -206,7 +209,7 @@ useEffect(() => {
 }, []);
 
   useEffect(() => {
-    if (activeTab === 'following' && zisprUser && user) {
+    if (user && zisprUser && activeTab === 'following') {
         const unsubscribe = fetchFollowingPosts(user, zisprUser);
         return () => unsubscribe();
     } else if (activeTab === 'following') {
@@ -871,5 +874,3 @@ useEffect(() => {
     </>
   );
 }
-
-    

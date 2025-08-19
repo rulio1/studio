@@ -130,6 +130,7 @@ export default function NotificationsPage() {
             if (currentUser) {
                 setUser(currentUser);
             } else {
+                setUser(null);
                 router.push('/login');
             }
         });
@@ -292,7 +293,3 @@ export default function NotificationsPage() {
     </Tabs>
   );
 }
-
-    
-
-    

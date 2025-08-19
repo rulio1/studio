@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -146,6 +145,7 @@ export default function MessagesPage() {
                     setZisprUser(userDoc.data() as ZisprUser);
                 }
             } else {
+                setUser(null);
                 router.push('/login');
             }
         });
@@ -167,7 +167,7 @@ export default function MessagesPage() {
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
             const currentUser = auth.currentUser;
-            if (!currentUser) {
+            if (!currentUser) { // Extra check to ensure user is still logged in
                 setConversations([]);
                 setIsLoading(false);
                 return;
@@ -303,7 +303,7 @@ export default function MessagesPage() {
                  <Button className="mt-4" onClick={() => setIsNewMessageModalOpen(true)}>Encontrar pessoas</Button>
             </div>
         ) : (
-             <div className="divide-y divide-border">
+             <ul className="divide-y divide-border">
                 {filteredConversations.map((convo) => (
                    <ConversationItem 
                         key={convo.id} 
@@ -312,7 +312,7 @@ export default function MessagesPage() {
                         onActionClick={handleActionClick}
                     />
                 ))}
-             </div>
+             </ul>
         )}
          {isNewMessageModalOpen && user && (
             <NewMessageModal 
@@ -324,7 +324,3 @@ export default function MessagesPage() {
     </>
   );
 }
-
-    
-
-    

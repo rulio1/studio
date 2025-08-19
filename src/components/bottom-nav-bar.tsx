@@ -12,7 +12,7 @@ import { Badge } from './ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { Skeleton } from './ui/skeleton';
 
-interface ChirpUser {
+interface ZisprUser {
     uid: string;
     avatar: string;
     displayName: string;
@@ -22,7 +22,7 @@ interface ChirpUser {
 export default function BottomNavBar() {
     const pathname = usePathname();
     const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
+    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [notificationCount, setNotificationCount] = useState(0);
     const [messageCount, setMessageCount] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
@@ -50,11 +50,11 @@ export default function BottomNavBar() {
     useEffect(() => {
         if (!user) {
             // Reset counts and user info on logout
-            setChirpUser(null);
+            setZisprUser(null);
             setNotificationCount(0);
             setMessageCount(0);
             setIsLoading(false);
-            return;
+            return () => {}; // Return an empty function for cleanup
         }
         
         setIsLoading(true);
@@ -63,7 +63,7 @@ export default function BottomNavBar() {
         const userDocRef = doc(db, 'users', user.uid);
         const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
-                setChirpUser(doc.data() as ChirpUser);
+                setZisprUser(doc.data() as ZisprUser);
             }
             setIsLoading(false);
         });
@@ -112,11 +112,11 @@ export default function BottomNavBar() {
                  <div className="relative flex-1 flex justify-center items-center h-full rounded-full">
                     {isLoading ? (
                         <Skeleton className="h-8 w-8 rounded-full" />
-                    ) : user && chirpUser ? (
+                    ) : user && zisprUser ? (
                         <Link href={`/profile/${user.uid}`} className={`transition-opacity hover:opacity-80 ${pathname.startsWith(`/profile/`) ? 'border-2 border-primary rounded-full p-0.5' : ''}`}>
                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={chirpUser.avatar} alt={chirpUser.displayName} />
-                                <AvatarFallback>{chirpUser.displayName?.[0]}</AvatarFallback>
+                                <AvatarImage src={zisprUser.avatar} alt={zisprUser.displayName} />
+                                <AvatarFallback>{zisprUser.displayName?.[0]}</AvatarFallback>
                             </Avatar>
                         </Link>
                     ) : null}
