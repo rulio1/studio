@@ -109,7 +109,7 @@ export default function HomePage() {
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editedContent, setEditedContent] = useState("");
-  const [isUpdating, setIsUpdating] = useState(isUpdating);
+  const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   
@@ -866,5 +866,3 @@ export default function HomePage() {
     </>
   );
 }
-
-    
