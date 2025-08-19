@@ -16,12 +16,29 @@ import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { CalendarIcon, Loader2 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
   email: z.string().email({ message: "Endereço de e-mail inválido." }),
   password: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres." }),
+  birthDate: z.date({
+    required_error: "A data de nascimento é obrigatória.",
+    invalid_type_error: "Formato de data inválido.",
+  })
+}).refine(data => {
+    const today = new Date();
+    const sixteenYearsAgo = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
+    return data.birthDate <= sixteenYearsAgo;
+}, {
+    message: "Você deve ter pelo menos 16 anos para se cadastrar.",
+    path: ['birthDate'],
 });
 
 export default function RegisterPage() {
@@ -48,7 +65,6 @@ export default function RegisterPage() {
             displayName: values.name,
         });
 
-        // Use a predictable and unique part of the email for the initial handle
         const handle = values.email.split('@')[0].replace(/[^a-z0-9_]/g, '');
 
         await setDoc(doc(db, "users", user.uid), {
@@ -64,7 +80,7 @@ export default function RegisterPage() {
             bio: '',
             location: '',
             website: '',
-            birthDate: null,
+            birthDate: values.birthDate,
             followers: [],
             following: [],
             communities: [],
@@ -116,6 +132,52 @@ export default function RegisterPage() {
                   </FormItem>
                 )}
               />
+               <FormField
+                control={form.control}
+                name="birthDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Data de Nascimento</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                            disabled={isLoading}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP", { locale: ptBR })
+                            ) : (
+                              <span>Selecione uma data</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                          locale={ptBR}
+                          captionLayout="dropdown-buttons"
+                          fromYear={1920}
+                          toYear={new Date().getFullYear()}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="email"
@@ -147,11 +209,16 @@ export default function RegisterPage() {
                 Criar Conta
               </Button>
             </CardContent>
-            <CardFooter className="flex justify-center text-sm">
-              <span className="text-muted-foreground">Já tem uma conta?</span>
-              <Link href="/login" className="ml-1 underline">
-                Entrar
-              </Link>
+            <CardFooter className="flex-col gap-4 text-center">
+              <p className="text-xs text-muted-foreground">
+                Ao se inscrever, você concorda com nossos <Link href="/privacy" className="underline hover:text-primary">Termos de Serviço</Link> e <Link href="/privacy" className="underline hover:text-primary">Política de Privacidade</Link>.
+              </p>
+              <div className="flex justify-center text-sm">
+                <span className="text-muted-foreground">Já tem uma conta?</span>
+                <Link href="/login" className="ml-1 underline">
+                  Entrar
+                </Link>
+              </div>
             </CardFooter>
           </form>
         </Form>

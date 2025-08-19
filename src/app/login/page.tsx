@@ -105,13 +105,16 @@ export default function LoginPage() {
                 Entrar
               </Button>
             </CardContent>
-            <CardFooter className="flex-col gap-4">
-              <div className="flex justify-center text-sm">
+            <CardFooter className="flex-col gap-4 text-center">
+                <p className="text-xs text-muted-foreground">
+                    Ao continuar, você concorda com a nossa <Link href="/privacy" className="underline hover:text-primary">Política de Privacidade</Link>.
+                </p>
+                <div className="flex justify-center text-sm">
                   <span className="text-muted-foreground">Não tem uma conta?</span>
                   <Link href="/register" className="ml-1 underline">
                   Inscreva-se
                   </Link>
-              </div>
+                </div>
             </CardFooter>
           </form>
         </Form>
