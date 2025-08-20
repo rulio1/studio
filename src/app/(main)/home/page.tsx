@@ -164,8 +164,8 @@ export default function HomePage() {
             return {
                 id: doc.id,
                 ...data,
-                isLiked: (Array.isArray(data.likes) ? data.likes : []).includes(currentUser.uid),
-                isRetweeted: (Array.isArray(data.retweets) ? data.retweets : []).includes(currentUser.uid),
+                isLiked: Array.isArray(data.likes) ? data.likes.includes(currentUser.uid) : false,
+                isRetweeted: Array.isArray(data.retweets) ? data.retweets.includes(currentUser.uid) : false,
             } as Post;
         });
         setAllPosts(postsData);
@@ -207,8 +207,8 @@ useEffect(() => {
             return {
                 id: doc.id,
                 ...data,
-                isLiked: (Array.isArray(data.likes) ? data.likes : []).includes(currentUser.uid),
-                isRetweeted: (Array.isArray(data.retweets) ? data.retweets : []).includes(currentUser.uid),
+                isLiked: Array.isArray(data.likes) ? data.likes.includes(currentUser.uid) : false,
+                isRetweeted: Array.isArray(data.retweets) ? data.retweets.includes(currentUser.uid) : false,
             } as Post
         });
         setFollowingPosts(postsData);
@@ -707,7 +707,7 @@ useEffect(() => {
                         <PopoverTrigger asChild>
                              <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1 hover:text-green-500 transition-colors`}>
                                 <Repeat className="h-5 w-5" />
-                                <span>{(post.retweets || []).length}</span>
+                                <span>{Array.isArray(post.retweets) ? post.retweets.length : 0}</span>
                             </button>
                         </PopoverTrigger>
                          <PopoverContent className="w-48 p-2">
@@ -718,7 +718,7 @@ useEffect(() => {
                                     onClick={(e) => { e.stopPropagation(); handlePostAction(post.id, 'retweet', post.authorId); }}
                                 >
                                     <Repeat className="mr-2 h-4 w-4" />
-                                    {(post.retweets || []).includes(user?.uid || '') ? 'Desfazer Repost' : 'Repostar'}
+                                    {Array.isArray(post.retweets) && post.retweets.includes(user?.uid || '') ? 'Desfazer Repost' : 'Repostar'}
                                 </Button>
                                 <Button
                                     variant="ghost"
@@ -734,7 +734,7 @@ useEffect(() => {
 
                     <button onClick={(e) => {e.stopPropagation(); handlePostAction(post.id, 'like', post.authorId)}} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
                         <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
-                        <span>{(post.likes || []).length}</span>
+                        <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
                     </button>
                         <div className="flex items-center gap-1">
                     <BarChart2 className="h-5 w-5" />
