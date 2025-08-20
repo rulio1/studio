@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, User as FirebaseUser, updateProfile } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
@@ -26,7 +26,6 @@ interface UserProfileData {
     location: string;
     avatar: string;
     banner: string;
-    isVerified?: boolean;
 }
 
 export default function EditProfilePage() {
@@ -43,7 +42,6 @@ export default function EditProfilePage() {
         location: '',
         avatar: '',
         banner: '',
-        isVerified: false,
     });
     
     const [newAvatarDataUri, setNewAvatarDataUri] = useState<string | null>(null);
@@ -69,7 +67,6 @@ export default function EditProfilePage() {
                             location: userData.location || '',
                             avatar: userData.avatar || '',
                             banner: userData.banner || '',
-                            isVerified: userData.isVerified || false,
                         };
                         setProfileData(initialData);
                     }
@@ -127,19 +124,11 @@ export default function EditProfilePage() {
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
                 bio: profileData.bio,
                 location: profileData.location,
-                isVerified: profileData.isVerified,
                 avatar: newAvatarDataUri || profileData.avatar,
                 banner: newBannerDataUri || profileData.banner,
             };
             
             await updateDoc(userRef, firestoreUpdateData);
-    
-            if (user.displayName !== firestoreUpdateData.displayName || user.photoURL !== firestoreUpdateData.avatar) {
-                await updateProfile(user, {
-                    displayName: firestoreUpdateData.displayName,
-                    photoURL: firestoreUpdateData.avatar,
-                });
-            }
     
             toast({
                 title: 'Perfil Salvo!',
