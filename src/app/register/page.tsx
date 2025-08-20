@@ -45,6 +45,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -138,7 +139,7 @@ export default function RegisterPage() {
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Data de Nascimento</FormLabel>
-                    <Popover>
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -162,15 +163,15 @@ export default function RegisterPage() {
                         <Calendar
                           mode="single"
                           selected={field.value}
-                          onSelect={field.onChange}
+                          onSelect={(date) => {
+                            field.onChange(date);
+                            setIsCalendarOpen(false);
+                          }}
                           disabled={(date) =>
                             date > new Date() || date < new Date("1900-01-01")
                           }
                           initialFocus
                           locale={ptBR}
-                          captionLayout="dropdown-buttons"
-                          fromYear={1920}
-                          toYear={new Date().getFullYear()}
                         />
                       </PopoverContent>
                     </Popover>
