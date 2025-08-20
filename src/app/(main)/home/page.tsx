@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -113,7 +114,7 @@ export default function HomePage() {
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editedContent, setEditedContent] = useState("");
-  const [isUpdating, setIsUpdating] = useState(isUpdating);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [postToQuote, setPostToQuote] = useState<Post | null>(null);
   const { toast } = useToast();
