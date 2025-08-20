@@ -67,6 +67,7 @@ interface Post {
     isRetweeted: boolean;
     createdAt: any;
     editedAt?: any;
+    isUpdate?: boolean;
     communityId?: string;
     hashtags?: string[];
     mentions?: string[];
@@ -595,12 +596,18 @@ useEffect(() => {
                 </Avatar>
                 <div className='w-full'>
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-sm flex-wrap">
                         <p className="font-bold text-base flex items-center gap-1">
                             {post.author} 
                             {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                         </p>
                         <p className="text-muted-foreground">{post.handle} · {time}</p>
+                        {post.isUpdate && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Bird className="h-3 w-3 text-primary" />
+                                <span>Atualização</span>
+                            </span>
+                        )}
                         {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
                     </div>
                      <DropdownMenu>

@@ -20,6 +20,8 @@ import { fileToDataUri } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
+import { Switch } from './ui/switch';
+import { Label } from './ui/label';
 
 interface Post {
     id: string;
@@ -49,6 +51,7 @@ interface Post {
     isPinned?: boolean;
     isVerified?: boolean;
     isFirstPost?: boolean;
+    isUpdate?: boolean;
     poll?: {
         options: string[];
         votes: number[];
@@ -116,6 +119,9 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const [showPollCreator, setShowPollCreator] = useState(false);
     const [pollData, setPollData] = useState<PollData | null>(null);
     
+    // App Update State
+    const [isAppUpdate, setIsAppUpdate] = useState(false);
+    
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
 
@@ -166,6 +172,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         setAiImagePrompt('');
         setShowPollCreator(false);
         setPollData(null);
+        setIsAppUpdate(false);
         onOpenChange(false);
         setIsPosting(false);
     }
@@ -271,6 +278,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     views: 0,
                     isVerified: zisprUser.isVerified || false,
                     isFirstPost: isFirstPost,
+                    isUpdate: zisprUser.handle === '@rulio' && isAppUpdate,
                     poll: finalPollData,
                     quotedPostId: quotedPost?.id || null,
                     quotedPost: quotedPost ? {
@@ -502,6 +510,14 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                             </Button>
                         </div>
                     )}
+
+                    {zisprUser.handle === '@rulio' && (
+                        <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
+                            <Switch id="update-switch" checked={isAppUpdate} onCheckedChange={setIsAppUpdate} />
+                            <Label htmlFor="update-switch">Marcar como atualização do app</Label>
+                        </div>
+                    )}
+
 
                     <div className="flex justify-between items-center mt-2 border-t pt-4">
                         <div className="flex items-center gap-1">

@@ -61,6 +61,7 @@ interface Post {
     isLiked: boolean;
     isRetweeted: boolean;
     editedAt?: any;
+    isUpdate?: boolean;
     hashtags?: string[];
     mentions?: string[];
     isVerified?: boolean;
@@ -852,8 +853,14 @@ export default function PostDetailPage() {
                             <span>{post.location}</span>
                         </div>
                     )}
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4 flex-wrap">
                         <p>{post.time}</p>
+                        {post.isUpdate && (
+                            <span className="flex items-center gap-1">
+                                <Bird className="h-3 w-3 text-primary" />
+                                <span>Atualização</span>
+                            </span>
+                        )}
                         {post.editedAt && <p className="text-xs">(editado)</p>}
                     </div>
                     <Separator className="my-4" />
