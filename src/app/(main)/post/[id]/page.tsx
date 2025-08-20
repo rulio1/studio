@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird, Pin, Sparkles, Frown, Flag, BarChart3, Megaphone, UserRound, MapPin } from 'lucide-react';
+import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird, Pin, Sparkles, Frown, Flag, BarChart3, Megaphone, UserRound, MapPin, PenSquare } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle as EditDialogTitle, DialogTitle as OtherDialogTitle } from '@/components/ui/dialog';
+import CreatePostModal from '@/components/create-post-modal';
 import { useToast } from '@/hooks/use-toast';
 import { formatTimeAgo } from '@/lib/utils';
 import Poll from '@/components/poll';
@@ -66,6 +67,8 @@ interface Post {
         votes: number[];
         voters: Record<string, number>;
     } | null;
+    quotedPostId?: string;
+    quotedPost?: Omit<Post, 'quotedPost' | 'quotedPostId'>;
 }
 
 interface Comment {
@@ -161,6 +164,28 @@ const CommentContent = ({ content }: { content: string }) => (
         <ContentRenderer content={content} />
     </p>
 );
+
+const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => {
+    const router = useRouter();
+    return (
+        <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
+            <div className="flex items-center gap-2 text-sm">
+                <Avatar className="h-5 w-5">
+                    <AvatarImage src={post.avatar} />
+                    <AvatarFallback>{post.author[0]}</AvatarFallback>
+                </Avatar>
+                <span className="font-bold">{post.author}</span>
+                <span className="text-muted-foreground">{post.handle}</span>
+            </div>
+            <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
+            {post.image && (
+                <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
+                    <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+                </div>
+            )}
+        </div>
+    );
+};
 
 
 const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comment: Comment, user: FirebaseUser | null, onEdit: (comment: Comment) => void, onDelete: (id: string) => void, isLastComment: boolean }) => {
@@ -286,6 +311,7 @@ export default function PostDetailPage() {
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
+    const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
 
     // State for comment actions
     const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
@@ -800,6 +826,7 @@ export default function PostDetailPage() {
                         </DropdownMenu>
                     </div>
                     <PostContent content={post.content} />
+                    {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
                     {post.image && (
                         <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border">
                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
@@ -829,10 +856,13 @@ export default function PostDetailPage() {
                     </div>
                     <Separator className="my-4" />
                     <div className="flex justify-around text-muted-foreground">
-                        <div className="flex items-center gap-2">
+                        <button className="flex items-center gap-2">
                             <MessageCircle className="h-5 w-5" />
                             <span>{post.comments}</span>
-                        </div>
+                        </button>
+                         <button onClick={(e) => {e.stopPropagation(); setIsQuoteModalOpen(true)}} className="flex items-center gap-1 hover:text-blue-500 transition-colors">
+                            <PenSquare className="h-5 w-5" />
+                        </button>
                         <button onClick={() => handlePostAction('retweet')} className={`flex items-center gap-2 ${post.isRetweeted ? 'text-green-500' : ''}`}>
                             <Repeat className="h-5 w-5" />
                             <span>{post.retweets.length}</span>
@@ -919,6 +949,11 @@ export default function PostDetailPage() {
                         </Button>
                     </DialogContent>
                 </Dialog>
+                <CreatePostModal
+                    open={isQuoteModalOpen}
+                    onOpenChange={setIsQuoteModalOpen}
+                    quotedPost={post}
+                />
 
                 {/* Comment Modals */}
                 <AlertDialog open={!!commentToDelete} onOpenChange={(open) => !open && setCommentToDelete(null)}>

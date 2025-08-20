@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Loader2, Trash2, Edit, Save, BadgeCheck, LogOut, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Star } from 'lucide-react';
+import { Bell, Home, Mail, MessageCircle, Search, Settings, User, Repeat, Heart, BarChart2, Bird, X, MessageSquare, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Loader2, Trash2, Edit, Save, BadgeCheck, LogOut, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Star, PenSquare } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -38,6 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle as EditDialogTitle, DialogTitle as OtherDialogTitle } from '@/components/ui/dialog';
+import CreatePostModal from '@/components/create-post-modal';
 import { Textarea } from '@/components/ui/textarea';
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -78,6 +79,8 @@ interface Post {
         votes: number[];
         voters: Record<string, number>;
     } | null;
+    quotedPostId?: string;
+    quotedPost?: Omit<Post, 'quotedPost' | 'quotedPostId'>;
 }
 
 interface ZisprUser {
@@ -110,6 +113,8 @@ export default function HomePage() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editedContent, setEditedContent] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [postToQuote, setPostToQuote] = useState<Post | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   
@@ -273,6 +278,11 @@ useEffect(() => {
             }
         }
         await batch.commit();
+    };
+
+    const handleQuoteClick = (post: Post) => {
+        setPostToQuote(post);
+        setIsQuoteModalOpen(true);
     };
 
  const handleDeletePost = async () => {
@@ -466,6 +476,25 @@ useEffect(() => {
             </p>
         );
     };
+
+    const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => (
+        <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
+            <div className="flex items-center gap-2 text-sm">
+                <Avatar className="h-5 w-5">
+                    <AvatarImage src={post.avatar} />
+                    <AvatarFallback>{post.author[0]}</AvatarFallback>
+                </Avatar>
+                <span className="font-bold">{post.author}</span>
+                <span className="text-muted-foreground">{post.handle}</span>
+            </div>
+            <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
+            {post.image && (
+                <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
+                    <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+                </div>
+            )}
+        </div>
+    );
     
     const handleVote = async (postId: string, optionIndex: number) => {
         if (!user) return;
@@ -636,6 +665,7 @@ useEffect(() => {
                 <div className="mb-2 whitespace-pre-wrap">
                     <PostContent content={post.content} />
                 </div>
+                {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
                 {post.poll && user && (
                     <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                         <Poll 
@@ -654,15 +684,18 @@ useEffect(() => {
                     </div>
                 )}
                 <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                        <MessageCircle className="h-5 w-5 hover:text-primary transition-colors" />
+                    <button onClick={(e) => { e.stopPropagation(); router.push(`/post/${post.id}`)}} className="flex items-center gap-1 hover:text-primary transition-colors">
+                        <MessageCircle className="h-5 w-5" />
                         <span>{post.comments}</span>
-                    </div>
-                    <button onClick={() => handlePostAction(post.id, 'retweet', post.authorId)} className={`flex items-center gap-1 ${post.retweets.includes(user?.uid || '') ? 'text-green-500' : ''}`}>
+                    </button>
+                    <button onClick={(e) => {e.stopPropagation(); handleQuoteClick(post)}} className="flex items-center gap-1 hover:text-blue-500 transition-colors">
+                        <PenSquare className="h-5 w-5" />
+                    </button>
+                    <button onClick={(e) => {e.stopPropagation(); handlePostAction(post.id, 'retweet', post.authorId)}} className={`flex items-center gap-1 ${post.retweets.includes(user?.uid || '') ? 'text-green-500' : ''}`}>
                         <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
                         <span>{post.retweets.length}</span>
                     </button>
-                    <button onClick={() => handlePostAction(post.id, 'like', post.authorId)} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
+                    <button onClick={(e) => {e.stopPropagation(); handlePostAction(post.id, 'like', post.authorId)}} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
                         <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
                         <span>{post.likes.length}</span>
                     </button>
@@ -870,6 +903,11 @@ useEffect(() => {
                 </Button>
             </DialogContent>
         </Dialog>
+        <CreatePostModal 
+            open={isQuoteModalOpen}
+            onOpenChange={setIsQuoteModalOpen}
+            quotedPost={postToQuote}
+        />
       </main>
     </>
   );

@@ -21,6 +21,43 @@ import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
 
+interface Post {
+    id: string;
+    authorId: string;
+    avatar: string;
+    avatarFallback: string;
+    author: string;
+    handle: string;
+    time: string;
+    content: string;
+    image?: string;
+    imageHint?: string;
+    location?: string;
+    comments: number;
+    retweets: string[];
+    likes: string[];
+    views: number;
+    isLiked: boolean;
+    isRetweeted: boolean;
+    createdAt: any;
+    editedAt?: any;
+    communityId?: string;
+    hashtags?: string[];
+    mentions?: string[];
+    repostedBy?: { name: string; handle: string; avatar: string };
+    repostedAt?: any;
+    isPinned?: boolean;
+    isVerified?: boolean;
+    isFirstPost?: boolean;
+    poll?: {
+        options: string[];
+        votes: number[];
+        voters: Record<string, number>;
+    } | null;
+    quotedPostId?: string;
+    quotedPost?: Omit<Post, 'quotedPost' | 'quotedPostId'>;
+}
+
 interface ZisprUser {
     uid: string;
     displayName: string;
@@ -33,9 +70,30 @@ interface CreatePostModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     initialMode?: 'post' | 'image';
+    quotedPost?: Post | null;
 }
 
-export default function CreatePostModal({ open, onOpenChange, initialMode = 'post'}: CreatePostModalProps) {
+const QuotedPostPreview = ({ post }: { post: Post }) => (
+    <div className="mt-2 border rounded-xl p-3">
+        <div className="flex items-center gap-2 text-sm">
+            <Avatar className="h-5 w-5">
+                <AvatarImage src={post.avatar} />
+                <AvatarFallback>{post.author[0]}</AvatarFallback>
+            </Avatar>
+            <span className="font-bold">{post.author}</span>
+            <span className="text-muted-foreground">{post.handle}</span>
+        </div>
+        <p className="text-sm mt-1 text-muted-foreground">{post.content}</p>
+        {post.image && (
+            <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
+                <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+            </div>
+        )}
+    </div>
+);
+
+
+export default function CreatePostModal({ open, onOpenChange, initialMode = 'post', quotedPost = null}: CreatePostModalProps) {
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
     
@@ -87,6 +145,10 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     useEffect(() => {
         if (open && initialMode === 'image') {
             setShowAiImageGenerator(true);
+        }
+         if (!open) {
+            // Delay reset to allow animation to finish
+            setTimeout(resetModal, 300);
         }
     }, [open, initialMode]);
 
@@ -145,7 +207,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     };
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() && !postImageDataUri && !pollData) {
+        if (!newPostContent.trim() && !postImageDataUri && !pollData && !quotedPost) {
             toast({
                 title: "O post não pode estar vazio.",
                 description: "Por favor, escreva algo, adicione uma imagem ou crie uma enquete.",
@@ -181,6 +243,12 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     votes: pollData.options.map(() => 0), // Initialize votes
                     voters: {} // Map of userId to optionIndex
                 } : null;
+                
+                 // If it's a quote post, increment the original post's retweet count
+                 if (quotedPost) {
+                    const originalPostRef = doc(db, 'posts', quotedPost.id);
+                    transaction.update(originalPostRef, { retweets: increment(1) });
+                }
 
                 // 1. Set the main post data
                 transaction.set(postRef, {
@@ -203,7 +271,19 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     views: 0,
                     isVerified: zisprUser.isVerified || false,
                     isFirstPost: isFirstPost,
-                    poll: finalPollData
+                    poll: finalPollData,
+                    quotedPostId: quotedPost?.id || null,
+                    quotedPost: quotedPost ? {
+                        id: quotedPost.id,
+                        author: quotedPost.author,
+                        authorId: quotedPost.authorId,
+                        handle: quotedPost.handle,
+                        avatar: quotedPost.avatar,
+                        content: quotedPost.content,
+                        image: quotedPost.image || '',
+                        createdAt: quotedPost.createdAt,
+                        isVerified: quotedPost.isVerified || false,
+                    } : null,
                 });
 
                 // 2. Handle first post notification
@@ -338,6 +418,8 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         setNewPostContent(prev => prev + emojiData.emoji);
     };
 
+    const isSubmitDisabled = (!newPostContent.trim() && !postImageDataUri && !pollData && !quotedPost) || isPosting;
+
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen); }}>
             <DialogContent className="sm:max-w-xl bg-background/80 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
@@ -359,6 +441,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                 onChange={(e) => setNewPostContent(e.target.value)}
                                 disabled={isPosting}
                             />
+                            {quotedPost && <QuotedPostPreview post={quotedPost} />}
                             {postImagePreview && (
                                 <div className="mt-4 relative">
                                     <Image src={postImagePreview} alt="Prévia da imagem" width={500} height={300} className="rounded-lg object-cover w-full" />
@@ -455,7 +538,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                 <Sparkles className="h-6 w-6 text-primary" />
                             </Button>
                         </div>
-                        <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !postImageDataUri && !pollData) || isPosting}>
+                        <Button onClick={handleCreatePost} disabled={isSubmitDisabled}>
                             {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Postar
                         </Button>

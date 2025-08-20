@@ -89,13 +89,13 @@ export default function CreatePostFAB() {
                    <Plus className="h-8 w-8" />
                 </Button>
             </div>
-            {isModalOpen && (
-                <CreatePostModal
-                    open={isModalOpen}
-                    onOpenChange={setIsModalOpen}
-                    initialMode={modalMode}
-                />
-            )}
+            
+            <CreatePostModal
+                open={isModalOpen}
+                onOpenChange={setIsModalOpen}
+                initialMode={modalMode}
+            />
+            
         </>
     );
 }

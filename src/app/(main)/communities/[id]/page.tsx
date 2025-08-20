@@ -14,6 +14,7 @@ import PostSkeleton from '@/components/post-skeleton';
 import { formatTimeAgo } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import CreatePostModal from '@/components/create-post-modal';
 import { Textarea } from '@/components/ui/textarea';
 import { generatePost } from '@/ai/flows/post-generator-flow';
 import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
@@ -57,6 +58,8 @@ interface Post {
     hashtags?: string[];
     isVerified?: boolean;
     isFirstPost?: boolean;
+    quotedPostId?: string;
+    quotedPost?: Omit<Post, 'quotedPost' | 'quotedPostId'>;
 }
 
 interface ZisprUser {
@@ -96,7 +99,29 @@ const PostContent = ({ content }: { content: string }) => {
     );
 };
 
-const PostItem = ({ post }: { post: Post }) => {
+const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => {
+    const router = useRouter();
+    return (
+        <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
+            <div className="flex items-center gap-2 text-sm">
+                <Avatar className="h-5 w-5">
+                    <AvatarImage src={post.avatar} />
+                    <AvatarFallback>{post.author[0]}</AvatarFallback>
+                </Avatar>
+                <span className="font-bold">{post.author}</span>
+                <span className="text-muted-foreground">{post.handle}</span>
+            </div>
+            <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
+            {post.image && (
+                <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
+                    <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+                </div>
+            )}
+        </div>
+    );
+};
+
+const PostItem = ({ post, onQuote }: { post: Post, onQuote: (post: Post) => void }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
     
@@ -147,11 +172,33 @@ const PostItem = ({ post }: { post: Post }) => {
                     <div className="mb-2 whitespace-pre-wrap">
                         <PostContent content={post.content} />
                     </div>
+                     {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
                     {post.image && (
                         <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border">
                             <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
                         </div>
                     )}
+                     <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={(e) => { e.stopPropagation(); router.push(`/post/${post.id}`)}} className="flex items-center gap-1 hover:text-primary transition-colors">
+                            <MessageCircle className="h-5 w-5" />
+                            <span>{post.comments}</span>
+                        </button>
+                        <button onClick={(e) => {e.stopPropagation(); onQuote(post)}} className="flex items-center gap-1 hover:text-blue-500 transition-colors">
+                            <PenSquare className="h-5 w-5" />
+                        </button>
+                        <button className={`flex items-center gap-1`}>
+                            <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
+                            <span>{post.retweets.length}</span>
+                        </button>
+                        <button className={`flex items-center gap-1`}>
+                            <Heart className={`h-5 w-5 hover:text-red-500 transition-colors`} />
+                            <span>{post.likes.length}</span>
+                        </button>
+                        <div className="flex items-center gap-1">
+                            <BarChart2 className="h-5 w-5" />
+                            <span>{post.views}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </li>
@@ -175,21 +222,8 @@ export default function CommunityDetailPage() {
     
     // Post creation modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newPostContent, setNewPostContent] = useState('');
+    const [postToQuote, setPostToQuote] = useState<Post | null>(null);
     const [isPosting, setIsPosting] = useState(false);
-    const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
-    const [postImageDataUri, setPostImageDataUri] = useState<string | null>(null);
-    const [location, setLocation] = useState('');
-    const [showLocationInput, setShowLocationInput] = useState(false);
-    const imageInputRef = useRef<HTMLInputElement>(null);
-
-    // AI Generators State
-    const [showAiTextGenerator, setShowAiTextGenerator] = useState(false);
-    const [aiTextPrompt, setAiTextPrompt] = useState('');
-    const [isGeneratingText, setIsGeneratingText] = useState(false);
-    const [showAiImageGenerator, setShowAiImageGenerator] = useState(false);
-    const [aiImagePrompt, setAiImagePrompt] = useState('');
-    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
 
     useEffect(() => {
@@ -289,185 +323,15 @@ export default function CommunityDetailPage() {
         await batch.commit();
     };
 
-    const resetModal = () => {
-        setNewPostContent('');
-        setAiTextPrompt('');
-        setLocation('');
-        setShowLocationInput(false);
-        setIsGeneratingText(false);
-        setShowAiTextGenerator(false);
-        setAiImagePrompt('');
-        setIsGeneratingImage(false);
-        setShowAiImageGenerator(false);
-        setPostImageDataUri(null);
-        setPostImagePreview(null);
-        setIsModalOpen(false);
+    const handleQuoteClick = (postToQuote: Post) => {
+        setPostToQuote(postToQuote);
+        setIsModalOpen(true);
+    };
+
+    const handleOpenCreatePost = () => {
+        setPostToQuote(null);
+        setIsModalOpen(true);
     }
-    
-    const extractHashtags = (content: string) => {
-        const regex = /#([a-zA-Z0-9_]+)/g;
-        const matches = content.match(regex);
-        if (!matches) {
-            return [];
-        }
-        // Return unique hashtags in lowercase
-        return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
-    };
-
-    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        if (file.size > 2 * 1024 * 1024) { // 2MB limit for Data URI
-            toast({
-                title: 'Imagem muito grande',
-                description: 'Por favor, selecione uma imagem menor que 2MB.',
-                variant: 'destructive',
-            });
-            return;
-        }
-
-        const dataUri = await fileToDataUri(file);
-        setPostImagePreview(URL.createObjectURL(file));
-        setPostImageDataUri(dataUri);
-    };
-
-    const handleCreatePost = async () => {
-        if (!newPostContent.trim() && !postImageDataUri) {
-             toast({
-                title: "O post não pode estar vazio.",
-                description: "Por favor, escreva algo ou adicione uma imagem.",
-                variant: "destructive",
-            });
-            return;
-        }
-        if (!user || !zisprUser) return;
-        setIsPosting(true);
-        
-        try {
-            // Check if it's the user's first post outside the transaction
-            const userPostsQuery = query(collection(db, 'posts'), where('authorId', '==', user.uid), limit(1));
-            const userPostsSnapshot = await getDocs(userPostsQuery);
-            const isFirstPost = userPostsSnapshot.empty;
-            const hashtags = extractHashtags(newPostContent);
-
-            await runTransaction(db, async (transaction) => {
-                const postRef = doc(collection(db, "posts"));
-
-                // 1. Perform all reads for hashtags
-                const hashtagRefs = hashtags.map(tag => doc(db, "hashtags", tag));
-                const hashtagDocs = await Promise.all(hashtagRefs.map(ref => transaction.get(ref)));
-
-                // 2. Perform all writes
-                // Create the new post
-                transaction.set(postRef, {
-                    authorId: user.uid,
-                    author: zisprUser.displayName,
-                    handle: zisprUser.handle,
-                    avatar: zisprUser.avatar,
-                    avatarFallback: zisprUser.displayName[0],
-                    content: newPostContent,
-                    location: location,
-                    hashtags: hashtags,
-                    image: postImageDataUri || '',
-                    imageHint: '',
-                    communityId: communityId,
-                    createdAt: serverTimestamp(),
-                    comments: 0,
-                    retweets: [],
-                    likes: [],
-                    views: 0,
-                    isVerified: zisprUser.isVerified || false,
-                    isFirstPost: isFirstPost,
-                });
-
-                // Update hashtag counts
-                 hashtagDocs.forEach((hashtagDoc, index) => {
-                    const tag = hashtags[index];
-                    const hashtagRef = hashtagRefs[index];
-                    if (hashtagDoc.exists()) {
-                        transaction.update(hashtagRef, { count: increment(1) });
-                    } else {
-                        transaction.set(hashtagRef, {
-                            name: tag,
-                            count: 1,
-                            createdAt: serverTimestamp()
-                        });
-                    }
-                });
-
-                // Handle First Post Notification
-                if (isFirstPost) {
-                    const zisprOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@Zispr'), limit(1));
-                    const zisprUserSnapshot = await getDocs(zisprOfficialUserQuery);
-
-                    if (!zisprUserSnapshot.empty) {
-                        const zisprUserData = zisprUserSnapshot.docs[0].data();
-                        const notificationRef = doc(collection(db, 'notifications'));
-                        transaction.set(notificationRef, {
-                            toUserId: user.uid,
-                            fromUserId: zisprUserSnapshot.docs[0].id,
-                            fromUser: {
-                                name: zisprUserData.displayName,
-                                handle: zisprUserData.handle,
-                                avatar: zisprUserData.avatar,
-                                isVerified: true,
-                            },
-                            type: 'post',
-                            text: 'Bem-vindo ao Zispr! Adoramos seu primeiro post.',
-                            postContent: newPostContent.substring(0, 50),
-                            postId: postRef.id,
-                            createdAt: serverTimestamp(),
-                            read: false,
-                        });
-                    }
-                }
-            });
-
-            resetModal();
-            toast({ title: "Post criado na comunidade!" });
-        } catch (error) {
-            console.error(error);
-            toast({ title: "Falha ao criar o post", variant: "destructive" });
-        } finally {
-            setIsPosting(false);
-        }
-    };
-
-    const handleGenerateText = async () => {
-        if (!aiTextPrompt.trim()) return;
-        setIsGeneratingText(true);
-        try {
-            const generatedContent = await generatePost(aiTextPrompt);
-            setNewPostContent(generatedContent);
-            toast({ title: "Conteúdo do post gerado!" });
-        } catch (error) {
-            console.error(error);
-            toast({ title: "Falha ao gerar o post", variant: "destructive" });
-        } finally {
-            setIsGeneratingText(false);
-        }
-    };
-
-    const handleGenerateImage = async () => {
-        if (!aiImagePrompt.trim()) return;
-        setIsGeneratingImage(true);
-        try {
-            const generatedDataUri = await generateImageFromPrompt(aiImagePrompt);
-            setPostImageDataUri(generatedDataUri);
-            setPostImagePreview(generatedDataUri);
-            toast({ title: "Imagem gerada com sucesso!" });
-        } catch (error) {
-            console.error(error);
-            toast({ title: "Falha ao gerar a imagem", variant: "destructive" });
-        } finally {
-            setIsGeneratingImage(false);
-        }
-    };
-    
-    const onEmojiClick = (emojiData: EmojiClickData) => {
-        setNewPostContent(prev => prev + emojiData.emoji);
-    };
     
     if (isLoading || !community) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -507,6 +371,10 @@ export default function CommunityDetailPage() {
                     </div>
                 </div>
 
+                 <div className="border-t p-4">
+                    <Button className="w-full" variant="outline" onClick={handleOpenCreatePost}>Postar na Comunidade</Button>
+                </div>
+
                 <div className="border-t">
                     {isLoadingPosts ? (
                          <ul className="divide-y divide-border">
@@ -520,7 +388,7 @@ export default function CommunityDetailPage() {
                     ) : (
                          <ul className="divide-y divide-border">
                             {posts.map((post) => (
-                                <PostItem key={post.id} post={post} />
+                                <PostItem key={post.id} post={post} onQuote={handleQuoteClick} />
                             ))}
                         </ul>
                     )}
@@ -528,125 +396,12 @@ export default function CommunityDetailPage() {
             </main>
 
             {isMember && (
-                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                    <DialogTrigger asChild>
-                         <div />
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-xl bg-background/80 backdrop-blur-lg border rounded-2xl">
-                        <DialogHeader>
-                            <DialogTitle>Postar na comunidade {community.name}</DialogTitle>
-                        </DialogHeader>
-                         {zisprUser ? (
-                            <div className="flex flex-col gap-4">
-                                <div className="flex gap-4">
-                                    <Avatar>
-                                        <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
-                                        <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="w-full">
-                                        <Textarea
-                                            placeholder="O que está acontecendo?"
-                                            value={newPostContent}
-                                            onChange={(e) => setNewPostContent(e.target.value)}
-                                            rows={5}
-                                        />
-                                         {postImagePreview && (
-                                            <div className="mt-4 relative">
-                                                <Image src={postImagePreview} alt="Prévia da imagem" width={500} height={300} className="rounded-lg object-cover w-full" />
-                                                <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => { setPostImagePreview(null); setPostImageDataUri(null); }}>
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                {showLocationInput && (
-                                    <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
-                                        <MapPin className="h-5 w-5 text-primary" />
-                                        <Input 
-                                            placeholder="Adicionar localização"
-                                            className="bg-transparent border-b-2 border-primary focus-visible:ring-0 rounded-none"
-                                            value={location}
-                                            onChange={(e) => setLocation(e.target.value)}
-                                        />
-                                    </div>
-                                )}
-                                 {showAiTextGenerator && (
-                                    <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
-                                        <Textarea 
-                                            placeholder="ex: Um post sobre o futuro da exploração espacial"
-                                            className="text-sm focus-visible:ring-1 bg-background"
-                                            value={aiTextPrompt}
-                                            onChange={(e) => setAiTextPrompt(e.target.value)}
-                                            rows={2}
-                                        />
-                                        <Button onClick={handleGenerateText} disabled={isGeneratingText || !aiTextPrompt.trim()} className="self-end" size="sm">
-                                            {isGeneratingText && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Gerar Texto
-                                        </Button>
-                                    </div>
-                                )}
-                                 {showAiImageGenerator && (
-                                    <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
-                                        <Textarea 
-                                            placeholder="Descreva a imagem que você quer criar..."
-                                            className="text-sm focus-visible:ring-1 bg-background"
-                                            value={aiImagePrompt}
-                                            onChange={(e) => setAiImagePrompt(e.target.value)}
-                                            rows={2}
-                                        />
-                                        <Button onClick={handleGenerateImage} disabled={isGeneratingImage || !aiImagePrompt.trim()} className="self-end" size="sm">
-                                            {isGeneratingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Gerar Imagem
-                                        </Button>
-                                    </div>
-                                )}
-                                <div className="flex justify-between items-center mt-2 border-t pt-4">
-                                    <div className="flex items-center gap-1">
-                                        <Input
-                                            type="file"
-                                            className="hidden"
-                                            ref={imageInputRef}
-                                            accept="image/png, image/jpeg, image/gif"
-                                            onChange={handleImageChange}
-                                        />
-                                         <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
-                                            <Upload className="h-6 w-6 text-primary" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => setShowAiImageGenerator(!showAiImageGenerator)} disabled={isPosting}>
-                                            <ImageIcon className="h-6 w-6 text-primary" />
-                                        </Button>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="ghost" size="icon" disabled={isPosting}>
-                                                    <Smile className="h-6 w-6 text-primary" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0 border-0">
-                                                <EmojiPicker onEmojiClick={onEmojiClick} />
-                                            </PopoverContent>
-                                        </Popover>
-                                        <Button variant="ghost" size="icon" onClick={() => setShowLocationInput(!showLocationInput)} disabled={isPosting}>
-                                            <MapPin className="h-6 w-6 text-primary" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => {setShowAiTextGenerator(!showAiTextGenerator);}} disabled={isPosting}>
-                                            <Sparkles className="h-6 w-6 text-primary" />
-                                        </Button>
-                                    </div>
-                                    <Button onClick={handleCreatePost} disabled={(!newPostContent.trim() && !postImageDataUri) || isPosting}>
-                                        {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Postar
-                                    </Button>
-                                </div>
-                            </div>
-                         ) : <Loader2 className="h-6 w-6 animate-spin mx-auto" />}
-                    </DialogContent>
-                </Dialog>
+                <CreatePostModal 
+                    open={isModalOpen}
+                    onOpenChange={setIsModalOpen}
+                    quotedPost={postToQuote}
+                />
             )}
         </div>
     );
 }
-
-    
-
-    
