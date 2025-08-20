@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -114,7 +113,7 @@ export default function HomePage() {
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editedContent, setEditedContent] = useState("");
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(isUpdating);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [postToQuote, setPostToQuote] = useState<Post | null>(null);
   const { toast } = useToast();
@@ -164,8 +163,8 @@ export default function HomePage() {
             return {
                 id: doc.id,
                 ...data,
-                isLiked: (data.likes || []).includes(currentUser.uid),
-                isRetweeted: (data.retweets || []).includes(currentUser.uid),
+                isLiked: (Array.isArray(data.likes) ? data.likes : []).includes(currentUser.uid),
+                isRetweeted: (Array.isArray(data.retweets) ? data.retweets : []).includes(currentUser.uid),
             } as Post;
         });
         setAllPosts(postsData);
@@ -207,8 +206,8 @@ useEffect(() => {
             return {
                 id: doc.id,
                 ...data,
-                isLiked: (data.likes || []).includes(currentUser.uid),
-                isRetweeted: (data.retweets || []).includes(currentUser.uid),
+                isLiked: (Array.isArray(data.likes) ? data.likes : []).includes(currentUser.uid),
+                isRetweeted: (Array.isArray(data.retweets) ? data.retweets : []).includes(currentUser.uid),
             } as Post
         });
         setFollowingPosts(postsData);

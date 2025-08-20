@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -299,8 +298,8 @@ export default function CommunityDetailPage() {
                     id: doc.id,
                     ...data,
                     time: '', // Will be set in PostItem component
-                    isLiked: data.likes.includes(currentUser.uid),
-                    isRetweeted: data.retweets.includes(currentUser.uid),
+                    isLiked: (Array.isArray(data.likes) ? data.likes : []).includes(currentUser.uid),
+                    isRetweeted: (Array.isArray(data.retweets) ? data.retweets : []).includes(currentUser.uid),
                 } as Post;
             });
             postsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -412,11 +411,12 @@ export default function ProfilePage() {
         if (profileData.pinnedPostId) {
             const postDoc = await getDoc(doc(db, 'posts', profileData.pinnedPostId));
             if (postDoc.exists()) {
+                const data = postDoc.data();
                 setPinnedPost({
                     id: postDoc.id,
-                    ...postDoc.data(),
-                    isLiked: postDoc.data().likes.includes(userToFetch.uid || ''),
-                    isRetweeted: postDoc.data().retweets.includes(userToFetch.uid || ''),
+                    ...data,
+                    isLiked: (Array.isArray(data.likes) ? data.likes : []).includes(userToFetch.uid || ''),
+                    isRetweeted: (Array.isArray(data.retweets) ? data.retweets : []).includes(userToFetch.uid || ''),
                     isPinned: true
                 } as Post);
             }
@@ -467,8 +467,8 @@ export default function ProfilePage() {
         
         const finalPosts = allPosts.map(post => ({
             ...post,
-            isLiked: post.likes.includes(userToFetch.uid || ''),
-            isRetweeted: post.retweets.includes(userToFetch.uid || ''),
+            isLiked: (Array.isArray(post.likes) ? post.likes : []).includes(userToFetch.uid || ''),
+            isRetweeted: (Array.isArray(post.retweets) ? post.retweets : []).includes(userToFetch.uid || ''),
         }));
     
         setUserPosts(finalPosts);
@@ -534,8 +534,8 @@ export default function ProfilePage() {
                     return {
                         id: doc.id,
                         ...data,
-                        isLiked: data.likes.includes(userToFetch.uid || ''),
-                        isRetweeted: data.retweets.includes(userToFetch.uid || ''),
+                        isLiked: (Array.isArray(data.likes) ? data.likes : []).includes(userToFetch.uid || ''),
+                        isRetweeted: (Array.isArray(data.retweets) ? data.retweets : []).includes(userToFetch.uid || ''),
                     } as Post;
                 })
             );

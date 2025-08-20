@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -358,8 +356,8 @@ export default function PostDetailPage() {
                         id: doc.id,
                         ...postData,
                         time: postData.createdAt ? format(postData.createdAt.toDate(), "h:mm a · d 'de' MMMM 'de' yyyy", { locale: ptBR }) : '',
-                        isLiked: (postData.likes || []).includes(user.uid),
-                        isRetweeted: (postData.retweets || []).includes(user.uid),
+                        isLiked: (Array.isArray(postData.likes) ? postData.likes : []).includes(user.uid),
+                        isRetweeted: (Array.isArray(postData.retweets) ? postData.retweets : []).includes(user.uid),
                     });
                      setEditedContent(postData.content);
                 } else {
@@ -376,7 +374,7 @@ export default function PostDetailPage() {
                         id: doc.id,
                         ...data,
                         time: '', // will be set in CommentItem
-                        isLiked: (data.likes || []).includes(user.uid || ''),
+                        isLiked: (Array.isArray(data.likes) ? data.likes : []).includes(user.uid || ''),
                     } as Comment;
                 });
                 commentsData.sort((a, b) => {

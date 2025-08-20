@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -162,8 +161,8 @@ export default function SavedPage() {
                         id: doc.id,
                         ...data,
                         time: '', // will be set in SavedPostItem
-                        isLiked: data.likes.includes(user.uid),
-                        isRetweeted: data.retweets.includes(user.uid),
+                        isLiked: (Array.isArray(data.likes) ? data.likes : []).includes(user.uid),
+                        isRetweeted: (Array.isArray(data.retweets) ? data.retweets : []).includes(user.uid),
                     } as Post;
                 });
 
@@ -224,5 +223,3 @@ export default function SavedPage() {
         </div>
     );
 }
-
-    
