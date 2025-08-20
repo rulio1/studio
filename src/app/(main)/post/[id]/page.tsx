@@ -38,6 +38,8 @@ import { useToast } from '@/hooks/use-toast';
 import { formatTimeAgo } from '@/lib/utils';
 import Poll from '@/components/poll';
 import { runTransaction } from 'firebase/firestore';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 
 interface Post {
     id: string;
@@ -860,13 +862,34 @@ export default function PostDetailPage() {
                             <MessageCircle className="h-5 w-5" />
                             <span>{post.comments}</span>
                         </button>
-                         <button onClick={(e) => {e.stopPropagation(); setIsQuoteModalOpen(true)}} className="flex items-center gap-1 hover:text-blue-500 transition-colors">
-                            <PenSquare className="h-5 w-5" />
-                        </button>
-                        <button onClick={() => handlePostAction('retweet')} className={`flex items-center gap-2 ${post.isRetweeted ? 'text-green-500' : ''}`}>
-                            <Repeat className="h-5 w-5" />
-                            <span>{post.retweets.length}</span>
-                        </button>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-2 hover:text-green-500 transition-colors`}>
+                                    <Repeat className="h-5 w-5" />
+                                    <span>{post.retweets.length}</span>
+                                </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-48 p-2">
+                                <div className="grid gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        className="w-full justify-start"
+                                        onClick={(e) => { e.stopPropagation(); handlePostAction('retweet'); }}
+                                    >
+                                        <Repeat className="mr-2 h-4 w-4" />
+                                        {post.isRetweeted ? 'Desfazer Repost' : 'Repostar'}
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        className="w-full justify-start"
+                                        onClick={(e) => { e.stopPropagation(); setIsQuoteModalOpen(true); }}
+                                    >
+                                        <PenSquare className="mr-2 h-4 w-4" />
+                                        Quotar Post
+                                    </Button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
                         <button onClick={() => handlePostAction('like')} className={`flex items-center gap-2 ${post.isLiked ? 'text-red-500' : ''}`}>
                              <Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
                             <span>{post.likes.length}</span>

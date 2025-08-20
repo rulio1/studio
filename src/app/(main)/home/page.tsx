@@ -44,6 +44,7 @@ import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { dataURItoFile } from '@/lib/utils';
 import Poll from '@/components/poll';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 
 interface Post {
@@ -688,13 +689,36 @@ useEffect(() => {
                         <MessageCircle className="h-5 w-5" />
                         <span>{post.comments}</span>
                     </button>
-                    <button onClick={(e) => {e.stopPropagation(); handleQuoteClick(post)}} className="flex items-center gap-1 hover:text-blue-500 transition-colors">
-                        <PenSquare className="h-5 w-5" />
-                    </button>
-                    <button onClick={(e) => {e.stopPropagation(); handlePostAction(post.id, 'retweet', post.authorId)}} className={`flex items-center gap-1 ${post.retweets.includes(user?.uid || '') ? 'text-green-500' : ''}`}>
-                        <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
-                        <span>{post.retweets.length}</span>
-                    </button>
+                    
+                    <Popover>
+                        <PopoverTrigger asChild>
+                             <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1 hover:text-green-500 transition-colors`}>
+                                <Repeat className="h-5 w-5" />
+                                <span>{post.retweets.length}</span>
+                            </button>
+                        </PopoverTrigger>
+                         <PopoverContent className="w-48 p-2">
+                            <div className="grid gap-2">
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start"
+                                    onClick={(e) => { e.stopPropagation(); handlePostAction(post.id, 'retweet', post.authorId); }}
+                                >
+                                    <Repeat className="mr-2 h-4 w-4" />
+                                    {post.retweets.includes(user?.uid || '') ? 'Desfazer Repost' : 'Repostar'}
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start"
+                                    onClick={(e) => { e.stopPropagation(); handleQuoteClick(post); }}
+                                >
+                                    <PenSquare className="mr-2 h-4 w-4" />
+                                    Quotar Post
+                                </Button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+
                     <button onClick={(e) => {e.stopPropagation(); handlePostAction(post.id, 'like', post.authorId)}} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
                         <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
                         <span>{post.likes.length}</span>
