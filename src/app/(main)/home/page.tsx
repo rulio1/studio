@@ -159,12 +159,15 @@ export default function HomePage() {
 
     const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        const postsData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            isLiked: doc.data().likes.includes(currentUser.uid),
-            isRetweeted: doc.data().retweets.includes(currentUser.uid),
-        } as Post));
+        const postsData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                isLiked: (data.likes || []).includes(currentUser.uid),
+                isRetweeted: (data.retweets || []).includes(currentUser.uid),
+            } as Post;
+        });
         setAllPosts(postsData);
         setIsLoading(false);
     }, (error) => {
@@ -199,12 +202,15 @@ useEffect(() => {
 
     const q = query(collection(db, "posts"), where("authorId", "in", feedUserIds), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        const postsData = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            isLiked: doc.data().likes.includes(currentUser.uid),
-            isRetweeted: doc.data().retweets.includes(currentUser.uid),
-        } as Post));
+        const postsData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                isLiked: (data.likes || []).includes(currentUser.uid),
+                isRetweeted: (data.retweets || []).includes(currentUser.uid),
+            } as Post
+        });
         setFollowingPosts(postsData);
         setIsLoadingFollowing(false);
     }, (error) => {

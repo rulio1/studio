@@ -358,8 +358,8 @@ export default function PostDetailPage() {
                         id: doc.id,
                         ...postData,
                         time: postData.createdAt ? format(postData.createdAt.toDate(), "h:mm a · d 'de' MMMM 'de' yyyy", { locale: ptBR }) : '',
-                        isLiked: postData.likes.includes(user.uid || ''),
-                        isRetweeted: postData.retweets.includes(user.uid || ''),
+                        isLiked: (postData.likes || []).includes(user.uid),
+                        isRetweeted: (postData.retweets || []).includes(user.uid),
                     });
                      setEditedContent(postData.content);
                 } else {
