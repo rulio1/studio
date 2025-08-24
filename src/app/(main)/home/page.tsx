@@ -827,6 +827,13 @@ useEffect(() => {
   
     const isZisprAccount = zisprUser.handle === '@Zispr';
     const isZisprUserVerified = zisprUser.isVerified || zisprUser.handle === '@rulio' || isZisprAccount;
+    const navItems = [
+        { href: '/home', icon: Home, label: 'Início' },
+        { href: '/notifications', icon: Bell, label: 'Notificações' },
+        { href: '/messages', icon: Mail, label: 'Mensagens' },
+        { href: '/saved', icon: Bookmark, label: 'Itens Salvos' },
+        { href: `/profile/${user.uid}`, icon: User, label: 'Perfil' },
+    ];
 
 
   return (
@@ -866,16 +873,13 @@ useEffect(() => {
                     </div>
                 </div>
                  <nav className="flex-1 flex flex-col gap-2 p-4">
-                    <SheetClose asChild>
-                      <Link href={`/profile/${user.uid}`} className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <User className="h-6 w-6" /> Perfil
-                      </Link>
-                    </SheetClose>
-                    <SheetClose asChild>
-                       <Link href="/saved" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <Bookmark className="h-6 w-6" /> Itens Salvos
-                      </Link>
-                    </SheetClose>
+                    {navItems.map((item) => (
+                        <SheetClose asChild key={item.label}>
+                            <Link href={item.href} className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                                <item.icon className="h-6 w-6" /> {item.label}
+                            </Link>
+                        </SheetClose>
+                    ))}
                   </nav>
                   <div className="p-4 border-t mt-auto flex flex-col gap-2">
                     <SheetClose asChild>
