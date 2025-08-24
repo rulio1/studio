@@ -3,7 +3,7 @@
 
 import { Dialog, DialogContent, DialogOverlay, DialogPortal, DialogTitle } from '@/components/ui/dialog';
 import { Button } from './ui/button';
-import { X, MessageCircle, Repeat, Heart, BarChart2, Upload } from 'lucide-react';
+import { X, MessageCircle, Repeat, Heart, BarChart2, Upload, MoreHorizontal } from 'lucide-react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
