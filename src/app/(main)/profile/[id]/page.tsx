@@ -114,6 +114,7 @@ interface ZisprUser {
     createdAt: any;
     followers: string[];
     following: string[];
+    likedPosts?: string[];
     savedPosts?: string[];
     pinnedPostId?: string;
     isVerified?: boolean;
@@ -571,29 +572,18 @@ export default function ProfilePage() {
 
     const fetchLikedPosts = useCallback(async (userToFetch: FirebaseUser, profileData: ZisprUser) => {
         setIsLoadingLikes(true);
-        if (!isOwnProfile) {
-            setLikedPosts([]);
-            setIsLoadingLikes(false);
-            return;
-        }
-
         try {
-            const likedPostIds = profileData.savedPosts?.filter(id => id.startsWith('liked:'))
-                .map(id => id.replace('liked:', '')) || [];
-            
-            // This is just a temporary mock, in a real app you'd fetch the posts from firestore based on likedPostIds
-            const userDoc = await getDoc(doc(db, 'users', userToFetch.uid));
-            const likedPostsData = userDoc.data()?.likedPosts || [];
+            const likedPostIds = profileData.likedPosts || [];
 
-            if (likedPostsData.length === 0) {
+            if (likedPostIds.length === 0) {
                  setLikedPosts([]);
                  setIsLoadingLikes(false);
                  return;
             }
             
             const chunks = [];
-            for (let i = 0; i < likedPostsData.length; i += 30) {
-                 chunks.push(likedPostsData.slice(i, i + 30));
+            for (let i = 0; i < likedPostIds.length; i += 30) {
+                 chunks.push(likedPostIds.slice(i, i + 30));
             }
             const postsSnapshots = await Promise.all(chunks.map(chunk => getDocs(query(collection(db, "posts"), where(documentId(), "in", chunk)))));
 
@@ -616,7 +606,7 @@ export default function ProfilePage() {
         } finally {
             setIsLoadingLikes(false);
         }
-    }, [profileId, isOwnProfile]);
+    }, [profileId]);
 
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
@@ -659,7 +649,7 @@ export default function ProfilePage() {
         });
 
         return () => unsubscribeAuth();
-    }, [profileId, router, fetchUserPosts, fetchUserReplies, fetchLikedPosts, toast, isOwnProfile]);
+    }, [profileId, router, fetchUserPosts, fetchUserReplies, fetchLikedPosts, toast]);
     
     const handleToggleFollow = async (targetUser: ZisprUser, currentZisprUser: ZisprUser, isCurrentlyFollowing: boolean) => {
         if (!currentUser) return;
@@ -839,12 +829,17 @@ export default function ProfilePage() {
     
         const isActioned = action === 'like' ? (Array.isArray(post.likes) && post.likes.includes(currentUser.uid)) : (Array.isArray(post.retweets) && post.retweets.includes(currentUser.uid));
 
+        const userRef = doc(db, 'users', currentUser.uid);
     
         const batch = writeBatch(db);
     
         if (isActioned) {
             const field = action === 'like' ? 'likes' : 'retweets';
             batch.update(postRef, { [field]: arrayRemove(currentUser.uid) });
+
+            if (action === 'like') {
+                batch.update(userRef, { likedPosts: arrayRemove(postId) });
+            }
     
             if (action === 'retweet') {
                 const repostQuery = query(collection(db, 'reposts'), where('userId', '==', currentUser.uid), where('postId', '==', postId));
@@ -855,6 +850,10 @@ export default function ProfilePage() {
             const field = action === 'like' ? 'likes' : 'retweets';
             batch.update(postRef, { [field]: arrayUnion(currentUser.uid) });
     
+            if (action === 'like') {
+                batch.update(userRef, { likedPosts: arrayUnion(postId) });
+            }
+
             if (action === 'retweet') {
                 const repostRef = doc(collection(db, 'reposts'));
                 batch.set(repostRef, {
@@ -1198,19 +1197,12 @@ export default function ProfilePage() {
                  />
             </TabsContent>
             <TabsContent value="likes" className="mt-0">
-                {isOwnProfile ? (
-                    <PostList 
-                        posts={likedPosts} 
-                        loading={isLoadingLikes}
-                        emptyTitle="Nenhuma curtida ainda" 
-                        emptyDescription="Quando você curtir posts, eles aparecerão aqui."
-                    />
-                ) : (
-                    <EmptyState 
-                        title="As curtidas são privadas"
-                        description="A lista de posts que este usuário curtiu não está visível para outras pessoas."
-                    />
-                )}
+                <PostList 
+                    posts={likedPosts} 
+                    loading={isLoadingLikes}
+                    emptyTitle={`${isOwnProfile ? "Você não curtiu" : "Nenhum post curtido"} nada ainda`} 
+                    emptyDescription={`${isOwnProfile ? "Quando você curtir" : "Quando este usuário curtir"} posts, eles aparecerão aqui.`}
+                />
             </TabsContent>
         </Tabs>
       </main>
