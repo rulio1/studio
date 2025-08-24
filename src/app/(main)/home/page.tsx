@@ -45,6 +45,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { dataURItoFile } from '@/lib/utils';
 import Poll from '@/components/poll';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import ImageViewer from '@/components/image-viewer';
 
 
 interface Post {
@@ -117,6 +118,7 @@ export default function HomePage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [postToQuote, setPostToQuote] = useState<Post | null>(null);
+  const [imageToView, setImageToView] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   
@@ -693,7 +695,7 @@ useEffect(() => {
                     </div>
                 )}
                 {post.image && (
-                    <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border">
+                    <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); setImageToView(post.image || null); }}>
                         <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
                     </div>
                 )}
@@ -945,6 +947,7 @@ useEffect(() => {
             onOpenChange={setIsQuoteModalOpen}
             quotedPost={postToQuote}
         />
+        <ImageViewer src={imageToView} onOpenChange={() => setImageToView(null)} />
       </main>
     </>
   );

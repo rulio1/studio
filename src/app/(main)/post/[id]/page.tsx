@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -37,6 +38,7 @@ import { formatTimeAgo } from '@/lib/utils';
 import Poll from '@/components/poll';
 import { runTransaction } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import ImageViewer from '@/components/image-viewer';
 
 
 interface Post {
@@ -306,6 +308,7 @@ export default function PostDetailPage() {
     const [isReplying, setIsReplying] = useState(false);
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
+    const [imageToView, setImageToView] = useState<string | null>(null);
     
     // State for post actions
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -829,7 +832,7 @@ export default function PostDetailPage() {
                     <PostContent content={post.content} />
                     {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
                     {post.image && (
-                        <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border">
+                        <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); setImageToView(post.image || null); }}>
                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
                         </div>
                     )}
@@ -1015,6 +1018,7 @@ export default function PostDetailPage() {
                         </Button>
                     </DialogContent>
                 </Dialog>
+                <ImageViewer src={imageToView} onOpenChange={() => setImageToView(null)} />
             </main>
         </div>
     );

@@ -42,6 +42,7 @@ import { Badge } from '@/components/ui/badge';
 import FollowListDialog from '@/components/follow-list-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import CreatePostModal from '@/components/create-post-modal';
+import ImageViewer from '@/components/image-viewer';
 
 
 const EmptyState = ({ title, description, icon: Icon }: { title: string, description: string, icon?: React.ElementType }) => (
@@ -172,7 +173,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
 };
 
 
-const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, onPin, onVote, toast, onQuote }: { post: Post, user: FirebaseUser | null, zisprUser: ZisprUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, onVote: (postId: string, optionIndex: number) => Promise<void>, toast: any, onQuote: (post: Post) => void }) => {
+const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, onPin, onVote, toast, onQuote, onImageClick }: { post: Post, user: FirebaseUser | null, zisprUser: ZisprUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, onVote: (postId: string, optionIndex: number) => Promise<void>, toast: any, onQuote: (post: Post) => void, onImageClick: (src: string) => void }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
     
@@ -313,7 +314,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
                         </div>
                     )}
                      {post.image && (
-                        <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border">
+                        <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); onImageClick(post.image || ''); }}>
                             <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint="Imagem do perfil" />
                         </div>
                     )}
@@ -423,6 +424,7 @@ export default function ProfilePage() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [postToQuote, setPostToQuote] = useState<Post | null>(null);
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+    const [imageToView, setImageToView] = useState<string | null>(null);
 
     // Follow list dialog state
     const [followListTitle, setFollowListTitle] = useState('');
@@ -953,6 +955,7 @@ export default function ProfilePage() {
                         onVote={handleVote}
                         toast={toast}
                         onQuote={handleQuoteClick}
+                        onImageClick={setImageToView}
                     />
                 )}
                 {displayPosts.map((post) => (
@@ -969,6 +972,7 @@ export default function ProfilePage() {
                         onVote={handleVote}
                         toast={toast}
                         onQuote={handleQuoteClick}
+                        onImageClick={setImageToView}
                     />
                 ))}
             </ul>
@@ -1218,6 +1222,7 @@ export default function ProfilePage() {
                 onToggleFollow={handleToggleFollow}
             />
         )}
+        <ImageViewer src={imageToView} onOpenChange={() => setImageToView(null)} />
     </div>
   );
 }

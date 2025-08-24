@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -22,6 +23,7 @@ import { fileToDataUri } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import ImageViewer from '@/components/image-viewer';
 
 interface Community {
     id: string;
@@ -120,7 +122,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
     );
 };
 
-const PostItem = ({ post, onQuote }: { post: Post, onQuote: (post: Post) => void }) => {
+const PostItem = ({ post, onQuote, onImageClick }: { post: Post, onQuote: (post: Post) => void, onImageClick: (src: string) => void }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
     
@@ -173,7 +175,7 @@ const PostItem = ({ post, onQuote }: { post: Post, onQuote: (post: Post) => void
                     </div>
                      {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
                     {post.image && (
-                        <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border">
+                        <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); onImageClick(post.image || ''); }}>
                             <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
                         </div>
                     )}
@@ -239,6 +241,7 @@ export default function CommunityDetailPage() {
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [isMember, setIsMember] = useState(false);
+    const [imageToView, setImageToView] = useState<string | null>(null);
     
     // Post creation modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -408,7 +411,7 @@ export default function CommunityDetailPage() {
                     ) : (
                          <ul className="divide-y divide-border">
                             {posts.map((post) => (
-                                <PostItem key={post.id} post={post} onQuote={handleQuoteClick} />
+                                <PostItem key={post.id} post={post} onQuote={handleQuoteClick} onImageClick={setImageToView} />
                             ))}
                         </ul>
                     )}
@@ -422,6 +425,7 @@ export default function CommunityDetailPage() {
                     quotedPost={postToQuote}
                 />
             )}
+             <ImageViewer src={imageToView} onOpenChange={() => setImageToView(null)} />
         </div>
     );
 }
