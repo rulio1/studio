@@ -276,11 +276,11 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
                     </div>
                     <button onClick={() => toast({title: "Em breve!", description: "Retweetar comentários estará disponível em breve."})} className={`flex items-center gap-1`}>
                         <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
-                        <span>{comment.retweets?.length || 0}</span>
+                        <span>{Array.isArray(comment.retweets) ? comment.retweets.length : 0}</span>
                     </button>
                     <button onClick={() => handleCommentAction('like')} className={`flex items-center gap-1 ${comment.isLiked ? 'text-red-500' : ''}`}>
                         <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${comment.isLiked ? 'fill-current' : ''}`} />
-                        <span>{comment.likes?.length || 0}</span>
+                        <span>{Array.isArray(comment.likes) ? comment.likes.length : 0}</span>
                     </button>
                     <div className="flex items-center gap-1">
                         <BarChart2 className="h-5 w-5" />
@@ -356,8 +356,8 @@ export default function PostDetailPage() {
                         id: doc.id,
                         ...postData,
                         time: postData.createdAt ? format(postData.createdAt.toDate(), "h:mm a · d 'de' MMMM 'de' yyyy", { locale: ptBR }) : '',
-                        isLiked: (Array.isArray(postData.likes) ? postData.likes : []).includes(user.uid),
-                        isRetweeted: (Array.isArray(postData.retweets) ? postData.retweets : []).includes(user.uid),
+                        isLiked: Array.isArray(postData.likes) ? postData.likes.includes(user.uid) : false,
+                        isRetweeted: Array.isArray(postData.retweets) ? postData.retweets.includes(user.uid) : false,
                     });
                      setEditedContent(postData.content);
                 } else {
@@ -374,7 +374,7 @@ export default function PostDetailPage() {
                         id: doc.id,
                         ...data,
                         time: '', // will be set in CommentItem
-                        isLiked: (Array.isArray(data.likes) ? data.likes : []).includes(user.uid || ''),
+                        isLiked: Array.isArray(data.likes) ? data.likes.includes(user.uid || '') : false,
                     } as Comment;
                 });
                 commentsData.sort((a, b) => {
@@ -871,7 +871,7 @@ export default function PostDetailPage() {
                             <PopoverTrigger asChild>
                                 <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-2 hover:text-green-500 transition-colors`}>
                                     <Repeat className="h-5 w-5" />
-                                    <span>{post.retweets.length}</span>
+                                    <span>{Array.isArray(post.retweets) ? post.retweets.length : 0}</span>
                                 </button>
                             </PopoverTrigger>
                             <PopoverContent className="w-48 p-2">
@@ -897,7 +897,7 @@ export default function PostDetailPage() {
                         </Popover>
                         <button onClick={() => handlePostAction('like')} className={`flex items-center gap-2 ${post.isLiked ? 'text-red-500' : ''}`}>
                              <Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
-                            <span>{post.likes.length}</span>
+                            <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
                         </button>
                         <div className="flex items-center gap-2">
                            <BarChart2 className="h-5 w-5" />

@@ -197,7 +197,8 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
     const isZisprAccount = post.handle === '@Zispr';
     const isVerified = post.isVerified || post.handle === '@rulio' || isZisprAccount;
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
-    const isRetweeted = Array.isArray(post.retweets) ? post.retweets.includes(user?.uid || '') : false;
+    const isRetweeted = Array.isArray(post.retweets) && post.retweets.includes(user?.uid || '');
+    const isLiked = Array.isArray(post.likes) && post.likes.includes(user?.uid || '');
 
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
@@ -325,7 +326,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
                     <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
                         <button className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></button>
                         <button onClick={() => onAction(post.id, 'retweet', post.authorId)} className={`flex items-center gap-1 ${isRetweeted ? 'text-green-500' : ''}`}><Repeat className="h-5 w-5 hover:text-green-500 transition-colors" /><span>{Array.isArray(post.retweets) ? post.retweets.length : 0}</span></button>
-                        <button onClick={() => onAction(post.id, 'like', post.authorId)} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}><Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} /><span>{Array.isArray(post.likes) ? post.likes.length : 0}</span></button>
+                        <button onClick={() => onAction(post.id, 'like', post.authorId)} className={`flex items-center gap-1 ${isLiked ? 'text-red-500' : ''}`}><Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${isLiked ? 'fill-current' : ''}`} /><span>{Array.isArray(post.likes) ? post.likes.length : 0}</span></button>
                         <div className="flex items-center gap-1"><BarChart2 className="h-5 w-5" /><span>{post.views}</span></div>
                     </div>
                 </div>
@@ -774,7 +775,8 @@ export default function ProfilePage() {
         const post = userPosts.find(p => p.id === postId) || likedPosts.find(p => p.id === postId) || mediaPosts.find(p => p.id === postId) || (pinnedPost?.id === postId ? pinnedPost : null);
         if (!post) return;
     
-        const isActioned = action === 'like' ? post.isLiked : post.isRetweeted;
+        const isActioned = action === 'like' ? (Array.isArray(post.likes) && post.likes.includes(currentUser.uid)) : (Array.isArray(post.retweets) && post.retweets.includes(currentUser.uid));
+
     
         const batch = writeBatch(db);
     
