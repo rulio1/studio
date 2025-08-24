@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useCallback, Suspense, use } from 'react';
+import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,7 +9,7 @@ import { MoreHorizontal, Search, Settings, MessageCircle, Loader2, ArrowLeft, Ba
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { collection, getDocs, query, where, limit, orderBy, doc, updateDoc, arrayUnion, arrayRemove, writeBatch, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import SearchLoading from './loading';
@@ -66,14 +66,10 @@ const PostContent = ({ content }: { content: string }) => {
     );
 };
 
-function SearchPageClient({
-    searchParams,
-}: {
-    searchParams?: { [key: string]: string | string[] | undefined };
-}) {
+function SearchPageClient() {
   const router = useRouter();
-  const unwrappedSearchParams = use(searchParams);
-  const queryFromUrl = unwrappedSearchParams?.q || '';
+  const searchParams = useSearchParams();
+  const queryFromUrl = searchParams.get('q') || '';
   
   const [searchTerm, setSearchTerm] = useState(typeof queryFromUrl === 'string' ? queryFromUrl : '');
   const [trends, setTrends] = useState<Trend[]>([]);
@@ -401,16 +397,10 @@ function SearchPageClient({
   );
 }
 
-export default function SearchPage({
-  searchParams,
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined };
-}) {
+export default function SearchPage() {
     return (
         <Suspense fallback={<SearchLoading />}>
-            <SearchPageClient searchParams={searchParams} />
+            <SearchPageClient />
         </Suspense>
     )
 }
-
-    
