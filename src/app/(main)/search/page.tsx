@@ -72,8 +72,8 @@ function SearchPageClient({
     searchParams?: { [key: string]: string | string[] | undefined };
 }) {
   const router = useRouter();
-  const unwrappedSearchParams = searchParams || {};
-  const queryFromUrl = unwrappedSearchParams.q || '';
+  const unwrappedSearchParams = use(searchParams);
+  const queryFromUrl = unwrappedSearchParams?.q || '';
   
   const [searchTerm, setSearchTerm] = useState(typeof queryFromUrl === 'string' ? queryFromUrl : '');
   const [trends, setTrends] = useState<Trend[]>([]);
@@ -412,3 +412,5 @@ export default function SearchPage({
         </Suspense>
     )
 }
+
+    
