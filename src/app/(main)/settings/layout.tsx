@@ -8,11 +8,12 @@ import { ArrowLeft } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
 const titleMap: Record<string, string> = {
-    'settings': 'Configurações e privacidade',
+    'settings': 'Configurações',
     'account': 'Sua Conta',
     'change-password': 'Alterar Senha',
     'deactivate': 'Desativar Conta',
     'delete': 'Excluir Conta',
+    'privacy': 'Privacidade e Segurança',
 };
 
 export default function SettingsLayout({

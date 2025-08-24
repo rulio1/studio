@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Info, Star, PenSquare } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Info, Star, PenSquare, Lock } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -44,8 +44,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import CreatePostModal from '@/components/create-post-modal';
 
 
-const EmptyState = ({ title, description }: { title: string, description: string }) => (
-    <div className="text-center p-8">
+const EmptyState = ({ title, description, icon: Icon }: { title: string, description: string, icon?: React.ElementType }) => (
+    <div className="text-center p-8 mt-4">
+        {Icon && <Icon className="mx-auto h-16 w-16 text-muted-foreground mb-4" />}
         <h3 className="text-xl font-bold">{title}</h3>
         <p className="text-muted-foreground mt-2">{description}</p>
     </div>
@@ -118,6 +119,7 @@ interface ZisprUser {
     savedPosts?: string[];
     pinnedPostId?: string;
     isVerified?: boolean;
+    likesArePrivate?: boolean;
 }
 
 const getZodiacSign = (date: Date) => {
@@ -571,6 +573,12 @@ export default function ProfilePage() {
 
 
     const fetchLikedPosts = useCallback(async (userToFetch: FirebaseUser, profileData: ZisprUser) => {
+        if (profileData.likesArePrivate && profileData.uid !== userToFetch.uid) {
+            setLikedPosts([]);
+            setIsLoadingLikes(false);
+            return;
+        }
+
         setIsLoadingLikes(true);
         try {
             const likedPostIds = profileData.likedPosts || [];
@@ -606,7 +614,7 @@ export default function ProfilePage() {
         } finally {
             setIsLoadingLikes(false);
         }
-    }, [profileId]);
+    }, []);
 
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
@@ -616,12 +624,12 @@ export default function ProfilePage() {
             }
             setCurrentUser(user);
 
-            try {
-                const profileDocRef = doc(db, 'users', profileId);
-                const profileDoc = await getDoc(profileDocRef);
-
+            const profileDocRef = doc(db, 'users', profileId);
+            // Use onSnapshot for real-time updates on the profile user's data
+            const unsubscribeProfile = onSnapshot(profileDocRef, async (profileDoc) => {
                 if (!profileDoc.exists()) {
                     setIsLoading(false);
+                    setProfileUser(null);
                     return;
                 }
                 const profileData = { uid: profileDoc.id, ...profileDoc.data() } as ZisprUser;
@@ -639,13 +647,14 @@ export default function ProfilePage() {
                 await fetchUserPosts(user, profileData);
                 await fetchUserReplies();
                 await fetchLikedPosts(user, profileData);
-
-            } catch (error) {
-                console.error("Error fetching profile data:", error);
-                toast({ title: "Error fetching profile", variant: "destructive" });
-            } finally {
                 setIsLoading(false);
-            }
+            }, (error) => {
+                 console.error("Error fetching profile data:", error);
+                 toast({ title: "Error fetching profile", variant: "destructive" });
+                 setIsLoading(false);
+            });
+
+            return () => unsubscribeProfile();
         });
 
         return () => unsubscribeAuth();
@@ -697,14 +706,7 @@ export default function ProfilePage() {
     
         await batch.commit();
         
-        // Update local state for the main profile button
-        if (targetUser.uid === profileUser?.uid) {
-            setIsFollowing(!isCurrentlyFollowing);
-            setProfileUser(prev => prev ? { ...prev, followers: !isCurrentlyFollowing ? [...(prev.followers || []), currentUser.uid] : (prev.followers || []).filter(id => id !== currentUser.uid) } : null);
-        }
-    
-        // Update local state for the current user (affects the dialog)
-        setZisprUser(prev => prev ? { ...prev, following: !isCurrentlyFollowing ? prev.following.filter(id => id !== targetUser.uid) : [...(prev.following || []), targetUser.uid] } : null);
+        // Let onSnapshot handle UI updates to avoid race conditions
     };
 
     const handleStartConversation = async () => {
@@ -811,13 +813,11 @@ export default function ProfilePage() {
 
         if (isSaved) {
             await updateDoc(userRef, { savedPosts: arrayRemove(postId) });
-            setZisprUser(prev => prev ? {...prev, savedPosts: prev.savedPosts?.filter(id => id !== postId)} : null);
-            toast({ title: 'Post removido dos salvos' });
         } else {
             await updateDoc(userRef, { savedPosts: arrayUnion(postId) });
-            setZisprUser(prev => prev ? {...prev, savedPosts: [...(prev.savedPosts || []), postId]} : null);
-            toast({ title: 'Post salvo!' });
         }
+        // Let onSnapshot handle UI updates
+        toast({ title: isSaved ? 'Post removido dos salvos' : 'Post salvo!' });
     };
 
     const handlePostAction = async (postId: string, action: 'like' | 'retweet', authorId: string) => {
@@ -885,10 +885,6 @@ export default function ProfilePage() {
             }
         }
         await batch.commit();
-        if(profileUser && currentUser){
-            fetchUserPosts(currentUser, profileUser);
-            fetchLikedPosts(currentUser, profileUser);
-        }
     };
     
     const handleVote = async (postId: string, optionIndex: number) => {
@@ -950,8 +946,7 @@ export default function ProfilePage() {
             toast({
                 title: isCurrentlyPinned ? 'Post desafixado!' : 'Post fixado no perfil!',
             });
-            // Refetch posts to update UI
-            await fetchUserPosts(currentUser, profileUser);
+            // onSnapshot will handle the UI update
         } catch (error) {
             console.error("Error pinning/unpinning post: ", error);
             toast({ title: 'Erro ao fixar post.', variant: 'destructive' });
@@ -963,7 +958,7 @@ export default function ProfilePage() {
         setIsQuoteModalOpen(true);
     };
 
-    const PostList = ({ posts, loading, emptyTitle, emptyDescription, showPinnedPost = false }: { posts: Post[], loading: boolean, emptyTitle: string, emptyDescription: string, showPinnedPost?: boolean }) => {
+    const PostList = ({ posts, loading, emptyTitle, emptyDescription, showPinnedPost = false, emptyIcon }: { posts: Post[], loading: boolean, emptyTitle: string, emptyDescription: string, showPinnedPost?: boolean, emptyIcon?: React.ElementType }) => {
         if (loading) {
             return (
                 <ul>
@@ -976,7 +971,7 @@ export default function ProfilePage() {
         const displayPosts = showPinnedPost ? posts : posts.filter(p => !p.isPinned);
     
         if (displayPosts.length === 0 && (!showPinnedPost || !pinnedPost)) {
-            return <EmptyState title={emptyTitle} description={emptyDescription} />;
+            return <EmptyState title={emptyTitle} description={emptyDescription} icon={emptyIcon} />;
         }
     
         return (
@@ -1058,7 +1053,7 @@ export default function ProfilePage() {
 
     const isZisprAccount = profileUser.handle === '@Zispr';
     const isProfileVerified = profileUser.isVerified || profileUser.handle === '@rulio' || isZisprAccount;
-
+    const canViewLikes = isOwnProfile || !profileUser.likesArePrivate;
 
   return (
     <div className="animate-fade-in">
@@ -1197,12 +1192,20 @@ export default function ProfilePage() {
                  />
             </TabsContent>
             <TabsContent value="likes" className="mt-0">
-                <PostList 
-                    posts={likedPosts} 
-                    loading={isLoadingLikes}
-                    emptyTitle={`${isOwnProfile ? "Você não curtiu" : "Nenhum post curtido"} nada ainda`} 
-                    emptyDescription={`${isOwnProfile ? "Quando você curtir" : "Quando este usuário curtir"} posts, eles aparecerão aqui.`}
-                />
+                {canViewLikes ? (
+                    <PostList 
+                        posts={likedPosts} 
+                        loading={isLoadingLikes}
+                        emptyTitle="Nenhum post curtido" 
+                        emptyDescription="Quando este usuário curtir posts, eles aparecerão aqui."
+                    />
+                ) : (
+                     <EmptyState 
+                        title="As curtidas são privadas"
+                        description={`@${profileUser.handle} optou por manter suas curtidas privadas.`}
+                        icon={Lock}
+                     />
+                )}
             </TabsContent>
         </Tabs>
       </main>

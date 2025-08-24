@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -45,6 +44,21 @@ export default function SettingsPage() {
 
                 <Card className="mt-6">
                     <CardHeader>
+                        <CardTitle>Privacidade e Segurança</CardTitle>
+                        <CardDescription>Controle como o Zispr usa suas informações e quem pode ver seu conteúdo.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                          <SettingsItem 
+                            icon={Lock} 
+                            title="Privacidade e segurança" 
+                            description="Gerencie suas configurações de privacidade e segurança."
+                            onClick={() => router.push('/settings/privacy')}
+                        />
+                    </CardContent>
+                </Card>
+
+                 <Card className="mt-6">
+                    <CardHeader>
                         <CardTitle>Notificações</CardTitle>
                         <CardDescription>Selecione os tipos de notificações que você recebe sobre suas atividades, interesses e recomendações.</CardDescription>
                     </CardHeader>
@@ -54,21 +68,6 @@ export default function SettingsPage() {
                             title="Preferências" 
                             description="Gerencie suas preferências de notificação."
                             onClick={() => alert('Página de preferências de notificação em breve!')}
-                        />
-                    </CardContent>
-                </Card>
-
-                 <Card className="mt-6">
-                    <CardHeader>
-                        <CardTitle>Privacidade e Segurança</CardTitle>
-                        <CardDescription>Gerencie quais informações você permite que outras pessoas no Zispr vejam.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                          <SettingsItem 
-                            icon={Lock} 
-                            title="Público e marcação" 
-                            description="Gerencie quais informações você permite que outras pessoas no Zispr vejam."
-                            onClick={() => alert('Página de público e marcação em breve!')}
                         />
                     </CardContent>
                 </Card>
