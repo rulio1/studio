@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Bird, Home, Bell, Mail, User, Bookmark, Users, MoreHorizontal, Feather, LogOut, Settings } from 'lucide-react';
+import { Bird, Home, Bell, Mail, User, Bookmark, Users, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck } from 'lucide-react';
 import CreatePostModal from './create-post-modal';
 import { Skeleton } from './ui/skeleton';
 
@@ -26,6 +26,7 @@ interface ZisprUser {
     displayName: string;
     handle: string;
     avatar: string;
+    isVerified?: boolean;
 }
 
 export default function DesktopSidebar() {
@@ -83,6 +84,9 @@ export default function DesktopSidebar() {
         return pathname.startsWith(href);
     };
 
+    const isZisprAccount = zisprUser?.handle === '@Zispr';
+    const isUserVerified = zisprUser?.isVerified || zisprUser?.handle === '@rulio' || isZisprAccount;
+
     return (
         <aside className="sticky top-0 h-screen w-64 hidden md:flex flex-col justify-between items-end p-2 border-r">
             <div className="flex flex-col items-start gap-2 w-full">
@@ -129,7 +133,10 @@ export default function DesktopSidebar() {
                                     <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
                                 </Avatar>
                                 <div className="ml-3 text-left overflow-hidden">
-                                    <p className="font-bold truncate">{zisprUser.displayName}</p>
+                                    <p className="font-bold truncate flex items-center gap-1">
+                                        {zisprUser.displayName}
+                                        {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isUserVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                                    </p>
                                     <p className="text-sm text-muted-foreground truncate">{zisprUser.handle}</p>
                                 </div>
                                 <MoreHorizontal className="ml-auto h-5 w-5" />
