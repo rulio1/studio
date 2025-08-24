@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { X } from 'lucide-react';
 import Image from 'next/image';
@@ -20,6 +20,9 @@ export default function ImageViewer({ src, onOpenChange }: ImageViewerProps) {
         className="bg-black/80 backdrop-blur-sm border-0 p-2 h-screen w-screen max-w-full flex items-center justify-center"
         hideCloseButton={true}
       >
+        <DialogHeader className="sr-only">
+          <DialogTitle>Visualização de Imagem</DialogTitle>
+        </DialogHeader>
         <DialogClose asChild>
           <Button
             variant="ghost"
