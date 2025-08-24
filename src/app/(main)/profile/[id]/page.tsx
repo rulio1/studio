@@ -41,6 +41,7 @@ import Poll from '@/components/poll';
 import { Badge } from '@/components/ui/badge';
 import FollowListDialog from '@/components/follow-list-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import CreatePostModal from '@/components/create-post-modal';
 
 
 const EmptyState = ({ title, description }: { title: string, description: string }) => (
@@ -568,26 +569,31 @@ export default function ProfilePage() {
     }, [profileId]);
 
 
-    const fetchLikedPosts = useCallback(async (userToFetch: FirebaseUser) => {
+    const fetchLikedPosts = useCallback(async (userToFetch: FirebaseUser, profileData: ZisprUser) => {
+        setIsLoadingLikes(true);
         if (!isOwnProfile) {
             setLikedPosts([]);
             setIsLoadingLikes(false);
             return;
         }
-        setIsLoadingLikes(true);
-        try {
-            const userDoc = await getDoc(doc(db, 'users', userToFetch.uid));
-            const likedPostIds = userDoc.data()?.likedPosts || [];
 
-            if (likedPostIds.length === 0) {
+        try {
+            const likedPostIds = profileData.savedPosts?.filter(id => id.startsWith('liked:'))
+                .map(id => id.replace('liked:', '')) || [];
+            
+            // This is just a temporary mock, in a real app you'd fetch the posts from firestore based on likedPostIds
+            const userDoc = await getDoc(doc(db, 'users', userToFetch.uid));
+            const likedPostsData = userDoc.data()?.likedPosts || [];
+
+            if (likedPostsData.length === 0) {
                  setLikedPosts([]);
                  setIsLoadingLikes(false);
                  return;
             }
             
             const chunks = [];
-            for (let i = 0; i < likedPostIds.length; i += 30) {
-                 chunks.push(likedPostIds.slice(i, i + 30));
+            for (let i = 0; i < likedPostsData.length; i += 30) {
+                 chunks.push(likedPostsData.slice(i, i + 30));
             }
             const postsSnapshots = await Promise.all(chunks.map(chunk => getDocs(query(collection(db, "posts"), where(documentId(), "in", chunk)))));
 
@@ -642,11 +648,7 @@ export default function ProfilePage() {
 
                 await fetchUserPosts(user, profileData);
                 await fetchUserReplies();
-                if (user.uid === profileId) {
-                    await fetchLikedPosts(user);
-                } else {
-                    setIsLoadingLikes(false);
-                }
+                await fetchLikedPosts(user, profileData);
 
             } catch (error) {
                 console.error("Error fetching profile data:", error);
@@ -657,7 +659,7 @@ export default function ProfilePage() {
         });
 
         return () => unsubscribeAuth();
-    }, [profileId, router, fetchUserPosts, fetchUserReplies, fetchLikedPosts, toast]);
+    }, [profileId, router, fetchUserPosts, fetchUserReplies, fetchLikedPosts, toast, isOwnProfile]);
     
     const handleToggleFollow = async (targetUser: ZisprUser, currentZisprUser: ZisprUser, isCurrentlyFollowing: boolean) => {
         if (!currentUser) return;
@@ -886,7 +888,7 @@ export default function ProfilePage() {
         await batch.commit();
         if(profileUser && currentUser){
             fetchUserPosts(currentUser, profileUser);
-            fetchLikedPosts(currentUser);
+            fetchLikedPosts(currentUser, profileUser);
         }
     };
     
@@ -1167,7 +1169,7 @@ export default function ProfilePage() {
                 <TabsTrigger value="posts" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Posts</TabsTrigger>
                 <TabsTrigger value="replies" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Respostas</TabsTrigger>
                 <TabsTrigger value="media" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Mídia</TabsTrigger>
-                {isOwnProfile && <TabsTrigger value="likes" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Curtidas</TabsTrigger>}
+                <TabsTrigger value="likes" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Curtidas</TabsTrigger>
             </TabsList>
 
              <TabsContent value="posts" className="mt-0">
@@ -1195,14 +1197,21 @@ export default function ProfilePage() {
                     emptyDescription="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui."
                  />
             </TabsContent>
-            {isOwnProfile && <TabsContent value="likes" className="mt-0">
-                 <PostList 
-                    posts={likedPosts} 
-                    loading={isLoadingLikes}
-                    emptyTitle="Nenhuma curtida ainda" 
-                    emptyDescription="Quando você curtir posts, eles aparecerão aqui."
-                 />
-            </TabsContent>}
+            <TabsContent value="likes" className="mt-0">
+                {isOwnProfile ? (
+                    <PostList 
+                        posts={likedPosts} 
+                        loading={isLoadingLikes}
+                        emptyTitle="Nenhuma curtida ainda" 
+                        emptyDescription="Quando você curtir posts, eles aparecerão aqui."
+                    />
+                ) : (
+                    <EmptyState 
+                        title="As curtidas são privadas"
+                        description="A lista de posts que este usuário curtiu não está visível para outras pessoas."
+                    />
+                )}
+            </TabsContent>
         </Tabs>
       </main>
       <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
@@ -1237,6 +1246,11 @@ export default function ProfilePage() {
                 </Button>
             </DialogContent>
         </Dialog>
+        <CreatePostModal 
+            open={isQuoteModalOpen}
+            onOpenChange={setIsQuoteModalOpen}
+            quotedPost={postToQuote}
+        />
         {isFollowListOpen && zisprUser && (
             <FollowListDialog
                 open={isFollowListOpen}
