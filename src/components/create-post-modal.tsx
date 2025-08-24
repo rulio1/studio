@@ -10,6 +10,8 @@ import { generatePost } from '@/ai/flows/post-generator-flow';
 import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 import { auth, db, storage } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, increment, query, where, getDocs, writeBatch, getDoc, limit } from 'firebase/firestore';
+import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Sparkles, Loader2, Plus, ImageIcon, X, Smile, Upload, MapPin, Bird, ListOrdered, PlusCircle, Trash2 } from 'lucide-react';
 import { Button } from './ui/button';
@@ -211,10 +213,10 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 2 * 1024 * 1024) { // 2MB limit for Data URI
+        if (file.size > 4 * 1024 * 1024) { // 4MB limit
             toast({
                 title: 'Imagem muito grande',
-                description: 'Por favor, selecione uma imagem menor que 2MB.',
+                description: 'Por favor, selecione uma imagem menor que 4MB.',
                 variant: 'destructive',
             });
             return;
@@ -246,6 +248,14 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         setIsPosting(true);
         
         try {
+            let imageUrl = '';
+            if (postImageDataUri) {
+                const imagePath = `posts/${user.uid}/${uuidv4()}`;
+                const imageStorageRef = storageRef(storage, imagePath);
+                const snapshot = await uploadString(imageStorageRef, postImageDataUri, 'data_url');
+                imageUrl = await getDownloadURL(snapshot.ref);
+            }
+
             // Check if it's the user's first post outside the transaction
             const userPostsQuery = query(collection(db, 'posts'), where('authorId', '==', user.uid), limit(1));
             const userPostsSnapshot = await getDocs(userPostsQuery);
@@ -264,13 +274,11 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     voters: {} // Map of userId to optionIndex
                 } : null;
                 
-                 // If it's a quote post, increment the original post's retweet count
                  if (quotedPost) {
                     const originalPostRef = doc(db, 'posts', quotedPost.id);
                     transaction.update(originalPostRef, { retweets: increment(1) });
                 }
 
-                // 1. Set the main post data
                 transaction.set(postRef, {
                     authorId: user.uid,
                     author: zisprUser.displayName,
@@ -281,8 +289,8 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     location: location,
                     hashtags: hashtags,
                     mentions: mentionedHandles,
-                    image: postImageDataUri || '',
-                    imageHint: '',
+                    image: imageUrl,
+                    imageHint: aiImagePrompt,
                     communityId: null,
                     createdAt: serverTimestamp(),
                     comments: 0,
@@ -307,8 +315,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     } : null,
                     spotifyUrl: finalSpotifyUrl,
                 });
-
-                // 2. Handle first post notification
+                
                 if (isFirstPost) {
                     const zisprOfficialUserQuery = query(collection(db, 'users'), where('handle', '==', '@Zispr'), limit(1));
                     const zisprUserSnapshot = await getDocs(zisprOfficialUserQuery); 
@@ -335,7 +342,6 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     }
                 }
                 
-                // 3. Handle mentions
                 if (mentionedHandles.length > 0) {
                      const usersRef = collection(db, "users");
                      const mentionedUserDocs = await Promise.all(mentionedHandles.map(handle => {
@@ -370,7 +376,6 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                      });
                 }
                 
-                // 4. Update hashtag counts
                 for (const tag of hashtags) {
                     const hashtagRef = doc(db, "hashtags", tag);
                     const hashtagDoc = await transaction.get(hashtagRef);

@@ -9,14 +9,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 import { fileToDataUri } from '@/lib/utils';
+import { v4 as uuidv4 } from 'uuid';
 
 
 interface UserProfileData {
@@ -118,14 +120,32 @@ export default function EditProfilePage() {
     
         try {
             const userRef = doc(db, 'users', user.uid);
+            let avatarUrl = profileData.avatar;
+            let bannerUrl = profileData.banner;
+
+            // Upload Avatar if changed
+            if (newAvatarDataUri) {
+                const avatarPath = `avatars/${user.uid}/${uuidv4()}`;
+                const imageStorageRef = storageRef(storage, avatarPath);
+                const snapshot = await uploadString(imageStorageRef, newAvatarDataUri, 'data_url');
+                avatarUrl = await getDownloadURL(snapshot.ref);
+            }
             
+            // Upload Banner if changed
+            if (newBannerDataUri) {
+                const bannerPath = `banners/${user.uid}/${uuidv4()}`;
+                const imageStorageRef = storageRef(storage, bannerPath);
+                const snapshot = await uploadString(imageStorageRef, newBannerDataUri, 'data_url');
+                bannerUrl = await getDownloadURL(snapshot.ref);
+            }
+
             const firestoreUpdateData = {
                 displayName: profileData.displayName,
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
                 bio: profileData.bio,
                 location: profileData.location,
-                avatar: newAvatarDataUri || profileData.avatar,
-                banner: newBannerDataUri || profileData.banner,
+                avatar: avatarUrl,
+                banner: bannerUrl,
             };
             
             await updateDoc(userRef, firestoreUpdateData);
