@@ -871,20 +871,10 @@ useEffect(() => {
                         <User className="h-6 w-6" /> Perfil
                       </Link>
                     </SheetClose>
-                     <SheetClose asChild>
-                      <Link href="/communities" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                        <Users className="h-6 w-6" /> Comunidades
-                      </Link>
-                    </SheetClose>
                     <SheetClose asChild>
                        <Link href="/saved" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                         <Bookmark className="h-6 w-6" /> Itens Salvos
                       </Link>
-                    </SheetClose>
-                     <SheetClose asChild>
-                        <div className="flex items-center gap-4 py-2 text-xl font-bold rounded-md text-muted-foreground cursor-not-allowed">
-                            <Radio className="h-6 w-6" /> Spaces <Badge variant="secondary" className="ml-auto">em breve</Badge>
-                        </div>
                     </SheetClose>
                   </nav>
                   <div className="p-4 border-t mt-auto flex flex-col gap-2">
