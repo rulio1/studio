@@ -1,24 +1,34 @@
 
 'use client';
 
-import { Dialog, DialogContent, DialogOverlay, DialogPortal, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogOverlay, DialogPortal, DialogTitle, DialogHeader } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { X, MessageCircle, Repeat, Heart, BarChart2, Upload, MoreHorizontal } from 'lucide-react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
+interface PostForViewer {
+    id: string;
+    image?: string;
+    comments: number;
+    retweets: string[];
+    likes: string[];
+    views: number;
+}
+
 interface ImageViewerProps {
-  src: string | null;
+  post: PostForViewer | null;
   onOpenChange: (open: boolean) => void;
 }
 
-export default function ImageViewer({ src, onOpenChange }: ImageViewerProps) {
+export default function ImageViewer({ post, onOpenChange }: ImageViewerProps) {
   const handleClose = () => onOpenChange(false);
+  const src = post?.image;
 
   return (
     <AnimatePresence>
-      {src && (
-        <Dialog open={!!src} onOpenChange={onOpenChange}>
+      {post && src && (
+        <Dialog open={!!post} onOpenChange={onOpenChange}>
           <DialogPortal>
             <motion.div
                 initial={{ opacity: 0 }}
@@ -32,7 +42,9 @@ export default function ImageViewer({ src, onOpenChange }: ImageViewerProps) {
               className="bg-transparent border-0 p-0 h-full w-full max-w-full flex flex-col items-center justify-center outline-none"
               hideCloseButton={true}
             >
-              <DialogTitle className="sr-only">Visualização de Imagem</DialogTitle>
+              <DialogHeader className="sr-only">
+                  <DialogTitle>Visualização de Imagem</DialogTitle>
+              </DialogHeader>
               
                <motion.div 
                     className="absolute top-0 left-0 right-0 p-2 flex justify-between items-center z-50"
@@ -101,19 +113,19 @@ export default function ImageViewer({ src, onOpenChange }: ImageViewerProps) {
                    <div className="flex justify-around text-white/80 max-w-sm mx-auto">
                         <Button variant="ghost" className="flex items-center gap-2 hover:bg-white/10 hover:text-white">
                             <MessageCircle className="h-5 w-5" />
-                            <span>12</span>
+                            <span>{post.comments}</span>
                         </Button>
                         <Button variant="ghost" className="flex items-center gap-2 hover:bg-white/10 hover:text-white">
                             <Repeat className="h-5 w-5" />
-                             <span>6</span>
+                             <span>{post.retweets.length}</span>
                         </Button>
                         <Button variant="ghost" className="flex items-center gap-2 hover:bg-white/10 hover:text-white">
                             <Heart className="h-5 w-5" />
-                             <span>20</span>
+                             <span>{post.likes.length}</span>
                         </Button>
                          <Button variant="ghost" className="flex items-center gap-2 hover:bg-white/10 hover:text-white">
                             <BarChart2 className="h-5 w-5" />
-                             <span>128</span>
+                             <span>{post.views}</span>
                         </Button>
                         <Button variant="ghost" className="flex items-center gap-2 hover:bg-white/10 hover:text-white">
                             <Upload className="h-5 w-5" />

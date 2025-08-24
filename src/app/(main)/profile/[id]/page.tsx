@@ -174,7 +174,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
 };
 
 
-const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, onPin, onVote, toast, onQuote, onImageClick }: { post: Post, user: FirebaseUser | null, zisprUser: ZisprUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, onVote: (postId: string, optionIndex: number) => Promise<void>, toast: any, onQuote: (post: Post) => void, onImageClick: (src: string) => void }) => {
+const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, onPin, onVote, toast, onQuote, onImageClick }: { post: Post, user: FirebaseUser | null, zisprUser: ZisprUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, onVote: (postId: string, optionIndex: number) => Promise<void>, toast: any, onQuote: (post: Post) => void, onImageClick: (post: Post) => void }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
     
@@ -215,6 +215,12 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
                     <span>Primeiro post</span>
                 </div>
             )}
+             {post.isUpdate && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-12">
+                    <Bird className="h-4 w-4 text-primary" />
+                    <span>Atualização</span>
+                </div>
+            )}
             <div className="flex gap-4">
                  <Avatar className="cursor-pointer" onClick={(e) => {e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
                     {isZisprAccount ? (
@@ -236,12 +242,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
                                 {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                             </p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
-                            {post.isUpdate && (
-                                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                    <Bird className="h-3 w-3 text-primary" />
-                                    <span>Atualização</span>
-                                </span>
-                            )}
+                            
                             {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
                         </div>
                         <DropdownMenu>
@@ -321,7 +322,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
                         </div>
                     )}
                      {post.image && (
-                        <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); onImageClick(post.image || ''); }}>
+                        <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); onImageClick(post); }}>
                             <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint="Imagem do perfil" />
                         </div>
                     )}
@@ -431,7 +432,7 @@ export default function ProfilePage() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [postToQuote, setPostToQuote] = useState<Post | null>(null);
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
-    const [imageToView, setImageToView] = useState<string | null>(null);
+    const [postToView, setPostToView] = useState<Post | null>(null);
 
     // Follow list dialog state
     const [followListTitle, setFollowListTitle] = useState('');
@@ -962,7 +963,7 @@ export default function ProfilePage() {
                         onVote={handleVote}
                         toast={toast}
                         onQuote={handleQuoteClick}
-                        onImageClick={setImageToView}
+                        onImageClick={setPostToView}
                     />
                 )}
                 {displayPosts.map((post) => (
@@ -979,7 +980,7 @@ export default function ProfilePage() {
                         onVote={handleVote}
                         toast={toast}
                         onQuote={handleQuoteClick}
-                        onImageClick={setImageToView}
+                        onImageClick={setPostToView}
                     />
                 ))}
             </ul>
@@ -1229,7 +1230,7 @@ export default function ProfilePage() {
                 onToggleFollow={handleToggleFollow}
             />
         )}
-        <ImageViewer src={imageToView} onOpenChange={() => setImageToView(null)} />
+        <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />
     </div>
   );
 }

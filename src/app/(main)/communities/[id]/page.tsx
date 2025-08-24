@@ -122,7 +122,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
     );
 };
 
-const PostItem = ({ post, onQuote, onImageClick }: { post: Post, onQuote: (post: Post) => void, onImageClick: (src: string) => void }) => {
+const PostItem = ({ post, onQuote, onImageClick }: { post: Post, onQuote: (post: Post) => void, onImageClick: (post: Post) => void }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
     
@@ -175,7 +175,7 @@ const PostItem = ({ post, onQuote, onImageClick }: { post: Post, onQuote: (post:
                     </div>
                      {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
                     {post.image && (
-                        <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); onImageClick(post.image || ''); }}>
+                        <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); onImageClick(post); }}>
                             <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
                         </div>
                     )}
@@ -241,7 +241,7 @@ export default function CommunityDetailPage() {
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [isMember, setIsMember] = useState(false);
-    const [imageToView, setImageToView] = useState<string | null>(null);
+    const [postToView, setPostToView] = useState<Post | null>(null);
     
     // Post creation modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -411,7 +411,7 @@ export default function CommunityDetailPage() {
                     ) : (
                          <ul className="divide-y divide-border">
                             {posts.map((post) => (
-                                <PostItem key={post.id} post={post} onQuote={handleQuoteClick} onImageClick={setImageToView} />
+                                <PostItem key={post.id} post={post} onQuote={handleQuoteClick} onImageClick={setPostToView} />
                             ))}
                         </ul>
                     )}
@@ -425,7 +425,7 @@ export default function CommunityDetailPage() {
                     quotedPost={postToQuote}
                 />
             )}
-             <ImageViewer src={imageToView} onOpenChange={() => setImageToView(null)} />
+             <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />
         </div>
     );
 }

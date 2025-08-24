@@ -308,7 +308,7 @@ export default function PostDetailPage() {
     const [isReplying, setIsReplying] = useState(false);
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
-    const [imageToView, setImageToView] = useState<string | null>(null);
+    const [postToView, setPostToView] = useState<Post | null>(null);
     
     // State for post actions
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -832,7 +832,7 @@ export default function PostDetailPage() {
                     <PostContent content={post.content} />
                     {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
                     {post.image && (
-                        <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); setImageToView(post.image || null); }}>
+                        <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); setPostToView(post); }}>
                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
                         </div>
                     )}
@@ -858,7 +858,7 @@ export default function PostDetailPage() {
                         <p>{post.time}</p>
                         {post.isUpdate && (
                             <span className="flex items-center gap-1">
-                                <Bird className="h-3 w-3 text-primary" />
+                                <Bird className="h-4 w-4 text-primary" />
                                 <span>Atualização</span>
                             </span>
                         )}
@@ -1018,7 +1018,7 @@ export default function PostDetailPage() {
                         </Button>
                     </DialogContent>
                 </Dialog>
-                <ImageViewer src={imageToView} onOpenChange={() => setImageToView(null)} />
+                <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />
             </main>
         </div>
     );
