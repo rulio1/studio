@@ -43,6 +43,7 @@ import FollowListDialog from '@/components/follow-list-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import CreatePostModal from '@/components/create-post-modal';
 import ImageViewer from '@/components/image-viewer';
+import SpotifyEmbed from '@/components/spotify-embed';
 
 
 const EmptyState = ({ title, description, icon: Icon }: { title: string, description: string, icon?: React.ElementType }) => (
@@ -88,6 +89,7 @@ interface Post {
     } | null;
     quotedPostId?: string;
     quotedPost?: Omit<Post, 'quotedPost' | 'quotedPostId'>;
+    spotifyUrl?: string;
 }
 
 interface Reply {
@@ -124,12 +126,15 @@ interface ZisprUser {
     likesArePrivate?: boolean;
 }
 
-const PostContent = ({ content }: { content: string }) => {
+const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => {
     const router = useRouter();
-    const parts = content.split(/(#\w+)/g);
+    const parts = content.split(/(#\w+|@\w+|https?:\/\/[^\s]+)/g);
+
     return (
         <p>
             {parts.map((part, index) => {
+                if (!part) return null;
+
                 if (part.startsWith('#')) {
                     const hashtag = part.substring(1);
                     return (
@@ -141,6 +146,34 @@ const PostContent = ({ content }: { content: string }) => {
                                 router.push(`/search?q=%23${hashtag}`);
                             }}
                         >
+                            {part}
+                        </a>
+                    );
+                }
+                if (part.startsWith('@')) {
+                    const handle = part.substring(1);
+                    return (
+                        <a 
+                            key={index} 
+                            className="text-primary hover:underline"
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                const usersRef = collection(db, "users");
+                                const q = query(usersRef, where("handle", "==", part));
+                                const querySnapshot = await getDocs(q);
+                                if (!querySnapshot.empty) {
+                                    const userDoc = querySnapshot.docs[0];
+                                    router.push(`/profile/${userDoc.id}`);
+                                }
+                            }}
+                        >
+                            {part}
+                        </a>
+                    );
+                }
+                if (part.includes('spotify.com')) {
+                    return spotifyUrl ? null : (
+                         <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
                             {part}
                         </a>
                     );
@@ -306,9 +339,10 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
                         </DropdownMenu>
                     </div>
                     <div className="mb-2 whitespace-pre-wrap">
-                        <PostContent content={post.content} />
+                        <PostContent content={post.content} spotifyUrl={post.spotifyUrl} />
                     </div>
                      {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
+                     {post.spotifyUrl && <SpotifyEmbed url={post.spotifyUrl} />}
                      {post.poll && user && (
                         <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                             <Poll 

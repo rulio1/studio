@@ -16,12 +16,13 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
-import { fileToDataUri } from '@/lib/utils';
+import { fileToDataUri, extractSpotifyUrl } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
+import SpotifyEmbed from './spotify-embed';
 
 interface Post {
     id: string;
@@ -59,6 +60,7 @@ interface Post {
     } | null;
     quotedPostId?: string;
     quotedPost?: Omit<Post, 'quotedPost' | 'quotedPostId'>;
+    spotifyUrl?: string;
 }
 
 interface ZisprUser {
@@ -125,6 +127,8 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
 
+    const [spotifyUrl, setSpotifyUrl] = useState<string | null>(null);
+
     const { toast } = useToast();
 
      useEffect(() => {
@@ -158,6 +162,13 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         }
     }, [open, initialMode]);
 
+    const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const text = e.target.value;
+        setNewPostContent(text);
+        const url = extractSpotifyUrl(text);
+        setSpotifyUrl(url);
+    };
+
     const resetModal = () => {
         setNewPostContent('');
         setAiTextPrompt('');
@@ -173,6 +184,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         setShowPollCreator(false);
         setPollData(null);
         setIsAppUpdate(false);
+        setSpotifyUrl(null);
         onOpenChange(false);
         setIsPosting(false);
     }
@@ -241,6 +253,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
 
             const hashtags = extractHashtags(newPostContent);
             const mentionedHandles = extractMentions(newPostContent);
+            const finalSpotifyUrl = extractSpotifyUrl(newPostContent);
 
             await runTransaction(db, async (transaction) => {
                 const postRef = doc(collection(db, "posts"));
@@ -292,6 +305,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                         createdAt: quotedPost.createdAt,
                         isVerified: quotedPost.isVerified || false,
                     } : null,
+                    spotifyUrl: finalSpotifyUrl,
                 });
 
                 // 2. Handle first post notification
@@ -446,7 +460,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                 placeholder="O que está acontecendo?!" 
                                 className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0"
                                 value={newPostContent}
-                                onChange={(e) => setNewPostContent(e.target.value)}
+                                onChange={handleContentChange}
                                 disabled={isPosting}
                             />
                             {quotedPost && <QuotedPostPreview post={quotedPost} />}
@@ -463,6 +477,9 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                     <PollCreator onChange={setPollData} />
                                 </div>
                             )}
+                             {spotifyUrl && (
+                                <SpotifyEmbed url={spotifyUrl} />
+                             )}
                         </div>
                     </div>
 

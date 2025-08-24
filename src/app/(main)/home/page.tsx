@@ -46,6 +46,7 @@ import { dataURItoFile } from '@/lib/utils';
 import Poll from '@/components/poll';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import ImageViewer from '@/components/image-viewer';
+import SpotifyEmbed from '@/components/spotify-embed';
 
 
 interface Post {
@@ -84,6 +85,7 @@ interface Post {
     } | null;
     quotedPostId?: string;
     quotedPost?: Omit<Post, 'quotedPost' | 'quotedPostId'>;
+    spotifyUrl?: string;
 }
 
 interface ZisprUser {
@@ -440,11 +442,17 @@ useEffect(() => {
     router.push(`/post/${postId}`);
   };
 
-    const PostContent = ({ content }: { content: string }) => {
-        const parts = content.split(/(#\w+|@\w+)/g);
+    const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => {
+        const router = useRouter();
+        const parts = content.split(/(#\w+|@\w+|https?:\/\/[^\s]+)/g);
+        
+        const spotifyLinkIndex = parts.findIndex(part => part && part.includes('spotify.com'));
+
         return (
             <p>
                 {parts.map((part, index) => {
+                    if (!part) return null;
+
                     if (part.startsWith('#')) {
                         const hashtag = part.substring(1);
                         return (
@@ -477,6 +485,14 @@ useEffect(() => {
                                     }
                                 }}
                             >
+                                {part}
+                            </a>
+                        );
+                    }
+                    if (part.includes('spotify.com')) {
+                        // Don't render the text link if the embed will be shown
+                        return spotifyUrl ? null : (
+                             <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
                                 {part}
                             </a>
                         );
@@ -680,9 +696,10 @@ useEffect(() => {
                     </DropdownMenu>
                 </div>
                 <div className="mb-2 whitespace-pre-wrap">
-                    <PostContent content={post.content} />
+                    <PostContent content={post.content} spotifyUrl={post.spotifyUrl} />
                 </div>
                 {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
+                {post.spotifyUrl && <SpotifyEmbed url={post.spotifyUrl} />}
                 {post.poll && user && (
                     <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                         <Poll 

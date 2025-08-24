@@ -65,3 +65,10 @@ export function formatTimeAgo(date: Date): string {
   }
   return Math.floor(seconds) + "s";
 }
+
+export function extractSpotifyUrl(text: string): string | null {
+    if (!text) return null;
+    const spotifyRegex = /(https?:\/\/(?:open|play)\.spotify\.com\/(?:track|album|artist|playlist)\/[a-zA-Z0-9]+)/;
+    const match = text.match(spotifyRegex);
+    return match ? match[0] : null;
+}

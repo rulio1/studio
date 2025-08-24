@@ -39,6 +39,7 @@ import Poll from '@/components/poll';
 import { runTransaction } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import ImageViewer from '@/components/image-viewer';
+import SpotifyEmbed from '@/components/spotify-embed';
 
 
 interface Post {
@@ -72,6 +73,7 @@ interface Post {
     } | null;
     quotedPostId?: string;
     quotedPost?: Omit<Post, 'quotedPost' | 'quotedPostId'>;
+    spotifyUrl?: string;
 }
 
 interface Comment {
@@ -103,13 +105,15 @@ interface ZisprUser {
     isVerified?: boolean;
 }
 
-const ContentRenderer = ({ content }: { content: string }) => {
+const ContentRenderer = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => {
     const router = useRouter();
-    const parts = content.split(/(#\w+|@\w+)/g);
+    const parts = content.split(/(#\w+|@\w+|https?:\/\/[^\s]+)/g);
 
     return (
         <>
             {parts.map((part, index) => {
+                if (!part) return null;
+
                 if (part.startsWith('#')) {
                     const hashtag = part.substring(1);
                     return (
@@ -127,8 +131,6 @@ const ContentRenderer = ({ content }: { content: string }) => {
                 }
                 if (part.startsWith('@')) {
                     const handle = part.substring(1);
-                    // In a real app, you'd fetch the user ID for the handle here
-                    // For simplicity, we assume the handle is the ID for navigation in this example
                     return (
                         <a 
                             key={index} 
@@ -141,11 +143,16 @@ const ContentRenderer = ({ content }: { content: string }) => {
                                 if (!querySnapshot.empty) {
                                     const userDoc = querySnapshot.docs[0];
                                     router.push(`/profile/${userDoc.id}`);
-                                } else {
-                                    // Handle user not found, maybe just display text
                                 }
                             }}
                         >
+                            {part}
+                        </a>
+                    );
+                }
+                if (part.includes('spotify.com')) {
+                    return spotifyUrl ? null : (
+                         <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
                             {part}
                         </a>
                     );
@@ -156,9 +163,9 @@ const ContentRenderer = ({ content }: { content: string }) => {
     );
 };
 
-const PostContent = ({ content }: { content: string }) => (
+const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => (
     <p className="text-xl mb-4 whitespace-pre-wrap">
-        <ContentRenderer content={content} />
+        <ContentRenderer content={content} spotifyUrl={spotifyUrl} />
     </p>
 );
 
@@ -829,8 +836,9 @@ export default function PostDetailPage() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
-                    <PostContent content={post.content} />
+                    <PostContent content={post.content} spotifyUrl={post.spotifyUrl} />
                     {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
+                    {post.spotifyUrl && <SpotifyEmbed url={post.spotifyUrl} />}
                     {post.image && (
                         <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); setPostToView(post); }}>
                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
