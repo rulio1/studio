@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Info, Star } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Info, Star, PenSquare } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -40,6 +40,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Poll from '@/components/poll';
 import { Badge } from '@/components/ui/badge';
 import FollowListDialog from '@/components/follow-list-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 
 const EmptyState = ({ title, description }: { title: string, description: string }) => (
@@ -81,6 +82,8 @@ interface Post {
         votes: number[];
         voters: Record<string, number>;
     } | null;
+    quotedPostId?: string;
+    quotedPost?: Omit<Post, 'quotedPost' | 'quotedPostId'>;
 }
 
 interface Reply {
@@ -179,7 +182,30 @@ const PostContent = ({ content }: { content: string }) => {
     );
 };
 
-const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, onPin, onVote, toast }: { post: Post, user: FirebaseUser | null, zisprUser: ZisprUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, onVote: (postId: string, optionIndex: number) => Promise<void>, toast: any }) => {
+const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => {
+    const router = useRouter();
+    return (
+        <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
+            <div className="flex items-center gap-2 text-sm">
+                <Avatar className="h-5 w-5">
+                    <AvatarImage src={post.avatar} />
+                    <AvatarFallback>{post.author[0]}</AvatarFallback>
+                </Avatar>
+                <span className="font-bold">{post.author}</span>
+                <span className="text-muted-foreground">{post.handle}</span>
+            </div>
+            <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
+            {post.image && (
+                <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
+                    <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, onPin, onVote, toast, onQuote }: { post: Post, user: FirebaseUser | null, zisprUser: ZisprUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, onVote: (postId: string, optionIndex: number) => Promise<void>, toast: any, onQuote: (post: Post) => void }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
     
@@ -306,6 +332,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
                     <div className="mb-2 whitespace-pre-wrap">
                         <PostContent content={post.content} />
                     </div>
+                     {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
                      {post.poll && user && (
                         <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                             <Poll 
@@ -324,8 +351,38 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
                         </div>
                     )}
                     <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
-                        <button className="flex items-center gap-1"><MessageCircle className="h-5 w-5 hover:text-primary transition-colors" /><span>{post.comments}</span></button>
-                        <button onClick={() => onAction(post.id, 'retweet', post.authorId)} className={`flex items-center gap-1 ${isRetweeted ? 'text-green-500' : ''}`}><Repeat className="h-5 w-5 hover:text-green-500 transition-colors" /><span>{Array.isArray(post.retweets) ? post.retweets.length : 0}</span></button>
+                        <button className="flex items-center gap-1 hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); router.push(`/post/${post.id}`)}}>
+                            <MessageCircle className="h-5 w-5" />
+                            <span>{post.comments}</span>
+                        </button>
+                         <Popover>
+                            <PopoverTrigger asChild>
+                                <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1 hover:text-green-500 transition-colors`}>
+                                    <Repeat className="h-5 w-5" />
+                                    <span>{Array.isArray(post.retweets) ? post.retweets.length : 0}</span>
+                                </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-48 p-2">
+                                <div className="grid gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        className="w-full justify-start"
+                                        onClick={(e) => { e.stopPropagation(); onAction(post.id, 'retweet', post.authorId); }}
+                                    >
+                                        <Repeat className="mr-2 h-4 w-4" />
+                                        {isRetweeted ? 'Desfazer Repost' : 'Repostar'}
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        className="w-full justify-start"
+                                        onClick={(e) => { e.stopPropagation(); onQuote(post); }}
+                                    >
+                                        <PenSquare className="mr-2 h-4 w-4" />
+                                        Quotar Post
+                                    </Button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
                         <button onClick={() => onAction(post.id, 'like', post.authorId)} className={`flex items-center gap-1 ${isLiked ? 'text-red-500' : ''}`}><Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${isLiked ? 'fill-current' : ''}`} /><span>{Array.isArray(post.likes) ? post.likes.length : 0}</span></button>
                         <div className="flex items-center gap-1"><BarChart2 className="h-5 w-5" /><span>{post.views}</span></div>
                     </div>
@@ -397,6 +454,8 @@ export default function ProfilePage() {
     const [editingPost, setEditingPost] = useState<Post | null>(null);
     const [editedContent, setEditedContent] = useState("");
     const [isUpdating, setIsUpdating] = useState(false);
+    const [postToQuote, setPostToQuote] = useState<Post | null>(null);
+    const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
 
     // Follow list dialog state
     const [followListTitle, setFollowListTitle] = useState('');
@@ -431,6 +490,7 @@ export default function ProfilePage() {
         const [postsSnapshot, repostsSnapshot] = await Promise.all([getDocs(postsQuery), getDocs(repostsQuery)]);
 
         const originalPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
+        
         const repostsData = repostsSnapshot.docs.map(doc => doc.data());
         const repostedPostIds = repostsData.map(repost => repost.postId);
         
@@ -897,6 +957,11 @@ export default function ProfilePage() {
         }
     };
     
+    const handleQuoteClick = (postToQuote: Post) => {
+        setPostToQuote(postToQuote);
+        setIsQuoteModalOpen(true);
+    };
+
     const PostList = ({ posts, loading, emptyTitle, emptyDescription, showPinnedPost = false }: { posts: Post[], loading: boolean, emptyTitle: string, emptyDescription: string, showPinnedPost?: boolean }) => {
         if (loading) {
             return (
@@ -928,6 +993,7 @@ export default function ProfilePage() {
                         onPin={() => handleTogglePinPost(pinnedPost)}
                         onVote={handleVote}
                         toast={toast}
+                        onQuote={handleQuoteClick}
                     />
                 )}
                 {displayPosts.map((post) => (
@@ -943,6 +1009,7 @@ export default function ProfilePage() {
                         onPin={() => handleTogglePinPost(post)}
                         onVote={handleVote}
                         toast={toast}
+                        onQuote={handleQuoteClick}
                     />
                 ))}
             </ul>
