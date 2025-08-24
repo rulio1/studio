@@ -190,17 +190,17 @@ export default function RightSidebar() {
                                     const isVerified = user.isVerified || user.handle === '@rulio' || isZisprAccount;
 
                                     return (
-                                        <li key={user.uid} className="flex items-center gap-4">
+                                        <li key={user.uid} className="flex items-center gap-2">
                                             <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
                                                 <AvatarImage src={user.avatar} alt={user.displayName} />
                                                 <AvatarFallback>{user.displayName[0]}</AvatarFallback>
                                             </Avatar>
-                                            <div className="flex-1 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
-                                                <p className="font-bold flex items-center gap-1 hover:underline">
+                                            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
+                                                <p className="font-bold flex items-center gap-1 hover:underline truncate">
                                                     {user.displayName}
                                                     {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
                                                 </p>
-                                                <p className="text-sm text-muted-foreground">{user.handle}</p>
+                                                <p className="text-sm text-muted-foreground truncate">{user.handle}</p>
                                             </div>
                                             <Button variant={isFollowing ? 'secondary' : 'default'} size="sm" className="rounded-full" onClick={() => handleFollow(user.uid)}>
                                                 {isFollowing ? 'Seguindo' : 'Seguir'}
