@@ -4,20 +4,40 @@
 import BottomNavBar from '@/components/bottom-nav-bar';
 import CreatePostFAB from '@/components/create-post-fab';
 import HomeLoading from '@/app/(main)/home/loading';
-import { usePathname } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import React, { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
+import { auth, db } from '@/lib/firebase';
 import DesktopSidebar from '@/components/desktop-sidebar';
 import RightSidebar from '@/components/right-sidebar';
+import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+
+interface Notification {
+    id: string;
+    type: 'like' | 'follow' | 'post' | 'retweet' | 'mention' | 'unfollow';
+    fromUserId: string;
+    fromUser: {
+        name: string;
+        avatar: string;
+        handle: string;
+        isVerified?: boolean;
+    };
+    text: string;
+    postContent?: string;
+    postId?: string;
+    createdAt: any;
+    read: boolean;
+}
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
+    const { toast } = useToast();
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    
+    const initialLoadTime = useRef(new Date());
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             if (currentUser) {
@@ -30,6 +50,41 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
         return () => unsubscribe();
     }, [router]);
+    
+    useEffect(() => {
+        if (!user) return;
+
+        const notificationsQuery = query(
+            collection(db, "notifications"),
+            where("toUserId", "==", user.uid)
+        );
+
+        const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    const notification = { id: change.doc.id, ...change.doc.data() } as Notification;
+                    
+                    // Only show toasts for notifications created after the page loaded
+                    if (notification.createdAt && notification.createdAt.toDate() > initialLoadTime.current) {
+                        toast({
+                            title: `${notification.fromUser.name} ${notification.text}`,
+                            description: notification.postContent,
+                            onClick: () => {
+                                if (notification.type === 'follow' || notification.type === 'unfollow') {
+                                    router.push(`/profile/${notification.fromUserId}`);
+                                } else if (notification.postId) {
+                                    router.push(`/post/${notification.postId}`);
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+        });
+
+        return () => unsubscribe();
+
+    }, [user, router, toast]);
 
     // Pages where the FAB should not be shown on mobile
     const fabBlacklist = [
