@@ -1,6 +1,5 @@
-
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, setPersistence, browserLocalPersistence, Auth } from "firebase/auth";
+import { getAuth, setPersistence, browserSessionPersistence, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
@@ -13,7 +12,6 @@ const firebaseConfig = {
   "messagingSenderId": "489188047340"
 };
 
-// Singleton pattern to ensure single instance
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
@@ -26,7 +24,7 @@ function initializeFirebase() {
         db = getFirestore(app);
         storage = getStorage(app);
         if (typeof window !== 'undefined') {
-            setPersistence(auth, browserLocalPersistence)
+            setPersistence(auth, browserSessionPersistence)
               .catch((error) => {
                 console.error("Erro ao definir a persistência da autenticação:", error);
               });
@@ -39,7 +37,6 @@ function initializeFirebase() {
     }
 }
 
-// Initialize on load.
 initializeFirebase();
 
 export { app, auth, db, storage };
