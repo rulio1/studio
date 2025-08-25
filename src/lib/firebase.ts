@@ -18,6 +18,7 @@ let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
+// Initialize Firebase
 if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
 } else {
@@ -28,13 +29,14 @@ auth = getAuth(app);
 db = getFirestore(app);
 storage = getStorage(app);
 
-// Set persistence on the client side
+// Set persistence on the client side. This is crucial for PWAs.
 if (typeof window !== 'undefined') {
-  setPersistence(auth, browserLocalPersistence)
-    .catch((error) => {
-      console.error("Error setting persistence: ", error);
-    });
+  try {
+    // This makes sure the user stays logged in across sessions.
+    setPersistence(auth, browserLocalPersistence);
+  } catch (error) {
+    console.error("Error setting Firebase Auth persistence:", error);
+  }
 }
-
 
 export { app, auth, db, storage };
