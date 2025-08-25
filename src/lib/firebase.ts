@@ -1,6 +1,6 @@
 
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, setPersistence, browserLocalPersistence, inMemoryPersistence, Auth } from "firebase/auth";
+import { getAuth, browserLocalPersistence, initializeAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
@@ -25,18 +25,19 @@ if (getApps().length === 0) {
     app = getApp();
 }
 
-auth = getAuth(app);
+// Initialize Auth with persistence
+// This is more robust for PWAs, especially on iOS devices.
+try {
+    auth = initializeAuth(app, {
+      persistence: browserLocalPersistence,
+    });
+} catch (error) {
+    console.error("Error initializing Firebase Auth with persistence, falling back to default.", error);
+    auth = getAuth(app);
+}
+
 db = getFirestore(app);
 storage = getStorage(app);
 
-// Set persistence on the client side. This is crucial for PWAs.
-if (typeof window !== 'undefined') {
-  try {
-    // This makes sure the user stays logged in across sessions.
-    setPersistence(auth, browserLocalPersistence);
-  } catch (error) {
-    console.error("Error setting Firebase Auth persistence:", error);
-  }
-}
 
 export { app, auth, db, storage };
