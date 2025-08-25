@@ -1,5 +1,6 @@
+
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, setPersistence, browserLocalPersistence, Auth } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence, inMemoryPersistence, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
@@ -17,25 +18,23 @@ let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
-if (typeof window !== 'undefined') {
-    if (getApps().length === 0) {
-        app = initializeApp(firebaseConfig);
-    } else {
-        app = getApp();
-    }
-    auth = getAuth(app);
-    db = getFirestore(app);
-    storage = getStorage(app);
-    setPersistence(auth, browserLocalPersistence);
+if (getApps().length === 0) {
+    app = initializeApp(firebaseConfig);
 } else {
-    if (getApps().length === 0) {
-        app = initializeApp(firebaseConfig);
-    } else {
-        app = getApp();
-    }
-    auth = getAuth(app);
-    db = getFirestore(app);
-    storage = getStorage(app);
+    app = getApp();
 }
+
+auth = getAuth(app);
+db = getFirestore(app);
+storage = getStorage(app);
+
+// Set persistence on the client side
+if (typeof window !== 'undefined') {
+  setPersistence(auth, browserLocalPersistence)
+    .catch((error) => {
+      console.error("Error setting persistence: ", error);
+    });
+}
+
 
 export { app, auth, db, storage };
