@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, setPersistence, browserSessionPersistence, Auth } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
@@ -17,26 +17,25 @@ let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
-function initializeFirebase() {
+if (typeof window !== 'undefined') {
     if (getApps().length === 0) {
         app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-        storage = getStorage(app);
-        if (typeof window !== 'undefined') {
-            setPersistence(auth, browserSessionPersistence)
-              .catch((error) => {
-                console.error("Erro ao definir a persistência da autenticação:", error);
-              });
-        }
     } else {
         app = getApp();
-        auth = getAuth(app);
-        db = getFirestore(app);
-        storage = getStorage(app);
     }
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+    setPersistence(auth, browserLocalPersistence);
+} else {
+    if (getApps().length === 0) {
+        app = initializeApp(firebaseConfig);
+    } else {
+        app = getApp();
+    }
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
 }
-
-initializeFirebase();
 
 export { app, auth, db, storage };
