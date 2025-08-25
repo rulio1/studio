@@ -41,16 +41,20 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            if (currentUser) {
-                setUser(currentUser);
-            } else {
-                router.push('/login');
-            }
-            setIsLoading(false);
+            setUser(currentUser);
+            // This is the key change: we only stop loading once Firebase has confirmed the auth state.
+            setIsLoading(false); 
         });
 
         return () => unsubscribe();
-    }, [router]);
+    }, []);
+
+    useEffect(() => {
+        if (isLoading) return; // Don't redirect while checking auth
+        if (!user) {
+            router.push('/login');
+        }
+    }, [user, isLoading, router]);
     
      useEffect(() => {
         if (!user) return;

@@ -1,6 +1,6 @@
 
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, browserLocalPersistence, initializeAuth, Auth } from "firebase/auth";
+import { getAuth, browserLocalPersistence, initializeAuth, Auth, setPersistence } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 
@@ -18,23 +18,18 @@ let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
-// Initialize Firebase
 if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
 } else {
     app = getApp();
 }
 
-// Initialize Auth with persistence
-// This is more robust for PWAs, especially on iOS devices.
-try {
-    auth = initializeAuth(app, {
-      persistence: browserLocalPersistence,
-    });
-} catch (error) {
-    console.error("Error initializing Firebase Auth with persistence, falling back to default.", error);
-    auth = getAuth(app);
-}
+// Reverted to the standard initialization. The logic in MainLayout handles the async nature of auth restoration.
+auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.error("Firebase persistence error", error);
+});
+
 
 db = getFirestore(app);
 storage = getStorage(app);
