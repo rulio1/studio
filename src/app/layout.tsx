@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 export const metadata: Metadata = {
   title: 'Zispr',
   description: 'O melhor lugar para se conectar com o mundo. Participe da conversa.',
+  manifest: '/manifest.json',
   icons: {
     icon: '/icon.svg',
   },

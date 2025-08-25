@@ -1,0 +1,21 @@
+{
+  "name": "Zispr",
+  "short_name": "Zispr",
+  "description": "O melhor lugar para se conectar com o mundo. Participe da conversa.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#1DA1F2",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
