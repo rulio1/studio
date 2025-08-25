@@ -127,16 +127,16 @@ export default function EditProfilePage() {
             if (newAvatarDataUri) {
                 const avatarPath = `avatars/${user.uid}/${uuidv4()}`;
                 const imageStorageRef = storageRef(storage, avatarPath);
-                const snapshot = await uploadString(imageStorageRef, newAvatarDataUri, 'data_url');
-                avatarUrl = await getDownloadURL(snapshot.ref);
+                await uploadString(imageStorageRef, newAvatarDataUri, 'data_url');
+                avatarUrl = await getDownloadURL(imageStorageRef);
             }
             
             // Upload Banner if changed
             if (newBannerDataUri) {
                 const bannerPath = `banners/${user.uid}/${uuidv4()}`;
                 const imageStorageRef = storageRef(storage, bannerPath);
-                const snapshot = await uploadString(imageStorageRef, newBannerDataUri, 'data_url');
-                bannerUrl = await getDownloadURL(snapshot.ref);
+                await uploadString(imageStorageRef, newBannerDataUri, 'data_url');
+                bannerUrl = await getDownloadURL(imageStorageRef);
             }
 
             const firestoreUpdateData = {

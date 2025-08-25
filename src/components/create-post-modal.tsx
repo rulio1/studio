@@ -252,8 +252,8 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
             if (postImageDataUri) {
                 const imagePath = `posts/${user.uid}/${uuidv4()}`;
                 const imageStorageRef = storageRef(storage, imagePath);
-                const snapshot = await uploadString(imageStorageRef, postImageDataUri, 'data_url');
-                imageUrl = await getDownloadURL(snapshot.ref);
+                await uploadString(imageStorageRef, postImageDataUri, 'data_url');
+                imageUrl = await getDownloadURL(imageStorageRef);
             }
 
             // Check if it's the user's first post outside the transaction

@@ -1,8 +1,8 @@
 
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getAuth, setPersistence, browserLocalPersistence, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   "projectId": "chirp-3wj1h",
@@ -14,16 +14,23 @@ const firebaseConfig = {
   "messagingSenderId": "489188047340"
 };
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+let storage: FirebaseStorage;
 
-// Set authentication persistence to local
-setPersistence(auth, browserLocalPersistence)
-  .catch((error) => {
-    console.error("Erro ao definir a persistência da autenticação:", error);
-  });
+if (typeof window !== "undefined") {
+    // Initialize Firebase
+    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+
+    // Set authentication persistence to local
+    setPersistence(auth, browserLocalPersistence)
+      .catch((error) => {
+        console.error("Erro ao definir a persistência da autenticação:", error);
+      });
+}
 
 export { app, auth, db, storage };
