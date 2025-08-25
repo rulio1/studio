@@ -7,10 +7,11 @@ import HomeLoading from '@/app/(main)/home/loading';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, app } from '@/lib/firebase';
 import DesktopSidebar from '@/components/desktop-sidebar';
 import RightSidebar from '@/components/right-sidebar';
-import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { useToast } from '@/hooks/use-toast';
 
 interface Notification {
@@ -51,39 +52,52 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         return () => unsubscribe();
     }, [router]);
     
-    useEffect(() => {
-        if (!user) return;
+     useEffect(() => {
+        if ('serviceWorker' in navigator && typeof window !== 'undefined') {
+            const messaging = getMessaging(app);
 
-        const notificationsQuery = query(
-            collection(db, "notifications"),
-            where("toUserId", "==", user.uid)
-        );
-
-        const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === "added") {
-                    const notification = { id: change.doc.id, ...change.doc.data() } as Notification;
-                    
-                    // Only show toasts for notifications created after the page loaded
-                    if (notification.createdAt && notification.createdAt.toDate() > initialLoadTime.current) {
-                        toast({
-                            title: `${notification.fromUser.name} ${notification.text}`,
-                            description: notification.postContent,
-                            onClick: () => {
-                                if (notification.type === 'follow' || notification.type === 'unfollow') {
-                                    router.push(`/profile/${notification.fromUserId}`);
-                                } else if (notification.postId) {
-                                    router.push(`/post/${notification.postId}`);
-                                }
-                            }
-                        });
+            // Request permission and get token
+            const requestPermission = async () => {
+                try {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted' && user) {
+                        const currentToken = await getToken(messaging, { vapidKey: 'YOUR_VAPID_KEY_HERE' }); // You need to generate and add your VAPID key
+                        if (currentToken) {
+                            console.log('FCM Token:', currentToken);
+                            // Save the token to the user's document in Firestore
+                            const userDocRef = doc(db, 'users', user.uid);
+                            await updateDoc(userDocRef, { fcmToken: currentToken });
+                        } else {
+                            console.log('No registration token available. Request permission to generate one.');
+                        }
+                    } else {
+                        console.log('Unable to get permission to notify.');
                     }
+                } catch (error) {
+                    console.error('An error occurred while retrieving token. ', error);
                 }
+            };
+            
+            if(user) requestPermission();
+
+            // Handle foreground messages
+            const unsubscribeOnMessage = onMessage(messaging, (payload) => {
+                console.log('Message received. ', payload);
+                toast({
+                    title: payload.notification?.title,
+                    description: payload.notification?.body,
+                    onClick: () => {
+                       if (payload.data?.url) {
+                           router.push(payload.data.url);
+                       }
+                    }
+                });
             });
-        });
 
-        return () => unsubscribe();
-
+            return () => {
+                unsubscribeOnMessage();
+            };
+        }
     }, [user, router, toast]);
 
     // Pages where the FAB should not be shown on mobile
