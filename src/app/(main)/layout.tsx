@@ -7,7 +7,7 @@ import HomeLoading from '@/app/(main)/home/loading';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth, db, requestNotificationPermission } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import DesktopSidebar from '@/components/desktop-sidebar';
 import RightSidebar from '@/components/right-sidebar';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
@@ -23,11 +23,9 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             if (!currentUser) {
-                router.push('/login');
+                // This check is now primarily handled by the parent MainLayout
             } else {
                 setUser(currentUser);
-                 // Solicitar permissão para notificações assim que o usuário estiver logado
-                requestNotificationPermission(currentUser.uid);
             }
         });
         return () => unsubscribe();
@@ -132,13 +130,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         // Handle case where auth takes a while to initialize
         const timer = setTimeout(() => {
             if (auth.currentUser === null) {
-                setIsLoading(false);
+                setIsLoading(false); // Stop loading even if there's no user, to prevent infinite spinner
                 router.push('/login');
             } else {
                 // Also handle the case where user is available but loading state hasn't changed
                 setIsLoading(false);
             }
-        }, 3000); // 3-second timeout as a fallback
+        }, 2500); // 2.5-second timeout as a fallback
 
         return () => {
             unsubscribe();

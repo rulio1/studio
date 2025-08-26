@@ -4,14 +4,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, requestNotificationPermission } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
-import { Loader2, Heart, MessageCircle, Repeat, AtSign, UserPlus } from 'lucide-react';
+import { Loader2, Heart, MessageCircle, Repeat, AtSign, UserPlus, Bell, CheckCircle, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface NotificationPreferences {
     mention?: boolean;
@@ -23,6 +25,7 @@ interface NotificationPreferences {
 
 interface ZisprUser {
     notificationPreferences?: NotificationPreferences;
+    fcmToken?: string;
 }
 
 const preferenceItems = [
@@ -40,6 +43,14 @@ export default function NotificationSettingsPage() {
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState<string | null>(null);
+    const [permissionStatus, setPermissionStatus] = useState<'default' | 'granted' | 'denied'>('default');
+    const [isActivating, setIsActivating] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== "undefined" && "Notification" in window) {
+            setPermissionStatus(Notification.permission);
+        }
+    }, []);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -63,6 +74,29 @@ export default function NotificationSettingsPage() {
         });
         return () => unsubscribe();
     }, [user]);
+
+    const handleEnableNotifications = async () => {
+        if (!user) return;
+        setIsActivating(true);
+        const result = await requestNotificationPermission(user.uid);
+        if (result.success) {
+            toast({
+                title: "Notificações Ativadas!",
+                description: "Você agora receberá notificações push.",
+            });
+            setPermissionStatus('granted');
+        } else {
+            toast({
+                title: "Falha ao Ativar Notificações",
+                description: result.message,
+                variant: "destructive"
+            });
+             if (Notification.permission === 'denied') {
+                setPermissionStatus('denied');
+            }
+        }
+        setIsActivating(false);
+    };
 
     const handleTogglePreference = async (key: keyof NotificationPreferences, value: boolean) => {
         if (!user || isSaving === key) return;
@@ -113,13 +147,45 @@ export default function NotificationSettingsPage() {
     }
     
     const preferences = zisprUser?.notificationPreferences || {};
+    const hasPushToken = !!zisprUser?.fcmToken;
+    const areNotificationsEnabled = permissionStatus === 'granted' && hasPushToken;
 
     return (
-        <main className="flex-1 overflow-y-auto p-4">
+        <main className="flex-1 overflow-y-auto p-4 space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Notificações Push</CardTitle>
+                    <CardDescription>Receba alertas sobre atividades importantes, mesmo quando o Zispr não estiver aberto.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {permissionStatus === 'denied' ? (
+                         <Alert variant="destructive">
+                            <XCircle className="h-4 w-4" />
+                            <AlertTitle>Permissão Bloqueada</AlertTitle>
+                            <AlertDescription>Você bloqueou as notificações. Para reativá-las, você precisará alterar as permissões nas configurações do seu navegador ou dispositivo.</AlertDescription>
+                        </Alert>
+                    ) : areNotificationsEnabled ? (
+                        <Alert>
+                            <CheckCircle className="h-4 w-4" />
+                            <AlertTitle>Notificações Ativadas</AlertTitle>
+                            <AlertDescription>Você está pronto para receber notificações push neste dispositivo.</AlertDescription>
+                        </Alert>
+                    ) : (
+                        <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-muted/50 rounded-lg">
+                            <p className="text-sm text-muted-foreground mb-4 sm:mb-0">As notificações push estão desativadas.</p>
+                            <Button onClick={handleEnableNotifications} disabled={isActivating}>
+                                {isActivating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Ativar
+                            </Button>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
              <Card>
                 <CardHeader>
-                    <CardTitle>Preferências de Notificação Push</CardTitle>
-                    <CardDescription>Gerencie as notificações que você recebe no seu dispositivo.</CardDescription>
+                    <CardTitle>Preferências</CardTitle>
+                    <CardDescription>Escolha quais notificações push você deseja receber. Isso não afeta as notificações dentro do app.</CardDescription>
                 </CardHeader>
                 <CardContent className="divide-y divide-border">
                     {preferenceItems.map(({ id, label, description, icon: Icon }) => {
@@ -144,6 +210,7 @@ export default function NotificationSettingsPage() {
                                         id={`switch-${id}`}
                                         checked={isChecked}
                                         onCheckedChange={(value) => handleTogglePreference(id as keyof NotificationPreferences, value)}
+                                        disabled={!areNotificationsEnabled}
                                     />
                                 )}
                             </div>

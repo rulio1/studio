@@ -1,9 +1,9 @@
 
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, browserLocalPersistence, initializeAuth, Auth, connectAuthEmulator } from "firebase/auth";
-import { getFirestore, Firestore, connectFirestoreEmulator } from "firebase/firestore";
-import { getStorage, FirebaseStorage, connectStorageEmulator } from "firebase/storage";
-import { getMessaging, Messaging, getToken } from "firebase/messaging";
+import { getAuth, initializeAuth, browserLocalPersistence, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
+import { getMessaging, Messaging, getToken, onMessage } from "firebase/messaging";
 import { doc, setDoc } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -24,17 +24,30 @@ let messaging: Messaging | null = null;
 if (typeof window !== "undefined") {
     if (getApps().length === 0) {
         app = initializeApp(firebaseConfig);
+        auth = initializeAuth(app, {
+            persistence: browserLocalPersistence
+        });
+        if ('serviceWorker' in navigator) {
+            messaging = getMessaging(app);
+
+            // Ouvinte de mensagens em primeiro plano
+            onMessage(messaging, (payload) => {
+                console.log('Mensagem recebida em primeiro plano. ', payload);
+                // Você pode exibir uma notificação personalizada aqui se desejar
+                // Ex: new Notification(payload.notification.title, { body: payload.notification.body });
+            });
+        }
     } else {
         app = getApp();
+        auth = getAuth(app);
+        if ('serviceWorker' in navigator) {
+            messaging = getMessaging(app);
+        }
     }
-    auth = initializeAuth(app, {
-        persistence: browserLocalPersistence
-    });
     db = getFirestore(app);
     storage = getStorage(app);
-    messaging = getMessaging(app);
-
 } else {
+    // Lógica para o lado do servidor (se necessário)
     if (getApps().length === 0) {
         app = initializeApp(firebaseConfig);
     } else {
@@ -45,37 +58,38 @@ if (typeof window !== "undefined") {
     storage = getStorage(app);
 }
 
+
 export const requestNotificationPermission = async (userId: string) => {
     if (!messaging || typeof window === 'undefined' || !("Notification" in window)) {
-        console.log("Este navegador não suporta notificações.");
-        return;
+        console.log("Este navegador não suporta notificações ou o app não está em um contexto seguro (HTTPS).");
+        return { success: false, message: 'Notificações não suportadas.' };
     }
     
     try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-            console.log('Permissão para notificação concedida.');
             const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
             if (!vapidKey) {
-                console.error("Chave VAPID do Firebase não encontrada. Verifique seu arquivo .env");
-                return;
+                console.error("A variável de ambiente NEXT_PUBLIC_FIREBASE_VAPID_KEY não está definida.");
+                return { success: false, message: 'Configuração do servidor incompleta.' };
             }
+            
             const fcmToken = await getToken(messaging, { vapidKey });
+            
             if (fcmToken) {
-                console.log('FCM Token:', fcmToken);
-                // Salvar o token no documento do usuário
                 const userDocRef = doc(db, 'users', userId);
                 await setDoc(userDocRef, { fcmToken: fcmToken }, { merge: true });
+                return { success: true, message: 'Permissão concedida e token salvo!' };
             } else {
-                console.log('Não foi possível obter o token de registro. Permissão necessária?');
+                return { success: false, message: 'Não foi possível obter o token. A permissão foi concedida?' };
             }
         } else {
-            console.log('Permissão para notificação não concedida.');
+            return { success: false, message: 'Permissão para notificações não foi concedida.' };
         }
     } catch (error) {
-        console.error('Ocorreu um erro ao obter a permissão para notificação.', error);
+        console.error('Ocorreu um erro ao obter a permissão para notificação:', error);
+        return { success: false, message: 'Erro ao solicitar permissão.' };
     }
 };
-
 
 export { app, auth, db, storage, messaging };
