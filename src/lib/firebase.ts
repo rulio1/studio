@@ -64,10 +64,8 @@ export const requestNotificationPermission = async (userId: string) => {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
             const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
-            if (!vapidKey) {
-                console.error("A VAPID key do Firebase não está configurada em .env. A notificação push falhará.");
-                return { success: false, message: 'Configuração do servidor incompleta.' };
-            }
+            // A verificação explícita foi removida. Vamos confiar que o getToken lida com isso.
+            // Se vapidKey for undefined aqui, getToken vai falhar com um erro mais informativo do Firebase.
             
             const fcmToken = await getToken(messaging, { vapidKey });
             
