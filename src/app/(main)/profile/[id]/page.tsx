@@ -124,6 +124,9 @@ interface ZisprUser {
     pinnedPostId?: string;
     isVerified?: boolean;
     likesArePrivate?: boolean;
+    notificationPreferences?: {
+        [key: string]: boolean;
+    };
 }
 
 const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => {
@@ -673,42 +676,38 @@ export default function ProfilePage() {
         const batch = writeBatch(db);
         const currentUserRef = doc(db, 'users', currentUser.uid);
         const targetUserRef = doc(db, 'users', targetUser.uid);
-        const notificationRef = doc(collection(db, 'notifications'));
     
         if (isCurrentlyFollowing) {
             batch.update(currentUserRef, { following: arrayRemove(targetUser.uid) });
             batch.update(targetUserRef, { followers: arrayRemove(currentUser.uid) });
-            batch.set(notificationRef, {
-                toUserId: targetUser.uid,
-                fromUserId: currentUser.uid,
-                fromUser: {
-                    name: currentZisprUser.displayName,
-                    handle: currentZisprUser.handle,
-                    avatar: currentZisprUser.avatar,
-                    isVerified: currentZisprUser.isVerified || false,
-                },
-                type: 'unfollow',
-                text: 'deixou de seguir você',
-                createdAt: serverTimestamp(),
-                read: false,
-            });
+            
+            // Note: We don't need to send 'unfollow' notifications per X/Twitter's behavior.
+            // If you want them, you can add notification creation logic here.
+
         } else {
             batch.update(currentUserRef, { following: arrayUnion(targetUser.uid) });
             batch.update(targetUserRef, { followers: arrayUnion(currentUser.uid) });
-            batch.set(notificationRef, {
-                toUserId: targetUser.uid,
-                fromUserId: currentUser.uid,
-                fromUser: {
-                    name: currentZisprUser.displayName,
-                    handle: currentZisprUser.handle,
-                    avatar: currentZisprUser.avatar,
-                    isVerified: currentZisprUser.isVerified || false,
-                },
-                type: 'follow',
-                text: 'seguiu você',
-                createdAt: serverTimestamp(),
-                read: false,
-            });
+
+            const prefs = targetUser.notificationPreferences;
+            const canSendNotification = !prefs || prefs['follow'] !== false;
+
+            if (canSendNotification) {
+                const notificationRef = doc(collection(db, 'notifications'));
+                batch.set(notificationRef, {
+                    toUserId: targetUser.uid,
+                    fromUserId: currentUser.uid,
+                    fromUser: {
+                        name: currentZisprUser.displayName,
+                        handle: currentZisprUser.handle,
+                        avatar: currentZisprUser.avatar,
+                        isVerified: currentZisprUser.isVerified || false,
+                    },
+                    type: 'follow',
+                    text: 'seguiu você',
+                    createdAt: serverTimestamp(),
+                    read: false,
+                });
+            }
         }
     
         await batch.commit();
@@ -872,23 +871,32 @@ export default function ProfilePage() {
             }
     
             if (currentUser.uid !== authorId) {
-                const notificationRef = doc(collection(db, 'notifications'));
-                batch.set(notificationRef, {
-                    toUserId: authorId,
-                    fromUserId: currentUser.uid,
-                    fromUser: {
-                        name: zisprUser.displayName,
-                        handle: zisprUser.handle,
-                        avatar: zisprUser.avatar,
-                        isVerified: zisprUser.isVerified || false,
-                    },
-                    type: action,
-                    text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
-                    postContent: post.content.substring(0, 50),
-                    postId: post.id,
-                    createdAt: serverTimestamp(),
-                    read: false,
-                });
+                const authorDoc = await getDoc(doc(db, 'users', authorId));
+                if (authorDoc.exists()) {
+                    const authorData = authorDoc.data();
+                    const prefs = authorData.notificationPreferences;
+                    const canSendNotification = !prefs || prefs[action] !== false;
+
+                    if (canSendNotification) {
+                        const notificationRef = doc(collection(db, 'notifications'));
+                        batch.set(notificationRef, {
+                            toUserId: authorId,
+                            fromUserId: currentUser.uid,
+                            fromUser: {
+                                name: zisprUser.displayName,
+                                handle: zisprUser.handle,
+                                avatar: zisprUser.avatar,
+                                isVerified: zisprUser.isVerified || false,
+                            },
+                            type: action,
+                            text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
+                            postContent: post.content.substring(0, 50),
+                            postId: post.id,
+                            createdAt: serverTimestamp(),
+                            read: false,
+                        });
+                    }
+                }
             }
         }
         await batch.commit();

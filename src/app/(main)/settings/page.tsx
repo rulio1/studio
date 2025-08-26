@@ -67,7 +67,7 @@ export default function SettingsPage() {
                             icon={Bell} 
                             title="Preferências" 
                             description="Gerencie suas preferências de notificação."
-                            onClick={() => alert('Página de preferências de notificação em breve!')}
+                            onClick={() => router.push('/settings/notifications')}
                         />
                     </CardContent>
                 </Card>

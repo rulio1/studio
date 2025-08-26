@@ -103,6 +103,9 @@ interface ZisprUser {
     savedPosts?: string[];
     pinnedPostId?: string;
     isVerified?: boolean;
+    notificationPreferences?: {
+        [key: string]: boolean;
+    };
 }
 
 const ContentRenderer = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => {
@@ -494,9 +497,13 @@ export default function PostDetailPage() {
                 const usersRef = collection(db, "users");
                 const q = query(usersRef, where("handle", "in", mentionedHandles));
                 const querySnapshot = await getDocs(q);
-                querySnapshot.forEach(userDoc => {
+                for (const userDoc of querySnapshot.docs) {
                     const mentionedUserId = userDoc.id;
-                    if (mentionedUserId !== user.uid) { // Don't notify for self-mention
+                    const mentionedUserData = userDoc.data();
+                    const prefs = mentionedUserData.notificationPreferences;
+                    const canSendNotification = !prefs || prefs['mention'] !== false;
+
+                    if (mentionedUserId !== user.uid && canSendNotification) {
                         const notificationRef = doc(collection(db, 'notifications'));
                         batch.set(notificationRef, {
                             toUserId: mentionedUserId,
@@ -515,29 +522,38 @@ export default function PostDetailPage() {
                             read: false,
                         });
                     }
-                });
+                }
             }
 
 
             // Create notification if not replying to own post
             if(user.uid !== post.authorId) {
-                const notificationRef = doc(collection(db, 'notifications'));
-                batch.set(notificationRef, {
-                     toUserId: post.authorId,
-                    fromUserId: user.uid,
-                    fromUser: {
-                        name: zisprUser.displayName,
-                        handle: zisprUser.handle,
-                        avatar: zisprUser.avatar,
-                        isVerified: zisprUser.isVerified || false,
-                    },
-                    type: 'post',
-                    text: 'respondeu ao seu post',
-                    postContent: post.content.substring(0, 50),
-                    postId: post.id,
-                    createdAt: serverTimestamp(),
-                    read: false,
-                });
+                 const authorDoc = await getDoc(doc(db, 'users', post.authorId));
+                 if (authorDoc.exists()) {
+                    const authorData = authorDoc.data();
+                    const prefs = authorData.notificationPreferences;
+                    const canSendNotification = !prefs || prefs['reply'] !== false;
+                    
+                    if (canSendNotification) {
+                        const notificationRef = doc(collection(db, 'notifications'));
+                        batch.set(notificationRef, {
+                             toUserId: post.authorId,
+                            fromUserId: user.uid,
+                            fromUser: {
+                                name: zisprUser.displayName,
+                                handle: zisprUser.handle,
+                                avatar: zisprUser.avatar,
+                                isVerified: zisprUser.isVerified || false,
+                            },
+                            type: 'reply',
+                            text: 'respondeu ao seu post',
+                            postContent: post.content.substring(0, 50),
+                            postId: post.id,
+                            createdAt: serverTimestamp(),
+                            read: false,
+                        });
+                    }
+                }
             }
 
             await batch.commit();
@@ -565,23 +581,31 @@ export default function PostDetailPage() {
             
             // Create notification if not own post
             if (user.uid !== post.authorId) {
-                const notificationRef = doc(collection(db, 'notifications'));
-                batch.set(notificationRef, {
-                    toUserId: post.authorId,
-                    fromUserId: user.uid,
-                    fromUser: {
-                        name: zisprUser.displayName,
-                        handle: zisprUser.handle,
-                        avatar: zisprUser.avatar,
-                        isVerified: zisprUser.isVerified || false,
-                    },
-                    type: action,
-                    text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
-                    postContent: post.content.substring(0, 50),
-                    postId: post.id,
-                    createdAt: serverTimestamp(),
-                    read: false,
-                });
+                const authorDoc = await getDoc(doc(db, 'users', post.authorId));
+                if (authorDoc.exists()) {
+                    const authorData = authorDoc.data();
+                    const prefs = authorData.notificationPreferences;
+                    const canSendNotification = !prefs || prefs[action] !== false;
+                    if (canSendNotification) {
+                        const notificationRef = doc(collection(db, 'notifications'));
+                        batch.set(notificationRef, {
+                            toUserId: post.authorId,
+                            fromUserId: user.uid,
+                            fromUser: {
+                                name: zisprUser.displayName,
+                                handle: zisprUser.handle,
+                                avatar: zisprUser.avatar,
+                                isVerified: zisprUser.isVerified || false,
+                            },
+                            type: action,
+                            text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
+                            postContent: post.content.substring(0, 50),
+                            postId: post.id,
+                            createdAt: serverTimestamp(),
+                            read: false,
+                        });
+                    }
+                }
             }
             await batch.commit();
         }

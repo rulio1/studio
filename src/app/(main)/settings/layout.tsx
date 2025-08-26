@@ -14,6 +14,7 @@ const titleMap: Record<string, string> = {
     'deactivate': 'Desativar Conta',
     'delete': 'Excluir Conta',
     'privacy': 'Privacidade e Segurança',
+    'notifications': 'Notificações',
 };
 
 export default function SettingsLayout({
