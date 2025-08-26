@@ -29,12 +29,8 @@ if (typeof window !== "undefined") {
         });
         if ('serviceWorker' in navigator) {
             messaging = getMessaging(app);
-
-            // Ouvinte de mensagens em primeiro plano
             onMessage(messaging, (payload) => {
                 console.log('Mensagem recebida em primeiro plano. ', payload);
-                // Você pode exibir uma notificação personalizada aqui se desejar
-                // Ex: new Notification(payload.notification.title, { body: payload.notification.body });
             });
         }
     } else {
@@ -47,7 +43,6 @@ if (typeof window !== "undefined") {
     db = getFirestore(app);
     storage = getStorage(app);
 } else {
-    // Lógica para o lado do servidor (se necessário)
     if (getApps().length === 0) {
         app = initializeApp(firebaseConfig);
     } else {
@@ -70,7 +65,7 @@ export const requestNotificationPermission = async (userId: string) => {
         if (permission === 'granted') {
             const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
             if (!vapidKey) {
-                console.error("A variável de ambiente NEXT_PUBLIC_FIREBASE_VAPID_KEY não está definida.");
+                console.error("A VAPID key do Firebase não está configurada em .env. A notificação push falhará.");
                 return { success: false, message: 'Configuração do servidor incompleta.' };
             }
             
