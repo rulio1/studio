@@ -5,58 +5,33 @@ import BottomNavBar from '@/components/bottom-nav-bar';
 import CreatePostFAB from '@/components/create-post-fab';
 import HomeLoading from '@/app/(main)/home/loading';
 import { usePathname, useRouter } from 'next/navigation';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth, db, app } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import DesktopSidebar from '@/components/desktop-sidebar';
 import RightSidebar from '@/components/right-sidebar';
-import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
-interface Notification {
-    id: string;
-    type: 'like' | 'follow' | 'post' | 'retweet' | 'mention' | 'unfollow';
-    fromUserId: string;
-    fromUser: {
-        name: string;
-        avatar: string;
-        handle: string;
-        isVerified?: boolean;
-    };
-    text: string;
-    postContent?: string;
-    postId?: string;
-    createdAt: any;
-    read: boolean;
-}
-
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+function MainLayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const { toast } = useToast();
-    const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [user, setUser] = useState<FirebaseUser | null>(auth.currentUser);
     const initialLoadTime = useRef(new Date());
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
-            // This is the key change: we only stop loading once Firebase has confirmed the auth state.
-            setIsLoading(false); 
+            if (!currentUser) {
+                router.push('/login');
+            } else {
+                setUser(currentUser);
+            }
         });
-
         return () => unsubscribe();
-    }, []);
-
-    useEffect(() => {
-        if (isLoading) return; // Don't redirect while checking auth
-        if (!user) {
-            router.push('/login');
-        }
-    }, [user, isLoading, router]);
+    }, [router]);
     
-     useEffect(() => {
+    useEffect(() => {
         if (!user) return;
     
         const notificationsQuery = query(
@@ -90,21 +65,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         return () => unsubscribe();
     }, [user, router, toast]);
 
-    // Pages where the FAB should not be shown on mobile
     const fabBlacklist = [
         '/messages/',
         '/chat',
         '/profile/edit',
         '/privacy',
     ];
-
     const showFab = !fabBlacklist.some(path => pathname.startsWith(path) && pathname !== '/messages');
     
-    if (isLoading || !user) {
-        return <HomeLoading />;
-    }
-
-    // Hide sidebars on specific pages for a more focused view
     const hideSidebars = [
         '/chat',
         '/profile/edit',
@@ -140,5 +108,46 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <BottomNavBar />
             </div>
         </div>
+    );
+}
+
+
+export default function MainLayout({ children }: { children: React.ReactNode }) {
+    const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                // If after checking, there's no user, redirect.
+                router.push('/login');
+            } else {
+                // If there is a user, stop loading and show the content.
+                setIsLoading(false);
+            }
+        });
+
+        // Handle case where auth takes a while to initialize
+        const timer = setTimeout(() => {
+            if (auth.currentUser === null) {
+                setIsLoading(false);
+                router.push('/login');
+            }
+        }, 3000); // 3-second timeout as a fallback
+
+        return () => {
+            unsubscribe();
+            clearTimeout(timer);
+        };
+    }, [router]);
+
+    if (isLoading) {
+        return <HomeLoading />;
+    }
+
+    return (
+        <Suspense fallback={<HomeLoading />}>
+            <MainLayoutClient>{children}</MainLayoutClient>
+        </Suspense>
     );
 }
