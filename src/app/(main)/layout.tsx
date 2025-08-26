@@ -7,7 +7,7 @@ import HomeLoading from '@/app/(main)/home/loading';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, requestNotificationPermission } from '@/lib/firebase';
 import DesktopSidebar from '@/components/desktop-sidebar';
 import RightSidebar from '@/components/right-sidebar';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
@@ -26,6 +26,8 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
                 router.push('/login');
             } else {
                 setUser(currentUser);
+                 // Solicitar permissão para notificações assim que o usuário estiver logado
+                requestNotificationPermission(currentUser.uid);
             }
         });
         return () => unsubscribe();
@@ -132,6 +134,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             if (auth.currentUser === null) {
                 setIsLoading(false);
                 router.push('/login');
+            } else {
+                // Also handle the case where user is available but loading state hasn't changed
+                setIsLoading(false);
             }
         }, 3000); // 3-second timeout as a fallback
 
