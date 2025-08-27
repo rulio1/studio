@@ -39,7 +39,7 @@ interface Conversation {
         senderId: string;
     };
     unreadCount: number;
-    deletedFor: string[];
+    deletedFor?: string[];
 }
 
 
@@ -177,7 +177,6 @@ export default function MessagesPage() {
 
             const filteredDocs = snapshot.docs.filter(doc => {
                  const data = doc.data();
-                 // Show conversation if it's not marked as deleted for the current user
                  return !data.deletedFor || !data.deletedFor.includes(currentUser.uid);
             });
 
@@ -200,7 +199,7 @@ export default function MessagesPage() {
                 return {
                     id: docData.id,
                     otherUser: {
-                        id: otherUserData.uid,
+                        id: otherUserId,
                         name: otherUserData.displayName,
                         handle: otherUserData.handle,
                         avatar: otherUserData.avatar,

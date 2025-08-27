@@ -35,6 +35,7 @@ interface Conversation {
     };
     lastMessageReadBy?: string[];
     unreadCounts?: Record<string, number>;
+    deletedFor?: string[];
 }
 
 export default function ConversationPage() {
@@ -230,7 +231,7 @@ export default function ConversationPage() {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2">
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                <Button variant="ghost" size="icon" onClick={() => router.push('/messages')}>
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push(`/profile/${otherUser.uid}`)}>
