@@ -41,11 +41,11 @@ export default function DesktopSidebar() {
     const [messageCount, setMessageCount] = useState(0);
 
     const navItems = [
-        { href: '/home', icon: Home, label: 'Início' },
+        { href: '/home', icon: Home, label: 'Início', count: 0 },
         { href: '/notifications', icon: Bell, label: 'Notificações', count: notificationCount },
         { href: '/messages', icon: Mail, label: 'Mensagens', count: messageCount },
-        { href: '/saved', icon: Bookmark, label: 'Salvos' },
-        { href: `/profile/${user?.uid}`, icon: User, label: 'Perfil' },
+        { href: '/saved', icon: Bookmark, label: 'Salvos', count: 0 },
+        { href: `/profile/${user?.uid}`, icon: User, label: 'Perfil', count: 0 },
     ];
 
     useEffect(() => {
@@ -77,7 +77,6 @@ export default function DesktopSidebar() {
             setIsLoading(false);
         });
 
-        // Notifications listener
         const notificationsQuery = query(
             collection(db, "notifications"),
             where("toUserId", "==", user.uid),
@@ -87,7 +86,6 @@ export default function DesktopSidebar() {
             setNotificationCount(snapshot.size);
         });
 
-        // Messages listener
         const conversationsQuery = query(
             collection(db, "conversations"),
             where("participants", "array-contains", user.uid)
@@ -137,20 +135,18 @@ export default function DesktopSidebar() {
                 <nav className="w-full">
                     <ul className="space-y-1">
                         {navItems.map((item) => (
-                            <li key={item.label}>
+                             <li key={item.label} className="relative">
                                 <Link href={item.href} passHref>
-                                     <Button variant="ghost" className={`w-full justify-start text-xl p-6 ${getIsActive(item.href) ? 'font-bold' : ''}`}>
-                                        <div className="relative mr-4">
-                                            <item.icon className="h-7 w-7" />
-                                            {item.count && item.count > 0 && (
-                                                <Badge className="absolute -top-1 -right-2 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs">
-                                                    {item.count}
-                                                </Badge>
-                                            )}
-                                        </div>
+                                    <Button variant="ghost" className={`w-full justify-start text-xl p-6 ${getIsActive(item.href) ? 'font-bold' : ''}`}>
+                                        <item.icon className="h-7 w-7 mr-4" />
                                         <span>{item.label}</span>
                                     </Button>
                                 </Link>
+                                {item.count > 0 && (
+                                    <Badge className="absolute top-3 left-8 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs pointer-events-none">
+                                        {item.count}
+                                    </Badge>
+                                )}
                             </li>
                         ))}
                     </ul>
