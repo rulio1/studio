@@ -6,21 +6,37 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import DesktopLanding from '@/components/landing/desktop-landing';
 import MobileLanding from '@/components/landing/mobile-landing';
 import { Skeleton } from '@/components/ui/skeleton';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 export default function LandingPage() {
+  const router = useRouter();
   const isMobile = useIsMobile();
   const [isClient, setIsClient] = useState(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Se o usuário estiver logado, redirecione para a home
+        router.replace('/home');
+      } else {
+        // Se não houver usuário, pare de carregar e mostre a landing page
+        setIsLoadingAuth(false);
+      }
+    });
 
-  if (!isClient) {
+    // Desinscrever-se no cleanup
+    return () => unsubscribe();
+  }, [router]);
+
+  if (isLoadingAuth || !isClient) {
     return (
         <div className="flex flex-col items-center justify-center min-h-svh p-4">
-            <Skeleton className="h-16 w-16 rounded-full" />
-            <Skeleton className="h-8 w-64 mt-4" />
-            <Skeleton className="h-4 w-80 mt-2" />
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </div>
     );
   }
