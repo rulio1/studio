@@ -27,13 +27,16 @@ if (getApps().length === 0) {
     app = getApp();
 }
 
-if (typeof window !== 'undefined') {
+// Use initializeAuth to ensure persistence is set correctly, especially for client-side rendering.
+try {
     auth = initializeAuth(app, {
         persistence: browserLocalPersistence
     });
-} else {
+} catch (error) {
+    // If auth is already initialized (e.g., in a server environment or due to HMR), get the existing instance.
     auth = getAuth(app);
 }
+
 
 db = getFirestore(app);
 storage = getStorage(app);
@@ -55,15 +58,22 @@ export const getMessagingInstance = () => {
 
 export const requestNotificationPermission = async (userId: string) => {
     const messagingInstance = getMessagingInstance();
-    if (!messagingInstance || typeof window === 'undefined' || !("Notification" in window)) {
-        console.log("Este navegador não suporta notificações ou o app não está em um contexto seguro (HTTPS).");
+    if (!messagingInstance) {
+        return { success: false, message: 'Notificações não suportadas neste navegador.' };
+    }
+    
+    if (typeof window === 'undefined' || !("Notification" in window)) {
         return { success: false, message: 'Notificações não suportadas.' };
     }
     
     try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-            const vapidKey = "ZXxyxikRId-4OKGJsYPU8vDe7mJicoucrwpzhRo-Fdw";
+            const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+             if (!vapidKey) {
+                console.error("VAPID key not found in environment variables.");
+                return { success: false, message: 'Configuração do servidor incompleta.' };
+            }
             
             const fcmToken = await getToken(messagingInstance, { vapidKey });
             
