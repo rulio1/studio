@@ -21,41 +21,41 @@ let db: Firestore;
 let storage: FirebaseStorage;
 let messaging: Messaging | null = null;
 
-if (typeof window !== "undefined") {
-    if (getApps().length === 0) {
-        app = initializeApp(firebaseConfig);
-        auth = initializeAuth(app, {
-            persistence: browserLocalPersistence
-        });
-        if ('serviceWorker' in navigator) {
+if (getApps().length === 0) {
+    app = initializeApp(firebaseConfig);
+} else {
+    app = getApp();
+}
+
+if (typeof window !== 'undefined') {
+    auth = initializeAuth(app, {
+        persistence: browserLocalPersistence
+    });
+} else {
+    auth = getAuth(app);
+}
+
+db = getFirestore(app);
+storage = getStorage(app);
+
+// Lazy initialization for Messaging
+export const getMessagingInstance = () => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        if (!messaging) {
             messaging = getMessaging(app);
             onMessage(messaging, (payload) => {
                 console.log('Mensagem recebida em primeiro plano. ', payload);
             });
         }
-    } else {
-        app = getApp();
-        auth = getAuth(app);
-        if ('serviceWorker' in navigator) {
-            messaging = getMessaging(app);
-        }
+        return messaging;
     }
-    db = getFirestore(app);
-    storage = getStorage(app);
-} else {
-    if (getApps().length === 0) {
-        app = initializeApp(firebaseConfig);
-    } else {
-        app = getApp();
-    }
-    auth = getAuth(app);
-    db = getFirestore(app);
-    storage = getStorage(app);
+    return null;
 }
 
 
 export const requestNotificationPermission = async (userId: string) => {
-    if (!messaging || typeof window === 'undefined' || !("Notification" in window)) {
+    const messagingInstance = getMessagingInstance();
+    if (!messagingInstance || typeof window === 'undefined' || !("Notification" in window)) {
         console.log("Este navegador não suporta notificações ou o app não está em um contexto seguro (HTTPS).");
         return { success: false, message: 'Notificações não suportadas.' };
     }
@@ -63,11 +63,9 @@ export const requestNotificationPermission = async (userId: string) => {
     try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-            const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
-            // A verificação explícita foi removida. Vamos confiar que o getToken lida com isso.
-            // Se vapidKey for undefined aqui, getToken vai falhar com um erro mais informativo do Firebase.
+            const vapidKey = "ZXxyxikRId-4OKGJsYPU8vDe7mJicoucrwpzhRo-Fdw";
             
-            const fcmToken = await getToken(messaging, { vapidKey });
+            const fcmToken = await getToken(messagingInstance, { vapidKey });
             
             if (fcmToken) {
                 const userDocRef = doc(db, 'users', userId);
@@ -85,4 +83,4 @@ export const requestNotificationPermission = async (userId: string) => {
     }
 };
 
-export { app, auth, db, storage, messaging };
+export { app, auth, db, storage };

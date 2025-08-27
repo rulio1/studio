@@ -91,7 +91,7 @@ export default function NotificationSettingsPage() {
                 description: result.message,
                 variant: "destructive"
             });
-             if (Notification.permission === 'denied') {
+             if (typeof window !== "undefined" && "Notification" in window && Notification.permission === 'denied') {
                 setPermissionStatus('denied');
             }
         }
