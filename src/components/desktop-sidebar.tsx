@@ -140,15 +140,15 @@ export default function DesktopSidebar() {
                             <li key={item.label}>
                                 <Link href={item.href} passHref>
                                      <Button variant="ghost" className={`w-full justify-start text-xl p-6 ${getIsActive(item.href) ? 'font-bold' : ''}`}>
-                                        <div className="relative">
-                                            <item.icon className="h-7 w-7 mr-4" />
+                                        <div className="relative mr-4">
+                                            <item.icon className="h-7 w-7" />
                                             {item.count && item.count > 0 && (
-                                                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs">
+                                                <Badge className="absolute -top-1 -right-2 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs">
                                                     {item.count}
                                                 </Badge>
                                             )}
                                         </div>
-                                        {item.label}
+                                        <span>{item.label}</span>
                                     </Button>
                                 </Link>
                             </li>
