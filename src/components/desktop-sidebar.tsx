@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import {
 import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck } from 'lucide-react';
 import CreatePostModal from './create-post-modal';
 import { Skeleton } from './ui/skeleton';
+import { Badge } from './ui/badge';
 
 interface ZisprUser {
     uid: string;
@@ -36,11 +37,13 @@ export default function DesktopSidebar() {
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [notificationCount, setNotificationCount] = useState(0);
+    const [messageCount, setMessageCount] = useState(0);
 
     const navItems = [
         { href: '/home', icon: Home, label: 'Início' },
-        { href: '/notifications', icon: Bell, label: 'Notificações' },
-        { href: '/messages', icon: Mail, label: 'Mensagens' },
+        { href: '/notifications', icon: Bell, label: 'Notificações', count: notificationCount },
+        { href: '/messages', icon: Mail, label: 'Mensagens', count: messageCount },
         { href: '/saved', icon: Bookmark, label: 'Salvos' },
         { href: `/profile/${user?.uid}`, icon: User, label: 'Perfil' },
     ];
@@ -58,9 +61,13 @@ export default function DesktopSidebar() {
     useEffect(() => {
         if (!user) {
             setZisprUser(null);
+            setNotificationCount(0);
+            setMessageCount(0);
             setIsLoading(false);
             return;
         }
+
+        setIsLoading(true);
 
         const userDocRef = doc(db, "users", user.uid);
         const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
@@ -69,8 +76,39 @@ export default function DesktopSidebar() {
             }
             setIsLoading(false);
         });
+
+        // Notifications listener
+        const notificationsQuery = query(
+            collection(db, "notifications"),
+            where("toUserId", "==", user.uid),
+            where("read", "==", false)
+        );
+        const unsubscribeNotifications = onSnapshot(notificationsQuery, (snapshot) => {
+            setNotificationCount(snapshot.size);
+        });
+
+        // Messages listener
+        const conversationsQuery = query(
+            collection(db, "conversations"),
+            where("participants", "array-contains", user.uid)
+        );
+        const unsubscribeMessages = onSnapshot(conversationsQuery, (snapshot) => {
+            let totalUnread = 0;
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (!data.deletedFor || !data.deletedFor.includes(user.uid)) {
+                    const unread = data.unreadCounts?.[user.uid] || 0;
+                    totalUnread += unread;
+                }
+            });
+            setMessageCount(totalUnread);
+        });
         
-        return () => unsubscribeUser();
+        return () => {
+            unsubscribeUser();
+            unsubscribeNotifications();
+            unsubscribeMessages();
+        };
     }, [user]);
 
     const handleSignOut = async () => {
@@ -80,6 +118,9 @@ export default function DesktopSidebar() {
     
     const getIsActive = (href: string) => {
         if (href === '/home') return pathname === href;
+        if (href.startsWith('/profile') && user?.uid) {
+            return pathname === `/profile/${user.uid}`;
+        }
         return pathname.startsWith(href);
     };
 
@@ -97,9 +138,16 @@ export default function DesktopSidebar() {
                     <ul className="space-y-1">
                         {navItems.map((item) => (
                             <li key={item.label}>
-                                <Link href={item.href}>
+                                <Link href={item.href} passHref>
                                      <Button variant="ghost" className={`w-full justify-start text-xl p-6 ${getIsActive(item.href) ? 'font-bold' : ''}`}>
-                                        <item.icon className="h-7 w-7 mr-4" />
+                                        <div className="relative">
+                                            <item.icon className="h-7 w-7 mr-4" />
+                                            {item.count && item.count > 0 && (
+                                                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs">
+                                                    {item.count}
+                                                </Badge>
+                                            )}
+                                        </div>
                                         {item.label}
                                     </Button>
                                 </Link>
