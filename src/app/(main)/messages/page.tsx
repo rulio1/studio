@@ -9,11 +9,12 @@ import { Input } from '@/components/ui/input';
 import { MailPlus, Search, Settings, Loader2, MessageSquare, Pin, Archive, Trash2, MoreHorizontal, BadgeCheck, Bird } from 'lucide-react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, doc, getDoc, orderBy, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, getDoc, orderBy, updateDoc, arrayUnion } from 'firebase/firestore';
 import { formatTimeAgo } from '@/lib/utils';
 import NewMessageModal from '@/components/new-message-modal';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 
 interface ZisprUser {
     uid: string;
@@ -38,6 +39,7 @@ interface Conversation {
         senderId: string;
     };
     unreadCount: number;
+    deletedFor: string[];
 }
 
 
@@ -65,7 +67,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
     return (
          <div
             onClick={() => router.push(`/messages/${convo.id}`)}
-            className={`w-full p-4 hover:bg-muted/50 cursor-pointer flex items-center gap-4 ${isUnread ? 'border-l-2 border-primary' : ''}`}
+            className={`w-full p-3 hover:bg-muted/50 cursor-pointer flex items-center gap-4 border-b last:border-b-0`}
         >
             <Avatar className="h-12 w-12">
                 {isZisprAccount ? (
@@ -167,19 +169,25 @@ export default function MessagesPage() {
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
             const currentUser = auth.currentUser;
-            if (!currentUser) { // Extra check to ensure user is still logged in
+            if (!currentUser) { 
                 setConversations([]);
                 setIsLoading(false);
                 return;
             };
 
-            if (snapshot.empty) {
+            const filteredDocs = snapshot.docs.filter(doc => {
+                 const data = doc.data();
+                 // Show conversation if it's not marked as deleted for the current user
+                 return !data.deletedFor || !data.deletedFor.includes(currentUser.uid);
+            });
+
+            if (filteredDocs.length === 0) {
                 setConversations([]);
                 setIsLoading(false);
                 return;
             }
 
-            const convsPromises = snapshot.docs.map(async (docData) => {
+            const convsPromises = filteredDocs.map(async (docData) => {
                 const conversationData = docData.data();
                 const otherUserId = conversationData.participants.find((p: string) => p !== user.uid);
                 
@@ -201,7 +209,8 @@ export default function MessagesPage() {
                     lastMessage: {
                         ...conversationData.lastMessage,
                     },
-                    unreadCount: conversationData.unreadCounts?.[user.uid] || 0
+                    unreadCount: conversationData.unreadCounts?.[user.uid] || 0,
+                    deletedFor: conversationData.deletedFor || [],
                 } as Conversation;
             });
             
@@ -224,12 +233,17 @@ export default function MessagesPage() {
     }, [user]);
 
     const handleActionClick = async (convoId: string, action: 'pin' | 'archive' | 'delete') => {
+        if (!user) return;
+        
         if (action === 'delete') {
             try {
-                await deleteDoc(doc(db, 'conversations', convoId));
+                const convoRef = doc(db, 'conversations', convoId);
+                await updateDoc(convoRef, {
+                    deletedFor: arrayUnion(user.uid)
+                });
                 toast({
                     title: "Conversa apagada",
-                    description: "A conversa foi removida permanentemente.",
+                    description: "A conversa foi removida da sua lista.",
                 });
             } catch (error) {
                  toast({
@@ -259,17 +273,23 @@ export default function MessagesPage() {
     <>
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
-           {zisprUser && (
+           {zisprUser ? (
                 <Avatar className="h-8 w-8 cursor-pointer" onClick={() => user && router.push(`/profile/${user.uid}`)}>
                     <AvatarImage src={zisprUser.avatar} alt={zisprUser.displayName} />
                     <AvatarFallback>{zisprUser.displayName?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
-           )}
-          <div className="flex-1">
-             <h1 className="text-xl font-bold">Mensagens</h1>
+           ) : <div className="w-8"></div>}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input 
+                placeholder="Buscar Mensagens" 
+                className="w-full rounded-full bg-muted pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
+          <div className="flex items-center gap-0">
+            <Button variant="ghost" size="icon" onClick={() => router.push('/settings')}>
                 <Settings className="h-5 w-5" />
             </Button>
             <Button variant="ghost" size="icon" onClick={() => setIsNewMessageModalOpen(true)}>
@@ -279,23 +299,12 @@ export default function MessagesPage() {
         </div>
       </header>
 
-      <div className="p-4 border-b">
-        <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input 
-                placeholder="Buscar Mensagens Diretas" 
-                className="w-full rounded-full bg-muted pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
-        </div>
-      </div>
-        
+       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
             <div className="flex justify-center items-center h-full p-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
-        ): filteredConversations.length === 0 ? (
+        ) : filteredConversations.length === 0 ? (
              <div className="text-center p-8 mt-16">
                 <MessageSquare className="mx-auto h-16 w-16 text-muted-foreground" />
                 <h2 className="mt-4 text-2xl font-bold">{searchTerm ? 'Nenhum resultado encontrado' : 'Sem mensagens ainda'}</h2>
@@ -303,17 +312,20 @@ export default function MessagesPage() {
                  <Button className="mt-4" onClick={() => setIsNewMessageModalOpen(true)}>Encontrar pessoas</Button>
             </div>
         ) : (
-             <ul className="divide-y divide-border">
-                {filteredConversations.map((convo) => (
-                   <ConversationItem 
-                        key={convo.id} 
-                        convo={convo} 
-                        currentUserId={user?.uid || null}
-                        onActionClick={handleActionClick}
-                    />
-                ))}
-             </ul>
+             <Card className="m-2 md:m-4 border-0 md:border">
+                 <CardContent className="p-0">
+                    {filteredConversations.map((convo) => (
+                       <ConversationItem 
+                            key={convo.id} 
+                            convo={convo} 
+                            currentUserId={user?.uid || null}
+                            onActionClick={handleActionClick}
+                        />
+                    ))}
+                 </CardContent>
+             </Card>
         )}
+        </div>
          {isNewMessageModalOpen && user && (
             <NewMessageModal 
                 open={isNewMessageModalOpen}

@@ -132,10 +132,10 @@ export default function ConversationPage() {
 
     const scrollToBottom = () => {
         if (scrollAreaRef.current) {
-            const scrollContainer = scrollAreaRef.current.querySelector('div');
-            if (scrollContainer) {
-                 scrollContainer.scrollTo({
-                    top: scrollContainer.scrollHeight,
+            const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
+            if (viewport) {
+                viewport.scrollTo({
+                    top: viewport.scrollHeight,
                     behavior: 'smooth'
                 });
             }
@@ -169,7 +169,8 @@ export default function ConversationPage() {
                     timestamp: serverTimestamp()
                 },
                 lastMessageReadBy: [user.uid], // Reset read status, only sender has read it
-                [unreadCountKey]: increment(1)
+                [unreadCountKey]: increment(1),
+                deletedFor: [], // If a user deleted it before, bring it back on new message
             });
 
             setNewMessage('');
@@ -270,8 +271,8 @@ export default function ConversationPage() {
 
                     return (
                         <div key={message.id}>
-                            <div className={`flex items-start gap-3 ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
-                            {message.senderId !== user?.uid && (
+                            <div className={`flex items-end gap-2 ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
+                            {!isMyMessage && (
                                 <Avatar className="h-8 w-8">
                                      {isZisprAccount ? (
                                         <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
@@ -285,7 +286,7 @@ export default function ConversationPage() {
                                     )}
                                 </Avatar>
                             )}
-                            <div className={`rounded-lg px-4 py-2 max-w-xs md:max-w-md ${isMyMessage ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                            <div className={`rounded-2xl px-4 py-2 max-w-[80%] md:max-w-[60%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
                                 <p className="text-sm whitespace-pre-wrap">{message.text}</p>
                             </div>
                             </div>
