@@ -90,7 +90,7 @@ const QuotedPostPreview = ({ post }: { post: Post }) => (
             <span className="font-bold">{post.author}</span>
             <span className="text-muted-foreground">{post.handle}</span>
         </div>
-        <p className="text-sm mt-1 text-muted-foreground">{post.content}</p>
+        <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
         {post.image && (
             <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
                 <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
@@ -482,7 +482,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                     <PollCreator onChange={setPollData} />
                                 </div>
                             )}
-                             {spotifyUrl && (
+                             {spotifyUrl && !quotedPost && (
                                 <SpotifyEmbed url={spotifyUrl} />
                              )}
                         </div>
