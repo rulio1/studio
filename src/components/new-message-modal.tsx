@@ -116,7 +116,7 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                         <ul className="divide-y divide-border">
                             {results.map(user => {
                                 const isZisprAccount = user.handle === '@Zispr';
-                                const isVerified = user.isVerified || user.handle === '@rulio' || isZisprAccount;
+                                const isVerified = user.isVerified;
                                 return (
                                     <li key={user.uid}>
                                         <button 

@@ -123,7 +123,7 @@ export default function DesktopSidebar() {
     };
 
     const isZisprAccount = zisprUser?.handle === '@Zispr';
-    const isUserVerified = zisprUser?.isVerified || zisprUser?.handle === '@rulio' || isZisprAccount;
+    const isUserVerified = zisprUser?.isVerified;
 
     return (
         <aside className="sticky top-0 h-screen w-64 hidden md:flex flex-col justify-between items-end p-2 border-r">

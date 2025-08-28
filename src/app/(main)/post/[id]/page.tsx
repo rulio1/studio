@@ -231,7 +231,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
     };
     
     const isZisprAccount = comment.handle === '@Zispr';
-    const isVerified = comment.isVerified || comment.handle === '@rulio' || isZisprAccount;
+    const isVerified = comment.isVerified;
 
     return (
         <li className="p-4 flex gap-4 relative">
@@ -762,7 +762,7 @@ export default function PostDetailPage() {
     }
     
     const isZisprAccount = post.handle === '@Zispr';
-    const isPostVerified = post.isVerified || post.handle === '@rulio' || isZisprAccount;
+    const isPostVerified = post.isVerified;
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
     return (

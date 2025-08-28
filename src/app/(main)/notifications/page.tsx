@@ -85,7 +85,7 @@ const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notif
     };
 
     const isZisprAccount = notification.fromUser.handle === '@Zispr';
-    const isVerified = notification.fromUser.isVerified || notification.fromUser.handle === '@rulio' || isZisprAccount;
+    const isVerified = notification.fromUser.isVerified;
 
     return (
         <li className={`p-4 flex gap-4 hover:bg-muted/50 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`} onClick={handleItemClick}>
@@ -219,7 +219,7 @@ export default function NotificationsPage() {
     }, [notifications]);
 
     const verifiedNotifications = useMemo(() => {
-        return notifications.filter(n => n.fromUser.isVerified || n.fromUser.handle === '@Zispr' || n.fromUser.handle === '@rulio');
+        return notifications.filter(n => n.fromUser.isVerified);
     }, [notifications]);
 
   return (

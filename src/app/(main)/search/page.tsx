@@ -223,7 +223,7 @@ function SearchPageClient() {
   const renderUser = (user: UserSearchResult, list: 'newUsers' | 'users') => {
     const isFollowing = user.followers?.includes(currentUser?.uid || '');
     const isZisprAccount = user.handle === '@Zispr';
-    const isVerified = user.isVerified || user.handle === '@rulio' || isZisprAccount;
+    const isVerified = user.isVerified;
 
     if (currentUser?.uid === user.uid) {
         return (

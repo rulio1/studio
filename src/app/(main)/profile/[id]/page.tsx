@@ -226,7 +226,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
     }, [post.createdAt, post.repostedAt]);
     
     const isZisprAccount = post.handle === '@Zispr';
-    const isVerified = post.isVerified || post.handle === '@rulio' || isZisprAccount;
+    const isVerified = post.isVerified;
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
     const isRetweeted = Array.isArray(post.retweets) && post.retweets.includes(user?.uid || '');
     const isLiked = Array.isArray(post.likes) && post.likes.includes(user?.uid || '');
@@ -1069,7 +1069,7 @@ export default function ProfilePage() {
     }
 
     const isZisprAccount = profileUser.handle === '@Zispr';
-    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@rulio' || isZisprAccount;
+    const isProfileVerified = profileUser.isVerified;
     const canViewLikes = isOwnProfile || !profileUser.likesArePrivate;
 
   return (
