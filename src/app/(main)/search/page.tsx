@@ -13,6 +13,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import SearchLoading from './loading';
+import { motion } from 'framer-motion';
 
 
 interface Trend {
@@ -79,6 +80,7 @@ function SearchPageClient() {
   const [isSearching, setIsSearching] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [posts, setPosts] = useState<PostSearchResult[]>([]);
+  const [activeTab, setActiveTab] = useState('trending');
 
 
   const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
@@ -291,11 +293,13 @@ function SearchPageClient() {
 
         return (
             <Tabs defaultValue="top" className="w-full">
-                <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
-                    <TabsTrigger value="top" className="flex-1">Principais</TabsTrigger>
-                    <TabsTrigger value="people" className="flex-1">Pessoas</TabsTrigger>
-                    <TabsTrigger value="posts" className="flex-1">Posts</TabsTrigger>
-                </TabsList>
+                <div className="w-full justify-around rounded-none bg-transparent border-b sticky top-16 bg-background/80 backdrop-blur-sm z-10 p-2">
+                    <TabsList className="relative grid w-full grid-cols-3 p-1 bg-muted/50 rounded-full h-11">
+                        <TabsTrigger value="top" className="relative z-10 rounded-full text-base">Principais</TabsTrigger>
+                        <TabsTrigger value="people" className="relative z-10 rounded-full text-base">Pessoas</TabsTrigger>
+                        <TabsTrigger value="posts" className="relative z-10 rounded-full text-base">Posts</TabsTrigger>
+                    </TabsList>
+                </div>
                 <TabsContent value="top">
                     {users.length > 0 && (
                         <div className="border-b">
@@ -335,11 +339,24 @@ function SearchPageClient() {
     }
     
     return (
-        <Tabs defaultValue="trending" className="w-full">
-            <TabsList className="w-full justify-around rounded-none bg-transparent border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10 px-4">
-              <TabsTrigger value="trending" className="flex-1">Tópicos do momento</TabsTrigger>
-              <TabsTrigger value="new-users" className="flex-1">Novos Usuários</TabsTrigger>
-            </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="w-full justify-around rounded-none bg-transparent border-b sticky top-16 bg-background/80 backdrop-blur-sm z-10 p-2">
+              <TabsList className="relative grid w-full grid-cols-2 p-1 bg-muted/50 rounded-full h-11">
+                  <TabsTrigger value="trending" className="relative z-10 rounded-full text-base">Tópicos do momento</TabsTrigger>
+                  <TabsTrigger value="new-users" className="relative z-10 rounded-full text-base">Novos Usuários</TabsTrigger>
+                  <motion.div
+                        layoutId="search-tab-indicator"
+                        className="absolute inset-0 h-full p-1"
+                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        style={{
+                            left: activeTab === 'trending' ? '0%' : '50%',
+                            right: activeTab === 'trending' ? '50%' : '0%',
+                        }}
+                    >
+                        <div className="w-full h-full bg-background rounded-full shadow-md"></div>
+                    </motion.div>
+              </TabsList>
+            </div>
             <TabsContent value="trending" className="mt-0">
                 {isLoading ? (
                     <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -377,7 +394,7 @@ function SearchPageClient() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b md:hidden">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()}><ArrowLeft /></Button>
           <div className="flex-1 relative">
@@ -389,7 +406,7 @@ function SearchPageClient() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Settings className="h-6 w-6" />
+          <Button variant="ghost" size="icon" onClick={() => router.push('/settings')}><Settings className="h-6 w-6" /></Button>
         </div>
       </header>
       {renderContent()}
