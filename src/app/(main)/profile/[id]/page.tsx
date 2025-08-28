@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp, deleteDoc, setDoc, documentId, addDoc, runTransaction } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp, deleteDoc, setDoc, documentId, addDoc, runTransaction, increment } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -548,7 +548,7 @@ export default function ProfilePage() {
         const finalPosts = allPosts.map(post => ({
             ...post,
             isLiked: (Array.isArray(post.likes) ? post.likes : []).includes(userToFetch.uid || ''),
-            isRetweeted: (Array.isArray(post.retweets) ? data.retweets : []).includes(userToFetch.uid || ''),
+            isRetweeted: (Array.isArray(post.retweets) ? post.retweets : []).includes(userToFetch.uid || ''),
         }));
     
         setUserPosts(finalPosts);
@@ -1177,8 +1177,8 @@ export default function ProfilePage() {
             </div>
         </div>
 
-        <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full mt-4 border-b">
-             <div className="w-full justify-around rounded-none bg-transparent px-4">
+        <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
+             <div className="w-full justify-around rounded-none bg-transparent border-b px-4">
                 <TabsList className="relative grid w-full grid-cols-4 p-0 bg-transparent h-11">
                     <TabsTrigger value="posts" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base">Posts</TabsTrigger>
                     <TabsTrigger value="replies" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base">Respostas</TabsTrigger>
@@ -1186,14 +1186,13 @@ export default function ProfilePage() {
                     <TabsTrigger value="likes" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base">Curtidas</TabsTrigger>
                     <motion.div
                         layoutId="profile-tab-indicator"
-                        className="absolute bottom-0 h-1"
+                        className="absolute bottom-0 h-1 bg-primary rounded-full"
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         style={{
                             left: `${{'posts': 0, 'replies': 25, 'media': 50, 'likes': 75}[activeTab]}%`,
                             width: '25%',
                         }}
                     >
-                        <div className="w-full h-full bg-primary rounded-full"></div>
                     </motion.div>
                 </TabsList>
             </div>
@@ -1293,5 +1292,7 @@ export default function ProfilePage() {
   );
 }
 
+
+    
 
     
