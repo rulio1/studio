@@ -44,6 +44,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import CreatePostModal from '@/components/create-post-modal';
 import ImageViewer from '@/components/image-viewer';
 import SpotifyEmbed from '@/components/spotify-embed';
+import { motion } from 'framer-motion';
 
 
 const EmptyState = ({ title, description, icon: Icon }: { title: string, description: string, icon?: React.ElementType }) => (
@@ -470,6 +471,8 @@ export default function ProfilePage() {
     const [postToQuote, setPostToQuote] = useState<Post | null>(null);
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
     const [postToView, setPostToView] = useState<Post | null>(null);
+    const [activeTab, setActiveTab] = useState('posts');
+
 
     // Follow list dialog state
     const [followListTitle, setFollowListTitle] = useState('');
@@ -545,7 +548,7 @@ export default function ProfilePage() {
         const finalPosts = allPosts.map(post => ({
             ...post,
             isLiked: (Array.isArray(post.likes) ? post.likes : []).includes(userToFetch.uid || ''),
-            isRetweeted: (Array.isArray(post.retweets) ? post.retweets : []).includes(userToFetch.uid || ''),
+            isRetweeted: (Array.isArray(post.retweets) ? data.retweets : []).includes(userToFetch.uid || ''),
         }));
     
         setUserPosts(finalPosts);
@@ -1174,13 +1177,26 @@ export default function ProfilePage() {
             </div>
         </div>
 
-        <Tabs defaultValue="posts" className="w-full mt-4">
-            <TabsList className="w-full justify-around rounded-none bg-transparent border-b px-4">
-                <TabsTrigger value="posts" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Posts</TabsTrigger>
-                <TabsTrigger value="replies" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Respostas</TabsTrigger>
-                <TabsTrigger value="media" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Mídia</TabsTrigger>
-                <TabsTrigger value="likes" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent">Curtidas</TabsTrigger>
-            </TabsList>
+        <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full mt-4 border-b">
+             <div className="w-full justify-around rounded-none bg-transparent px-4">
+                <TabsList className="relative grid w-full grid-cols-4 p-0 bg-transparent h-11">
+                    <TabsTrigger value="posts" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base">Posts</TabsTrigger>
+                    <TabsTrigger value="replies" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base">Respostas</TabsTrigger>
+                    <TabsTrigger value="media" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base">Mídia</TabsTrigger>
+                    <TabsTrigger value="likes" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base">Curtidas</TabsTrigger>
+                    <motion.div
+                        layoutId="profile-tab-indicator"
+                        className="absolute bottom-0 h-1"
+                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        style={{
+                            left: `${{'posts': 0, 'replies': 25, 'media': 50, 'likes': 75}[activeTab]}%`,
+                            width: '25%',
+                        }}
+                    >
+                        <div className="w-full h-full bg-primary rounded-full"></div>
+                    </motion.div>
+                </TabsList>
+            </div>
 
              <TabsContent value="posts" className="mt-0">
                 <PostList 
@@ -1276,3 +1292,6 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+
+    
