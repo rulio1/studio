@@ -851,91 +851,92 @@ useEffect(() => {
 
   return (
     <>
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
-        <div className="flex items-center justify-between px-4 py-2">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
-                  <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
-                </Avatar>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-80 p-0 flex flex-col bg-background">
-                 <OtherDialogTitle className="sr-only">Menu Principal</OtherDialogTitle>
-                 <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Close</span>
-                 </SheetClose>
-                 <div className="p-4 border-b">
-                    <div className="flex justify-between items-center mb-4">
-                         <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
-                            <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
-                            <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
-                        </Avatar>
-                    </div>
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-1 font-bold text-lg">
-                            {zisprUser.displayName}
-                            {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className="h-5 w-5 text-primary" />)}
+      <Tabs defaultValue="for-you" className="w-full" onValueChange={(value) => setActiveTab(value as 'for-you' | 'following')}>
+        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
+            <div className="flex items-center justify-between px-4 py-2">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Avatar className="h-8 w-8 cursor-pointer">
+                      <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
+                      <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
+                    </Avatar>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-80 p-0 flex flex-col bg-background">
+                     <OtherDialogTitle className="sr-only">Menu Principal</OtherDialogTitle>
+                     <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Close</span>
+                     </SheetClose>
+                     <div className="p-4 border-b">
+                        <div className="flex justify-between items-center mb-4">
+                             <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
+                                <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
+                                <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
+                            </Avatar>
                         </div>
-                        <p className="text-sm text-muted-foreground">{zisprUser.handle}</p>
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-1 font-bold text-lg">
+                                {zisprUser.displayName}
+                                {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className="h-5 w-5 text-primary" />)}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{zisprUser.handle}</p>
+                        </div>
+                        <div className="flex gap-4 mt-2 text-sm">
+                            <p><span className="font-bold">{zisprUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
+                            <p><span className="font-bold">{zisprUser.followers?.length || 0}</span> <span className="text-muted-foreground">Seguidores</span></p>
+                        </div>
                     </div>
-                    <div className="flex gap-4 mt-2 text-sm">
-                        <p><span className="font-bold">{zisprUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
-                        <p><span className="font-bold">{zisprUser.followers?.length || 0}</span> <span className="text-muted-foreground">Seguidores</span></p>
-                    </div>
-                </div>
-                 <nav className="flex-1 flex flex-col gap-2 p-4">
-                    {navItems.map((item) => (
-                        <SheetClose asChild key={item.label}>
-                            <Link href={item.href} className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                                <item.icon className="h-6 w-6" /> {item.label}
-                            </Link>
+                     <nav className="flex-1 flex flex-col gap-2 p-4">
+                        {navItems.map((item) => (
+                            <SheetClose asChild key={item.label}>
+                                <Link href={item.href} className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                                    <item.icon className="h-6 w-6" /> {item.label}
+                                </Link>
+                            </SheetClose>
+                        ))}
+                      </nav>
+                      <div className="p-4 border-t mt-auto flex flex-col gap-2">
+                        <SheetClose asChild>
+                          <Link href="/chat" className="flex items-center gap-4 py-2 font-semibold rounded-md">
+                            <Bot className="h-6 w-6" /> Zispr AI
+                          </Link>
                         </SheetClose>
-                    ))}
-                  </nav>
-                  <div className="p-4 border-t mt-auto flex flex-col gap-2">
-                    <SheetClose asChild>
-                      <Link href="/chat" className="flex items-center gap-4 py-2 font-semibold rounded-md">
-                        <Bot className="h-6 w-6" /> Zispr AI
-                      </Link>
-                    </SheetClose>
-                    <SheetClose asChild>
-                       <Link href="/settings" className="flex items-center gap-4 py-2 font-semibold rounded-md">
-                        <Settings className="h-6 w-6" /> Configurações e privacidade
-                      </Link>
-                    </SheetClose>
-                    <SheetClose asChild>
-                        <Button variant="destructive" className="self-center" onClick={handleSignOut}>
-                            <LogOut className="h-6 w-6" />
-                            Sair
-                        </Button>
-                    </SheetClose>
-                  </div>
-              </SheetContent>
-            </Sheet>
-            <div className="flex-1 flex justify-center">
-                <Bird className="h-6 w-6" />
+                        <SheetClose asChild>
+                           <Link href="/settings" className="flex items-center gap-4 py-2 font-semibold rounded-md">
+                            <Settings className="h-6 w-6" /> Configurações e privacidade
+                          </Link>
+                        </SheetClose>
+                        <SheetClose asChild>
+                            <Button variant="destructive" className="self-center" onClick={handleSignOut}>
+                                <LogOut className="h-6 w-6" />
+                                Sair
+                            </Button>
+                        </SheetClose>
+                      </div>
+                  </SheetContent>
+                </Sheet>
+                <div className="flex-1 flex justify-center">
+                    <Bird className="h-6 w-6" />
+                </div>
+                <div className="w-8"></div>
             </div>
-            <ThemeToggle />
-        </div>
-      </header>
-       <main className="flex-1 overflow-y-auto">
-        <Tabs defaultValue="for-you" className="w-full" onValueChange={(value) => setActiveTab(value as 'for-you' | 'following')}>
-            <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
-                <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
-                  <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Para você</TabsTrigger>
-                  <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Seguindo</TabsTrigger>
-                </TabsList>
-            </div>
+            <TabsList className="w-full justify-around rounded-none bg-transparent">
+              <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent text-base">Para você</TabsTrigger>
+              <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent text-base">Seguindo</TabsTrigger>
+            </TabsList>
+        </header>
+
+        <main className="flex-1 overflow-y-auto">
             <TabsContent value="for-you" className="mt-0">
                 <PostList posts={allPosts} loading={isLoading} tab="for-you" />
             </TabsContent>
             <TabsContent value="following" className="mt-0">
                 <PostList posts={followingPosts} loading={isLoadingFollowing} tab="following" />
             </TabsContent>
-        </Tabs>
-        <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+        </main>
+      </Tabs>
+
+      <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                 <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
@@ -973,7 +974,8 @@ useEffect(() => {
             quotedPost={postToQuote}
         />
         <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />
-      </main>
     </>
   );
 }
+
+    
