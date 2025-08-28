@@ -47,8 +47,6 @@ import Poll from '@/components/poll';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import ImageViewer from '@/components/image-viewer';
 import SpotifyEmbed from '@/components/spotify-embed';
-import { ads } from '@/lib/ads';
-import PromotedPost from '@/components/promoted-post';
 
 
 interface Post {
@@ -808,20 +806,11 @@ useEffect(() => {
         )
     }
 
-    const items = [];
-    let adIndex = 0;
-    for (let i = 0; i < posts.length; i++) {
-        items.push(<PostItem key={`${posts[i].id}-${posts[i].repostedAt?.toMillis() || ''}`} post={posts[i]} />);
-        if ((i + 1) % 5 === 0 && tab === 'for-you') {
-            items.push(<PromotedPost key={`ad-${adIndex}`} ad={ads[adIndex % ads.length]} />);
-            adIndex++;
-        }
-    }
-
-
     return (
         <ul className="divide-y divide-border">
-            {items}
+            {posts.map((post) => (
+                <PostItem key={`${post.id}-${post.repostedAt?.toMillis() || ''}`} post={post} />
+            ))}
         </ul>
     );
   };
