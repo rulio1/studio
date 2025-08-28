@@ -4,7 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, Settings, Star, Users, Heart, Loader2, AtSign, BadgeCheck, Bird, UserX } from 'lucide-react';
+import { Bell, Settings, Star, Users, Heart, Loader2, AtSign, BadgeCheck, Bird, UserX, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { auth, db } from '@/lib/firebase';
