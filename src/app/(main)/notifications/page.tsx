@@ -12,6 +12,7 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { formatTimeAgo } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 interface ZisprUser {
     uid: string;
@@ -20,7 +21,7 @@ interface ZisprUser {
 
 interface Notification {
     id: string;
-    type: 'like' | 'follow' | 'post' | 'retweet' | 'mention' | 'unfollow';
+    type: 'like' | 'follow' | 'post' | 'retweet' | 'mention' | 'unfollow' | 'reply';
     fromUserId: string;
     fromUser: {
         name: string;
@@ -43,6 +44,7 @@ const iconMap = {
     retweet: { icon: Users, color: 'text-green-500' },
     mention: { icon: AtSign, color: 'text-primary' },
     unfollow: { icon: UserX, color: 'text-muted-foreground' },
+    reply: { icon: MessageCircle, color: 'text-sky-500' },
 };
 
 const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notification: Notification, zisprUser: ZisprUser | null, handleFollowBack: (userId: string) => Promise<void> }) => {
@@ -124,6 +126,7 @@ export default function NotificationsPage() {
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('all');
 
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -223,7 +226,7 @@ export default function NotificationsPage() {
     }, [notifications]);
 
   return (
-    <Tabs defaultValue="all" className="flex flex-col h-screen">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-screen">
        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2 gap-4">
           <div className="w-6"></div>
@@ -232,11 +235,24 @@ export default function NotificationsPage() {
           </div>
            <div className="w-6"></div>
         </div>
-        <TabsList className="w-full justify-around rounded-none bg-transparent border-b">
-            <TabsTrigger value="all" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Todas</TabsTrigger>
-            <TabsTrigger value="verified" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Verificados</TabsTrigger>
-            <TabsTrigger value="mentions" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary">Menções</TabsTrigger>
-        </TabsList>
+        <div className="w-full flex justify-center p-2">
+            <TabsList className="relative grid w-full grid-cols-3 p-1 bg-muted/50 rounded-full h-11">
+                <TabsTrigger value="all" className="relative z-10 rounded-full text-base">Todas</TabsTrigger>
+                <TabsTrigger value="verified" className="relative z-10 rounded-full text-base">Verificados</TabsTrigger>
+                <TabsTrigger value="mentions" className="relative z-10 rounded-full text-base">Menções</TabsTrigger>
+                 <motion.div
+                    layoutId="notification-tab-indicator"
+                    className="absolute inset-0 h-full p-1"
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    style={{
+                        left: activeTab === 'all' ? '0%' : activeTab === 'verified' ? '33.33%' : '66.66%',
+                        width: '33.33%',
+                    }}
+                >
+                    <div className="w-full h-full bg-background rounded-full shadow-md"></div>
+                </motion.div>
+            </TabsList>
+        </div>
       </header>
 
         <div className="flex-1 overflow-y-auto">
