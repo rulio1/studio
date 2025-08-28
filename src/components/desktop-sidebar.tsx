@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck } from 'lucide-react';
+import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck, Rocket } from 'lucide-react';
 import CreatePostModal from './create-post-modal';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
@@ -136,17 +136,19 @@ export default function DesktopSidebar() {
                     <ul className="space-y-1">
                         {navItems.map((item) => (
                              <li key={item.label} className="relative">
-                                <Link href={item.href} passHref>
-                                    <Button variant="ghost" className={`w-full justify-start text-xl p-6 ${getIsActive(item.href) ? 'font-bold' : ''}`}>
-                                        <item.icon className="h-7 w-7 mr-4" />
-                                        <span>{item.label}</span>
-                                    </Button>
-                                </Link>
-                                {item.count > 0 && (
-                                    <Badge className="absolute top-3 left-8 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs pointer-events-none">
-                                        {item.count}
-                                    </Badge>
-                                )}
+                                <div className="relative">
+                                    <Link href={item.href} passHref>
+                                        <Button variant="ghost" className={`w-full justify-start text-xl p-6 ${getIsActive(item.href) ? 'font-bold' : ''}`}>
+                                            <item.icon className="h-7 w-7 mr-4" />
+                                            <span>{item.label}</span>
+                                        </Button>
+                                    </Link>
+                                    {item.count > 0 && (
+                                        <Badge className="absolute top-3 left-8 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs pointer-events-none">
+                                            {item.count}
+                                        </Badge>
+                                    )}
+                                </div>
                             </li>
                         ))}
                     </ul>
@@ -155,6 +157,12 @@ export default function DesktopSidebar() {
                 <Button className="w-full rounded-full mt-4 p-6 text-lg" onClick={() => setIsModalOpen(true)}>
                     <Feather className="mr-2 h-5 w-5" />
                     Postar
+                </Button>
+                 <Button variant="outline" className="w-full rounded-full mt-2" asChild>
+                    <Link href="/pricing">
+                        <Rocket className="mr-2 h-5 w-5" />
+                        Upgrade para o Pro
+                    </Link>
                 </Button>
             </div>
 
