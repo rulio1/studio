@@ -47,6 +47,7 @@ import Poll from '@/components/poll';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import ImageViewer from '@/components/image-viewer';
 import SpotifyEmbed from '@/components/spotify-embed';
+import { motion } from 'framer-motion';
 
 
 interface Post {
@@ -851,7 +852,7 @@ useEffect(() => {
 
   return (
     <>
-      <Tabs defaultValue="for-you" className="w-full" onValueChange={(value) => setActiveTab(value as 'for-you' | 'following')}>
+      <div className="w-full">
         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
             <div className="flex items-center justify-between px-4 py-2">
                 <Sheet>
@@ -920,21 +921,36 @@ useEffect(() => {
                 </div>
                 <div className="w-8"></div>
             </div>
-            <TabsList className="w-full justify-around rounded-none bg-transparent">
-              <TabsTrigger value="for-you" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent text-base">Para você</TabsTrigger>
-              <TabsTrigger value="following" className="flex-1 rounded-none data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary bg-transparent text-base">Seguindo</TabsTrigger>
-            </TabsList>
+            <div className="w-full flex justify-center p-2">
+                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-sm">
+                    <TabsList className="relative grid w-full grid-cols-2 p-1 bg-muted/50 rounded-full h-11">
+                        <TabsTrigger value="for-you" className="relative z-10 rounded-full text-base">Para você</TabsTrigger>
+                        <TabsTrigger value="following" className="relative z-10 rounded-full text-base">Seguindo</TabsTrigger>
+                        <motion.div
+                            layoutId="active-tab-indicator"
+                            className="absolute inset-0 h-full p-1"
+                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                            style={{
+                                left: activeTab === 'for-you' ? '0%' : '50%',
+                                right: activeTab === 'for-you' ? '50%' : '0%',
+                            }}
+                        >
+                            <div className="w-full h-full bg-background rounded-full shadow-md"></div>
+                        </motion.div>
+                    </TabsList>
+                 </Tabs>
+            </div>
         </header>
 
         <main className="flex-1 overflow-y-auto">
-            <TabsContent value="for-you" className="mt-0">
+            <TabsContent value="for-you" forceMount={true} className={`mt-0 ${activeTab !== 'for-you' ? 'hidden' : ''}`}>
                 <PostList posts={allPosts} loading={isLoading} tab="for-you" />
             </TabsContent>
-            <TabsContent value="following" className="mt-0">
+            <TabsContent value="following" forceMount={true} className={`mt-0 ${activeTab !== 'following' ? 'hidden' : ''}`}>
                 <PostList posts={followingPosts} loading={isLoadingFollowing} tab="following" />
             </TabsContent>
         </main>
-      </Tabs>
+      </div>
 
       <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
             <AlertDialogContent>
@@ -977,5 +993,7 @@ useEffect(() => {
     </>
   );
 }
+
+    
 
     
