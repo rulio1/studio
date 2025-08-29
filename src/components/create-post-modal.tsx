@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db, storage } from '@/lib/firebase';
-import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, getDocs, query, where } from 'firebase/firestore';
+import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, getDocs, query, where, updateDoc } from 'firebase/firestore';
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
@@ -21,6 +21,7 @@ import { Separator } from './ui/separator';
 import { Progress } from './ui/progress';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
+import DraftsListModal from './drafts-list-modal';
 
 
 interface Post {
@@ -58,6 +59,7 @@ interface Post {
     quotedPost?: Omit<Post, 'quotedPost' | 'quotedPostId'>;
     spotifyUrl?: string;
     replySettings?: 'everyone' | 'following' | 'mentioned';
+    status?: 'published' | 'draft';
 }
 
 interface ZisprUser {
@@ -78,13 +80,14 @@ type ReplySetting = 'everyone' | 'following' | 'mentioned';
 
 const replyOptions: Record<ReplySetting, { icon: React.ElementType, text: string }> = {
     everyone: { icon: Globe, text: 'Qualquer pessoa pode responder' },
-    following: { icon: Users, text: 'Contas que você segue podem responder' },
-    mentioned: { icon: AtSign, text: 'Apenas contas que você menciona podem responder' }
+    following: { icon: Users, text: 'Contas que você segue' },
+    mentioned: { icon: AtSign, text: 'Apenas contas que você menciona' }
 };
 
 const MAX_CHARS = 280;
 
 export default function CreatePostModal({ open, onOpenChange, quotedPost }: CreatePostModalProps) {
+    const [existingDraftId, setExistingDraftId] = useState<string | null>(null);
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
     
@@ -96,6 +99,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [replySetting, setReplySetting] = useState<ReplySetting>('everyone');
+    const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false);
+
 
     const { toast } = useToast();
 
@@ -120,28 +125,47 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         return () => unsubscribeUser();
     }, [user]);
 
+    const resetModalState = useCallback(() => {
+        setNewPostContent('');
+        setPostImageDataUri(null);
+        setPostImagePreview(null);
+        setReplySetting('everyone');
+        setExistingDraftId(null);
+        if (imageInputRef.current) {
+            imageInputRef.current.value = '';
+        }
+        onOpenChange(false);
+        setIsPosting(false);
+    }, [onOpenChange]);
+
     useEffect(() => {
         if (open) {
             setTimeout(() => {
                 textareaRef.current?.focus();
             }, 150);
         } else {
-            // Delay reset to allow closing animation
             setTimeout(resetModalState, 300);
         }
-    }, [open]);
+    }, [open, resetModalState]);
 
-    const resetModalState = () => {
-        setNewPostContent('');
-        setPostImageDataUri(null);
-        setPostImagePreview(null);
-        setReplySetting('everyone');
-        if (imageInputRef.current) {
-            imageInputRef.current.value = '';
+    const loadDraft = (draft: Post) => {
+        setNewPostContent(draft.content);
+        if (draft.image) {
+            setPostImagePreview(draft.image);
+            // Note: We can't re-create the data URI, but we can use the existing URL.
+            // When saving, we'll need to check if a *new* image was uploaded.
+            // For simplicity, we will treat the loaded image as the "current" one.
+            setPostImageDataUri(draft.image);
+        } else {
+            setPostImagePreview(null);
+            setPostImageDataUri(null);
         }
-        onOpenChange(false);
-        setIsPosting(false);
-    }
+        setReplySetting(draft.replySettings || 'everyone');
+        setExistingDraftId(draft.id);
+        setIsDraftsModalOpen(false); // Close drafts list
+        onOpenChange(true); // Ensure main modal is open
+    };
+
 
     const extractHashtags = (content: string) => {
         const regex = /#(\w+)/g;
@@ -191,8 +215,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
         
         try {
-            let imageUrl = '';
-            if (postImageDataUri) {
+            let imageUrl = postImagePreview || ''; // Keep existing image if not changed
+            // Only upload if postImageDataUri is a new base64 string
+            if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
                 const imagePath = `posts/${user.uid}/${uuidv4()}`;
                 const imageStorageRef = storageRef(storage, imagePath);
                 await uploadString(imageStorageRef, postImageDataUri, 'data_url');
@@ -202,32 +227,39 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             const hashtags = extractHashtags(newPostContent);
             const mentionedHandles = extractMentions(newPostContent);
             const spotifyUrl = extractSpotifyUrl(newPostContent);
+            
+            const postData = {
+                authorId: user.uid,
+                author: zisprUser.displayName,
+                handle: zisprUser.handle,
+                avatar: zisprUser.avatar,
+                avatarFallback: zisprUser.displayName[0],
+                content: newPostContent,
+                hashtags: hashtags,
+                mentions: mentionedHandles,
+                image: imageUrl,
+                spotifyUrl: spotifyUrl,
+                createdAt: serverTimestamp(), // This will be updated on publish
+                lastSavedAt: serverTimestamp(),
+                comments: 0,
+                retweets: [],
+                likes: [],
+                views: 0,
+                isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
+                quotedPostId: quotedPost ? quotedPost.id : null,
+                poll: null,
+                replySettings: replySetting,
+                status: isDraft ? 'draft' : 'published',
+            };
 
             await runTransaction(db, async (transaction) => {
-                const postRef = doc(collection(db, "posts"));
+                const postRef = existingDraftId ? doc(db, "posts", existingDraftId) : doc(collection(db, "posts"));
 
-                transaction.set(postRef, {
-                    authorId: user.uid,
-                    author: zisprUser.displayName,
-                    handle: zisprUser.handle,
-                    avatar: zisprUser.avatar,
-                    avatarFallback: zisprUser.displayName[0],
-                    content: newPostContent,
-                    hashtags: hashtags,
-                    mentions: mentionedHandles,
-                    image: imageUrl,
-                    spotifyUrl: spotifyUrl,
-                    createdAt: serverTimestamp(),
-                    comments: 0,
-                    retweets: [],
-                    likes: [],
-                    views: 0,
-                    isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
-                    quotedPostId: quotedPost ? quotedPost.id : null,
-                    poll: null,
-                    replySettings: replySetting,
-                    status: isDraft ? 'draft' : 'published',
-                });
+                if (existingDraftId) {
+                    transaction.update(postRef, postData);
+                } else {
+                    transaction.set(postRef, postData);
+                }
 
                 if (hashtags.length > 0 && !isDraft) {
                     for (const tag of hashtags) {
@@ -305,115 +337,130 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const CurrentReplyOption = replyOptions[replySetting];
 
     return (
-        <Dialog open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen)}}>
-             <DialogContent 
-                className="p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl flex flex-col h-auto max-h-[80svh] min-h-[350px]"
-                hideCloseButton={true}
-             >
-                <DialogHeader className="p-4 flex flex-row items-center justify-between border-b">
-                    <DialogClose asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" disabled={isPosting}>
-                            <X className="h-5 w-5" />
-                        </Button>
-                    </DialogClose>
-                    <DialogTitle className="sr-only">Novo post</DialogTitle>
-                    <Button variant="link" className="font-bold text-primary" disabled={isPosting} onClick={() => toast({ title: "Em breve!", description: "Carregar rascunhos estará disponível em breve."})}>Rascunhos</Button>
-                </DialogHeader>
+        <>
+            <Dialog open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen)}}>
+                <DialogContent 
+                    className="p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl flex flex-col h-auto max-h-[80svh] min-h-[350px]"
+                    hideCloseButton={true}
+                >
+                    <DialogHeader className="p-4 flex flex-row items-center justify-between border-b">
+                        <DialogClose asChild>
+                            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" disabled={isPosting}>
+                                <X className="h-5 w-5" />
+                            </Button>
+                        </DialogClose>
+                        <DialogTitle className="sr-only">Novo post</DialogTitle>
+                        <Button variant="link" className="font-bold text-primary" disabled={isPosting} onClick={() => setIsDraftsModalOpen(true)}>Rascunhos</Button>
+                    </DialogHeader>
 
-                <main className="px-4 pt-4 pb-0 flex-1 flex flex-col gap-3 overflow-y-auto">
-                    <div className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                            <Avatar className="h-10 w-10">
-                                <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
-                                <AvatarFallback>{zisprUser?.displayName?.[0]}</AvatarFallback>
-                            </Avatar>
-                            <div className="w-0.5 flex-1 bg-border my-2"></div>
+                    <main className="px-4 pt-4 pb-0 flex-1 flex flex-col gap-3 overflow-y-auto">
+                        <div className="flex gap-3">
+                            <div className="flex flex-col items-center">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
+                                    <AvatarFallback>{zisprUser?.displayName?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <div className="w-0.5 flex-1 bg-border my-2"></div>
+                            </div>
+                            <div className="w-full">
+                                <Textarea
+                                    ref={textareaRef}
+                                    placeholder="O que está acontecendo?"
+                                    className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none min-h-[80px]"
+                                    value={newPostContent}
+                                    onChange={(e) => setNewPostContent(e.target.value)}
+                                    disabled={isPosting}
+                                />
+                                {postImagePreview && (
+                                    <div className="mt-4 relative w-fit">
+                                        <Image
+                                            src={postImagePreview}
+                                            alt="Prévia da imagem"
+                                            width={500}
+                                            height={300}
+                                            className="rounded-lg object-cover w-full h-auto max-h-60"
+                                        />
+                                        <Button
+                                            variant="secondary"
+                                            size="icon"
+                                            className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/50 hover:bg-black/70 text-white"
+                                            onClick={() => {
+                                                setPostImagePreview(null);
+                                                setPostImageDataUri(null);
+                                            }}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                )}
+                                {quotedPost && (
+                                    <div className="w-full">
+                                        <QuotedPostPreview post={quotedPost} />
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <div className="w-full">
-                            <Textarea
-                                ref={textareaRef}
-                                placeholder="O que está acontecendo?"
-                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none min-h-[80px]"
-                                value={newPostContent}
-                                onChange={(e) => setNewPostContent(e.target.value)}
-                                disabled={isPosting}
-                            />
-                            {postImagePreview && (
-                                <div className="mt-4 relative w-fit">
-                                    <Image
-                                        src={postImagePreview}
-                                        alt="Prévia da imagem"
-                                        width={500}
-                                        height={300}
-                                        className="rounded-lg object-cover w-full h-auto max-h-60"
-                                    />
-                                    <Button
-                                        variant="secondary"
-                                        size="icon"
-                                        className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/50 hover:bg-black/70 text-white"
-                                        onClick={() => {
-                                            setPostImagePreview(null);
-                                            setPostImageDataUri(null);
-                                        }}
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            )}
-                            {quotedPost && (
-                                <div className="w-full">
-                                    <QuotedPostPreview post={quotedPost} />
-                                </div>
-                            )}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="flex items-center gap-2 text-primary self-start rounded-full -ml-2 h-auto py-1 px-2">
+                                    <CurrentReplyOption.icon className="h-4 w-4"/>
+                                    <span className="font-bold text-sm">{CurrentReplyOption.text}</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onSelect={() => setReplySetting('everyone')}>
+                                    <Globe className="mr-2 h-4 w-4"/>
+                                    <span>Qualquer pessoa</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setReplySetting('following')}>
+                                    <Users className="mr-2 h-4 w-4"/>
+                                    <span>Contas que você segue</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setReplySetting('mentioned')}>
+                                    <AtSign className="mr-2 h-4 w-4"/>
+                                    <span>Apenas contas que você menciona</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </main>
+
+                    <div className="p-2 border-t mt-auto">
+                        <div className="flex justify-between items-center">
+                            <div className="flex justify-start items-center -ml-2">
+                                <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
+                                <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                                    <ImageIcon className="h-5 w-5 text-primary" />
+                                </Button>
+                                <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de enquete será adicionada em breve.'})}>
+                                    <ListOrdered className="h-5 w-5 text-primary" />
+                                </Button>
+                                <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de emoji será adicionada em breve.'})}>
+                                    <Smile className="h-5 w-5 text-primary" />
+                                </Button>
+                                <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de localização será adicionada em breve.'})}>
+                                    <MapPin className="h-5 w-5 text-primary" />
+                                </Button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                 <Button variant="ghost" onClick={() => handleCreatePost(true)} disabled={isSubmitDisabled}>
+                                    <Save className="h-5 w-5"/>
+                                </Button>
+                                <Button onClick={() => handleCreatePost()} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
+                                    {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
+                                </Button>
+                            </div>
                         </div>
                     </div>
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="flex items-center gap-2 text-primary self-start rounded-full -ml-2 h-auto py-1 px-2">
-                                <CurrentReplyOption.icon className="h-4 w-4"/>
-                                <span className="font-bold text-sm">{CurrentReplyOption.text.split(' ')[0]} {CurrentReplyOption.text.split(' ')[1]}...</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem onSelect={() => setReplySetting('everyone')}>
-                                <Globe className="mr-2 h-4 w-4"/>
-                                <span>Qualquer pessoa</span>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem onSelect={() => setReplySetting('following')}>
-                                <Users className="mr-2 h-4 w-4"/>
-                                <span>Contas que você segue</span>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem onSelect={() => setReplySetting('mentioned')}>
-                                <AtSign className="mr-2 h-4 w-4"/>
-                                <span>Apenas contas que você menciona</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </main>
-
-                <div className="p-2 border-t mt-auto">
-                    <div className="flex justify-between items-center">
-                        <div className="flex justify-start items-center -ml-2">
-                            <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
-                            <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
-                                <ImageIcon className="h-5 w-5 text-primary" />
-                            </Button>
-                            <Button variant="ghost" size="icon" disabled={isPosting}>
-                                <ListOrdered className="h-5 w-5 text-primary" />
-                            </Button>
-                            <Button variant="ghost" size="icon" disabled={isPosting}>
-                                <Smile className="h-5 w-5 text-primary" />
-                            </Button>
-                            <Button variant="ghost" size="icon" disabled={isPosting}>
-                                <MapPin className="h-5 w-5 text-primary" />
-                            </Button>
-                        </div>
-                         <Button onClick={() => handleCreatePost()} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
-                            {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
-                        </Button>
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
+                </DialogContent>
+            </Dialog>
+            {user && (
+                <DraftsListModal
+                    open={isDraftsModalOpen}
+                    onOpenChange={setIsDraftsModalOpen}
+                    currentUser={user}
+                    onSelectDraft={loadDraft}
+                />
+            )}
+        </>
     );
 }
