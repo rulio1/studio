@@ -2,8 +2,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle as EditDialogTitle, DialogTitle as OtherDialogTitle, DialogClose } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +14,7 @@ import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, i
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Sparkles, Loader2, Plus, ImageIcon, X, Smile, Upload, MapPin, Bird, ListOrdered, PlusCircle, Trash2, BadgeCheck, Globe, Video, Camera, FileGif } from 'lucide-react';
+import { Sparkles, Loader2, Plus, ImageIcon, X, Smile, Upload, MapPin, Bird, ListOrdered, PlusCircle, Trash2, BadgeCheck, Globe, Video, Camera, Clapperboard } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
@@ -148,12 +148,10 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
 
     useEffect(() => {
         if (open) {
-            // Delay focus to allow sheet animation to complete
             setTimeout(() => {
                 textareaRef.current?.focus();
             }, 150);
         } else {
-             // Reset state when modal closes
             setTimeout(resetModalState, 300);
         }
     }, [open]);
@@ -471,7 +469,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                             <Camera className="h-6 w-6 text-primary" />
                         </Button>
                         <Button variant="ghost" size="icon" disabled={isPosting}>
-                            <FileGif className="h-6 w-6 text-primary" />
+                            <Clapperboard className="h-6 w-6 text-primary" />
                         </Button>
                     </div>
                     <div className="flex items-center gap-2">
@@ -502,12 +500,16 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         <DialogWrapper open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen); }}>
             <DialogContentWrapper 
                  className={isMobile ? "h-svh p-0 border-0 flex flex-col" : "sm:max-w-xl bg-background/95 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 p-0"}
-                 {...(isMobile && { side: "bottom", hideCloseButton: true })}
+                 {...(isMobile && { side: "bottom"})}
+                 hideCloseButton={isMobile}
             >
+               {isMobile && 
+                <SheetHeader className="sr-only">
+                    <SheetTitle>Criar Post</SheetTitle>
+                </SheetHeader>
+               }
                {ModalContent}
             </DialogContentWrapper>
         </DialogWrapper>
     );
 }
-
-    
