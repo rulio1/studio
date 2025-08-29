@@ -941,7 +941,7 @@ export default function PostDetailPage() {
                     </div>
                 </div>
                 
-                <div className="p-4 m-4 border rounded-2xl bg-background/80 backdrop-blur-lg">
+                <div className="p-4 bg-muted/30">
                      <div className="flex gap-4">
                         <Avatar>
                             <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
@@ -953,11 +953,11 @@ export default function PostDetailPage() {
                                 className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
-                                rows={2}
+                                rows={1}
                                 disabled={isReplying}
                             />
-                            <div className="flex justify-end mt-2 border-t pt-2">
-                                <Button onClick={handleReply} disabled={!newComment.trim() || isReplying}>
+                             <div className="flex justify-end mt-2 border-t pt-2">
+                                <Button onClick={handleReply} disabled={!newComment.trim() || isReplying} size="sm" className="rounded-full">
                                     {isReplying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Responder
                                 </Button>

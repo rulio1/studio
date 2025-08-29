@@ -449,12 +449,12 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen); }}>
-            <DialogContent className="sm:max-w-xl bg-background/80 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
-                <DialogHeader>
-                <DialogTitle>Criar Post</DialogTitle>
+            <DialogContent className="sm:max-w-xl bg-background/95 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 p-0">
+                <DialogHeader className="p-4 border-b">
+                    <DialogTitle>Criar Post</DialogTitle>
                 </DialogHeader>
                     {zisprUser ? (
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4 p-4">
                     <div className="flex gap-4">
                         <Avatar>
                             <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
@@ -463,7 +463,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                         <div className="w-full">
                             <Textarea 
                                 placeholder="O que está acontecendo?!" 
-                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0"
+                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[100px] resize-none"
                                 value={newPostContent}
                                 onChange={handleContentChange}
                                 disabled={isPosting}
@@ -489,11 +489,11 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     </div>
 
                     {showLocationInput && (
-                        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
+                        <div className="flex items-center gap-2 p-3 bg-muted rounded-lg animate-fade-in">
                              <MapPin className="h-5 w-5 text-primary" />
                              <Input 
                                 placeholder="Adicionar localização"
-                                className="bg-transparent border-b-2 border-primary focus-visible:ring-0 rounded-none"
+                                className="bg-transparent border-0 focus-visible:ring-0 rounded-none h-auto p-0"
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
                              />
@@ -501,7 +501,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     )}
                     
                     {showAiTextGenerator && (
-                        <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
+                        <div className="flex flex-col gap-2 p-3 bg-muted rounded-lg animate-fade-in">
                             <Textarea 
                                 placeholder="ex: Um post sobre o futuro da exploração espacial"
                                 className="text-sm focus-visible:ring-1 bg-background"
@@ -517,7 +517,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                         </div>
                     )}
                      {showAiImageGenerator && (
-                        <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg animate-fade-in">
+                        <div className="flex flex-col gap-2 p-3 bg-muted rounded-lg animate-fade-in">
                             <Textarea 
                                 placeholder="Descreva a imagem que você quer criar..."
                                 className="text-sm focus-visible:ring-1 bg-background"
@@ -541,7 +541,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     )}
 
 
-                    <div className="flex justify-between items-center mt-2 border-t pt-4">
+                    <div className="flex justify-between items-center mt-2 border-t pt-2">
                         <div className="flex items-center gap-1">
                             <Input
                                 type="file"
@@ -576,7 +576,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                 <Sparkles className="h-6 w-6 text-primary" />
                             </Button>
                         </div>
-                        <Button onClick={handleCreatePost} disabled={isSubmitDisabled}>
+                        <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full">
                             {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Postar
                         </Button>
