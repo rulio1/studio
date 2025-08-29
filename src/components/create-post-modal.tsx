@@ -3,7 +3,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -12,14 +11,15 @@ import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, g
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Clapperboard } from 'lucide-react';
+import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Clapperboard, Camera } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
 import { fileToDataUri, extractSpotifyUrl } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Separator } from './ui/separator';
+import { Progress } from './ui/progress';
+import { cn } from '@/lib/utils';
 
 interface Post {
     id: string;
@@ -71,6 +71,8 @@ interface CreatePostModalProps {
     quotedPost?: Post | null;
 }
 
+const MAX_CHARS = 280;
+
 export default function CreatePostModal({ open, onOpenChange, quotedPost }: CreatePostModalProps) {
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
@@ -84,7 +86,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
 
     const { toast } = useToast();
-    const isMobile = useIsMobile();
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -265,7 +266,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
     };
     
-    const isSubmitDisabled = (!newPostContent.trim() && !postImageDataUri && !quotedPost) || isPosting;
+    const isSubmitDisabled = (!newPostContent.trim() && !postImageDataUri && !quotedPost) || isPosting || newPostContent.length > MAX_CHARS;
     
     const QuotedPostPreview = ({ post }: { post: Post }) => (
         <div className="mt-2 border rounded-xl p-3">
@@ -287,15 +288,17 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     );
 
     const ModalContent = (
-        <>
+        <div className="flex flex-col h-full">
             <DialogHeader className="p-4 flex flex-row items-center justify-between border-b">
-                <DialogTitle>Novo Post</DialogTitle>
-                <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
-                    {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
-                </Button>
+                <DialogClose asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" disabled={isPosting}>
+                        <X className="h-5 w-5" />
+                    </Button>
+                </DialogClose>
+                 <DialogTitle className="text-center absolute left-1/2 -translate-x-1/2">Novo post</DialogTitle>
             </DialogHeader>
 
-            <div className="p-3 flex-1 overflow-y-auto">
+            <main className="p-3 flex-1 flex flex-col gap-3 overflow-y-auto">
                 <div className="flex gap-3">
                     <Avatar className="h-10 w-10">
                         <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
@@ -305,7 +308,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                         <Textarea
                             ref={textareaRef}
                             placeholder="O que está acontecendo?"
-                            className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[80px] resize-none"
+                            className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none min-h-[80px]"
                             value={newPostContent}
                             onChange={(e) => setNewPostContent(e.target.value)}
                             disabled={isPosting}
@@ -317,7 +320,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                     alt="Prévia da imagem"
                                     width={500}
                                     height={300}
-                                    className="rounded-lg object-cover w-full h-auto max-h-80"
+                                    className="rounded-lg object-cover w-full h-auto max-h-60"
                                 />
                                 <Button
                                     variant="secondary"
@@ -339,13 +342,21 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                         )}
                     </div>
                 </div>
-            </div>
+                 <Button variant="ghost" className="flex items-center gap-2 text-primary self-start rounded-full -ml-2">
+                    <Globe className="h-4 w-4"/>
+                    <span className="font-bold text-sm">Qualquer pessoa pode responder</span>
+                </Button>
+            </main>
 
-            <DialogFooter className="p-2 border-t">
+            <Separator />
+            <DialogFooter className="p-2 sm:justify-between flex-row items-center">
                  <div className="flex justify-start items-center -ml-2">
                     <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
                     <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
                         <ImageIcon className="h-5 w-5 text-primary" />
+                    </Button>
+                     <Button variant="ghost" size="icon" disabled={isPosting}>
+                        <Camera className="h-5 w-5 text-primary" />
                     </Button>
                     <Button variant="ghost" size="icon" disabled={isPosting}>
                         <Clapperboard className="h-5 w-5 text-primary" />
@@ -360,24 +371,47 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                         <MapPin className="h-5 w-5 text-primary" />
                     </Button>
                 </div>
+                <div className="flex items-center gap-4">
+                     <div className="relative h-8 w-8">
+                        <svg className="h-full w-full" viewBox="0 0 36 36">
+                            <circle
+                                cx="18"
+                                cy="18"
+                                r="16"
+                                fill="none"
+                                className="stroke-muted"
+                                strokeWidth="2"
+                            />
+                            <circle
+                                cx="18"
+                                cy="18"
+                                r="16"
+                                fill="none"
+                                className={cn("transition-all duration-300", newPostContent.length > MAX_CHARS ? "stroke-destructive" : "stroke-primary")}
+                                strokeWidth="2"
+                                strokeDasharray={100.5}
+                                strokeDashoffset={100.5 - (newPostContent.length / MAX_CHARS) * 100.5}
+                                transform="rotate(-90 18 18)"
+                            />
+                        </svg>
+                    </div>
+                    <Separator orientation="vertical" className="h-8"/>
+                    <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
+                        {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
+                    </Button>
+                </div>
             </DialogFooter>
-        </>
+        </div>
     );
-
-    const DialogWrapper = isMobile ? Sheet : Dialog;
-    const DialogContentWrapper = isMobile ? SheetContent : DialogContent;
     
     return (
-        <DialogWrapper open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen)}}>
-             <DialogContentWrapper 
-                className={isMobile 
-                    ? "p-0 gap-0 border-0 flex flex-col h-[80svh]" 
-                    : "p-0 gap-0 rounded-2xl bg-card/80 backdrop-blur-lg sm:max-w-xl max-h-[90vh] flex flex-col"
-                }
-                side={isMobile ? "bottom" : "default"}
+        <Dialog open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen)}}>
+             <DialogContent 
+                className="p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl max-h-[80svh] flex flex-col"
              >
+                <DialogTitle className="sr-only">Criar novo post</DialogTitle>
                 {ModalContent}
-            </DialogContentWrapper>
-        </DialogWrapper>
+            </DialogContent>
+        </Dialog>
     );
 }
