@@ -28,6 +28,7 @@ import { Label } from './ui/label';
 import SpotifyEmbed from './spotify-embed';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Progress } from './ui/progress';
+import { Separator } from './ui/separator';
 
 interface Post {
     id: string;
@@ -501,7 +502,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
             <DialogContentWrapper 
                  className={isMobile ? "h-svh p-0 border-0 flex flex-col" : "sm:max-w-xl bg-background/95 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 p-0"}
                  {...(isMobile && { side: "bottom"})}
-                 hideCloseButton={isMobile}
+                 hideCloseButton={true}
             >
                {isMobile && 
                 <SheetHeader className="sr-only">
@@ -513,3 +514,5 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         </DialogWrapper>
     );
 }
+
+    
