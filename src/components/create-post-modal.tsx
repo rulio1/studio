@@ -72,19 +72,6 @@ interface CreatePostModalProps {
     quotedPost?: Post | null;
 }
 
-const GIFIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-6 w-6">
-        <rect x="2" y="4" width="20" height="16" rx="4" stroke="currentColor" strokeWidth="2"/>
-        <path d="M8 15V9H11.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M8 12H10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M14 9H14.01" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M14 15V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M17 15V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M17 15H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-);
-
-
 export default function CreatePostModal({ open, onOpenChange, quotedPost }: CreatePostModalProps) {
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
@@ -301,101 +288,83 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     );
 
     const ModalContent = (
-      <div className="flex flex-col bg-background h-svh">
-        <DialogHeader className="flex flex-row items-center justify-between p-2">
-            <Button variant="ghost" size="icon" onClick={resetModalState} disabled={isPosting} className="rounded-full">
-                <X className="h-5 w-5" />
-            </Button>
-            <DialogTitle className="sr-only">Novo post</DialogTitle>
-             <Button variant="link" className="text-primary" onClick={() => toast({title: "Em breve!"})}>Rascunhos</Button>
-        </DialogHeader>
+        <div className="flex flex-col h-full">
+            <DialogHeader className={cn(isMobile ? 'p-4' : 'p-6')}>
+                <DialogTitle>{quotedPost ? 'Quotar Post' : 'Novo Post'}</DialogTitle>
+            </DialogHeader>
 
-        <main className="flex-1 px-4 pt-0 overflow-y-auto">
-          {zisprUser ? (
-            <div className="flex gap-4 h-full">
-                <div className="flex flex-col items-center pt-2">
+            <div className="flex-1 px-4 md:px-6 py-0 overflow-y-auto">
+                <div className="flex gap-4">
                     <Avatar className="h-10 w-10">
-                        <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
-                        <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
+                        <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
+                        <AvatarFallback>{zisprUser?.displayName?.[0]}</AvatarFallback>
                     </Avatar>
-                     <div className="w-0.5 grow bg-border my-2"></div>
-                </div>
-
-                <div className="w-full flex flex-col">
-                    <Textarea
-                    ref={textareaRef}
-                    placeholder="O que está acontecendo?"
-                    className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none flex-1"
-                    value={newPostContent}
-                    onChange={(e) => setNewPostContent(e.target.value)}
-                    disabled={isPosting}
-                    />
-                    {postImagePreview && (
-                    <div className="mt-4 relative w-fit">
-                        <Image
-                        src={postImagePreview}
-                        alt="Prévia da imagem"
-                        width={500}
-                        height={300}
-                        className="rounded-lg object-cover w-full h-auto max-h-80"
+                    <div className="w-full">
+                        <Textarea
+                            ref={textareaRef}
+                            placeholder="O que está acontecendo?"
+                            className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[120px] resize-none"
+                            value={newPostContent}
+                            onChange={(e) => setNewPostContent(e.target.value)}
+                            disabled={isPosting}
                         />
-                        <Button
-                        variant="secondary"
-                        size="icon"
-                        className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/50 hover:bg-black/70 text-white"
-                        onClick={() => {
-                            setPostImagePreview(null);
-                            setPostImageDataUri(null);
-                        }}
-                        >
-                        <X className="h-4 w-4" />
+                        {postImagePreview && (
+                            <div className="mt-4 relative w-fit">
+                                <Image
+                                    src={postImagePreview}
+                                    alt="Prévia da imagem"
+                                    width={500}
+                                    height={300}
+                                    className="rounded-lg object-cover w-full h-auto max-h-80"
+                                />
+                                <Button
+                                    variant="secondary"
+                                    size="icon"
+                                    className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/50 hover:bg-black/70 text-white"
+                                    onClick={() => {
+                                        setPostImagePreview(null);
+                                        setPostImageDataUri(null);
+                                    }}
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        )}
+                        {quotedPost && (
+                            <div className="w-full">
+                                <QuotedPostPreview post={quotedPost} />
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="p-4 md:p-6 border-t mt-auto">
+                <div className="flex justify-between items-center">
+                    <div className="flex justify-start items-center">
+                        <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
+                        <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                            <ImageIcon className="h-6 w-6 text-primary" />
+                        </Button>
+                        <Button variant="ghost" size="icon" disabled={isPosting}>
+                            <Clapperboard className="h-6 w-6 text-primary" />
+                        </Button>
+                        <Button variant="ghost" size="icon" disabled={isPosting}>
+                            <ListOrdered className="h-6 w-6 text-primary" />
+                        </Button>
+                        <Button variant="ghost" size="icon" disabled={isPosting}>
+                            <Smile className="h-6 w-6 text-primary" />
+                        </Button>
+                        <Button variant="ghost" size="icon" disabled={isPosting}>
+                            <MapPin className="h-6 w-6 text-primary" />
                         </Button>
                     </div>
-                    )}
-                    {quotedPost && (
-                    <div className="w-full">
-                        <QuotedPostPreview post={quotedPost} />
-                    </div>
-                    )}
-                     <Button variant="ghost" className="mt-4 p-2 text-primary rounded-full -ml-2 self-start">
-                        <Globe className="h-4 w-4 mr-2" />
-                        Qualquer pessoa pode responder
+                    <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
+                        {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
                     </Button>
                 </div>
             </div>
-          ) : (
-            <div className="flex items-center justify-center p-8 h-full">
-              <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-            </div>
-          )}
-        </main>
-        
-        <footer className="p-2 border-t bg-background mt-auto">
-            <div className="flex justify-between items-center">
-                <div className="flex justify-start items-center">
-                    <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
-                    <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
-                        <ImageIcon className="h-6 w-6 text-primary" />
-                    </Button>
-                    <Button variant="ghost" size="icon" disabled={isPosting}>
-                        <Clapperboard className="h-6 w-6 text-primary" />
-                    </Button>
-                    <Button variant="ghost" size="icon" disabled={isPosting}>
-                        <ListOrdered className="h-6 w-6 text-primary" />
-                    </Button>
-                    <Button variant="ghost" size="icon" disabled={isPosting}>
-                        <Smile className="h-6 w-6 text-primary" />
-                    </Button>
-                     <Button variant="ghost" size="icon" disabled={isPosting}>
-                        <MapPin className="h-6 w-6 text-primary" />
-                    </Button>
-                </div>
-                <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
-                    {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
-                </Button>
-            </div>
-        </footer>
-      </div>
+        </div>
     );
 
     const DialogWrapper = isMobile ? Sheet : Dialog;
@@ -404,16 +373,14 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     return (
         <DialogWrapper open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen)}}>
              <DialogContentWrapper 
-                className="p-0 gap-0 border-0 overflow-hidden" 
+                className={cn(
+                    "p-0 gap-0 border-0 flex flex-col",
+                    isMobile ? "h-[90svh]" : "sm:max-w-xl max-h-[90vh]"
+                )}
                 side={isMobile ? "bottom" : "default"}
-                style={isMobile ? { height: '90svh' } : {}}
              >
                 {ModalContent}
             </DialogContentWrapper>
         </DialogWrapper>
     );
 }
-
-    
-
-    
