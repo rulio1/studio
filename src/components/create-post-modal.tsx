@@ -396,7 +396,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
 
     const ModalContent = (
         <div className="flex flex-col h-full bg-background">
-            <header className="flex items-center justify-between p-2">
+            <header className="flex items-center justify-between p-2 border-b">
                  <Button variant="link" onClick={resetModalState} disabled={isPosting}>
                     Cancelar
                 </Button>
@@ -406,7 +406,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                 </Button>
             </header>
 
-            <main className="flex-1 overflow-y-auto px-4">
+            <main className="flex-1 overflow-y-auto px-4 pt-4">
                 {zisprUser ? (
                      <div className="flex gap-4">
                         <Avatar>
@@ -417,7 +417,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                             <Textarea 
                                 ref={textareaRef}
                                 placeholder="O que está acontecendo?!" 
-                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[100px] resize-none"
+                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[150px] resize-none"
                                 value={newPostContent}
                                 onChange={handleContentChange}
                                 disabled={isPosting}
@@ -444,7 +444,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     </div>
                 ) : <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>}
             </main>
-
+            
             <footer className="mt-auto p-2 border-t bg-background">
                 <Button variant="ghost" size="sm" className="rounded-full text-primary">
                     <Globe className="h-4 w-4 mr-2" />
@@ -469,7 +469,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                         <Button variant="ghost" size="icon" disabled={isPosting}>
                             <Camera className="h-6 w-6 text-primary" />
                         </Button>
-                        <Button variant="ghost" size="icon" disabled={isPosting}>
+                         <Button variant="ghost" size="icon" disabled={isPosting}>
                             <Clapperboard className="h-6 w-6 text-primary" />
                         </Button>
                     </div>
