@@ -11,27 +11,13 @@ import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, g
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, Save } from 'lucide-react';
+import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
 import { fileToDataUri, extractSpotifyUrl } from '@/lib/utils';
-import { Separator } from './ui/separator';
-import { Progress } from './ui/progress';
-import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
-import DraftsListModal from './drafts-list-modal';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 
 interface Post {
@@ -69,8 +55,6 @@ interface Post {
     quotedPost?: Omit<Post, 'quotedPost' | 'quotedPostId'>;
     spotifyUrl?: string;
     replySettings?: 'everyone' | 'following' | 'mentioned';
-    status?: 'published' | 'draft';
-    lastSavedAt?: any;
 }
 
 interface ZisprUser {
@@ -98,7 +82,6 @@ const replyOptions: Record<ReplySetting, { icon: React.ElementType, text: string
 const MAX_CHARS = 280;
 
 export default function CreatePostModal({ open, onOpenChange, quotedPost }: CreatePostModalProps) {
-    const [existingDraftId, setExistingDraftId] = useState<string | null>(null);
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
     
@@ -110,9 +93,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [replySetting, setReplySetting] = useState<ReplySetting>('everyone');
-    const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false);
-    const [isCloseAlertOpen, setIsCloseAlertOpen] = useState(false);
-
 
     const { toast } = useToast();
 
@@ -142,7 +122,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setPostImageDataUri(null);
         setPostImagePreview(null);
         setReplySetting('everyone');
-        setExistingDraftId(null);
         if (imageInputRef.current) {
             imageInputRef.current.value = '';
         }
@@ -155,37 +134,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             setTimeout(() => {
                 textareaRef.current?.focus();
             }, 150);
-        }
-    }, [open]);
-
-    const handleCloseAttempt = (isOpen: boolean) => {
-        if (isOpen) {
-            onOpenChange(true);
         } else {
-            if (!isPosting && (newPostContent.trim() || postImageDataUri)) {
-                setIsCloseAlertOpen(true);
-            } else {
-                resetModalState();
-            }
+            resetModalState();
         }
-    };
-
-
-    const loadDraft = (draft: Post) => {
-        setNewPostContent(draft.content);
-        if (draft.image) {
-            setPostImagePreview(draft.image);
-            setPostImageDataUri(draft.image);
-        } else {
-            setPostImagePreview(null);
-            setPostImageDataUri(null);
-        }
-        setReplySetting(draft.replySettings || 'everyone');
-        setExistingDraftId(draft.id);
-        setIsDraftsModalOpen(false);
-        onOpenChange(true);
-    };
-
+    }, [open, resetModalState]);
 
     const extractHashtags = (content: string) => {
         const regex = /#(\w+)/g;
@@ -219,7 +171,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setPostImageDataUri(dataUri);
     };
 
-    const handleCreatePost = async (isDraft = false) => {
+    const handleCreatePost = async () => {
         if (!newPostContent.trim() && !postImageDataUri && !quotedPost) {
             return;
         }
@@ -259,7 +211,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 image: imageUrl,
                 spotifyUrl: spotifyUrl,
                 createdAt: serverTimestamp(),
-                lastSavedAt: serverTimestamp(),
                 comments: 0,
                 retweets: [],
                 likes: [],
@@ -268,19 +219,14 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 quotedPostId: quotedPost ? quotedPost.id : null,
                 poll: null,
                 replySettings: replySetting,
-                status: isDraft ? 'draft' : 'published',
+                status: 'published',
             };
 
             await runTransaction(db, async (transaction) => {
-                const postRef = existingDraftId ? doc(db, "posts", existingDraftId) : doc(collection(db, "posts"));
+                const postRef = doc(collection(db, "posts"));
+                transaction.set(postRef, postData);
 
-                if (existingDraftId) {
-                    transaction.update(postRef, postData);
-                } else {
-                    transaction.set(postRef, postData);
-                }
-
-                if (hashtags.length > 0 && !isDraft) {
+                if (hashtags.length > 0) {
                     for (const tag of hashtags) {
                         const hashtagRef = doc(db, 'hashtags', tag);
                         const hashtagDoc = await transaction.get(hashtagRef);
@@ -292,7 +238,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     }
                 }
 
-                if (mentionedHandles.length > 0 && !isDraft) {
+                if (mentionedHandles.length > 0) {
                     const usersRef = collection(db, "users");
                     const q = query(usersRef, where("handle", "in", mentionedHandles));
                     const querySnapshot = await getDocs(q);
@@ -321,8 +267,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
 
             resetModalState();
             toast({
-                title: isDraft ? "Rascunho salvo!" : "Post criado!",
-                description: isDraft ? "Seu post foi salvo como rascunho." : "Seu post foi publicado com sucesso.",
+                title: "Post criado!",
+                description: "Seu post foi publicado com sucesso.",
             });
         } catch (error) {
             console.error(error);
@@ -330,17 +276,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         } finally {
             setIsPosting(false);
         }
-    };
-    
-    const handleSaveDraftAndClose = async () => {
-        await handleCreatePost(true);
-        setIsCloseAlertOpen(false);
-        resetModalState();
-    };
-
-    const handleDiscard = () => {
-        setIsCloseAlertOpen(false);
-        resetModalState();
     };
     
     const isSubmitDisabled = (!newPostContent.trim() && !postImageDataUri && !quotedPost) || isPosting || newPostContent.length > MAX_CHARS;
@@ -367,146 +302,116 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const CurrentReplyOption = replyOptions[replySetting];
 
     return (
-        <>
-            <Dialog open={open} onOpenChange={handleCloseAttempt}>
-                <DialogContent 
-                    className="p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl flex flex-col h-auto max-h-[80svh] min-h-[350px]"
-                    hideCloseButton={true}
-                >
-                    <DialogHeader className="p-4 flex flex-row items-center justify-between border-b">
-                        <DialogClose asChild>
-                            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" disabled={isPosting}>
-                                <X className="h-5 w-5" />
-                            </Button>
-                        </DialogClose>
-                        <DialogTitle className="sr-only">Novo post</DialogTitle>
-                        <Button variant="link" className="font-bold text-primary" disabled={isPosting} onClick={() => setIsDraftsModalOpen(true)}>Rascunhos</Button>
-                    </DialogHeader>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent 
+                className="p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl flex flex-col h-auto max-h-[80svh] min-h-[350px]"
+                hideCloseButton={true}
+            >
+                <DialogHeader className="p-4 flex flex-row items-center justify-between border-b">
+                    <DialogClose asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" disabled={isPosting}>
+                            <X className="h-5 w-5" />
+                        </Button>
+                    </DialogClose>
+                    <DialogTitle className="sr-only">Novo post</DialogTitle>
+                </DialogHeader>
 
-                    <main className="px-4 pt-4 pb-0 flex-1 flex flex-col gap-3 overflow-y-auto">
-                        <div className="flex gap-3">
-                            <div className="flex flex-col items-center">
-                                <Avatar className="h-10 w-10">
-                                    <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
-                                    <AvatarFallback>{zisprUser?.displayName?.[0]}</AvatarFallback>
-                                </Avatar>
-                                <div className="w-0.5 flex-1 bg-border my-2"></div>
-                            </div>
-                            <div className="w-full">
-                                <Textarea
-                                    ref={textareaRef}
-                                    placeholder="O que está acontecendo?"
-                                    className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none min-h-[80px]"
-                                    value={newPostContent}
-                                    onChange={(e) => setNewPostContent(e.target.value)}
-                                    disabled={isPosting}
-                                />
-                                {postImagePreview && (
-                                    <div className="mt-4 relative w-fit">
-                                        <Image
-                                            src={postImagePreview}
-                                            alt="Prévia da imagem"
-                                            width={500}
-                                            height={300}
-                                            className="rounded-lg object-cover w-full h-auto max-h-60"
-                                        />
-                                        <Button
-                                            variant="secondary"
-                                            size="icon"
-                                            className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/50 hover:bg-black/70 text-white"
-                                            onClick={() => {
-                                                setPostImagePreview(null);
-                                                setPostImageDataUri(null);
-                                            }}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                )}
-                                {quotedPost && (
-                                    <div className="w-full">
-                                        <QuotedPostPreview post={quotedPost} />
-                                    </div>
-                                )}
-                            </div>
+                <main className="px-4 pt-4 pb-0 flex-1 flex flex-col gap-3 overflow-y-auto">
+                    <div className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                            <Avatar className="h-10 w-10">
+                                <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
+                                <AvatarFallback>{zisprUser?.displayName?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="w-0.5 flex-1 bg-border my-2"></div>
                         </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="flex items-center gap-2 text-primary self-start rounded-full -ml-2 h-auto py-1 px-2">
-                                    <CurrentReplyOption.icon className="h-4 w-4"/>
-                                    <span className="font-bold text-sm">{CurrentReplyOption.text}</span>
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuItem onSelect={() => setReplySetting('everyone')}>
-                                    <Globe className="mr-2 h-4 w-4"/>
-                                    <span>Qualquer pessoa</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => setReplySetting('following')}>
-                                    <Users className="mr-2 h-4 w-4"/>
-                                    <span>Contas que você segue</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => setReplySetting('mentioned')}>
-                                    <AtSign className="mr-2 h-4 w-4"/>
-                                    <span>Apenas contas que você menciona</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </main>
-
-                    <div className="p-2 border-t mt-auto">
-                        <div className="flex justify-between items-center">
-                            <div className="flex justify-start items-center -ml-2">
-                                <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
-                                <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
-                                    <ImageIcon className="h-5 w-5 text-primary" />
-                                </Button>
-                                <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de enquete será adicionada em breve.'})}>
-                                    <ListOrdered className="h-5 w-5 text-primary" />
-                                </Button>
-                                <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de emoji será adicionada em breve.'})}>
-                                    <Smile className="h-5 w-5 text-primary" />
-                                </Button>
-                                <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de localização será adicionada em breve.'})}>
-                                    <MapPin className="h-5 w-5 text-primary" />
-                                </Button>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button onClick={() => handleCreatePost()} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
-                                    {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
-                                </Button>
-                            </div>
+                        <div className="w-full">
+                            <Textarea
+                                ref={textareaRef}
+                                placeholder="O que está acontecendo?"
+                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none min-h-[80px]"
+                                value={newPostContent}
+                                onChange={(e) => setNewPostContent(e.target.value)}
+                                disabled={isPosting}
+                            />
+                            {postImagePreview && (
+                                <div className="mt-4 relative w-fit">
+                                    <Image
+                                        src={postImagePreview}
+                                        alt="Prévia da imagem"
+                                        width={500}
+                                        height={300}
+                                        className="rounded-lg object-cover w-full h-auto max-h-60"
+                                    />
+                                    <Button
+                                        variant="secondary"
+                                        size="icon"
+                                        className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/50 hover:bg-black/70 text-white"
+                                        onClick={() => {
+                                            setPostImagePreview(null);
+                                            setPostImageDataUri(null);
+                                        }}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
+                            {quotedPost && (
+                                <div className="w-full">
+                                    <QuotedPostPreview post={quotedPost} />
+                                </div>
+                            )}
                         </div>
                     </div>
-                </DialogContent>
-            </Dialog>
-            {user && (
-                <DraftsListModal
-                    open={isDraftsModalOpen}
-                    onOpenChange={setIsDraftsModalOpen}
-                    currentUser={user}
-                    onSelectDraft={loadDraft}
-                />
-            )}
-            <AlertDialog open={isCloseAlertOpen} onOpenChange={setIsCloseAlertOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Salvar rascunho?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Você pode salvar este post como um rascunho para terminar de editar mais tarde.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setIsCloseAlertOpen(false)}>Cancelar</AlertDialogCancel>
-                         <Button variant="outline" onClick={handleDiscard}>
-                            Descartar
-                        </Button>
-                        <AlertDialogAction onClick={handleSaveDraftAndClose}>
-                            Salvar Rascunho
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="flex items-center gap-2 text-primary self-start rounded-full -ml-2 h-auto py-1 px-2">
+                                <CurrentReplyOption.icon className="h-4 w-4"/>
+                                <span className="font-bold text-sm">{CurrentReplyOption.text}</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onSelect={() => setReplySetting('everyone')}>
+                                <Globe className="mr-2 h-4 w-4"/>
+                                <span>Qualquer pessoa</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setReplySetting('following')}>
+                                <Users className="mr-2 h-4 w-4"/>
+                                <span>Contas que você segue</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setReplySetting('mentioned')}>
+                                <AtSign className="mr-2 h-4 w-4"/>
+                                <span>Apenas contas que você menciona</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </main>
+
+                <DialogFooter className="p-2 border-t mt-auto">
+                    <div className="flex justify-between items-center w-full">
+                        <div className="flex justify-start items-center -ml-2">
+                            <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
+                            <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                                <ImageIcon className="h-5 w-5 text-primary" />
+                            </Button>
+                            <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de enquete será adicionada em breve.'})}>
+                                <ListOrdered className="h-5 w-5 text-primary" />
+                            </Button>
+                            <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de emoji será adicionada em breve.'})}>
+                                <Smile className="h-5 w-5 text-primary" />
+                            </Button>
+                            <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de localização será adicionada em breve.'})}>
+                                <MapPin className="h-5 w-5 text-primary" />
+                            </Button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
+                                {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
+                            </Button>
+                        </div>
+                    </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
