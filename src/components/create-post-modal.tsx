@@ -110,6 +110,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
     const [postImageDataUri, setPostImageDataUri] = useState<string | null>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [location, setLocation] = useState('');
     const [showLocationInput, setShowLocationInput] = useState(false);
 
@@ -161,7 +162,13 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
          if (!open) {
             setTimeout(resetModal, 300);
         }
-    }, [open, initialMode]);
+        if (open && isMobile) {
+            // Delay focus to allow sheet animation to complete
+            setTimeout(() => {
+                textareaRef.current?.focus();
+            }, 150);
+        }
+    }, [open, initialMode, isMobile]);
 
     const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const text = e.target.value;
@@ -469,6 +476,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                         </Avatar>
                         <div className="w-full">
                             <Textarea 
+                                ref={textareaRef}
                                 placeholder="O que está acontecendo?!" 
                                 className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[100px] resize-none"
                                 value={newPostContent}
