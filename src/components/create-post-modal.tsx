@@ -2,8 +2,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -17,9 +17,8 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
-import { fileToDataUri, extractSpotifyUrl } from '@/lib/utils';
+import { fileToDataUri, extractSpotifyUrl, cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Progress } from './ui/progress';
 import { Separator } from './ui/separator';
 
 interface Post {
@@ -255,7 +254,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     );
 
     const ModalContent = (
-      <div className="flex flex-col bg-background h-full">
+      <div className="flex flex-col bg-background h-svh">
+         <SheetHeader className="p-4 border-b sr-only">
+             <SheetTitle>Novo Post</SheetTitle>
+         </SheetHeader>
         <header className="flex items-center justify-between p-4 border-b">
           <Button variant="link" onClick={resetModalState} disabled={isPosting} className="px-0">
             Cancelar
@@ -381,13 +383,14 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     return (
         <DialogWrapper open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen); }}>
             <DialogContentWrapper 
-                 className={isMobile ? "h-svh p-0 border-0 flex flex-col" : "sm:max-w-xl bg-background/95 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 p-0"}
+                 className={isMobile ? "h-full p-0 border-0 flex flex-col" : "sm:max-w-xl bg-background/95 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 p-0"}
                  {...(isMobile && { side: "bottom"})}
             >
+                <DialogHeader className="sr-only">
+                    <DialogTitle>Novo Post</DialogTitle>
+                </DialogHeader>
                {ModalContent}
             </DialogContentWrapper>
         </DialogWrapper>
     );
 }
-
-    
