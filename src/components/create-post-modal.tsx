@@ -11,7 +11,7 @@ import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, g
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Clapperboard, Camera } from 'lucide-react';
+import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, Save } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
@@ -20,6 +20,8 @@ import { fileToDataUri, extractSpotifyUrl } from '@/lib/utils';
 import { Separator } from './ui/separator';
 import { Progress } from './ui/progress';
 import { cn } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
+
 
 interface Post {
     id: string;
@@ -55,6 +57,7 @@ interface Post {
     quotedPostId?: string;
     quotedPost?: Omit<Post, 'quotedPost' | 'quotedPostId'>;
     spotifyUrl?: string;
+    replySettings?: 'everyone' | 'following' | 'mentioned';
 }
 
 interface ZisprUser {
@@ -71,6 +74,14 @@ interface CreatePostModalProps {
     quotedPost?: Post | null;
 }
 
+type ReplySetting = 'everyone' | 'following' | 'mentioned';
+
+const replyOptions: Record<ReplySetting, { icon: React.ElementType, text: string }> = {
+    everyone: { icon: Globe, text: 'Qualquer pessoa pode responder' },
+    following: { icon: Users, text: 'Contas que você segue podem responder' },
+    mentioned: { icon: AtSign, text: 'Apenas contas que você menciona podem responder' }
+};
+
 const MAX_CHARS = 280;
 
 export default function CreatePostModal({ open, onOpenChange, quotedPost }: CreatePostModalProps) {
@@ -84,6 +95,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
+    const [replySetting, setReplySetting] = useState<ReplySetting>('everyone');
 
     const { toast } = useToast();
 
@@ -123,6 +135,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setNewPostContent('');
         setPostImageDataUri(null);
         setPostImagePreview(null);
+        setReplySetting('everyone');
         if (imageInputRef.current) {
             imageInputRef.current.value = '';
         }
@@ -162,7 +175,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setPostImageDataUri(dataUri);
     };
 
-    const handleCreatePost = async () => {
+    const handleCreatePost = async (isDraft = false) => {
         if (!newPostContent.trim() && !postImageDataUri && !quotedPost) {
             return;
         }
@@ -212,9 +225,11 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
                     quotedPostId: quotedPost ? quotedPost.id : null,
                     poll: null,
+                    replySettings: replySetting,
+                    status: isDraft ? 'draft' : 'published',
                 });
 
-                if (hashtags.length > 0) {
+                if (hashtags.length > 0 && !isDraft) {
                     for (const tag of hashtags) {
                         const hashtagRef = doc(db, 'hashtags', tag);
                         const hashtagDoc = await transaction.get(hashtagRef);
@@ -226,7 +241,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     }
                 }
 
-                if (mentionedHandles.length > 0) {
+                if (mentionedHandles.length > 0 && !isDraft) {
                     const usersRef = collection(db, "users");
                     const q = query(usersRef, where("handle", "in", mentionedHandles));
                     const querySnapshot = await getDocs(q);
@@ -255,8 +270,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
 
             resetModalState();
             toast({
-                title: "Post criado!",
-                description: "Seu post foi publicado com sucesso.",
+                title: isDraft ? "Rascunho salvo!" : "Post criado!",
+                description: isDraft ? "Seu post foi salvo como rascunho." : "Seu post foi publicado com sucesso.",
             });
         } catch (error) {
             console.error(error);
@@ -286,24 +301,26 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             )}
         </div>
     );
+    
+    const CurrentReplyOption = replyOptions[replySetting];
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen)}}>
              <DialogContent 
-                className="p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl flex flex-col"
+                className="p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl flex flex-col h-auto max-h-[80svh] min-h-[350px]"
                 hideCloseButton={true}
              >
-                <DialogHeader className="p-4 flex flex-row items-center justify-between">
+                <DialogHeader className="p-4 flex flex-row items-center justify-between border-b">
                     <DialogClose asChild>
                         <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" disabled={isPosting}>
                             <X className="h-5 w-5" />
                         </Button>
                     </DialogClose>
                     <DialogTitle className="sr-only">Novo post</DialogTitle>
-                    <Button variant="link" className="font-bold text-primary" disabled={isPosting}>Rascunhos</Button>
+                    <Button variant="link" className="font-bold text-primary" disabled={isPosting} onClick={() => toast({ title: "Em breve!", description: "Carregar rascunhos estará disponível em breve."})}>Rascunhos</Button>
                 </DialogHeader>
 
-                <main className="px-4 pb-0 flex-1 flex flex-col gap-3 overflow-y-auto">
+                <main className="px-4 pt-4 pb-0 flex-1 flex flex-col gap-3 overflow-y-auto">
                     <div className="flex gap-3">
                         <div className="flex flex-col items-center">
                             <Avatar className="h-10 w-10">
@@ -350,68 +367,52 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                             )}
                         </div>
                     </div>
-                     <div className="flex items-center gap-2 text-primary self-start rounded-full -ml-2">
-                        <Globe className="h-4 w-4"/>
-                        <span className="font-bold text-sm">Qualquer pessoa pode responder</span>
-                    </div>
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="flex items-center gap-2 text-primary self-start rounded-full -ml-2 h-auto py-1 px-2">
+                                <CurrentReplyOption.icon className="h-4 w-4"/>
+                                <span className="font-bold text-sm">{CurrentReplyOption.text.split(' ')[0]} {CurrentReplyOption.text.split(' ')[1]}...</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onSelect={() => setReplySetting('everyone')}>
+                                <Globe className="mr-2 h-4 w-4"/>
+                                <span>Qualquer pessoa</span>
+                            </DropdownMenuItem>
+                             <DropdownMenuItem onSelect={() => setReplySetting('following')}>
+                                <Users className="mr-2 h-4 w-4"/>
+                                <span>Contas que você segue</span>
+                            </DropdownMenuItem>
+                             <DropdownMenuItem onSelect={() => setReplySetting('mentioned')}>
+                                <AtSign className="mr-2 h-4 w-4"/>
+                                <span>Apenas contas que você menciona</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </main>
 
-                <Separator className="my-2"/>
-
-                <DialogFooter className="p-2 sm:justify-between flex-row items-center">
-                     <div className="flex justify-start items-center -ml-2">
-                        <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
-                        <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
-                            <ImageIcon className="h-5 w-5 text-primary" />
-                        </Button>
-                        <Button variant="ghost" size="icon" disabled={isPosting}>
-                            <Clapperboard className="h-5 w-5 text-primary" />
-                        </Button>
-                        <Button variant="ghost" size="icon" disabled={isPosting}>
-                            <ListOrdered className="h-5 w-5 text-primary" />
-                        </Button>
-                        <Button variant="ghost" size="icon" disabled={isPosting}>
-                            <Smile className="h-5 w-5 text-primary" />
-                        </Button>
-                        <Button variant="ghost" size="icon" disabled={isPosting}>
-                            <MapPin className="h-5 w-5 text-primary" />
-                        </Button>
-                    </div>
-                    <div className="flex items-center gap-4">
-                         <div className="relative h-8 w-8">
-                            <svg className="h-full w-full" viewBox="0 0 36 36">
-                                <circle
-                                    cx="18"
-                                    cy="18"
-                                    r="16"
-                                    fill="none"
-                                    className="stroke-muted"
-                                    strokeWidth="2"
-                                />
-                                <circle
-                                    cx="18"
-                                    cy="18"
-                                    r="16"
-                                    fill="none"
-                                    className={cn("transition-all duration-300", newPostContent.length > MAX_CHARS ? "stroke-destructive" : "stroke-primary")}
-                                    strokeWidth="2"
-                                    strokeDasharray={100.5}
-                                    strokeDashoffset={100.5 - (newPostContent.length / MAX_CHARS) * 100.5}
-                                    transform="rotate(-90 18 18)"
-                                />
-                            </svg>
-                             {newPostContent.length > (MAX_CHARS - 20) && (
-                                <span className={cn("absolute inset-0 flex items-center justify-center text-xs", newPostContent.length > MAX_CHARS ? "text-destructive" : "text-muted-foreground")}>
-                                    {MAX_CHARS - newPostContent.length}
-                                </span>
-                            )}
+                <div className="p-2 border-t mt-auto">
+                    <div className="flex justify-between items-center">
+                        <div className="flex justify-start items-center -ml-2">
+                            <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
+                            <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                                <ImageIcon className="h-5 w-5 text-primary" />
+                            </Button>
+                            <Button variant="ghost" size="icon" disabled={isPosting}>
+                                <ListOrdered className="h-5 w-5 text-primary" />
+                            </Button>
+                            <Button variant="ghost" size="icon" disabled={isPosting}>
+                                <Smile className="h-5 w-5 text-primary" />
+                            </Button>
+                            <Button variant="ghost" size="icon" disabled={isPosting}>
+                                <MapPin className="h-5 w-5 text-primary" />
+                            </Button>
                         </div>
-                        <Separator orientation="vertical" className="h-8"/>
-                        <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
+                         <Button onClick={() => handleCreatePost()} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
                             {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
                         </Button>
                     </div>
-                </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
     );
