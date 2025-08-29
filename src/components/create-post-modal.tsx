@@ -154,8 +154,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             setTimeout(() => {
                 textareaRef.current?.focus();
             }, 150);
-        } else {
-            // No automatic reset here, it's handled by handleCloseAttempt
         }
     }, [open]);
 
@@ -236,7 +234,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
         
         try {
-            let imageUrl = postImagePreview || ''; // Keep existing image if not changed
+            let imageUrl = postImagePreview || ''; 
             if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
                 const imagePath = `posts/${user.uid}/${uuidv4()}`;
                 const imageStorageRef = storageRef(storage, imagePath);
@@ -471,9 +469,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                 <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de localização será adicionada em breve.'})}>
                                     <MapPin className="h-5 w-5 text-primary" />
                                 </Button>
-                                 <Button variant="ghost" onClick={() => handleCreatePost(true)} disabled={isSubmitDisabled}>
-                                    <Save className="h-5 w-5"/>
-                                </Button>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Button onClick={() => handleCreatePost()} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
@@ -514,7 +509,3 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         </>
     );
 }
-
-    
-
-    
