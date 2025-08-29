@@ -288,19 +288,15 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
 
     const ModalContent = (
         <>
-            <DialogHeader className="p-4 border-b">
-                <div className="flex justify-between items-center">
-                    <DialogTitle>{quotedPost ? 'Quotar Post' : 'Novo Post'}</DialogTitle>
-                     <DialogClose asChild>
-                        <Button variant="ghost" size="icon" className="h-6 w-6">
-                            <X className="h-4 w-4"/>
-                        </Button>
-                    </DialogClose>
-                </div>
+            <DialogHeader className="p-4 flex flex-row items-center justify-between border-b">
+                <DialogTitle>Novo Post</DialogTitle>
+                <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
+                    {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
+                </Button>
             </DialogHeader>
 
-            <div className="p-4 flex-1 overflow-y-auto">
-                <div className="flex gap-4">
+            <div className="p-3 flex-1 overflow-y-auto">
+                <div className="flex gap-3">
                     <Avatar className="h-10 w-10">
                         <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
                         <AvatarFallback>{zisprUser?.displayName?.[0]}</AvatarFallback>
@@ -309,7 +305,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                         <Textarea
                             ref={textareaRef}
                             placeholder="O que está acontecendo?"
-                            className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[120px] resize-none"
+                            className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[80px] resize-none"
                             value={newPostContent}
                             onChange={(e) => setNewPostContent(e.target.value)}
                             disabled={isPosting}
@@ -345,7 +341,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 </div>
             </div>
 
-            <DialogFooter className="p-4 border-t flex-col items-stretch gap-4">
+            <DialogFooter className="p-2 border-t">
                  <div className="flex justify-start items-center -ml-2">
                     <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
                     <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
@@ -364,11 +360,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                         <MapPin className="h-5 w-5 text-primary" />
                     </Button>
                 </div>
-                <div className="flex justify-end">
-                    <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
-                        {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
-                    </Button>
-                </div>
             </DialogFooter>
         </>
     );
@@ -380,11 +371,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         <DialogWrapper open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen)}}>
              <DialogContentWrapper 
                 className={isMobile 
-                    ? "p-0 gap-0 border-0 flex flex-col h-[90svh]" 
-                    : "p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl max-h-[90vh] flex flex-col"
+                    ? "p-0 gap-0 border-0 flex flex-col h-[80svh]" 
+                    : "p-0 gap-0 rounded-2xl bg-card/80 backdrop-blur-lg sm:max-w-xl max-h-[90vh] flex flex-col"
                 }
                 side={isMobile ? "bottom" : "default"}
-                hideCloseButton={true}
              >
                 {ModalContent}
             </DialogContentWrapper>
