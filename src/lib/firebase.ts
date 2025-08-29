@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, initializeAuth, browserLocalPersistence, Auth } from "firebase/auth";
-import { getFirestore, Firestore } from "firebase/firestore";
+import { getFirestore, Firestore, initializeFirestore, enableIndexedDbPersistence, memoryLocalCache } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 import { getMessaging, Messaging, getToken, onMessage } from "firebase/messaging";
 import { doc, setDoc } from "firebase/firestore";
@@ -27,18 +27,30 @@ if (getApps().length === 0) {
     app = getApp();
 }
 
-// Use initializeAuth to ensure persistence is set correctly, especially for client-side rendering.
 try {
     auth = initializeAuth(app, {
         persistence: browserLocalPersistence
     });
 } catch (error) {
-    // If auth is already initialized (e.g., in a server environment or due to HMR), get the existing instance.
     auth = getAuth(app);
 }
 
+try {
+    db = initializeFirestore(app, {
+      experimentalForceLongPolling: true,
+      localCache: memoryLocalCache(),
+    });
+    enableIndexedDbPersistence(db).catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+        } else if (err.code == 'unimplemented') {
+            console.warn('The current browser does not support all of the features required to enable persistence.');
+        }
+    });
+} catch (error) {
+    db = getFirestore(app);
+}
 
-db = getFirestore(app);
 storage = getStorage(app);
 
 // Lazy initialization for Messaging
