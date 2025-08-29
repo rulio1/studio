@@ -2,8 +2,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -17,10 +17,9 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
-import { fileToDataUri, extractSpotifyUrl, cn } from '@/lib/utils';
+import { fileToDataUri, extractSpotifyUrl } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Separator } from './ui/separator';
-import { Progress } from './ui/progress';
 
 interface Post {
     id: string;
@@ -288,12 +287,19 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     );
 
     const ModalContent = (
-        <div className="flex flex-col h-full">
-            <DialogHeader className={cn(isMobile ? 'p-4' : 'p-6')}>
-                <DialogTitle>{quotedPost ? 'Quotar Post' : 'Novo Post'}</DialogTitle>
+        <>
+            <DialogHeader className="p-4 border-b">
+                <div className="flex justify-between items-center">
+                    <DialogTitle>{quotedPost ? 'Quotar Post' : 'Novo Post'}</DialogTitle>
+                     <DialogClose asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <X className="h-4 w-4"/>
+                        </Button>
+                    </DialogClose>
+                </div>
             </DialogHeader>
 
-            <div className="flex-1 px-4 md:px-6 py-0 overflow-y-auto">
+            <div className="p-4 flex-1 overflow-y-auto">
                 <div className="flex gap-4">
                     <Avatar className="h-10 w-10">
                         <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
@@ -339,32 +345,32 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 </div>
             </div>
 
-            <div className="p-4 md:p-6 border-t mt-auto">
-                <div className="flex justify-between items-center">
-                    <div className="flex justify-start items-center">
-                        <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
-                        <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
-                            <ImageIcon className="h-6 w-6 text-primary" />
-                        </Button>
-                        <Button variant="ghost" size="icon" disabled={isPosting}>
-                            <Clapperboard className="h-6 w-6 text-primary" />
-                        </Button>
-                        <Button variant="ghost" size="icon" disabled={isPosting}>
-                            <ListOrdered className="h-6 w-6 text-primary" />
-                        </Button>
-                        <Button variant="ghost" size="icon" disabled={isPosting}>
-                            <Smile className="h-6 w-6 text-primary" />
-                        </Button>
-                        <Button variant="ghost" size="icon" disabled={isPosting}>
-                            <MapPin className="h-6 w-6 text-primary" />
-                        </Button>
-                    </div>
+            <DialogFooter className="p-4 border-t flex-col items-stretch gap-4">
+                 <div className="flex justify-start items-center -ml-2">
+                    <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
+                    <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                        <ImageIcon className="h-5 w-5 text-primary" />
+                    </Button>
+                    <Button variant="ghost" size="icon" disabled={isPosting}>
+                        <Clapperboard className="h-5 w-5 text-primary" />
+                    </Button>
+                    <Button variant="ghost" size="icon" disabled={isPosting}>
+                        <ListOrdered className="h-5 w-5 text-primary" />
+                    </Button>
+                    <Button variant="ghost" size="icon" disabled={isPosting}>
+                        <Smile className="h-5 w-5 text-primary" />
+                    </Button>
+                    <Button variant="ghost" size="icon" disabled={isPosting}>
+                        <MapPin className="h-5 w-5 text-primary" />
+                    </Button>
+                </div>
+                <div className="flex justify-end">
                     <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
                         {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
                     </Button>
                 </div>
-            </div>
-        </div>
+            </DialogFooter>
+        </>
     );
 
     const DialogWrapper = isMobile ? Sheet : Dialog;
@@ -373,11 +379,12 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     return (
         <DialogWrapper open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen)}}>
              <DialogContentWrapper 
-                className={cn(
-                    "p-0 gap-0 border-0 flex flex-col",
-                    isMobile ? "h-[90svh]" : "sm:max-w-xl max-h-[90vh]"
-                )}
+                className={isMobile 
+                    ? "p-0 gap-0 border-0 flex flex-col h-[90svh]" 
+                    : "p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl max-h-[90vh] flex flex-col"
+                }
                 side={isMobile ? "bottom" : "default"}
+                hideCloseButton={true}
              >
                 {ModalContent}
             </DialogContentWrapper>
