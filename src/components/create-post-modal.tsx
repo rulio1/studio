@@ -26,7 +26,7 @@ import PollCreator, { PollData } from './poll-creator';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import SpotifyEmbed from './spotify-embed';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { Progress } from './ui/progress';
 
 interface Post {
@@ -604,6 +604,9 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         return (
             <Sheet open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen); }}>
                 <SheetContent side="bottom" className="h-screen p-0 border-0">
+                    <SheetHeader>
+                       <SheetTitle className="sr-only">Criar Post</SheetTitle>
+                    </SheetHeader>
                    {ModalContent}
                 </SheetContent>
             </Sheet>
@@ -760,3 +763,5 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         </Dialog>
     );
 }
+
+    
