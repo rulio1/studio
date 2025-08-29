@@ -148,14 +148,14 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     }, [user]);
 
     useEffect(() => {
-        if (open && isMobile) {
+        if (open) {
             setTimeout(() => {
                 textareaRef.current?.focus();
             }, 150);
         } else if (!open) {
             setTimeout(resetModalState, 300);
         }
-    }, [open, isMobile]);
+    }, [open]);
 
     const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const text = e.target.value;
@@ -395,103 +395,150 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const isUserVerified = zisprUser?.isVerified || zisprUser?.handle === '@rulio';
 
     const ModalContent = (
-        <div className="flex flex-col h-svh bg-background">
-            <header className="flex items-center justify-between p-2 border-b">
-                 <Button variant="link" onClick={resetModalState} disabled={isPosting}>
-                    Cancelar
-                </Button>
-                <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
-                    {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Postar
-                </Button>
-            </header>
+      <div className="flex flex-col h-svh bg-background">
+        <SheetHeader className="p-0">
+          <SheetTitle className="sr-only">Criar Post</SheetTitle>
+        </SheetHeader>
+        <DialogHeader className="p-0">
+          <DialogTitle className="sr-only">Criar Post</DialogTitle>
+        </DialogHeader>
 
-            <main className="flex-1 overflow-y-auto px-4 pt-4">
-                {zisprUser ? (
-                     <div className="flex gap-4">
-                        <Avatar>
-                            <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
-                            <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="w-full">
-                            <Textarea 
-                                ref={textareaRef}
-                                placeholder="O que está acontecendo?!" 
-                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[150px] resize-none"
-                                value={newPostContent}
-                                onChange={handleContentChange}
-                                disabled={isPosting}
-                                maxLength={charLimit}
-                            />
-                            {quotedPost && <QuotedPostPreview post={quotedPost} />}
-                            {postImagePreview && (
-                                <div className="mt-4 relative">
-                                    <Image src={postImagePreview} alt="Prévia da imagem" width={500} height={300} className="rounded-lg object-cover w-full" />
-                                    <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => { setPostImagePreview(null); setPostImageDataUri(null); }}>
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            )}
-                             {pollData && (
-                                <div className="mt-4">
-                                    <PollCreator onChange={setPollData} />
-                                </div>
-                            )}
-                             {spotifyUrl && !quotedPost && (
-                                <SpotifyEmbed url={spotifyUrl} />
-                             )}
-                        </div>
-                    </div>
-                ) : <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>}
-            </main>
-            
-            <footer className="p-2 border-t bg-background">
-                <Button variant="ghost" size="sm" className="rounded-full text-primary">
-                    <Globe className="h-4 w-4 mr-2" />
-                    Qualquer pessoa pode interagir
-                </Button>
-                <Separator className="my-2"/>
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-0">
-                        <Input
-                            type="file"
-                            className="hidden"
-                            ref={imageInputRef}
-                            accept="image/png, image/jpeg, image/gif"
-                            onChange={handleImageChange}
-                        />
-                        <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
-                            <ImageIcon className="h-6 w-6 text-primary" />
-                        </Button>
-                        <Button variant="ghost" size="icon" disabled={isPosting}>
-                            <Video className="h-6 w-6 text-primary" />
-                        </Button>
-                        <Button variant="ghost" size="icon" disabled={isPosting}>
-                            <Camera className="h-6 w-6 text-primary" />
-                        </Button>
-                         <Button variant="ghost" size="icon" disabled={isPosting}>
-                            <Clapperboard className="h-6 w-6 text-primary" />
-                        </Button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                         <span className="text-sm text-muted-foreground">{charLimit - charCount}</span>
-                         {charCount > 0 && (
-                            <div className="relative h-6 w-6">
-                                <svg className="h-full w-full" viewBox="0 0 20 20">
-                                    <circle className="stroke-current text-border" cx="10" cy="10" r="8" strokeWidth="2" fill="none" />
-                                    <circle 
-                                        className={`stroke-current ${progress >= 100 ? 'text-destructive' : 'text-primary'}`}
-                                        cx="10" cy="10" r="8" strokeWidth="2" fill="none"
-                                        strokeDasharray={`${(progress / 100) * 50.26} 50.26`}
-                                        transform="rotate(-90 10 10)"
-                                    />
-                                </svg>
-                            </div>
-                         )}
-                    </div>
+        <header className="flex items-center justify-between p-2 border-b">
+          <Button variant="link" onClick={resetModalState} disabled={isPosting}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleCreatePost}
+            disabled={isSubmitDisabled}
+            className="rounded-full font-bold px-5"
+          >
+            {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Postar
+          </Button>
+        </header>
+
+        <main className="flex-1 overflow-y-auto px-4 pt-4">
+          {zisprUser ? (
+            <div className="flex gap-4">
+              <Avatar>
+                <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
+                <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
+              </Avatar>
+              <div className="w-full">
+                <Textarea
+                  ref={textareaRef}
+                  placeholder="O que está acontecendo?!"
+                  className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[150px] resize-none"
+                  value={newPostContent}
+                  onChange={handleContentChange}
+                  disabled={isPosting}
+                  maxLength={charLimit}
+                />
+                {quotedPost && <QuotedPostPreview post={quotedPost} />}
+                {postImagePreview && (
+                  <div className="mt-4 relative">
+                    <Image
+                      src={postImagePreview}
+                      alt="Prévia da imagem"
+                      width={500}
+                      height={300}
+                      className="rounded-lg object-cover w-full"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 h-6 w-6"
+                      onClick={() => {
+                        setPostImagePreview(null);
+                        setPostImageDataUri(null);
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                {pollData && (
+                  <div className="mt-4">
+                    <PollCreator onChange={setPollData} />
+                  </div>
+                )}
+                {spotifyUrl && !quotedPost && <SpotifyEmbed url={spotifyUrl} />}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+            </div>
+          )}
+        </main>
+
+        <footer className="p-2 border-t bg-background mt-auto">
+          <Button variant="ghost" size="sm" className="rounded-full text-primary">
+            <Globe className="h-4 w-4 mr-2" />
+            Qualquer pessoa pode interagir
+          </Button>
+          <Separator className="my-2" />
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-0">
+              <Input
+                type="file"
+                className="hidden"
+                ref={imageInputRef}
+                accept="image/png, image/jpeg, image/gif"
+                onChange={handleImageChange}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={isPosting}
+              >
+                <ImageIcon className="h-6 w-6 text-primary" />
+              </Button>
+              <Button variant="ghost" size="icon" disabled={isPosting}>
+                <Video className="h-6 w-6 text-primary" />
+              </Button>
+              <Button variant="ghost" size="icon" disabled={isPosting}>
+                <Camera className="h-6 w-6 text-primary" />
+              </Button>
+              <Button variant="ghost" size="icon" disabled={isPosting}>
+                <Clapperboard className="h-6 w-6 text-primary" />
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {charLimit - charCount}
+              </span>
+              {charCount > 0 && (
+                <div className="relative h-6 w-6">
+                  <svg className="h-full w-full" viewBox="0 0 20 20">
+                    <circle
+                      className="stroke-current text-border"
+                      cx="10"
+                      cy="10"
+                      r="8"
+                      strokeWidth="2"
+                      fill="none"
+                    />
+                    <circle
+                      className={`stroke-current ${
+                        progress >= 100 ? 'text-destructive' : 'text-primary'
+                      }`}
+                      cx="10"
+                      cy="10"
+                      r="8"
+                      strokeWidth="2"
+                      fill="none"
+                      strokeDasharray={`${(progress / 100) * 50.26} 50.26`}
+                      transform="rotate(-90 10 10)"
+                    />
+                  </svg>
                 </div>
-            </footer>
-        </div>
+              )}
+            </div>
+          </div>
+        </footer>
+      </div>
     );
 
     const DialogWrapper = isMobile ? Sheet : Dialog;
@@ -500,14 +547,11 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     return (
         <DialogWrapper open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen); }}>
             <DialogContentWrapper 
-                 className={isMobile ? "h-full p-0 border-0 flex flex-col" : "sm:max-w-xl bg-background/95 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 p-0"}
+                 className={isMobile ? "h-svh p-0 border-0 flex flex-col" : "sm:max-w-xl bg-background/95 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 p-0"}
                  {...(isMobile && { side: "bottom"})}
                  hideCloseButton={true}
             >
-               {isMobile ? 
-                 <div className="h-full">{ModalContent}</div> 
-                 : ModalContent
-               }
+               {ModalContent}
             </DialogContentWrapper>
         </DialogWrapper>
     );
