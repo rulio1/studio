@@ -231,7 +231,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
     };
     
     const isZisprAccount = comment.handle === '@Zispr';
-    const isVerified = comment.isVerified;
+    const isVerified = comment.isVerified || comment.handle === '@rulio';
 
     return (
         <li className="p-4 flex gap-4 relative">
@@ -762,7 +762,7 @@ export default function PostDetailPage() {
     }
     
     const isZisprAccount = post.handle === '@Zispr';
-    const isPostVerified = post.isVerified;
+    const isPostVerified = post.isVerified || post.handle === '@rulio';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
     return (
@@ -941,27 +941,25 @@ export default function PostDetailPage() {
                     </div>
                 </div>
                 
-                <div className="p-4 bg-muted/30">
+                 <div className="p-4 bg-background border-y">
                      <div className="flex gap-4">
                         <Avatar>
                             <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
                             <AvatarFallback>{zisprUser?.displayName[0]}</AvatarFallback>
                         </Avatar>
-                        <div className="w-full">
-                            <Textarea 
+                        <div className="w-full relative">
+                             <Textarea 
                                 placeholder="Poste sua resposta" 
-                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
+                                className="bg-muted border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 p-3 pr-24 resize-none rounded-2xl"
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
                                 rows={1}
                                 disabled={isReplying}
                             />
-                             <div className="flex justify-end mt-2 border-t pt-2">
-                                <Button onClick={handleReply} disabled={!newComment.trim() || isReplying} size="sm" className="rounded-full">
-                                    {isReplying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Responder
-                                </Button>
-                            </div>
+                             <Button onClick={handleReply} disabled={!newComment.trim() || isReplying} size="sm" className="rounded-full absolute bottom-2 right-2">
+                                {isReplying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Responder
+                            </Button>
                         </div>
                     </div>
                 </div>

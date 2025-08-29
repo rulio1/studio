@@ -227,7 +227,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
     }, [post.createdAt, post.repostedAt]);
     
     const isZisprAccount = post.handle === '@Zispr';
-    const isVerified = post.isVerified;
+    const isVerified = post.isVerified || post.handle === '@rulio';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
     const isRetweeted = Array.isArray(post.retweets) && post.retweets.includes(user?.uid || '');
     const isLiked = Array.isArray(post.likes) && post.likes.includes(user?.uid || '');
@@ -1072,7 +1072,7 @@ export default function ProfilePage() {
     }
 
     const isZisprAccount = profileUser.handle === '@Zispr';
-    const isProfileVerified = profileUser.isVerified;
+    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@rulio';
     const canViewLikes = isOwnProfile || !profileUser.likesArePrivate;
     const tabIndicatorPositions: { [key: string]: number } = {
         posts: 0,
@@ -1184,7 +1184,7 @@ export default function ProfilePage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-             <div className="w-full flex justify-center p-2 border-b">
+            <div className="w-full justify-center p-2 border-b">
                  <TabsList className="relative grid w-full grid-cols-4 p-1 bg-muted/50 rounded-full h-11">
                     <TabsTrigger value="posts" className="relative z-10 rounded-full text-base">Posts</TabsTrigger>
                     <TabsTrigger value="replies" className="relative z-10 rounded-full text-base">Respostas</TabsTrigger>
@@ -1195,7 +1195,7 @@ export default function ProfilePage() {
                         className="absolute inset-0 h-full p-1"
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         style={{
-                            left: `${tabIndicatorPositions[activeTab] * 25}%`,
+                            left: `${activeTab === 'posts' ? 0 : activeTab === 'replies' ? 25 : activeTab === 'media' ? 50 : 75}%`,
                             width: '25%',
                         }}
                     >

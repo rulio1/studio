@@ -43,7 +43,7 @@ const UserItem = ({ user, currentUser, onToggleFollow, onDialogClose }: { user: 
     const isFollowing = currentUser.following.includes(user.uid);
     const isCurrentUser = user.uid === currentUser.uid;
     const isZisprAccount = user.handle === '@Zispr';
-    const isVerified = user.isVerified;
+    const isVerified = user.isVerified || user.handle === '@rulio';
 
     const handleUserClick = () => {
         onDialogClose();

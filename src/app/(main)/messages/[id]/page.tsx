@@ -224,7 +224,7 @@ export default function ConversationPage() {
     }
     
     const isZisprAccount = otherUser.handle === '@Zispr';
-    const isOtherUserVerified = otherUser.isVerified;
+    const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@rulio';
 
   return (
     <div className="flex flex-col h-screen bg-background pb-20 md:pb-0">

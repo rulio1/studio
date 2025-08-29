@@ -600,7 +600,7 @@ useEffect(() => {
     }, [post.createdAt, post.repostedAt]);
     
     const isZisprAccount = post.handle === '@Zispr';
-    const isVerified = post.isVerified;
+    const isVerified = post.isVerified || post.handle === '@rulio';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
 
@@ -839,7 +839,7 @@ useEffect(() => {
   }
   
     const isZisprAccount = zisprUser.handle === '@Zispr';
-    const isZisprUserVerified = zisprUser.isVerified;
+    const isZisprUserVerified = zisprUser.isVerified || zisprUser.handle === '@rulio';
     const navItems = [
         { href: '/home', icon: Home, label: 'Início' },
         { href: '/notifications', icon: Bell, label: 'Notificações' },
@@ -993,7 +993,3 @@ useEffect(() => {
     </>
   );
 }
-
-    
-
-    
