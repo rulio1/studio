@@ -395,8 +395,8 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const isUserVerified = zisprUser?.isVerified || zisprUser?.handle === '@rulio';
 
     const ModalContent = (
-        <div className="flex flex-col h-svh bg-background">
-            <header className="flex flex-row items-center justify-between p-2">
+        <div className="flex flex-col h-full bg-background relative">
+            <header className="fixed top-0 left-0 right-0 z-10 flex flex-row items-center justify-between p-2 bg-background/80 backdrop-blur-sm">
                  <Button variant="link" onClick={resetModalState} disabled={isPosting}>
                     Cancelar
                 </Button>
@@ -406,7 +406,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                 </Button>
             </header>
 
-            <main className="flex-1 overflow-y-auto px-4">
+            <main className="flex-1 overflow-y-auto px-4 pt-16 pb-32">
                 {zisprUser ? (
                      <div className="flex gap-4">
                         <Avatar>
@@ -445,7 +445,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                 ) : <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>}
             </main>
 
-            <footer className="p-2 border-t">
+            <footer className="fixed bottom-0 left-0 right-0 z-10 p-2 border-t bg-background/80 backdrop-blur-sm">
                 <Button variant="ghost" size="sm" className="rounded-full text-primary">
                     <Globe className="h-4 w-4 mr-2" />
                     Qualquer pessoa pode interagir
@@ -500,7 +500,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     return (
         <DialogWrapper open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen); }}>
             <DialogContentWrapper 
-                 className={isMobile ? "h-svh p-0 border-0 flex flex-col" : "sm:max-w-xl bg-background/95 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 p-0"}
+                 className={isMobile ? "h-full p-0 border-0 flex flex-col" : "sm:max-w-xl bg-background/95 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 p-0"}
                  {...(isMobile && { side: "bottom"})}
                  hideCloseButton={true}
             >
@@ -514,5 +514,3 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         </DialogWrapper>
     );
 }
-
-    
