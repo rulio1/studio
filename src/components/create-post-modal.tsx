@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle as EditDialogTitle, DialogTitle as OtherDialogTitle, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -395,7 +395,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const isUserVerified = zisprUser?.isVerified || zisprUser?.handle === '@rulio';
 
     const ModalContent = (
-        <div className="flex flex-col h-full bg-background">
+        <div className="flex flex-col h-svh bg-background">
             <header className="flex items-center justify-between p-2 border-b">
                  <Button variant="link" onClick={resetModalState} disabled={isPosting}>
                     Cancelar
@@ -445,7 +445,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                 ) : <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>}
             </main>
             
-            <footer className="mt-auto p-2 border-t bg-background">
+            <footer className="p-2 border-t bg-background">
                 <Button variant="ghost" size="sm" className="rounded-full text-primary">
                     <Globe className="h-4 w-4 mr-2" />
                     Qualquer pessoa pode interagir
@@ -504,12 +504,10 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                  {...(isMobile && { side: "bottom"})}
                  hideCloseButton={true}
             >
-               {isMobile && 
-                <SheetHeader className="sr-only">
-                    <SheetTitle>Criar Post</SheetTitle>
-                </SheetHeader>
+               {isMobile ? 
+                 <div className="h-full">{ModalContent}</div> 
+                 : ModalContent
                }
-               {ModalContent}
             </DialogContentWrapper>
         </DialogWrapper>
     );
