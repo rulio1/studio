@@ -301,7 +301,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     retweets: [],
                     likes: [],
                     views: 0,
-                    isVerified: zisprUser.isVerified || false,
+                    isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
                     isFirstPost: isFirstPost,
                     isUpdate: zisprUser.handle === '@rulio' && isAppUpdate,
                     poll: finalPollData,
@@ -315,7 +315,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                         content: quotedPost.content,
                         image: quotedPost.image || '',
                         createdAt: quotedPost.createdAt,
-                        isVerified: quotedPost.isVerified || false,
+                        isVerified: quotedPost.isVerified || quotedPost.handle === '@rulio',
                     } : null,
                     spotifyUrl: finalSpotifyUrl,
                 });
@@ -366,7 +366,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                                         name: zisprUser.displayName,
                                         handle: zisprUser.handle,
                                         avatar: zisprUser.avatar,
-                                        isVerified: zisprUser.isVerified || false,
+                                        isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
                                     },
                                     type: 'mention',
                                     text: 'mencionou você em um post',
@@ -456,8 +456,8 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const isUserVerified = zisprUser?.isVerified || zisprUser?.handle === '@rulio';
 
     const ModalContent = (
-        <div className="flex flex-col h-full bg-background">
-            <DialogHeader className="flex flex-row items-center justify-between p-4 border-b">
+        <div className="flex flex-col h-svh bg-background">
+             <header className="flex flex-row items-center justify-between p-4 border-b">
                  <Button variant="ghost" size="icon" className="rounded-full" onClick={resetModal} disabled={isPosting}>
                     <X className="h-5 w-5" />
                     <span className="sr-only">Cancelar</span>
@@ -466,7 +466,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                     {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Postar
                 </Button>
-            </DialogHeader>
+            </header>
 
             <main className="flex-1 overflow-y-auto p-4">
                 {zisprUser ? (
