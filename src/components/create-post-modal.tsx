@@ -2,23 +2,25 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db, storage } from '@/lib/firebase';
-import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, getDocs, writeBatch, where, query as firestoreQuery } from 'firebase/firestore';
+import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, X, ImageIcon, Video, Camera, Clapperboard, BadgeCheck, Bird } from 'lucide-react';
+import { Loader2, X, ImageIcon, BadgeCheck, Video, Camera, Clapperboard } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
 import { fileToDataUri, extractSpotifyUrl } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Progress } from './ui/progress';
+import { Separator } from './ui/separator';
 
 interface Post {
     id: string;
@@ -85,6 +87,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const { toast } = useToast();
     const isMobile = useIsMobile();
     
+    const MAX_CHARS = 280;
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
@@ -110,9 +114,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         if (open) {
             setTimeout(() => {
                 textareaRef.current?.focus();
-            }, 150); // Small delay to ensure modal is rendered
+            }, 150);
         } else {
-            // Delay reset to allow closing animation
             setTimeout(resetModalState, 300);
         }
     }, [open]);
@@ -146,7 +149,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 4 * 1024 * 1024) { // 4MB limit
+        if (file.size > 4 * 1024 * 1024) {
             toast({
                 title: 'Imagem muito grande',
                 description: 'Por favor, selecione uma imagem menor que 4MB.',
@@ -230,7 +233,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
     };
     
-    const isSubmitDisabled = (!newPostContent.trim() && !postImageDataUri && !quotedPost) || isPosting;
+    const isSubmitDisabled = (!newPostContent.trim() && !postImageDataUri && !quotedPost) || isPosting || newPostContent.length > MAX_CHARS;
     
     const QuotedPostPreview = ({ post }: { post: Post }) => (
         <div className="mt-2 border rounded-xl p-3">
@@ -252,10 +255,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     );
 
     const ModalContent = (
-      <div className="flex flex-col bg-background h-svh">
-        <SheetHeader className="p-0">
-             <SheetTitle className="sr-only">Criar Post</SheetTitle>
-        </SheetHeader>
+      <div className="flex flex-col bg-background h-full">
         <header className="flex items-center justify-between p-4 border-b">
           <Button variant="link" onClick={resetModalState} disabled={isPosting} className="px-0">
             Cancelar
@@ -269,13 +269,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         <main className="flex-1 px-4 pt-4 overflow-y-auto">
           {zisprUser ? (
             <div className="flex gap-4">
-              <div className="flex flex-col items-center">
-                <Avatar>
+              <Avatar className="h-10 w-10">
                   <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
                   <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
-                </Avatar>
-                {quotedPost && <div className="w-0.5 flex-1 bg-border my-2"></div>}
-              </div>
+              </Avatar>
 
               <div className="w-full">
                 <div className="font-bold flex items-center gap-1">
@@ -343,6 +340,36 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 <Clapperboard className="h-6 w-6" />
               </Button>
             </div>
+            <div className="flex items-center gap-4">
+                <div className="relative h-6 w-6">
+                    <svg className="h-full w-full" viewBox="0 0 36 36">
+                        <circle
+                            cx="18"
+                            cy="18"
+                            r="16"
+                            fill="none"
+                            className="stroke-muted"
+                            strokeWidth="2"
+                        />
+                        <circle
+                            cx="18"
+                            cy="18"
+                            r="16"
+                            fill="none"
+                            className={cn("transition-all duration-300", newPostContent.length > MAX_CHARS ? "stroke-destructive" : "stroke-primary")}
+                            strokeWidth="2"
+                            strokeDasharray={100}
+                            strokeDashoffset={100 - (newPostContent.length / MAX_CHARS) * 100}
+                            transform="rotate(-90 18 18)"
+                        />
+                    </svg>
+                </div>
+                {newPostContent.length > 260 && (
+                    <span className={cn("text-sm", newPostContent.length > MAX_CHARS ? "text-destructive" : "text-muted-foreground")}>
+                        {MAX_CHARS - newPostContent.length}
+                    </span>
+                )}
+            </div>
           </div>
         </footer>
       </div>
@@ -354,7 +381,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     return (
         <DialogWrapper open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen); }}>
             <DialogContentWrapper 
-                 className={isMobile ? "h-full p-0 border-0 flex flex-col" : "sm:max-w-xl bg-background/95 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 p-0"}
+                 className={isMobile ? "h-svh p-0 border-0 flex flex-col" : "sm:max-w-xl bg-background/95 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 p-0"}
                  {...(isMobile && { side: "bottom"})}
             >
                {ModalContent}
@@ -362,3 +389,5 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         </DialogWrapper>
     );
 }
+
+    
