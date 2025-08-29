@@ -8,11 +8,11 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db, storage } from '@/lib/firebase';
-import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, getDocs, query, where } from 'firebase/firestore';
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, X, ImageIcon, BadgeCheck, Video, Camera, Clapperboard } from 'lucide-react';
+import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Clapperboard } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
@@ -20,6 +20,7 @@ import React from 'react';
 import { fileToDataUri, extractSpotifyUrl, cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Separator } from './ui/separator';
+import { Progress } from './ui/progress';
 
 interface Post {
     id: string;
@@ -71,6 +72,19 @@ interface CreatePostModalProps {
     quotedPost?: Post | null;
 }
 
+const GIFIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-6 w-6">
+        <rect x="2" y="4" width="20" height="16" rx="4" stroke="currentColor" strokeWidth="2"/>
+        <path d="M8 15V9H11.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M8 12H10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M14 9H14.01" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M14 15V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M17 15V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M17 15H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+);
+
+
 export default function CreatePostModal({ open, onOpenChange, quotedPost }: CreatePostModalProps) {
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
@@ -85,8 +99,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
 
     const { toast } = useToast();
     const isMobile = useIsMobile();
-    
-    const MAX_CHARS = 280;
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -115,6 +127,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 textareaRef.current?.focus();
             }, 150);
         } else {
+            // Delay reset to allow closing animation
             setTimeout(resetModalState, 300);
         }
     }, [open]);
@@ -164,10 +177,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
 
     const handleCreatePost = async () => {
         if (!newPostContent.trim() && !postImageDataUri && !quotedPost) {
-            toast({
-                title: "O post não pode estar vazio.",
-                variant: "destructive",
-            });
             return;
         }
         if (!user || !zisprUser) {
@@ -217,6 +226,44 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     quotedPostId: quotedPost ? quotedPost.id : null,
                     poll: null,
                 });
+
+                if (hashtags.length > 0) {
+                    for (const tag of hashtags) {
+                        const hashtagRef = doc(db, 'hashtags', tag);
+                        const hashtagDoc = await transaction.get(hashtagRef);
+                        if (hashtagDoc.exists()) {
+                            transaction.update(hashtagRef, { count: (hashtagDoc.data().count || 0) + 1 });
+                        } else {
+                            transaction.set(hashtagRef, { name: tag, count: 1 });
+                        }
+                    }
+                }
+
+                if (mentionedHandles.length > 0) {
+                    const usersRef = collection(db, "users");
+                    const q = query(usersRef, where("handle", "in", mentionedHandles));
+                    const querySnapshot = await getDocs(q);
+                    querySnapshot.forEach(userDoc => {
+                        const mentionedUserId = userDoc.id;
+                         const notificationRef = doc(collection(db, 'notifications'));
+                        transaction.set(notificationRef, {
+                            toUserId: mentionedUserId,
+                            fromUserId: user.uid,
+                            fromUser: {
+                                name: zisprUser.displayName,
+                                handle: zisprUser.handle,
+                                avatar: zisprUser.avatar,
+                                isVerified: zisprUser.isVerified || false,
+                            },
+                            type: 'mention',
+                            text: 'mencionou você em um post',
+                            postContent: newPostContent.substring(0, 50),
+                            postId: postRef.id,
+                            createdAt: serverTimestamp(),
+                            read: false,
+                        });
+                    });
+                }
             });
 
             resetModalState();
@@ -232,7 +279,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
     };
     
-    const isSubmitDisabled = (!newPostContent.trim() && !postImageDataUri && !quotedPost) || isPosting || newPostContent.length > MAX_CHARS;
+    const isSubmitDisabled = (!newPostContent.trim() && !postImageDataUri && !quotedPost) || isPosting;
     
     const QuotedPostPreview = ({ post }: { post: Post }) => (
         <div className="mt-2 border rounded-xl p-3">
@@ -255,124 +302,98 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
 
     const ModalContent = (
       <div className="flex flex-col bg-background h-svh">
-         <SheetHeader className="p-4 border-b sr-only">
-             <SheetTitle>Novo Post</SheetTitle>
-         </SheetHeader>
-        <header className="flex items-center justify-between p-4 border-b">
-          <Button variant="link" onClick={resetModalState} disabled={isPosting} className="px-0">
-            Cancelar
-          </Button>
-          <p className="font-bold text-lg">Novo post</p>
-          <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
-            {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
-          </Button>
-        </header>
+        <DialogHeader className="flex flex-row items-center justify-between p-2">
+            <Button variant="ghost" size="icon" onClick={resetModalState} disabled={isPosting} className="rounded-full">
+                <X className="h-5 w-5" />
+            </Button>
+            <DialogTitle className="sr-only">Novo post</DialogTitle>
+             <Button variant="link" className="text-primary" onClick={() => toast({title: "Em breve!"})}>Rascunhos</Button>
+        </DialogHeader>
 
-        <main className="flex-1 px-4 pt-4 overflow-y-auto">
+        <main className="flex-1 px-4 pt-0 overflow-y-auto">
           {zisprUser ? (
-            <div className="flex gap-4">
-              <Avatar className="h-10 w-10">
-                  <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
-                  <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
-              </Avatar>
-
-              <div className="w-full">
-                <div className="font-bold flex items-center gap-1">
-                    {zisprUser.displayName}
-                    {(zisprUser.isVerified || zisprUser.handle === '@rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
+            <div className="flex gap-4 h-full">
+                <div className="flex flex-col items-center pt-2">
+                    <Avatar className="h-10 w-10">
+                        <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
+                        <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
+                    </Avatar>
+                     <div className="w-0.5 grow bg-border my-2"></div>
                 </div>
-                <Textarea
-                  ref={textareaRef}
-                  placeholder="O que está acontecendo?"
-                  className="bg-transparent border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none min-h-[120px]"
-                  value={newPostContent}
-                  onChange={(e) => setNewPostContent(e.target.value)}
-                  disabled={isPosting}
-                />
-                 {postImagePreview && (
-                  <div className="mt-4 relative w-fit">
-                    <Image
-                      src={postImagePreview}
-                      alt="Prévia da imagem"
-                      width={250}
-                      height={250}
-                      className="rounded-lg object-cover"
+
+                <div className="w-full flex flex-col">
+                    <Textarea
+                    ref={textareaRef}
+                    placeholder="O que está acontecendo?"
+                    className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none flex-1"
+                    value={newPostContent}
+                    onChange={(e) => setNewPostContent(e.target.value)}
+                    disabled={isPosting}
                     />
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/50 hover:bg-black/70 text-white"
-                      onClick={() => {
-                        setPostImagePreview(null);
-                        setPostImageDataUri(null);
-                      }}
-                    >
-                      <X className="h-4 w-4" />
+                    {postImagePreview && (
+                    <div className="mt-4 relative w-fit">
+                        <Image
+                        src={postImagePreview}
+                        alt="Prévia da imagem"
+                        width={500}
+                        height={300}
+                        className="rounded-lg object-cover w-full h-auto max-h-80"
+                        />
+                        <Button
+                        variant="secondary"
+                        size="icon"
+                        className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/50 hover:bg-black/70 text-white"
+                        onClick={() => {
+                            setPostImagePreview(null);
+                            setPostImageDataUri(null);
+                        }}
+                        >
+                        <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    )}
+                    {quotedPost && (
+                    <div className="w-full">
+                        <QuotedPostPreview post={quotedPost} />
+                    </div>
+                    )}
+                     <Button variant="ghost" className="mt-4 p-2 text-primary rounded-full -ml-2 self-start">
+                        <Globe className="h-4 w-4 mr-2" />
+                        Qualquer pessoa pode responder
                     </Button>
-                  </div>
-                )}
-                 {quotedPost && (
-                  <div className="w-full">
-                    <QuotedPostPreview post={quotedPost} />
-                  </div>
-                )}
-              </div>
+                </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center p-8">
+            <div className="flex items-center justify-center p-8 h-full">
               <Loader2 className="h-6 w-6 animate-spin mx-auto" />
             </div>
           )}
         </main>
         
-        <footer className="p-4 border-t bg-background mt-auto">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-0">
-              <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
-              <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
-                <ImageIcon className="h-6 w-6" />
-              </Button>
-              <Button variant="ghost" size="icon" disabled={isPosting}>
-                <Video className="h-6 w-6" />
-              </Button>
-              <Button variant="ghost" size="icon" disabled={isPosting}>
-                <Camera className="h-6 w-6" />
-              </Button>
-              <Button variant="ghost" size="icon" disabled={isPosting}>
-                <Clapperboard className="h-6 w-6" />
-              </Button>
-            </div>
-            <div className="flex items-center gap-4">
-                <div className="relative h-6 w-6">
-                    <svg className="h-full w-full" viewBox="0 0 36 36">
-                        <circle
-                            cx="18"
-                            cy="18"
-                            r="16"
-                            fill="none"
-                            className="stroke-muted"
-                            strokeWidth="2"
-                        />
-                        <circle
-                            cx="18"
-                            cy="18"
-                            r="16"
-                            fill="none"
-                            className={cn("transition-all duration-300", newPostContent.length > MAX_CHARS ? "stroke-destructive" : "stroke-primary")}
-                            strokeWidth="2"
-                            strokeDasharray={100}
-                            strokeDashoffset={100 - (newPostContent.length / MAX_CHARS) * 100}
-                            transform="rotate(-90 18 18)"
-                        />
-                    </svg>
+        <footer className="p-2 border-t bg-background mt-auto">
+            <div className="flex justify-between items-center">
+                <div className="flex justify-start items-center">
+                    <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
+                    <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                        <ImageIcon className="h-6 w-6 text-primary" />
+                    </Button>
+                    <Button variant="ghost" size="icon" disabled={isPosting}>
+                        <Clapperboard className="h-6 w-6 text-primary" />
+                    </Button>
+                    <Button variant="ghost" size="icon" disabled={isPosting}>
+                        <ListOrdered className="h-6 w-6 text-primary" />
+                    </Button>
+                    <Button variant="ghost" size="icon" disabled={isPosting}>
+                        <Smile className="h-6 w-6 text-primary" />
+                    </Button>
+                     <Button variant="ghost" size="icon" disabled={isPosting}>
+                        <MapPin className="h-6 w-6 text-primary" />
+                    </Button>
                 </div>
-                {newPostContent.length > 260 && (
-                    <span className={cn("text-sm", newPostContent.length > MAX_CHARS ? "text-destructive" : "text-muted-foreground")}>
-                        {MAX_CHARS - newPostContent.length}
-                    </span>
-                )}
+                <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
+                    {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
+                </Button>
             </div>
-          </div>
         </footer>
       </div>
     );
@@ -381,16 +402,16 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const DialogContentWrapper = isMobile ? SheetContent : DialogContent;
     
     return (
-        <DialogWrapper open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen); }}>
-            <DialogContentWrapper 
-                 className={isMobile ? "h-full p-0 border-0 flex flex-col" : "sm:max-w-xl bg-background/95 backdrop-blur-lg border rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 p-0"}
-                 {...(isMobile && { side: "bottom"})}
-            >
-                <DialogHeader className="sr-only">
-                    <DialogTitle>Novo Post</DialogTitle>
-                </DialogHeader>
-               {ModalContent}
+        <DialogWrapper open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen)}}>
+             <DialogContentWrapper 
+                className="p-0 gap-0 border-0 overflow-hidden" 
+                side={isMobile ? "bottom" : "default"}
+                style={isMobile ? { height: '90svh' } : {}}
+             >
+                {ModalContent}
             </DialogContentWrapper>
         </DialogWrapper>
     );
 }
+
+    
