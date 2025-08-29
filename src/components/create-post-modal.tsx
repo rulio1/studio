@@ -148,14 +148,14 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     }, [user]);
 
     useEffect(() => {
-        if (open) {
+        if (open && isMobile) {
             setTimeout(() => {
                 textareaRef.current?.focus();
             }, 150);
-        } else {
+        } else if (!open) {
             setTimeout(resetModalState, 300);
         }
-    }, [open]);
+    }, [open, isMobile]);
 
     const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const text = e.target.value;
@@ -395,8 +395,8 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const isUserVerified = zisprUser?.isVerified || zisprUser?.handle === '@rulio';
 
     const ModalContent = (
-        <div className="flex flex-col h-full bg-background relative">
-            <header className="fixed top-0 left-0 right-0 z-10 flex flex-row items-center justify-between p-2 bg-background/80 backdrop-blur-sm">
+        <div className="flex flex-col h-full bg-background">
+            <header className="flex items-center justify-between p-2">
                  <Button variant="link" onClick={resetModalState} disabled={isPosting}>
                     Cancelar
                 </Button>
@@ -406,7 +406,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                 </Button>
             </header>
 
-            <main className="flex-1 overflow-y-auto px-4 pt-16 pb-32">
+            <main className="flex-1 overflow-y-auto px-4">
                 {zisprUser ? (
                      <div className="flex gap-4">
                         <Avatar>
@@ -445,7 +445,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
                 ) : <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>}
             </main>
 
-            <footer className="fixed bottom-0 left-0 right-0 z-10 p-2 border-t bg-background/80 backdrop-blur-sm">
+            <footer className="mt-auto p-2 border-t bg-background">
                 <Button variant="ghost" size="sm" className="rounded-full text-primary">
                     <Globe className="h-4 w-4 mr-2" />
                     Qualquer pessoa pode interagir
