@@ -1183,13 +1183,13 @@ export default function ProfilePage() {
             </div>
         </div>
 
-        <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
-            <div className="w-full justify-around rounded-none bg-transparent border-b px-2 sticky top-[57px] z-10 bg-background/80 backdrop-blur-sm">
+        <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="w-full justify-around rounded-none bg-transparent border-b sticky top-[57px] z-10 bg-background/80 backdrop-blur-sm">
                 <TabsList className="relative grid w-full grid-cols-4 p-0 bg-transparent h-11">
-                    <TabsTrigger value="posts" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base">Posts</TabsTrigger>
-                    <TabsTrigger value="replies" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base">Respostas</TabsTrigger>
-                    <TabsTrigger value="media" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base">Mídia</TabsTrigger>
-                    <TabsTrigger value="likes" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base">Curtidas</TabsTrigger>
+                    <TabsTrigger value="posts" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base font-semibold">Posts</TabsTrigger>
+                    <TabsTrigger value="replies" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base font-semibold">Respostas</TabsTrigger>
+                    <TabsTrigger value="media" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base font-semibold">Mídia</TabsTrigger>
+                    <TabsTrigger value="likes" className="relative z-10 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground text-base font-semibold">Curtidas</TabsTrigger>
                     <motion.div
                         layoutId="profile-tab-indicator"
                         className="absolute bottom-0 h-1 bg-primary rounded-full"
