@@ -1183,7 +1183,7 @@ export default function ProfilePage() {
             </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
              <div className="w-full flex justify-center p-2 border-b">
                  <TabsList className="relative grid w-full grid-cols-4 p-1 bg-muted/50 rounded-full h-11">
                     <TabsTrigger value="posts" className="relative z-10 rounded-full text-base">Posts</TabsTrigger>
