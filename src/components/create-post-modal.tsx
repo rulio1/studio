@@ -332,7 +332,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     };
 
     const handleSaveDraftAndClose = async () => {
-        await handleCreatePost(true);
+        await handleCreatePost(true); // <-- This is the corrected line
         setIsCloseAlertOpen(false);
         resetModalState();
     };
@@ -509,3 +509,5 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         </>
     );
 }
+
+    
