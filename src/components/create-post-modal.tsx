@@ -18,6 +18,9 @@ import Image from 'next/image';
 import React from 'react';
 import { fileToDataUri, extractSpotifyUrl } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import PollCreator, { PollData } from './poll-creator';
 
 
 interface Post {
@@ -93,6 +96,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [replySetting, setReplySetting] = useState<ReplySetting>('everyone');
+    const [location, setLocation] = useState('');
+    const [showPollCreator, setShowPollCreator] = useState(false);
+    const [pollData, setPollData] = useState<PollData | null>(null);
+
 
     const { toast } = useToast();
 
@@ -122,6 +129,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setPostImageDataUri(null);
         setPostImagePreview(null);
         setReplySetting('everyone');
+        setLocation('');
+        setShowPollCreator(false);
+        setPollData(null);
         if (imageInputRef.current) {
             imageInputRef.current.value = '';
         }
@@ -166,6 +176,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             return;
         }
 
+        setShowPollCreator(false);
         const dataUri = await fileToDataUri(file);
         setPostImagePreview(URL.createObjectURL(file));
         setPostImageDataUri(dataUri);
@@ -210,6 +221,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 mentions: mentionedHandles,
                 image: imageUrl,
                 spotifyUrl: spotifyUrl,
+                location: location.trim() || null,
                 createdAt: serverTimestamp(),
                 comments: 0,
                 retweets: [],
@@ -217,7 +229,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 views: 0,
                 isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
                 quotedPostId: quotedPost ? quotedPost.id : null,
-                poll: null,
+                poll: pollData ? { options: pollData.options.map(o => o.text), votes: pollData.options.map(() => 0), voters: {} } : null,
                 replySettings: replySetting,
                 status: 'published',
             };
@@ -278,7 +290,21 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
     };
     
-    const isSubmitDisabled = (!newPostContent.trim() && !postImageDataUri && !quotedPost) || isPosting || newPostContent.length > MAX_CHARS;
+    const onEmojiClick = (emojiData: EmojiClickData) => {
+        const cursor = textareaRef.current?.selectionStart ?? newPostContent.length;
+        const text = newPostContent.slice(0, cursor) + emojiData.emoji + newPostContent.slice(cursor);
+        setNewPostContent(text);
+    };
+
+    const handlePollClick = () => {
+        if (!showPollCreator) {
+            setPostImageDataUri(null);
+            setPostImagePreview(null);
+        }
+        setShowPollCreator(!showPollCreator);
+    };
+    
+    const isSubmitDisabled = (!newPostContent.trim() && !postImageDataUri && !quotedPost && !pollData) || isPosting || newPostContent.length > MAX_CHARS;
     
     const QuotedPostPreview = ({ post }: { post: Post }) => (
         <div className="mt-2 border rounded-xl p-3">
@@ -304,7 +330,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent 
-                className="p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl flex flex-col h-auto max-h-[80svh] min-h-[350px]"
+                className="p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl flex flex-col h-auto max-h-[80svh]"
                 hideCloseButton={true}
             >
                 <DialogHeader className="p-4 flex flex-row items-center justify-between border-b">
@@ -334,6 +360,11 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                 onChange={(e) => setNewPostContent(e.target.value)}
                                 disabled={isPosting}
                             />
+                            {showPollCreator && (
+                                <div className="mt-2">
+                                    <PollCreator onChange={setPollData} />
+                                </div>
+                            )}
                             {postImagePreview && (
                                 <div className="mt-4 relative w-fit">
                                     <Image
@@ -359,6 +390,12 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                             {quotedPost && (
                                 <div className="w-full">
                                     <QuotedPostPreview post={quotedPost} />
+                                </div>
+                            )}
+                            {location && (
+                                <div className="mt-2 text-sm text-primary flex items-center gap-1">
+                                    <MapPin className="h-4 w-4" />
+                                    <span>{location}</span>
                                 </div>
                             )}
                         </div>
@@ -390,21 +427,68 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 <DialogFooter className="p-2 border-t mt-auto">
                     <div className="flex justify-between items-center w-full">
                         <div className="flex justify-start items-center -ml-2">
-                            <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
-                            <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                            <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} disabled={showPollCreator} />
+                            <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting || showPollCreator}>
                                 <ImageIcon className="h-5 w-5 text-primary" />
                             </Button>
-                            <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de enquete será adicionada em breve.'})}>
+                             <Button variant="ghost" size="icon" disabled={isPosting} onClick={handlePollClick}>
                                 <ListOrdered className="h-5 w-5 text-primary" />
                             </Button>
-                            <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de emoji será adicionada em breve.'})}>
-                                <Smile className="h-5 w-5 text-primary" />
-                            </Button>
-                            <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de localização será adicionada em breve.'})}>
-                                <MapPin className="h-5 w-5 text-primary" />
-                            </Button>
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" disabled={isPosting}>
+                                        <Smile className="h-5 w-5 text-primary" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 border-0">
+                                    <EmojiPicker onEmojiClick={onEmojiClick} />
+                                </PopoverContent>
+                            </Popover>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" disabled={isPosting}>
+                                        <MapPin className="h-5 w-5 text-primary" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent>
+                                    <div className="grid gap-4">
+                                        <div className="space-y-2">
+                                            <h4 className="font-medium leading-none">Adicionar Localização</h4>
+                                            <p className="text-sm text-muted-foreground">
+                                                Digite sua cidade ou local.
+                                            </p>
+                                        </div>
+                                        <Input 
+                                            id="location" 
+                                            placeholder="Ex: São Paulo, Brasil"
+                                            value={location}
+                                            onChange={(e) => setLocation(e.target.value)}
+                                        />
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
                         </div>
                         <div className="flex items-center gap-2">
+                             <div className="relative h-7 w-7">
+                                <svg className="h-full w-full" viewBox="0 0 20 20">
+                                    <circle className="text-muted" strokeWidth="2" stroke="currentColor" fill="transparent" r="8" cx="10" cy="10"/>
+                                    <circle
+                                        className="text-primary"
+                                        strokeWidth="2"
+                                        strokeDasharray={`${(newPostContent.length / MAX_CHARS) * 2 * Math.PI * 8}, 100`}
+                                        strokeLinecap="round"
+                                        stroke="currentColor"
+                                        fill="transparent"
+                                        r="8"
+                                        cx="10"
+                                        cy="10"
+                                        style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
+                                    />
+                                </svg>
+                                {newPostContent.length > MAX_CHARS && (
+                                    <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-destructive">{MAX_CHARS - newPostContent.length}</span>
+                                )}
+                            </div>
                             <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
                                 {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
                             </Button>
