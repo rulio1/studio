@@ -26,7 +26,7 @@ import PollCreator, { PollData } from './poll-creator';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import SpotifyEmbed from './spotify-embed';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Progress } from './ui/progress';
 
 interface Post {
@@ -180,7 +180,6 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         setIsGeneratingText(false);
         setShowAiTextGenerator(false);
         setIsGeneratingImage(false);
-        setShowAiImageGenerator(false);
         setAiImagePrompt('');
         setShowPollCreator(false);
         setPollData(null);
@@ -763,5 +762,3 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
         </Dialog>
     );
 }
-
-    
