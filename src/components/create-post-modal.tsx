@@ -457,7 +457,7 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     const ModalContent = (
         <div className="flex flex-col h-full">
             <header className="flex items-center justify-between p-4 border-b">
-                <Button variant="ghost" onClick={resetModal} disabled={isPosting}>
+                <Button variant="ghost" size="icon" className="rounded-full" onClick={resetModal} disabled={isPosting}>
                     <X className="h-5 w-5" />
                     <span className="sr-only">Cancelar</span>
                 </Button>
@@ -610,10 +610,10 @@ export default function CreatePostModal({ open, onOpenChange, initialMode = 'pos
     if (isMobile) {
         return (
             <Sheet open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen); }}>
-                <SheetContent side="bottom" className="h-screen p-0 border-0">
-                    <SheetHeader>
-                       <SheetTitle className="sr-only">Criar Post</SheetTitle>
-                    </SheetHeader>
+                <SheetContent side="bottom" className="h-full p-0 border-0" hideCloseButton>
+                   <SheetHeader className="sr-only">
+                       <SheetTitle>Criar Post</SheetTitle>
+                   </SheetHeader>
                    {ModalContent}
                 </SheetContent>
             </Sheet>
