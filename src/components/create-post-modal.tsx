@@ -70,6 +70,7 @@ interface Post {
     spotifyUrl?: string;
     replySettings?: 'everyone' | 'following' | 'mentioned';
     status?: 'published' | 'draft';
+    lastSavedAt?: any;
 }
 
 interface ZisprUser {
@@ -330,9 +331,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             setIsPosting(false);
         }
     };
-
+    
     const handleSaveDraftAndClose = async () => {
-        await handleCreatePost(true); // <-- This is the corrected line
+        await handleCreatePost(true);
         setIsCloseAlertOpen(false);
         resetModalState();
     };
@@ -509,5 +510,3 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         </>
     );
 }
-
-    
