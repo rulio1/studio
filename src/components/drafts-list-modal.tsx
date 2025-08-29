@@ -51,12 +51,19 @@ export default function DraftsListModal({ open, onOpenChange, currentUser, onSel
         const q = query(
             collection(db, "posts"),
             where("authorId", "==", currentUser.uid),
-            where("status", "==", "draft"),
-            orderBy("lastSavedAt", "desc")
+            where("status", "==", "draft")
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const draftsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
+            
+            // Sort on the client-side to avoid needing a composite index
+            draftsData.sort((a, b) => {
+                const timeA = a.lastSavedAt?.toMillis() || 0;
+                const timeB = b.lastSavedAt?.toMillis() || 0;
+                return timeB - timeA;
+            });
+            
             setDrafts(draftsData);
             setIsLoading(false);
         }, (error) => {
