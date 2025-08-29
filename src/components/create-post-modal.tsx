@@ -22,6 +22,16 @@ import { Progress } from './ui/progress';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import DraftsListModal from './drafts-list-modal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 interface Post {
@@ -100,6 +110,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [replySetting, setReplySetting] = useState<ReplySetting>('everyone');
     const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false);
+    const [isCloseAlertOpen, setIsCloseAlertOpen] = useState(false);
 
 
     const { toast } = useToast();
@@ -144,17 +155,27 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 textareaRef.current?.focus();
             }, 150);
         } else {
-            setTimeout(resetModalState, 300);
+            // No automatic reset here, it's handled by handleCloseAttempt
         }
-    }, [open, resetModalState]);
+    }, [open]);
+
+    const handleCloseAttempt = (isOpen: boolean) => {
+        if (isOpen) {
+            onOpenChange(true);
+        } else {
+            if (!isPosting && (newPostContent.trim() || postImageDataUri)) {
+                setIsCloseAlertOpen(true);
+            } else {
+                resetModalState();
+            }
+        }
+    };
+
 
     const loadDraft = (draft: Post) => {
         setNewPostContent(draft.content);
         if (draft.image) {
             setPostImagePreview(draft.image);
-            // Note: We can't re-create the data URI, but we can use the existing URL.
-            // When saving, we'll need to check if a *new* image was uploaded.
-            // For simplicity, we will treat the loaded image as the "current" one.
             setPostImageDataUri(draft.image);
         } else {
             setPostImagePreview(null);
@@ -162,8 +183,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
         setReplySetting(draft.replySettings || 'everyone');
         setExistingDraftId(draft.id);
-        setIsDraftsModalOpen(false); // Close drafts list
-        onOpenChange(true); // Ensure main modal is open
+        setIsDraftsModalOpen(false);
+        onOpenChange(true);
     };
 
 
@@ -216,7 +237,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         
         try {
             let imageUrl = postImagePreview || ''; // Keep existing image if not changed
-            // Only upload if postImageDataUri is a new base64 string
             if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
                 const imagePath = `posts/${user.uid}/${uuidv4()}`;
                 const imageStorageRef = storageRef(storage, imagePath);
@@ -239,7 +259,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 mentions: mentionedHandles,
                 image: imageUrl,
                 spotifyUrl: spotifyUrl,
-                createdAt: serverTimestamp(), // This will be updated on publish
+                createdAt: serverTimestamp(),
                 lastSavedAt: serverTimestamp(),
                 comments: 0,
                 retweets: [],
@@ -312,6 +332,17 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             setIsPosting(false);
         }
     };
+
+    const handleSaveDraftAndClose = async () => {
+        await handleCreatePost(true);
+        setIsCloseAlertOpen(false);
+        resetModalState();
+    };
+
+    const handleDiscard = () => {
+        setIsCloseAlertOpen(false);
+        resetModalState();
+    };
     
     const isSubmitDisabled = (!newPostContent.trim() && !postImageDataUri && !quotedPost) || isPosting || newPostContent.length > MAX_CHARS;
     
@@ -338,7 +369,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
 
     return (
         <>
-            <Dialog open={open} onOpenChange={(isOpen) => { if(!isPosting) onOpenChange(isOpen)}}>
+            <Dialog open={open} onOpenChange={handleCloseAttempt}>
                 <DialogContent 
                     className="p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl flex flex-col h-auto max-h-[80svh] min-h-[350px]"
                     hideCloseButton={true}
@@ -440,11 +471,11 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                 <Button variant="ghost" size="icon" disabled={isPosting} onClick={() => toast({ title: 'Em breve!', description: 'A funcionalidade de localização será adicionada em breve.'})}>
                                     <MapPin className="h-5 w-5 text-primary" />
                                 </Button>
-                            </div>
-                            <div className="flex items-center gap-2">
                                  <Button variant="ghost" onClick={() => handleCreatePost(true)} disabled={isSubmitDisabled}>
                                     <Save className="h-5 w-5"/>
                                 </Button>
+                            </div>
+                            <div className="flex items-center gap-2">
                                 <Button onClick={() => handleCreatePost()} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
                                     {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
                                 </Button>
@@ -461,6 +492,27 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     onSelectDraft={loadDraft}
                 />
             )}
+            <AlertDialog open={isCloseAlertOpen} onOpenChange={setIsCloseAlertOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Salvar rascunho?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Você pode salvar este post como um rascunho para terminar de editar mais tarde.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setIsCloseAlertOpen(false)}>Cancelar</AlertDialogCancel>
+                         <Button variant="outline" onClick={handleDiscard}>
+                            Descartar
+                        </Button>
+                        <AlertDialogAction onClick={handleSaveDraftAndClose}>
+                            Salvar Rascunho
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }
+
+    
