@@ -12,14 +12,15 @@ import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, i
 import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, X, ImageIcon, MoreHorizontal, ListOrdered, Camera, Clapperboard } from 'lucide-react';
+import { Loader2, X, ImageIcon, MoreHorizontal, ListOrdered, Camera, Clapperboard, Globe, Video, BadgeCheck, Bird } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
 import { fileToDataUri } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { Separator } from './ui/separator';
+import { Progress } from './ui/progress';
 
 interface Post {
     id: string;
@@ -88,6 +89,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost = null}
 
     const { toast } = useToast();
     const isMobile = useIsMobile();
+    const MAX_CHARS = 280;
 
      useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -114,15 +116,16 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost = null}
         if (open) {
             setTimeout(() => {
                 textareaRef.current?.focus();
-            }, 150); // Small delay to allow modal animation
+            }, 150);
         } else {
-            // Reset state when modal closes
             setTimeout(resetModalState, 300);
         }
     }, [open]);
 
     const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setNewPostContent(e.target.value);
+        if (e.target.value.length <= MAX_CHARS) {
+            setNewPostContent(e.target.value);
+        }
     };
 
     const resetModalState = () => {
@@ -242,15 +245,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost = null}
           <Button variant="link" onClick={resetModalState} disabled={isPosting} className="px-0">
             Cancelar
           </Button>
-          <p className="font-bold">New thread</p>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" disabled={isPosting}>
-              <ListOrdered className="h-6 w-6" />
-            </Button>
-            <Button variant="ghost" size="icon" disabled={isPosting}>
-              <MoreHorizontal className="h-6 w-6" />
-            </Button>
-          </div>
+          <p className="font-bold text-lg">Novo post</p>
+          <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
+            {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
+          </Button>
         </header>
 
         <main className="flex-1 px-4 pt-4 overflow-y-auto">
@@ -269,38 +267,25 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost = null}
               </div>
 
               <div className="w-full">
-                <p className="font-bold">{zisprUser.displayName}</p>
+                <div className="font-bold flex items-center gap-1">
+                    {zisprUser.displayName}
+                    {(zisprUser.isVerified || zisprUser.handle === '@rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
+                </div>
                 <Textarea
                   ref={textareaRef}
-                  placeholder="What's new?"
+                  placeholder="O que está acontecendo?"
                   className="bg-transparent border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none"
                   value={newPostContent}
                   onChange={handleContentChange}
                   disabled={isPosting}
                 />
-                
-                <div className="flex items-center gap-2 text-muted-foreground mt-2">
-                    <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg" onChange={handleImageChange} />
-                    <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
-                        <ImageIcon className="h-6 w-6" />
-                    </Button>
-                     <Button variant="ghost" size="icon" disabled={isPosting}>
-                        <Clapperboard className="h-6 w-6" />
-                    </Button>
-                    <Button variant="ghost" size="icon" disabled={isPosting}>
-                        <Camera className="h-6 w-6" />
-                    </Button>
-                    <Button variant="ghost" size="icon" disabled={isPosting}>
-                        <MoreHorizontal className="h-6 w-6" />
-                    </Button>
-                </div>
                  {postImagePreview && (
                   <div className="mt-4 relative w-fit">
                     <Image
                       src={postImagePreview}
                       alt="Prévia da imagem"
-                      width={150}
-                      height={150}
+                      width={250}
+                      height={250}
                       className="rounded-lg object-cover"
                     />
                     <Button
@@ -328,14 +313,28 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost = null}
 
         <footer className="p-4 border-t bg-background mt-auto">
             <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">Seus seguidores podem responder e citar</p>
-                <Button
-                    onClick={handleCreatePost}
-                    disabled={isSubmitDisabled}
-                    className="rounded-full font-bold px-5"
-                >
-                    {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
-                </Button>
+                <div className="flex items-center gap-0">
+                    <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} />
+                    <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting}>
+                        <ImageIcon className="h-6 w-6" />
+                    </Button>
+                     <Button variant="ghost" size="icon" disabled={isPosting}>
+                        <Video className="h-6 w-6" />
+                    </Button>
+                    <Button variant="ghost" size="icon" disabled={isPosting}>
+                        <Camera className="h-6 w-6" />
+                    </Button>
+                    <Button variant="ghost" size="icon" disabled={isPosting}>
+                        <Clapperboard className="h-6 w-6" />
+                    </Button>
+                </div>
+
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <span>{MAX_CHARS - newPostContent.length}</span>
+                    <div className="relative h-6 w-6">
+                        <Progress value={(newPostContent.length / MAX_CHARS) * 100} className="absolute inset-0 h-full w-full bg-transparent" />
+                    </div>
+                </div>
             </div>
         </footer>
       </div>
