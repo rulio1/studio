@@ -21,7 +21,6 @@ const initializeFirebaseAdmin = () => {
     };
 };
 
-// Exporting the initialized services directly
 const { auth, db } = initializeFirebaseAdmin();
 
 export { auth, db };
