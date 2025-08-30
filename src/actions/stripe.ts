@@ -28,12 +28,12 @@ const ensureFirebaseAdminInitialized = () => {
 
 const plans = {
     pro: {
-        priceId: 'SEU_ID_DO_PLANO_PRO_AQUI',
+        productId: 'prod_Sxo9xG1UAeKyq8',
         name: 'Zispr Pro',
         description: 'Plano Pro para criadores de conteúdo.',
     },
     business: {
-        priceId: 'SEU_ID_DO_PLANO_BUSINESS_AQUI',
+        productId: 'prod_Sxo999SFYavgLz',
         name: 'Zispr Business',
         description: 'Plano Business para empresas.',
     },
@@ -53,11 +53,24 @@ export async function createCheckoutSession(planId: string, userId: string) {
     const baseUrl = origin || 'http://localhost:3000';
 
     try {
+        // Fetch the prices for the product
+        const prices = await stripe.prices.list({
+            product: selectedPlan.productId,
+            active: true,
+            limit: 1,
+        });
+
+        if (prices.data.length === 0) {
+            throw new Error(`Nenhum preço ativo encontrado para o produto ${selectedPlan.name}.`);
+        }
+        
+        const priceId = prices.data[0].id;
+
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [
                 {
-                    price: selectedPlan.priceId,
+                    price: priceId,
                     quantity: 1,
                 },
             ],
