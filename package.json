@@ -9,7 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.7",
@@ -46,9 +47,11 @@
     "embla-carousel-react": "^8.6.0",
     "emoji-picker-react": "^4.9.4",
     "firebase": "^11.9.1",
+    "firebase-admin": "^12.2.0",
     "framer-motion": "^11.3.19",
     "genkit": "^1.14.1",
     "lucide-react": "^0.475.0",
+    "micro": "^10.0.1",
     "next": "15.3.3",
     "next-themes": "^0.3.0",
     "patch-package": "^8.0.0",
@@ -66,6 +69,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/micro": "^10.0.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
