@@ -1,11 +1,32 @@
 
 import { stripe } from '@/lib/stripe/server';
-import { db } from '@/lib/firebase-admin';
+import * as admin from 'firebase-admin';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET as string;
+
+// Helper function to initialize Firebase Admin SDK safely
+const ensureFirebaseAdminInitialized = () => {
+  if (admin.apps.length === 0) {
+    try {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+        }),
+      });
+    } catch (error: any) {
+      console.error('Firebase Admin SDK Initialization Error in Webhook:', error.stack);
+      // If it fails here, the subsequent Firestore calls will fail,
+      // but we throw a clearer error to aid debugging during deployment.
+      throw new Error('Firebase Admin SDK could not be initialized. Check server environment variables.');
+    }
+  }
+  return admin.firestore();
+};
 
 export async function POST(req: NextRequest) {
     const sig = headers().get('stripe-signature');
@@ -19,6 +40,8 @@ export async function POST(req: NextRequest) {
         console.error(`⚠️  Webhook signature verification failed.`, err.message);
         return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
     }
+
+    const db = ensureFirebaseAdminInitialized();
 
     // Handle the event
     switch (event.type) {
@@ -75,7 +98,7 @@ export async function POST(req: NextRequest) {
                 let plan = 'free';
                 let isVerified = false;
 
-                if (newStatus === 'active') {
+                if (newStatus === 'active' || newStatus === 'trialing') {
                     plan = subscription.items.data[0].price.lookup_key || subscription.items.data[0].price.id;
                     isVerified = true;
                 }
