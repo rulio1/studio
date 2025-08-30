@@ -5,10 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { loadStripe } from '@stripe/stripe-js';
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
 
 const plans = [
     {
+        id: 'free',
         name: 'Grátis',
         price: 'R$0',
         description: 'Perfeito para começar sua jornada no Zispr.',
@@ -22,6 +28,7 @@ const plans = [
         isCurrent: true,
     },
     {
+        id: 'pro',
         name: 'Pro',
         price: 'R$19/mês',
         description: 'Para criadores de conteúdo e usuários avançados.',
@@ -37,6 +44,7 @@ const plans = [
         isPopular: true,
     },
     {
+        id: 'business',
         name: 'Business',
         price: 'R$49/mês',
         description: 'Para marcas e empresas que buscam mais alcance.',
@@ -54,12 +62,58 @@ const plans = [
 
 export default function PricingPage() {
     const { toast } = useToast();
+    const { user } = useAuth();
+    const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-    const handleUpgradeClick = (planName: string) => {
-        toast({
-            title: `Upgrade para o plano ${planName}`,
-            description: 'A integração de pagamento será implementada em breve. Obrigado pelo seu interesse!',
-        });
+    const handleUpgradeClick = async (planId: string) => {
+        if (!user) {
+            toast({
+                title: "Você não está logado",
+                description: "Por favor, faça login para fazer o upgrade do seu plano.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (planId === 'free') return;
+
+        setLoadingPlan(planId);
+
+        try {
+            const res = await fetch('/api/checkout/sessions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ plan: planId, userId: user.uid }),
+            });
+
+            const { sessionId, error } = await res.json();
+
+            if (error) {
+                throw new Error(error);
+            }
+
+            const stripe = await stripePromise;
+            if (!stripe) {
+                throw new Error("Stripe.js não carregou.");
+            }
+
+            const { error: stripeError } = await stripe.redirectToCheckout({ sessionId });
+
+            if (stripeError) {
+                throw new Error(stripeError.message);
+            }
+
+        } catch (error: any) {
+            toast({
+                title: 'Erro no Checkout',
+                description: error.message || 'Não foi possível iniciar a sessão de pagamento. Tente novamente.',
+                variant: 'destructive',
+            });
+        } finally {
+            setLoadingPlan(null);
+        }
     };
     
     return (
@@ -100,10 +154,14 @@ export default function PricingPage() {
                                 <Button 
                                     className="w-full rounded-full" 
                                     variant={plan.isPopular ? 'default' : 'outline'}
-                                    disabled={plan.isCurrent}
-                                    onClick={() => handleUpgradeClick(plan.name)}
+                                    disabled={plan.isCurrent || !!loadingPlan}
+                                    onClick={() => handleUpgradeClick(plan.id)}
                                 >
-                                    {plan.cta}
+                                    {loadingPlan === plan.id ? (
+                                        <Loader2 className="h-5 w-5 animate-spin"/>
+                                    ) : (
+                                        plan.cta
+                                    )}
                                 </Button>
                             </CardFooter>
                         </Card>
