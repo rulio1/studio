@@ -9,6 +9,7 @@ import { Check, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { loadStripe } from '@stripe/stripe-js';
+import { createCheckoutSession } from '@/actions/stripe';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
 
@@ -80,18 +81,14 @@ export default function PricingPage() {
         setLoadingPlan(planId);
 
         try {
-            const res = await fetch('/api/checkout/sessions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ plan: planId, userId: user.uid }),
-            });
-
-            const { sessionId, error } = await res.json();
+            const { sessionId, error } = await createCheckoutSession(planId, user.uid);
 
             if (error) {
                 throw new Error(error);
+            }
+            
+            if (!sessionId) {
+                throw new Error('Não foi possível obter o ID da sessão de checkout.');
             }
 
             const stripe = await stripePromise;

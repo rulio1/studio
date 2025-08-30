@@ -1,14 +1,14 @@
 
-
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { User, Lock, ChevronRight, UserX, Trash2, CreditCard } from 'lucide-react';
-import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { createPortalSession } from '@/actions/stripe';
 
 const SettingsItem = ({ icon, title, description, onClick, isDestructive = false, disabled = false }: { icon: React.ElementType, title: string, description: string, onClick?: () => void, isDestructive?: boolean, disabled?: boolean }) => {
     const Icon = icon;
@@ -34,17 +34,15 @@ export default function AccountSettingsPage() {
         if (!user) return;
         setIsPortalLoading(true);
         try {
-            const response = await fetch('/api/portal', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user.uid }),
-            });
-            if (!response.ok) {
-                const { error } = await response.json();
-                throw new Error(error || 'Failed to create portal session');
+            const { url, error } = await createPortalSession(user.uid);
+            if (error) {
+                throw new Error(error);
             }
-            const { url } = await response.json();
-            router.push(url);
+            if(url) {
+                router.push(url);
+            } else {
+                 throw new Error('Could not create customer portal session.');
+            }
         } catch (error: any) {
             toast({
                 title: "Erro ao abrir portal",
