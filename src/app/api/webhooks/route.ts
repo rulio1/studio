@@ -1,5 +1,5 @@
 
-import { stripe } from '@/lib/stripe';
+import { stripe } from '@/lib/stripe/server';
 import { db } from '@/lib/firebase-admin';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
