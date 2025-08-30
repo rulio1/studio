@@ -2,8 +2,29 @@
 'use server';
 
 import { stripe } from '@/lib/stripe/server';
-import { db } from '@/lib/firebase-admin';
+import * as admin from 'firebase-admin';
 import { headers } from 'next/headers';
+
+// Helper function to initialize Firebase Admin SDK safely
+const ensureFirebaseAdminInitialized = () => {
+  if (!admin.apps.length) {
+    try {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+        }),
+      });
+    } catch (error) {
+      console.error('Firebase Admin SDK Initialization Error in Action:', error);
+      // We are not re-throwing here to avoid crashing the server on every check,
+      // but subsequent db calls will fail if initialization doesn't succeed.
+    }
+  }
+  return admin.firestore();
+};
+
 
 const plans = {
     pro: {
@@ -63,6 +84,7 @@ export async function createCheckoutSession(planId: string, userId: string) {
 
 
 export async function createPortalSession(userId: string) {
+    const db = ensureFirebaseAdminInitialized();
     if (!userId) {
         return { url: null, error: 'Usuário não autenticado.' };
     }
