@@ -4,26 +4,8 @@ import { db } from '@/lib/firebase-admin';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
-import { buffer } from 'micro';
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET as string;
-
-// Update a user's role in Firestore
-const updateUserRole = async (userId: string, plan: string) => {
-    const userRef = db.collection('users').doc(userId);
-    let role = 'free';
-    let isVerified = false;
-
-    if (plan === 'pro' || plan === 'business') {
-        role = plan;
-        isVerified = true;
-    }
-
-    return userRef.update({
-        subscriptionPlan: role,
-        isVerified: isVerified
-    });
-};
 
 export async function POST(req: NextRequest) {
     const sig = headers().get('stripe-signature');

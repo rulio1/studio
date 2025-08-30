@@ -1,6 +1,5 @@
 
 import { stripe } from '@/lib/stripe';
-import { auth } from '@/lib/firebase-admin';
 import { NextRequest, NextResponse } from 'next/server';
 
 const plans = {
