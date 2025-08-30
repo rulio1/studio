@@ -28,12 +28,12 @@ const ensureFirebaseAdminInitialized = () => {
 
 const plans = {
     pro: {
-        priceId: 'price_1Pg9t2Rp9YDOkH5QyQc5gP2Z',
+        priceId: 'SEU_ID_DO_PLANO_PRO_AQUI',
         name: 'Zispr Pro',
         description: 'Plano Pro para criadores de conteúdo.',
     },
     business: {
-        priceId: 'price_1Pg9uNRp9YDOkH5Qm8o2K4Vq',
+        priceId: 'SEU_ID_DO_PLANO_BUSINESS_AQUI',
         name: 'Zispr Business',
         description: 'Plano Business para empresas.',
     },
