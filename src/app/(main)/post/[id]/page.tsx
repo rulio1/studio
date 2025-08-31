@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -202,7 +202,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
 };
 
 
-const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comment: Comment, user: FirebaseUser | null, onEdit: (comment: Comment) => void, onDelete: (id: string) => void, isLastComment: boolean }) => {
+const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment, onReply }: { comment: Comment, user: FirebaseUser | null, onEdit: (comment: Comment) => void, onDelete: (id: string) => void, isLastComment: boolean, onReply: (handle: string) => void }) => {
     const router = useRouter();
     const {toast} = useToast();
     const [time, setTime] = useState('');
@@ -297,7 +297,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
                 </div>
                 <CommentContent content={comment.content} />
                  <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => toast({title: "Em breve!", description: "Responder a comentários estará disponível em breve."})} className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors">
+                    <button onClick={() => onReply(comment.handle)} className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors">
                         <MessageCircle className="h-5 w-5" />
                         <span>{comment.comments}</span>
                     </button>
@@ -334,6 +334,7 @@ export default function PostDetailPage() {
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [postToView, setPostToView] = useState<Post | null>(null);
+    const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
     
     // State for post actions
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -751,6 +752,11 @@ export default function PostDetailPage() {
         }
     };
 
+    const handleReplyToComment = (handle: string) => {
+        replyTextareaRef.current?.focus();
+        setNewComment(prev => `${handle} ${prev}`);
+    };
+
     if (isLoading) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
@@ -792,7 +798,7 @@ export default function PostDetailPage() {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
                 <div className="p-4 border-b">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
@@ -957,7 +963,7 @@ export default function PostDetailPage() {
                     </div>
                 </div>
                 
-                 <div className="p-4 bg-background border-b">
+                 <div className="p-4 bg-background border-b sticky bottom-0 md:static">
                      <div className="flex gap-4">
                         <Avatar>
                             <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
@@ -965,6 +971,7 @@ export default function PostDetailPage() {
                         </Avatar>
                         <div className="w-full relative">
                              <Textarea 
+                                ref={replyTextareaRef}
                                 placeholder="Poste sua resposta" 
                                 className="bg-muted border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 p-3 pr-24 resize-none rounded-2xl"
                                 value={newComment}
@@ -989,6 +996,7 @@ export default function PostDetailPage() {
                             onEdit={handleEditCommentClick}
                             onDelete={setCommentToDelete}
                             isLastComment={index === comments.length - 1}
+                            onReply={handleReplyToComment}
                         />
                     ))}
                 </ul>
