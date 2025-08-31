@@ -236,7 +236,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
     const isVerified = comment.isVerified || comment.handle === '@rulio';
 
     return (
-        <li className="p-4 flex gap-4 relative">
+        <li className="p-4 flex gap-4 relative border-b">
             {!isLastComment && <div className="absolute left-10 top-16 bottom-0 w-0.5 bg-border -translate-x-1/2"></div>}
             <div className="relative">
                  <Avatar className="h-12 w-12 cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
@@ -301,12 +301,12 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
                         <MessageCircle className="h-5 w-5" />
                         <span>{comment.comments}</span>
                     </button>
-                    <button onClick={() => handleCommentAction('retweet')} className={`flex items-center gap-1 ${comment.isRetweeted ? 'text-green-500' : ''}`}>
-                        <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
+                    <button onClick={() => handleCommentAction('retweet')} className={`flex items-center gap-1 hover:text-green-500 transition-colors ${comment.isRetweeted ? 'text-green-500' : ''}`}>
+                        <Repeat className="h-5 w-5" />
                         <span>{Array.isArray(comment.retweets) ? comment.retweets.length : 0}</span>
                     </button>
-                    <button onClick={() => handleCommentAction('like')} className={`flex items-center gap-1 ${comment.isLiked ? 'text-red-500' : ''}`}>
-                        <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${comment.isLiked ? 'fill-current' : ''}`} />
+                    <button onClick={() => handleCommentAction('like')} className={`flex items-center gap-1 hover:text-red-500 transition-colors ${comment.isLiked ? 'text-red-500' : ''}`}>
+                        <Heart className={`h-5 w-5 ${comment.isLiked ? 'fill-current' : ''}`} />
                         <span>{Array.isArray(comment.likes) ? comment.likes.length : 0}</span>
                     </button>
                     <div className="flex items-center gap-1">
@@ -957,7 +957,7 @@ export default function PostDetailPage() {
                     </div>
                 </div>
                 
-                 <div className="p-4 bg-background border-y">
+                 <div className="p-4 bg-background border-b">
                      <div className="flex gap-4">
                         <Avatar>
                             <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
@@ -980,7 +980,7 @@ export default function PostDetailPage() {
                     </div>
                 </div>
 
-                <ul className="border-t">
+                <ul>
                     {comments.map((comment, index) => (
                         <CommentItem
                             key={comment.id}
@@ -1069,3 +1069,5 @@ export default function PostDetailPage() {
         </div>
     );
 }
+
+    
