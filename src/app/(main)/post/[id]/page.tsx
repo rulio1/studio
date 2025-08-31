@@ -92,6 +92,7 @@ interface Comment {
     comments: number;
     views: number;
     isLiked: boolean;
+    isRetweeted: boolean;
     isVerified?: boolean;
     postId: string;
 }
@@ -221,12 +222,13 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
 
         const commentRef = doc(db, "comments", comment.id);
         const field = action === 'like' ? 'likes' : 'retweets';
-        const isActioned = action === 'like' ? comment.isLiked : (comment.retweets || []).includes(user.uid);
+        const isActioned = action === 'like' ? comment.isLiked : comment.isRetweeted;
 
         if (isActioned) {
             await updateDoc(commentRef, { [field]: arrayRemove(user.uid) });
         } else {
             await updateDoc(commentRef, { [field]: arrayUnion(user.uid) });
+            // Here you could add notification logic for comment likes/retweets if desired
         }
     };
     
@@ -260,33 +262,46 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment }: { comme
                         <p className="text-muted-foreground">{comment.handle} · {time}</p>
                          {comment.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
                     </div>
-                    {user?.uid === comment.authorId && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-                                <DropdownMenuItem onClick={() => onDelete(comment.id)} className="text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4"/>
-                                    Apagar
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onEdit(comment)}>
-                                    <Edit className="mr-2 h-4 w-4"/>
-                                    Editar
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    )}
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                           {user?.uid === comment.authorId ? (
+                                <>
+                                    <DropdownMenuItem onClick={() => onDelete(comment.id)} className="text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                        Apagar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onEdit(comment)}>
+                                        <Edit className="mr-2 h-4 w-4"/>
+                                        Editar
+                                    </DropdownMenuItem>
+                                </>
+                            ) : (
+                                <>
+                                     <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                        <Flag className="mr-2 h-4 w-4"/>
+                                        Denunciar comentário
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => router.push(`/profile/${comment.authorId}`)}>
+                                        <UserRound className="mr-2 h-4 w-4"/>
+                                        Ir para perfil de {comment.handle}
+                                    </DropdownMenuItem>
+                                </>
+                           )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
                 <CommentContent content={comment.content} />
                  <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors">
+                    <button onClick={() => toast({title: "Em breve!", description: "Responder a comentários estará disponível em breve."})} className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors">
                         <MessageCircle className="h-5 w-5" />
                         <span>{comment.comments}</span>
-                    </div>
-                    <button onClick={() => toast({title: "Em breve!", description: "Retweetar comentários estará disponível em breve."})} className={`flex items-center gap-1`}>
+                    </button>
+                    <button onClick={() => handleCommentAction('retweet')} className={`flex items-center gap-1 ${comment.isRetweeted ? 'text-green-500' : ''}`}>
                         <Repeat className="h-5 w-5 hover:text-green-500 transition-colors" />
                         <span>{Array.isArray(comment.retweets) ? comment.retweets.length : 0}</span>
                     </button>
@@ -388,6 +403,7 @@ export default function PostDetailPage() {
                         ...data,
                         time: '', // will be set in CommentItem
                         isLiked: Array.isArray(data.likes) ? data.likes.includes(user.uid || '') : false,
+                        isRetweeted: Array.isArray(data.retweets) ? data.retweets.includes(user.uid || '') : false,
                     } as Comment;
                 });
                 commentsData.sort((a, b) => {
