@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
-const extractHashtags = (content: string) => {
+const extractHashtags = (content: string): string[] => {
     const regex = /#(\w+)/g;
     const matches = content.match(regex);
     if (!matches) return [];
@@ -13,30 +13,20 @@ const extractHashtags = (content: string) => {
 export async function POST(req: NextRequest) {
   try {
     const postData = await req.json();
+    const { authorId, content } = postData;
 
-    if (!postData.authorId || !postData.content) {
+    if (!authorId || !content) {
       return NextResponse.json({ error: 'Dados do post ausentes.' }, { status: 400 });
     }
 
     const client = await clientPromise;
     const db = client.db("zispr");
     
-    const hashtags = extractHashtags(postData.content);
+    const hashtags = extractHashtags(content);
 
     const newPost = {
-        authorId: postData.authorId,
-        author: postData.author,
-        handle: postData.handle,
-        avatar: postData.avatar,
-        avatarFallback: postData.avatarFallback,
-        content: postData.content,
-        image: postData.image || null,
-        spotifyUrl: postData.spotifyUrl || null,
-        location: postData.location || null,
-        isVerified: postData.isVerified || false,
-        quotedPostId: postData.quotedPostId || null,
-        poll: postData.poll || null,
-        replySettings: postData.replySettings || 'everyone',
+        ...postData,
+        authorId: new ObjectId(authorId), // Converte para ObjectId
         hashtags: hashtags,
         createdAt: new Date(),
         comments: 0,
@@ -44,10 +34,14 @@ export async function POST(req: NextRequest) {
         likes: [],
         views: 0,
     };
+    
+    // Remove o id do authorId original, pois já o convertemos
+    delete newPost.authorId; 
+    newPost.authorId = new ObjectId(postData.authorId);
+
 
     const result = await db.collection("posts").insertOne(newPost);
 
-    // Update hashtag counts
     if (hashtags.length > 0) {
         const hashtagCollection = db.collection("hashtags");
         const bulkOps = hashtags.map(tag => ({
@@ -60,13 +54,13 @@ export async function POST(req: NextRequest) {
         await hashtagCollection.bulkWrite(bulkOps);
     }
     
-    // Here you would also handle notifications for mentions, but that requires more setup.
-    // We'll skip it for now to keep it focused.
-
     return NextResponse.json({ success: true, postId: result.insertedId }, { status: 201 });
 
   } catch (error: any) {
     console.error("Erro ao criar post no MongoDB:", error);
+    if (error instanceof BSON.BSONError && error.message.includes("is not a valid ObjectId")) {
+         return NextResponse.json({ error: 'O ID do autor fornecido é inválido.' }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Falha ao criar post no banco de dados.' }, { status: 500 });
   }
 }
