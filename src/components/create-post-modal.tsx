@@ -173,7 +173,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         
         const isPostEmpty = !newPostContent.trim() && !postImagePreview && !quotedPost && !pollData;
         if (isPostEmpty) {
-             toast({
+            toast({
                 title: "Não é possível postar",
                 description: "O post precisa de conteúdo, uma imagem, uma enquete ou um post quotado.",
                 variant: "destructive",
