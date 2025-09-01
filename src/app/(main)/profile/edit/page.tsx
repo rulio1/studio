@@ -58,16 +58,11 @@ export default function EditProfilePage() {
             if (currentUser) {
                 setUser(currentUser);
                 try {
-                    const supabase = getSupabase();
-                    const { data, error } = await supabase
-                        .from('users')
-                        .select('*')
-                        .eq('uid', currentUser.uid)
-                        .single();
-
-                    if (error) throw error;
+                    const userDocRef = doc(db, 'users', currentUser.uid);
+                    const docSnap = await getDoc(userDocRef);
                     
-                    if (data) {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
                         const initialData: UserProfileData = {
                             displayName: data.displayName || '',
                             handle: data.handle || '',
@@ -160,7 +155,7 @@ export default function EditProfilePage() {
                 bannerUrl = await uploadImage(newBannerDataUri, 'banners');
             }
 
-            const supabaseUpdateData = {
+            const firestoreUpdateData = {
                 displayName: profileData.displayName,
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
                 bio: profileData.bio,
@@ -169,13 +164,8 @@ export default function EditProfilePage() {
                 banner: bannerUrl,
             };
 
-            const supabase = getSupabase();
-            const { error: supabaseError } = await supabase
-                .from('users')
-                .update(supabaseUpdateData)
-                .eq('uid', user.uid);
-
-            if (supabaseError) throw supabaseError;
+            const userDocRef = doc(db, 'users', user.uid);
+            await updateDoc(userDocRef, firestoreUpdateData);
     
             toast({
                 title: 'Perfil Salvo!',
