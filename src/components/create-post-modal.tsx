@@ -7,18 +7,20 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, addDoc, collection, serverTimestamp, writeBatch, getDocs, query, where, increment } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
-import { fileToDataUri, extractSpotifyUrl, extractHashtags, extractMentions, cn } from '@/lib/utils';
+import { fileToDataUri, extractSpotifyUrl, extractHashtags, extractMentions, cn, dataURItoFile } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
+import { getSupabase } from '@/lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
 
 interface Post {
     id: string;
@@ -63,6 +65,9 @@ interface ZisprUser {
     handle: string;
     avatar: string;
     isVerified?: boolean;
+    notificationPreferences?: {
+        [key: string]: boolean;
+    };
 }
 
 interface CreatePostModalProps {
@@ -165,14 +170,46 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     };
 
     const handleCreatePost = async () => {
-        if (!user || !zisprUser) return;
+        if (!user || !zisprUser || (!newPostContent.trim() && !postImageDataUri && !quotedPost)) {
+            return;
+        }
         
         setIsPosting(true);
-        
+
         try {
+            let imageUrl: string | null = null;
+            if (postImageDataUri) {
+                const supabase = getSupabase();
+                 if (!supabase) {
+                    throw new Error("A conexão com o Supabase não está configurada.");
+                }
+
+                const file = dataURItoFile(postImageDataUri, `${user.uid}-${uuidv4()}.jpg`);
+                const filePath = `posts/${user.uid}/${file.name}`;
+                
+                const { error: uploadError } = await supabase.storage
+                    .from('zispr')
+                    .upload(filePath, file, { upsert: true });
+
+                if (uploadError) {
+                    throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
+                }
+
+                const { data: urlData } = supabase.storage
+                    .from('zispr')
+                    .getPublicUrl(filePath);
+
+                if (!urlData.publicUrl) {
+                    throw new Error("Não foi possível obter a URL pública da imagem.");
+                }
+                imageUrl = urlData.publicUrl;
+            }
+
             const hashtags = extractHashtags(newPostContent);
             const mentionedHandles = extractMentions(newPostContent);
             
+            const batch = writeBatch(db);
+
             const postData: any = {
                 authorId: zisprUser.uid,
                 author: zisprUser.displayName,
@@ -184,12 +221,14 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 retweets: [],
                 comments: 0,
                 views: 0,
+                createdAt: serverTimestamp(),
                 spotifyUrl: extractSpotifyUrl(newPostContent),
                 hashtags: hashtags,
                 mentions: mentionedHandles,
                 isVerified: zisprUser.isVerified || false,
                 location: location.trim() || null,
                 replySettings: replySetting,
+                image: imageUrl,
             };
 
             if (quotedPost) {
@@ -203,19 +242,50 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     voters: {}
                 }
             }
-            
-            const response = await fetch('/api/posts/create', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ postData, imageDataUri: postImageDataUri }),
-            });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Falha ao criar o post.');
+            const postRef = doc(collection(db, "posts"));
+            batch.set(postRef, postData);
+
+             // Handle hashtag counts
+            for (const tag of hashtags) {
+                const hashtagRef = doc(db, 'hashtags', tag);
+                batch.set(hashtagRef, { name: tag, count: increment(1) }, { merge: true });
             }
+
+            // Handle mentions notifications
+            if (mentionedHandles.length > 0) {
+                 const usersRef = collection(db, "users");
+                 const q = query(usersRef, where("handle", "in", mentionedHandles));
+                 const querySnapshot = await getDocs(q);
+                 querySnapshot.forEach(userDoc => {
+                    const mentionedUserId = userDoc.id;
+                    const mentionedUserData = userDoc.data();
+                    const prefs = mentionedUserData.notificationPreferences;
+                    const canSendNotification = !prefs || prefs['mention'] !== false;
+
+                    if (mentionedUserId !== user.uid && canSendNotification) {
+                        const notificationRef = doc(collection(db, 'notifications'));
+                        batch.set(notificationRef, {
+                            toUserId: mentionedUserId,
+                            fromUserId: user.uid,
+                            fromUser: {
+                                name: zisprUser.displayName,
+                                handle: zisprUser.handle,
+                                avatar: zisprUser.avatar,
+                                isVerified: zisprUser.isVerified || false,
+                            },
+                            type: 'mention',
+                            text: 'mencionou você em um post',
+                            postContent: newPostContent.substring(0, 50),
+                            postId: postRef.id,
+                            createdAt: serverTimestamp(),
+                            read: false,
+                        });
+                    }
+                 });
+            }
+
+            await batch.commit();
 
             resetModalState();
             toast({
