@@ -22,6 +22,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import clientPromise from '@/lib/mongodb';
 
 
 const formSchema = z.object({
@@ -67,13 +68,18 @@ export default function RegisterPage() {
         });
 
         const handle = values.email.split('@')[0].replace(/[^a-z0-9_]/g, '');
+        
+        // Connect to MongoDB and save user data
+        const mongoClient = await clientPromise;
+        const db = mongoClient.db("zispr"); // You can name your database here
+        const usersCollection = db.collection("users");
 
-        await setDoc(doc(db, "users", user.uid), {
-            uid: user.uid,
+        const userDocument = {
+            _id: user.uid, // Use Firebase UID as the document ID
             displayName: values.name,
             searchableDisplayName: values.name.toLowerCase(),
             email: values.email,
-            createdAt: serverTimestamp(),
+            createdAt: new Date(),
             handle: `@${handle}`,
             searchableHandle: handle.toLowerCase(),
             avatar: `https://placehold.co/128x128.png?text=${values.name[0]}`,
@@ -87,11 +93,13 @@ export default function RegisterPage() {
             communities: [],
             savedPosts: [],
             isVerified: false,
-        });
+        };
+        
+        await usersCollection.insertOne(userDocument);
         
         toast({
-        title: "Conta Criada!",
-        description: "Agora você pode fazer login com sua nova conta.",
+            title: "Conta Criada!",
+            description: "Agora você pode fazer login com sua nova conta.",
         });
         router.push('/home');
 
@@ -99,6 +107,8 @@ export default function RegisterPage() {
       let description = 'Ocorreu um erro inesperado.';
       if (error.code === 'auth/email-already-in-use') {
           description = 'Este e-mail já está em uso. Por favor, tente outro.';
+      } else if (error.code === 11000) { // MongoDB duplicate key error
+          description = 'Um usuário com este ID já existe no banco de dados.';
       }
       toast({
         title: "Falha no Cadastro",
