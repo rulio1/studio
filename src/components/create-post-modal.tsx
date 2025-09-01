@@ -7,16 +7,14 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { doc, addDoc, collection, serverTimestamp, writeBatch, query, where, getDocs, increment, updateDoc, getDoc, onSnapshot } from 'firebase/firestore';
-import { getSupabase } from '@/lib/supabase';
-import { v4 as uuidv4 } from 'uuid';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
-import { fileToDataUri, dataURItoFile, extractSpotifyUrl, extractHashtags, extractMentions, cn } from '@/lib/utils';
+import { fileToDataUri, extractSpotifyUrl, extractHashtags, extractMentions, cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
@@ -169,49 +167,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const handleCreatePost = async () => {
         if (!user || !zisprUser) return;
         
-        const isPostEmpty = !newPostContent.trim() && !postImagePreview && !quotedPost && !pollData;
-        if (isPostEmpty) {
-            toast({
-                title: "Não é possível postar",
-                description: "O post precisa de conteúdo, uma imagem, uma enquete ou um post quotado.",
-                variant: "destructive",
-            });
-            return;
-        }
-
         setIsPosting(true);
         
         try {
-            let imageUrl: string | null = null;
-            const supabase = getSupabase();
-            
-            if (postImageDataUri) {
-                 if (!supabase) {
-                    throw new Error("A conexão com o Supabase não está configurada. Verifique as variáveis de ambiente.");
-                }
-                const file = dataURItoFile(postImageDataUri, `${user.uid}-${uuidv4()}.jpg`);
-                const filePath = `posts/${user.uid}/${file.name}`;
-                
-                const { error: uploadError } = await supabase.storage
-                    .from('zispr')
-                    .upload(filePath, file, { upsert: true });
-
-                if (uploadError) {
-                    throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
-                }
-
-                const { data: urlData } = supabase.storage
-                    .from('zispr')
-                    .getPublicUrl(filePath);
-
-                if (!urlData.publicUrl) {
-                    throw new Error("Não foi possível obter a URL pública da imagem após o upload.");
-                }
-                imageUrl = urlData.publicUrl;
-            }
-            
-            const batch = writeBatch(db);
-            const postRef = doc(collection(db, "posts"));
             const hashtags = extractHashtags(newPostContent);
             const mentionedHandles = extractMentions(newPostContent);
             
@@ -222,12 +180,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 avatar: zisprUser.avatar,
                 avatarFallback: zisprUser.displayName[0],
                 content: newPostContent,
-                createdAt: serverTimestamp(),
                 likes: [],
                 retweets: [],
                 comments: 0,
                 views: 0,
-                image: imageUrl,
                 spotifyUrl: extractSpotifyUrl(newPostContent),
                 hashtags: hashtags,
                 mentions: mentionedHandles,
@@ -248,75 +204,25 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 }
             }
             
-            batch.set(postRef, postData);
-            
-            if (mentionedHandles.length > 0) {
-                const usersRef = collection(db, "users");
-                const q = query(usersRef, where("handle", "in", mentionedHandles));
-                const querySnapshot = await getDocs(q);
-                for (const userDoc of querySnapshot.docs) {
-                    const mentionedUserId = userDoc.id;
-                    const mentionedUserData = userDoc.data();
-                    const prefs = mentionedUserData.notificationPreferences;
-                    const canSendNotification = !prefs || prefs['mention'] !== false;
+            const response = await fetch('/api/posts/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ postData, imageDataUri: postImageDataUri }),
+            });
 
-                    if (mentionedUserId !== user.uid && canSendNotification) {
-                        const notificationRef = doc(collection(db, 'notifications'));
-                        batch.set(notificationRef, {
-                            toUserId: mentionedUserId,
-                            fromUserId: user.uid,
-                            fromUser: {
-                                name: zisprUser.displayName,
-                                handle: zisprUser.handle,
-                                avatar: zisprUser.avatar,
-                                isVerified: zisprUser.isVerified || false,
-                            },
-                            type: 'mention',
-                            text: 'mencionou você em um post',
-                            postContent: newPostContent.substring(0, 50),
-                            postId: postRef.id,
-                            createdAt: serverTimestamp(),
-                            read: false,
-                        });
-                    }
-                }
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Falha ao criar o post.');
             }
-
-            if (quotedPost) {
-                const originalPostRef = doc(db, 'posts', quotedPost.id);
-                batch.update(originalPostRef, { comments: increment(1) });
-                if (quotedPost.authorId !== user.uid) {
-                    const authorDoc = await getDoc(doc(db, 'users', quotedPost.authorId));
-                    if(authorDoc.exists()){
-                         const authorData = authorDoc.data();
-                         const prefs = authorData.notificationPreferences;
-                         const canSendNotification = !prefs || prefs['retweet'] !== false;
-                         if(canSendNotification){
-                             const notificationRef = doc(collection(db, 'notifications'));
-                             batch.set(notificationRef, {
-                                 toUserId: quotedPost.authorId,
-                                 fromUserId: user.uid,
-                                 fromUser: { name: zisprUser.displayName, handle: zisprUser.handle, avatar: zisprUser.avatar, isVerified: zisprUser.isVerified || false },
-                                 type: 'retweet', // Using 'retweet' for quotes
-                                 text: 'quotou seu post',
-                                 postContent: newPostContent.substring(0, 50),
-                                 postId: postRef.id,
-                                 createdAt: serverTimestamp(),
-                                 read: false,
-                             });
-                         }
-                    }
-                }
-            }
-
-
-            await batch.commit();
 
             resetModalState();
             toast({
                 title: "Post criado!",
                 description: "Seu post foi publicado com sucesso.",
             });
+
         } catch (error: any) {
             console.error("Erro ao criar post:", error);
             toast({ title: "Falha ao criar o post", description: error.message || "Por favor, tente novamente.", variant: "destructive" });
