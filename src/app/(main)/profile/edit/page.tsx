@@ -52,7 +52,6 @@ export default function EditProfilePage() {
     const [cropperData, setCropperData] = useState<ImageCropperData | null>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const bannerInputRef = useRef<HTMLInputElement>(null);
-    const supabase = getSupabase();
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -118,6 +117,7 @@ export default function EditProfilePage() {
     const handleSave = async () => {
         if (!user) return;
         setIsSaving(true);
+        const supabase = getSupabase();
     
         try {
             const userRef = doc(db, 'users', user.uid);

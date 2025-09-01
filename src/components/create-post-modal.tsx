@@ -99,8 +99,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const [location, setLocation] = useState('');
     const [showPollCreator, setShowPollCreator] = useState(false);
     const [pollData, setPollData] = useState<PollData | null>(null);
-    const supabase = getSupabase();
-
 
     const { toast } = useToast();
 
@@ -194,6 +192,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
 
         setIsPosting(true);
+        const supabase = getSupabase();
         
         try {
             let imageUrl = '';
@@ -294,7 +293,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         } catch (error: any) {
             console.error("Erro ao criar post:", error);
             toast({ title: "Falha ao criar o post", description: error.message || "Por favor, tente novamente.", variant: "destructive" });
-        } finally {
             setIsPosting(false);
         }
     };
