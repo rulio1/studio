@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
@@ -119,6 +119,7 @@ export default function EditProfilePage() {
         setIsSaving(true);
     
         try {
+            const supabase = getSupabase();
             const userRef = doc(db, 'users', user.uid);
             let avatarUrl = profileData.avatar;
             let bannerUrl = profileData.banner;
