@@ -13,7 +13,7 @@ export function getSupabase(): SupabaseClient {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Supabase URL and Anon Key must be provided.');
+    throw new Error('Supabase URL and Anon Key must be provided in environment variables.');
   }
 
   supabase = createClient(supabaseUrl, supabaseAnonKey);
