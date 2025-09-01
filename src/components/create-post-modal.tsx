@@ -99,6 +99,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const [location, setLocation] = useState('');
     const [showPollCreator, setShowPollCreator] = useState(false);
     const [pollData, setPollData] = useState<PollData | null>(null);
+    const supabase = getSupabase();
 
 
     const { toast } = useToast();
@@ -183,13 +184,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     };
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() && !postImageDataUri && !quotedPost) {
-            return;
-        }
-        if (!user || !zisprUser) {
-             toast({
-                title: "Usuário não autenticado.",
-                description: "Por favor, faça login para postar.",
+        if ((!newPostContent.trim() && !postImageDataUri && !quotedPost) || !user || !zisprUser) {
+            toast({
+                title: "Não é possível postar",
+                description: "O post precisa de conteúdo ou uma imagem.",
                 variant: "destructive",
             });
             return;
@@ -198,9 +196,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
         
         try {
-            let imageUrl = ''; 
+            let imageUrl = '';
             if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
-                const supabase = getSupabase();
                 const file = dataURItoFile(postImageDataUri, `post-image-${uuidv4()}`);
                 const filePath = `${user.uid}/${file.name}`;
                 
@@ -209,13 +206,12 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     .upload(filePath, file);
 
                 if (uploadError) {
-                    throw uploadError;
+                    throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
                 }
 
                 const { data: urlData } = supabase.storage
                     .from('zispr')
                     .getPublicUrl(filePath);
-
                 imageUrl = urlData.publicUrl;
             }
 
@@ -295,9 +291,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 title: "Post criado!",
                 description: "Seu post foi publicado com sucesso.",
             });
-        } catch (error) {
-            console.error(error);
-            toast({ title: "Falha ao criar o post", description: "Por favor, tente novamente.", variant: "destructive" });
+        } catch (error: any) {
+            console.error("Erro ao criar post:", error);
+            toast({ title: "Falha ao criar o post", description: error.message || "Por favor, tente novamente.", variant: "destructive" });
         } finally {
             setIsPosting(false);
         }

@@ -52,6 +52,7 @@ export default function EditProfilePage() {
     const [cropperData, setCropperData] = useState<ImageCropperData | null>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
     const bannerInputRef = useRef<HTMLInputElement>(null);
+    const supabase = getSupabase();
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -124,7 +125,6 @@ export default function EditProfilePage() {
             let bannerUrl = profileData.banner;
 
             const uploadImage = async (dataUri: string, bucketPath: 'avatars' | 'banners'): Promise<string> => {
-                const supabase = getSupabase();
                 const file = dataURItoFile(dataUri, `${bucketPath}-${user.uid}-${uuidv4()}`);
                 const filePath = `${user.uid}/${file.name}`;
                 
@@ -132,7 +132,7 @@ export default function EditProfilePage() {
                     .from('zispr')
                     .upload(filePath, file, { upsert: true });
 
-                if (uploadError) throw uploadError;
+                if (uploadError) throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
 
                 const { data: urlData } = supabase.storage
                     .from('zispr')
@@ -171,7 +171,7 @@ export default function EditProfilePage() {
             console.error('Erro ao salvar perfil: ', error);
             toast({
                 title: 'Falha ao Salvar',
-                description: 'Não foi possível salvar as alterações do seu perfil. Por favor, tente novamente.',
+                description: error.message || 'Não foi possível salvar as alterações do seu perfil.',
                 variant: 'destructive',
             });
         } finally {
