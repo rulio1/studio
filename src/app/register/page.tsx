@@ -12,9 +12,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { serverTimestamp } from 'firebase/firestore';
 import { useState } from 'react';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -69,33 +69,25 @@ export default function RegisterPage() {
 
         const handle = values.email.split('@')[0].replace(/[^a-z0-9_]/g, '');
         
-        // Connect to MongoDB and save user data
-        const mongoClient = await clientPromise;
-        const db = mongoClient.db("zispr"); // You can name your database here
-        const usersCollection = db.collection("users");
-
-        const userDocument = {
-            _id: user.uid, // Use Firebase UID as the document ID
+        // This part sends the data to a serverless function to be inserted into MongoDB
+        const response = await fetch('/api/user/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            uid: user.uid,
             displayName: values.name,
-            searchableDisplayName: values.name.toLowerCase(),
             email: values.email,
-            createdAt: new Date(),
             handle: `@${handle}`,
-            searchableHandle: handle.toLowerCase(),
-            avatar: `https://placehold.co/128x128.png?text=${values.name[0]}`,
-            banner: 'https://placehold.co/600x200.png',
-            bio: '',
-            location: '',
-            website: '',
             birthDate: values.birthDate,
-            followers: [],
-            following: [],
-            communities: [],
-            savedPosts: [],
-            isVerified: false,
-        };
-        
-        await usersCollection.insertOne(userDocument);
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Falha ao salvar dados do usuário.');
+        }
         
         toast({
             title: "Conta Criada!",
@@ -107,8 +99,8 @@ export default function RegisterPage() {
       let description = 'Ocorreu um erro inesperado.';
       if (error.code === 'auth/email-already-in-use') {
           description = 'Este e-mail já está em uso. Por favor, tente outro.';
-      } else if (error.code === 11000) { // MongoDB duplicate key error
-          description = 'Um usuário com este ID já existe no banco de dados.';
+      } else {
+        description = error.message;
       }
       toast({
         title: "Falha no Cadastro",
@@ -174,7 +166,7 @@ export default function RegisterPage() {
                           mode="single"
                           selected={field.value}
                           onSelect={(date) => {
-                            field.onChange(date);
+                            if (date) field.onChange(date);
                             setIsCalendarOpen(false);
                           }}
                           disabled={(date) =>
@@ -192,7 +184,7 @@ export default function RegisterPage() {
               <FormField
                 control={form.control}
                 name="email"
-                render={({ field }) => (
+                render={({ field })_ => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
