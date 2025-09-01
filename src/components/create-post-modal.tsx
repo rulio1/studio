@@ -7,7 +7,7 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { doc, addDoc, collection, serverTimestamp, writeBatch, query, where, getDocs, increment, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, addDoc, collection, serverTimestamp, writeBatch, query, where, getDocs, increment, updateDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
