@@ -175,10 +175,14 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     };
 
     const handleCreatePost = async () => {
-        if ((!newPostContent.trim() && !postImagePreview && !quotedPost && !pollData) || !user || !zisprUser) {
+        if (!user || !zisprUser) return;
+
+        const isPostEmpty = !newPostContent.trim() && !postImagePreview && !quotedPost && !pollData;
+
+        if (isPostEmpty) {
             toast({
                 title: "Não é possível postar",
-                description: "O post precisa de conteúdo, uma imagem ou uma enquete.",
+                description: "O post precisa de conteúdo, uma imagem, uma enquete ou um post quotado.",
                 variant: "destructive",
             });
             return;
@@ -188,7 +192,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         
         try {
             let imageUrl: string | null = null;
-            // 1. Handle image upload first, if an image is selected
             if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
                 const supabase = getSupabase();
                 const file = dataURItoFile(postImageDataUri, `${user.uid}-${uuidv4()}.jpg`);
@@ -209,11 +212,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 imageUrl = urlData.publicUrl;
             }
             
-            // 2. Prepare the final post data object
             const postData = {
                 authorId: zisprUser.uid,
                 content: newPostContent,
-                image: imageUrl, // Use the URL from the upload, or null
+                image: imageUrl,
                 spotifyUrl: extractSpotifyUrl(newPostContent),
                 location: location.trim() || null,
                 quotedPostId: quotedPost ? quotedPost.id : null,
@@ -221,7 +223,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 replySettings: replySetting,
             };
             
-            // 3. Send data to the API route
             const response = await fetch('/api/posts/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
