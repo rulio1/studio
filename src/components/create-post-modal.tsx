@@ -7,7 +7,7 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { onSnapshot, doc } from 'firebase/firestore';
+import { onSnapshot, doc, addDoc, collection, serverTimestamp, writeBatch, query, where, getDocs, increment, updateDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
@@ -198,7 +198,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     .from('zispr')
                     .getPublicUrl(filePath);
 
-                if (!urlData.publicUrl) {
+                if (!urlData?.publicUrl) {
                     throw new Error("Não foi possível obter a URL pública da imagem após o upload.");
                 }
                 
@@ -212,7 +212,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 avatar: zisprUser.avatar,
                 avatarFallback: zisprUser.displayName[0],
                 content: newPostContent,
-                image: imageUrl,
+                image: imageUrl || undefined,
                 spotifyUrl: extractSpotifyUrl(newPostContent),
                 location: location.trim() || null,
                 isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
@@ -220,12 +220,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 poll: pollData ? { options: pollData.options.map(o => o.text), votes: pollData.options.map(() => 0), voters: {} } : null,
                 replySettings: replySetting,
             };
-
+            
             const response = await fetch('/api/posts/create', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(postData),
             });
 

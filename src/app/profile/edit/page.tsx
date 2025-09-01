@@ -140,7 +140,7 @@ export default function EditProfilePage() {
                     .from('zispr')
                     .getPublicUrl(filePath);
 
-                if (!urlData.publicUrl) {
+                if (!urlData?.publicUrl) {
                     throw new Error("Não foi possível obter a URL pública da imagem após o upload.");
                 }
                 
