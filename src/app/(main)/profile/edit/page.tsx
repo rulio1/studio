@@ -124,8 +124,7 @@ export default function EditProfilePage() {
             let bannerUrl = profileData.banner;
             
             const uploadImage = async (dataUri: string, bucketPath: 'avatars' | 'banners'): Promise<string> => {
-                const token = await user.getIdToken();
-                const supabase = getSupabase(token);
+                const supabase = getSupabase();
                 const file = dataURItoFile(dataUri, `${bucketPath}-${user.uid}-${uuidv4()}`);
                 const filePath = `${user.uid}/${file.name}`;
                 
@@ -311,3 +310,5 @@ export default function EditProfilePage() {
     </>
   );
 }
+
+    

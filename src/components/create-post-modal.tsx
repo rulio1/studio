@@ -196,8 +196,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         try {
             let imageUrl = '';
             if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
-                const token = await user.getIdToken();
-                const supabase = getSupabase(token);
+                const supabase = getSupabase();
                 const file = dataURItoFile(postImageDataUri, `post-image-${uuidv4()}`);
                 const filePath = `${user.uid}/${file.name}`;
                 
@@ -507,3 +506,5 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         </Dialog>
     );
 }
+
+    
