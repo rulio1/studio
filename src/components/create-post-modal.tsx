@@ -197,6 +197,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 const { data: urlData } = supabase.storage
                     .from('zispr')
                     .getPublicUrl(filePath);
+
+                if (!urlData.publicUrl) {
+                    throw new Error("Não foi possível obter a URL pública da imagem após o upload.");
+                }
                 
                 imageUrl = urlData.publicUrl;
             }
