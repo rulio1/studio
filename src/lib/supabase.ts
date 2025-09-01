@@ -13,12 +13,12 @@ export function getSupabase() {
   }
 
   // Ensure these variables are set in your environment
-  if (!process.env.SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error('Supabase URL and Anon Key must be provided.');
   }
 
   supabase = createClient(
-    process.env.SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
   

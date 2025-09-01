@@ -119,12 +119,12 @@ export default function EditProfilePage() {
         setIsSaving(true);
     
         try {
-            const supabase = getSupabase();
             const userRef = doc(db, 'users', user.uid);
             let avatarUrl = profileData.avatar;
             let bannerUrl = profileData.banner;
 
             const uploadImage = async (dataUri: string, bucketPath: 'avatars' | 'banners'): Promise<string> => {
+                const supabase = getSupabase();
                 const file = dataURItoFile(dataUri, `${bucketPath}-${user.uid}-${uuidv4()}`);
                 const filePath = `${user.uid}/${file.name}`;
                 
