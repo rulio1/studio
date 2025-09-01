@@ -2,7 +2,6 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, initializeAuth, browserLocalPersistence, Auth } from "firebase/auth";
 import { getFirestore, Firestore, initializeFirestore, enableIndexedDbPersistence, memoryLocalCache } from "firebase/firestore";
-import { getStorage, FirebaseStorage } from "firebase/storage";
 import { getMessaging, Messaging, getToken, onMessage } from "firebase/messaging";
 import { doc, setDoc } from "firebase/firestore";
 
@@ -18,7 +17,6 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
-let storage: FirebaseStorage;
 let messaging: Messaging | null = null;
 
 if (getApps().length === 0) {
@@ -51,7 +49,6 @@ try {
     db = getFirestore(app);
 }
 
-storage = getStorage(app);
 
 // Lazy initialization for Messaging
 export const getMessagingInstance = () => {
@@ -105,4 +102,4 @@ export const requestNotificationPermission = async (userId: string) => {
     }
 };
 
-export { app, auth, db, storage };
+export { app, auth, db };

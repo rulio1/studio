@@ -9,15 +9,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { supabase } from '@/lib/supabase';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
-import { fileToDataUri } from '@/lib/utils';
+import { fileToDataUri, dataURItoFile } from '@/lib/utils';
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -123,20 +123,29 @@ export default function EditProfilePage() {
             let avatarUrl = profileData.avatar;
             let bannerUrl = profileData.banner;
 
-            // Upload Avatar if changed
+            const uploadImage = async (dataUri: string, bucketPath: 'avatars' | 'banners'): Promise<string> => {
+                const file = dataURItoFile(dataUri, `${bucketPath}-${user.uid}-${uuidv4()}`);
+                const filePath = `${user.uid}/${file.name}`;
+                
+                const { error: uploadError } = await supabase.storage
+                    .from('images')
+                    .upload(filePath, file, { upsert: true });
+
+                if (uploadError) throw uploadError;
+
+                const { data: urlData } = supabase.storage
+                    .from('images')
+                    .getPublicUrl(filePath);
+
+                return urlData.publicUrl;
+            };
+
             if (newAvatarDataUri) {
-                const avatarPath = `avatars/${user.uid}/${uuidv4()}`;
-                const imageStorageRef = storageRef(storage, avatarPath);
-                await uploadString(imageStorageRef, newAvatarDataUri, 'data_url');
-                avatarUrl = await getDownloadURL(imageStorageRef);
+                avatarUrl = await uploadImage(newAvatarDataUri, 'avatars');
             }
             
-            // Upload Banner if changed
             if (newBannerDataUri) {
-                const bannerPath = `banners/${user.uid}/${uuidv4()}`;
-                const imageStorageRef = storageRef(storage, bannerPath);
-                await uploadString(imageStorageRef, newBannerDataUri, 'data_url');
-                bannerUrl = await getDownloadURL(imageStorageRef);
+                bannerUrl = await uploadImage(newBannerDataUri, 'banners');
             }
 
             const firestoreUpdateData = {

@@ -6,9 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, getDocs, query, where, updateDoc } from 'firebase/firestore';
-import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
@@ -16,7 +16,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
-import { fileToDataUri, extractSpotifyUrl } from '@/lib/utils';
+import { fileToDataUri, extractSpotifyUrl, dataURItoFile } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
@@ -198,12 +198,24 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
         
         try {
-            let imageUrl = postImagePreview || ''; 
+            let imageUrl = ''; 
             if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
-                const imagePath = `posts/${user.uid}/${uuidv4()}`;
-                const imageStorageRef = storageRef(storage, imagePath);
-                await uploadString(imageStorageRef, postImageDataUri, 'data_url');
-                imageUrl = await getDownloadURL(imageStorageRef);
+                const file = dataURItoFile(postImageDataUri, `post-image-${uuidv4()}`);
+                const filePath = `${user.uid}/${file.name}`;
+                
+                const { error: uploadError } = await supabase.storage
+                    .from('images')
+                    .upload(filePath, file);
+
+                if (uploadError) {
+                    throw uploadError;
+                }
+
+                const { data: urlData } = supabase.storage
+                    .from('images')
+                    .getPublicUrl(filePath);
+
+                imageUrl = urlData.publicUrl;
             }
 
             const hashtags = extractHashtags(newPostContent);
