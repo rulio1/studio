@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { ObjectId, BSON } from 'mongodb';
 
 const extractHashtags = (content: string): string[] => {
     const regex = /#(\w+)/g;
@@ -13,10 +13,11 @@ const extractHashtags = (content: string): string[] => {
 export async function POST(req: NextRequest) {
   try {
     const postData = await req.json();
+    // O postData agora inclui: author, handle, avatar, avatarFallback, content, etc.
     const { authorId, content } = postData;
 
-    if (!authorId || !content) {
-      return NextResponse.json({ error: 'Dados do post ausentes.' }, { status: 400 });
+    if (!authorId || content === undefined) { // Checa por content, mesmo que seja string vazia
+      return NextResponse.json({ error: 'Dados do post ausentes (ID do autor ou conteúdo).' }, { status: 400 });
     }
 
     const client = await clientPromise;
@@ -29,17 +30,14 @@ export async function POST(req: NextRequest) {
         authorId: new ObjectId(authorId), // Converte para ObjectId
         hashtags: hashtags,
         createdAt: new Date(),
+        editedAt: null,
         comments: 0,
         retweets: [],
         likes: [],
         views: 0,
+        isPinned: false,
     };
     
-    // Remove o id do authorId original, pois já o convertemos
-    delete newPost.authorId; 
-    newPost.authorId = new ObjectId(postData.authorId);
-
-
     const result = await db.collection("posts").insertOne(newPost);
 
     if (hashtags.length > 0) {
@@ -61,6 +59,6 @@ export async function POST(req: NextRequest) {
     if (error instanceof BSON.BSONError && error.message.includes("is not a valid ObjectId")) {
          return NextResponse.json({ error: 'O ID do autor fornecido é inválido.' }, { status: 400 });
     }
-    return NextResponse.json({ error: 'Falha ao criar post no banco de dados.' }, { status: 500 });
+    return NextResponse.json({ error: 'Falha ao criar post no banco de dados.', details: error.message }, { status: 500 });
   }
 }
