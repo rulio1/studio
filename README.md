@@ -1,6 +1,6 @@
 # Zispr 🐦
 
-Bem-vindo ao Zispr, uma moderna plataforma de mídia social construída com Next.js e Firebase. Este repositório contém o código-fonte de um aplicativo web completo, demonstrando a criação de uma experiência social interativa e em tempo real.
+Bem-vindo ao Zispr, uma moderna plataforma de mídia social construída com Next.js e uma arquitetura de back-end híbrida e poderosa. Este repositório contém o código-fonte de um aplicativo web completo, demonstrando a criação de uma experiência social interativa e em tempo real.
 
 ## ✨ Funcionalidades
 
@@ -21,11 +21,18 @@ Bem-vindo ao Zispr, uma moderna plataforma de mídia social construída com Next
 
 - **Framework**: [Next.js](https://nextjs.org/) (com App Router)
 - **Linguagem**: [TypeScript](https://www.typescriptlang.org/)
-- **Backend e Banco de Dados**: [Firebase](https://firebase.google.com/) (Firestore, Authentication, Storage)
 - **Estilização**: [Tailwind CSS](https://tailwindcss.com/)
 - **Componentes UI**: [Shadcn/ui](https://ui.shadcn.com/)
 - **Inteligência Artificial**: [Genkit](https://firebase.google.com/docs/genkit)
 - **Formulários**: [React Hook Form](https://react-hook-form.com/) & [Zod](https://zod.dev/)
+
+### Arquitetura de Back-end
+
+O Zispr utiliza uma abordagem de back-end híbrida para otimizar desempenho, escalabilidade e flexibilidade:
+
+- **Firebase**: Utilizado para **autenticação de usuários**, envio de **notificações push** (via Firebase Cloud Messaging) e funcionalidades em **tempo real** (como contadores e status de presença).
+- **Supabase (PostgreSQL)**: Atua como nosso banco de dados relacional principal. É responsável por gerenciar **perfis de usuário**, o **grafo social** (seguidores/seguindo) e a estrutura principal das postagens.
+- **MongoDB**: Usado como um banco de dados flexível para armazenar o **conteúdo** gerado pelos usuários, como o texto dos posts, comentários, enquetes e outros tipos de mídia que podem evoluir com o tempo.
 
 ## 🚀 Como Executar Localmente
 
@@ -42,7 +49,7 @@ Bem-vindo ao Zispr, uma moderna plataforma de mídia social construída com Next
 
 3. **Configure as variáveis de ambiente:**
    - Renomeie o arquivo `.env.local.example` para `.env.local`.
-   - Preencha com as chaves do seu projeto Firebase.
+   - Preencha com as chaves dos seus projetos Firebase, Supabase e MongoDB.
 
 4. **Inicie o servidor de desenvolvimento:**
    ```bash
