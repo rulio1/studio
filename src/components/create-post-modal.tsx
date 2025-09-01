@@ -506,5 +506,3 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         </Dialog>
     );
 }
-
-    

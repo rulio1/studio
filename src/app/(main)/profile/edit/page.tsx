@@ -132,7 +132,9 @@ export default function EditProfilePage() {
                     .from('zispr')
                     .upload(filePath, file, { upsert: true });
 
-                if (uploadError) throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
+                if (uploadError) {
+                    throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
+                }
 
                 const { data: urlData } = supabase.storage
                     .from('zispr')
@@ -310,5 +312,3 @@ export default function EditProfilePage() {
     </>
   );
 }
-
-    
