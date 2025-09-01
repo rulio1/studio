@@ -15,7 +15,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
-import { fileToDataUri, extractSpotifyUrl, dataURItoFile } from '@/lib/utils';
+import { fileToDataUri, extractSpotifyUrl, dataURItoFile, extractHashtags, extractMentions } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
@@ -168,7 +168,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     };
 
     const handleCreatePost = async () => {
-        if ((!newPostContent.trim() && !postImageDataUri && !quotedPost) || !user || !zisprUser) {
+        if ((!newPostContent.trim() && !postImageDataUri && !quotedPost && !pollData) || !user || !zisprUser) {
             toast({
                 title: "Não é possível postar",
                 description: "O post precisa de conteúdo ou uma imagem.",
@@ -180,6 +180,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
         
         try {
+            const batch = writeBatch(db);
+            const postsCollectionRef = collection(db, "posts");
+            const newPostRef = doc(postsCollectionRef);
+
             let imageUrl = '';
             if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
                 const supabase = getSupabase();
@@ -204,6 +208,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 
                 imageUrl = urlData.publicUrl;
             }
+
+            const hashtags = extractHashtags(newPostContent);
+            const mentionedHandles = extractMentions(newPostContent);
             
             const postData = {
                 authorId: zisprUser.uid,
@@ -213,24 +220,77 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 avatarFallback: zisprUser.displayName[0],
                 isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
                 content: newPostContent,
-                image: imageUrl || undefined,
+                image: imageUrl || null,
                 spotifyUrl: extractSpotifyUrl(newPostContent),
                 location: location.trim() || null,
                 quotedPostId: quotedPost ? quotedPost.id : null,
                 poll: pollData ? { options: pollData.options.map(o => o.text), votes: pollData.options.map(() => 0), voters: {} } : null,
                 replySettings: replySetting,
+                createdAt: serverTimestamp(),
+                editedAt: null,
+                comments: 0,
+                retweets: [],
+                likes: [],
+                views: 0,
+                isPinned: false,
+                hashtags,
+                mentions: mentionedHandles,
             };
             
-            const response = await fetch('/api/posts/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(postData),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Falha ao criar o post.');
+            batch.set(newPostRef, postData);
+            
+             // Handle hashtag counts
+            if (hashtags.length > 0) {
+                const hashtagCollection = collection(db, "hashtags");
+                for (const tag of hashtags) {
+                    const hashtagRef = doc(hashtagCollection, tag);
+                    const docSnap = await getDoc(hashtagRef);
+                    if (docSnap.exists()) {
+                        batch.update(hashtagRef, { count: increment(1) });
+                    } else {
+                        batch.set(hashtagRef, { name: tag, count: 1 });
+                    }
+                }
             }
+
+            // Handle mention notifications
+            if (mentionedHandles.length > 0) {
+                const usersRef = collection(db, "users");
+                const q = query(usersRef, where("handle", "in", mentionedHandles));
+                const querySnapshot = await getDocs(q);
+                querySnapshot.forEach(userDoc => {
+                    const mentionedUserId = userDoc.id;
+                    if (mentionedUserId !== user.uid) { // Don't notify for self-mention
+                        const notificationRef = doc(collection(db, 'notifications'));
+                        batch.set(notificationRef, {
+                            toUserId: mentionedUserId,
+                            fromUserId: user.uid,
+                            fromUser: {
+                                name: zisprUser.displayName,
+                                handle: zisprUser.handle,
+                                avatar: zisprUser.avatar,
+                                isVerified: zisprUser.isVerified || false,
+                            },
+                            type: 'mention',
+                            text: 'mencionou você em um post',
+                            postContent: newPostContent.substring(0, 50),
+                            postId: newPostRef.id,
+                            createdAt: serverTimestamp(),
+                            read: false,
+                        });
+                    }
+                });
+            }
+
+            // If it's a quote post, increment the original post's retweet count
+             if (quotedPost) {
+                const originalPostRef = doc(db, 'posts', quotedPost.id);
+                batch.update(originalPostRef, {
+                    retweets: arrayUnion(user.uid) // This logic might need adjustment depending on how quotes vs retweets are counted
+                });
+            }
+            
+            await batch.commit();
 
             resetModalState();
             toast({

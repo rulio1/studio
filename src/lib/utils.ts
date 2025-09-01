@@ -72,3 +72,17 @@ export function extractSpotifyUrl(text: string): string | null {
     const match = text.match(spotifyRegex);
     return match ? match[0] : null;
 }
+
+export const extractHashtags = (content: string): string[] => {
+    const regex = /#([a-zA-Z0-9_]+)/g;
+    const matches = content.match(regex);
+    if (!matches) return [];
+    return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
+};
+
+export const extractMentions = (content: string): string[] => {
+    const regex = /@(\w+)/g;
+    const matches = content.match(regex);
+    if (!matches) return [];
+    return [...new Set(matches)]; // Returns handles like '@username'
+};
