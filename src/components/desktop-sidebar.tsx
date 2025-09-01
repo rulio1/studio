@@ -158,12 +158,6 @@ export default function DesktopSidebar() {
                     <Feather className="mr-2 h-5 w-5" />
                     Postar
                 </Button>
-                 <Button variant="outline" className="w-full rounded-full mt-2" asChild>
-                    <Link href="/pricing">
-                        <Rocket className="mr-2 h-5 w-5" />
-                        Upgrade para o Pro
-                    </Link>
-                </Button>
             </div>
 
             <div className="w-full mb-4">

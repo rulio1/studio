@@ -841,7 +841,6 @@ useEffect(() => {
         { href: '/messages', icon: Mail, label: 'Mensagens' },
         { href: '/saved', icon: Bookmark, label: 'Itens Salvos' },
         { href: `/profile/${user.uid}`, icon: User, label: 'Perfil' },
-        { href: `/pricing`, icon: Rocket, label: 'Planos' },
     ];
 
 
