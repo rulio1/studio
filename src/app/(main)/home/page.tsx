@@ -350,7 +350,8 @@ useEffect(() => {
         if (!matches) {
             return [];
         }
-        return [...new Set(matches)]; // Returns handles like '@username'
+        // Return handles without the @
+        return [...new Set(matches.map(h => h.substring(1)))];
     };
 
     const handleUpdatePost = async () => {
@@ -370,7 +371,7 @@ useEffect(() => {
 
           if (mentionedHandles.length > 0) {
             const usersRef = collection(db, "users");
-            const q = query(usersRef, where("handle", "in", mentionedHandles));
+            const q = query(usersRef, where("handle", "in", mentionedHandles.map(h => `@${h}`)));
             const querySnapshot = await getDocs(q);
             querySnapshot.forEach(userDoc => {
                 const mentionedUserId = userDoc.id;
@@ -487,15 +488,9 @@ useEffect(() => {
                             <a 
                                 key={index} 
                                 className="text-primary hover:underline"
-                                onClick={async (e) => {
+                                onClick={(e) => {
                                     e.stopPropagation();
-                                    const usersRef = collection(db, "users");
-                                    const q = query(usersRef, where("handle", "==", part));
-                                    const querySnapshot = await getDocs(q);
-                                    if (!querySnapshot.empty) {
-                                        const userDoc = querySnapshot.docs[0];
-                                        router.push(`/profile/${userDoc.id}`);
-                                    }
+                                    router.push(`/profile/@${handle}`);
                                 }}
                             >
                                 {part}
@@ -625,7 +620,7 @@ useEffect(() => {
                 </div>
             )}
             <div className="flex gap-4">
-                 <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
+                 <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.handle.substring(1)}`)}}>
                     {isZisprAccount ? (
                         <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-full">
                             <Bird className="h-5 w-5 text-primary" />
@@ -699,7 +694,7 @@ useEffect(() => {
                                         Nota da comunidade
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => router.push(`/profile/${post.authorId}`)}>
+                                    <DropdownMenuItem onClick={() => router.push(`/profile/${post.handle.substring(1)}`)}>
                                         <UserRound className="mr-2 h-4 w-4"/>
                                         Ir para perfil de {post.handle}
                                     </DropdownMenuItem>
@@ -871,7 +866,7 @@ useEffect(() => {
                          </SheetClose>
                          <div className="p-4 border-b">
                             <div className="flex justify-between items-center mb-4">
-                                 <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
+                                 <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${zisprUser.handle.substring(1)}`)}>
                                     <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
                                     <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
                                 </Avatar>

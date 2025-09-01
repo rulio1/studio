@@ -106,28 +106,26 @@ function SearchPageClient() {
     return unsubscribe;
   }, []);
 
-  const fetchNewUsers = useCallback(() => {
+  const fetchNewUsers = useCallback(async () => {
     setIsLoading(true);
     const usersQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(10));
-    const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
+    try {
+        const snapshot = await getDocs(usersQuery);
         const usersData = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserSearchResult));
         setNewUsers(usersData);
-        setIsLoading(false);
-    }, (error) => {
+    } catch(error) {
         console.error("Erro ao buscar novos usuários:", error);
+    } finally {
         setIsLoading(false);
-    });
-
-    return unsubscribe;
+    }
   }, []);
 
 
   useEffect(() => {
     const unsubTrends = fetchTrends();
-    const unsubUsers = fetchNewUsers();
+    fetchNewUsers();
     return () => {
       unsubTrends();
-      unsubUsers();
     };
   }, [fetchTrends, fetchNewUsers]);
   
@@ -145,7 +143,7 @@ function SearchPageClient() {
             if (formattedTerm.startsWith('#')) {
                 // Hashtag search
                 const hashtag = formattedTerm.substring(1);
-                const postQuery = query(collection(db, 'posts'), where('hashtags', 'array-contains', hashtag), limit(20));
+                const postQuery = query(collection(db, 'posts'), where('hashtags', 'array-contains', hashtag), orderBy('createdAt', 'desc'), limit(20));
                 const postSnapshot = await getDocs(postQuery);
                 const postsData = postSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as PostSearchResult);
                 setPosts(postsData);
