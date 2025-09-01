@@ -123,9 +123,9 @@ export default function EditProfilePage() {
             let avatarUrl = profileData.avatar;
             let bannerUrl = profileData.banner;
             
-            const supabase = getSupabase();
-
             const uploadImage = async (dataUri: string, bucketPath: 'avatars' | 'banners'): Promise<string> => {
+                const token = await user.getIdToken();
+                const supabase = getSupabase(token);
                 const file = dataURItoFile(dataUri, `${bucketPath}-${user.uid}-${uuidv4()}`);
                 const filePath = `${user.uid}/${file.name}`;
                 
