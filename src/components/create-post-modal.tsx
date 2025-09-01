@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { doc, addDoc, collection, serverTimestamp, writeBatch, query, where, getDocs, increment, updateDoc, getDoc, onSnapshot } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { getSupabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
@@ -16,7 +16,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
-import { fileToDataUri, extractSpotifyUrl, extractHashtags, extractMentions, cn } from '@/lib/utils';
+import { fileToDataUri, dataURItoFile, extractSpotifyUrl, extractHashtags, extractMentions, cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
@@ -184,17 +184,33 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
         
         try {
-            const batch = writeBatch(db);
-            const postRef = doc(collection(db, "posts"));
             let imageUrl: string | null = null;
             
             if (postImageDataUri) {
-                const storage = getStorage();
-                const imageRef = storageRef(storage, `posts/${user.uid}/${uuidv4()}`);
-                await uploadString(imageRef, postImageDataUri, 'data_url');
-                imageUrl = await getDownloadURL(imageRef);
+                const supabase = getSupabase();
+                const file = dataURItoFile(postImageDataUri, `${user.uid}-${uuidv4()}.jpg`);
+                const filePath = `posts/${user.uid}/${file.name}`;
+                
+                const { error: uploadError } = await supabase.storage
+                    .from('zispr')
+                    .upload(filePath, file, { upsert: true });
+
+                if (uploadError) {
+                    throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
+                }
+
+                const { data: urlData } = supabase.storage
+                    .from('zispr')
+                    .getPublicUrl(filePath);
+
+                if (!urlData.publicUrl) {
+                    throw new Error("Não foi possível obter a URL pública da imagem após o upload.");
+                }
+                imageUrl = urlData.publicUrl;
             }
             
+            const batch = writeBatch(db);
+            const postRef = doc(collection(db, "posts"));
             const hashtags = extractHashtags(newPostContent);
             const mentionedHandles = extractMentions(newPostContent);
             
