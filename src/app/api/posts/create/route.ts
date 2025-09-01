@@ -6,25 +6,26 @@ import { getSupabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { dataURItoFile } from '@/lib/utils';
 
+const DB_NAME = 'zispr';
 
 // Helper function to connect to the database and get the posts collection
 async function getPostsCollection() {
     const client = await clientPromise;
-    const db = client.db(); // Assumes the default DB from the connection string
+    const db = client.db(DB_NAME);
     return db.collection('posts');
 }
 
 // Helper function to connect to the database and get the users collection
 async function getUsersCollection() {
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db(DB_NAME);
     return db.collection('users');
 }
 
 // Helper function to connect to the database and get the hashtags collection
 async function getHashtagsCollection() {
     const client = await clientPromise;
-    const db = client.db();
+    const db = client.db(DB_NAME);
     return db.collection('hashtags');
 }
 
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
             image: imageUrl, // Add the uploaded image URL
         };
 
-        await postsCollection.insertOne(newPost);
+        const result = await postsCollection.insertOne(newPost);
         
         // Asynchronously update related data
         Promise.all([
@@ -105,12 +106,11 @@ export async function POST(req: NextRequest) {
             ),
             
             // TODO: Add notification logic for mentions if needed
-            // This would require fetching mentioned user IDs and creating notification documents
 
         ]).catch(e => console.error("Erro em operações assíncronas de post:", e));
 
 
-        return NextResponse.json({ message: 'Post criado com sucesso!', post: newPost }, { status: 201 });
+        return NextResponse.json({ message: 'Post criado com sucesso!', postId: result.insertedId }, { status: 201 });
 
     } catch (error: any) {
         console.error('Erro na API de criação de post:', error);
