@@ -1,7 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
-import { ObjectId, BSON } from 'mongodb';
 
 const extractHashtags = (content: string): string[] => {
     const regex = /#(\w+)/g;
@@ -13,10 +12,9 @@ const extractHashtags = (content: string): string[] => {
 export async function POST(req: NextRequest) {
   try {
     const postData = await req.json();
-    // O postData agora inclui: author, handle, avatar, avatarFallback, content, etc.
     const { authorId, content } = postData;
 
-    if (!authorId || content === undefined) { // Checa por content, mesmo que seja string vazia
+    if (!authorId || content === undefined) {
       return NextResponse.json({ error: 'Dados do post ausentes (ID do autor ou conteúdo).' }, { status: 400 });
     }
 
@@ -25,9 +23,10 @@ export async function POST(req: NextRequest) {
     
     const hashtags = extractHashtags(content);
 
+    // O authorId já é a string do UID do Firebase, que é o _id na coleção de usuários
     const newPost = {
         ...postData,
-        authorId: new ObjectId(authorId), // Converte para ObjectId
+        authorId: authorId, 
         hashtags: hashtags,
         createdAt: new Date(),
         editedAt: null,
@@ -56,9 +55,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error("Erro ao criar post no MongoDB:", error);
-    if (error instanceof BSON.BSONError && error.message.includes("is not a valid ObjectId")) {
-         return NextResponse.json({ error: 'O ID do autor fornecido é inválido.' }, { status: 400 });
-    }
     return NextResponse.json({ error: 'Falha ao criar post no banco de dados.', details: error.message }, { status: 500 });
   }
 }

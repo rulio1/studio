@@ -13,8 +13,9 @@ export async function POST(req: NextRequest) {
     const client = await clientPromise;
     const db = client.db("zispr");
 
+    // Use o UID do Firebase Auth como _id no MongoDB
     const userDocument = {
-        _id: uid,
+        _id: uid, 
         displayName: displayName,
         searchableDisplayName: displayName.toLowerCase(),
         email: email,
