@@ -144,8 +144,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             setTimeout(() => {
                 textareaRef.current?.focus();
             }, 150);
-        } else {
-            // Do not reset state here, let it be handled by onOpenChange or successful post
         }
     }, [open]);
 
@@ -185,9 +183,12 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         
         try {
             let imageUrl: string | null = null;
+            const supabase = getSupabase();
             
             if (postImageDataUri) {
-                const supabase = getSupabase();
+                 if (!supabase) {
+                    throw new Error("A conexão com o Supabase não está configurada. Verifique as variáveis de ambiente.");
+                }
                 const file = dataURItoFile(postImageDataUri, `${user.uid}-${uuidv4()}.jpg`);
                 const filePath = `posts/${user.uid}/${file.name}`;
                 

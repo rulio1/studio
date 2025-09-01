@@ -123,8 +123,12 @@ export default function EditProfilePage() {
             let avatarUrl = profileData.avatar;
             let bannerUrl = profileData.banner;
             
+            const supabase = getSupabase();
+            if (!supabase) {
+                throw new Error("A conexão com o Supabase não está configurada. Verifique as variáveis de ambiente.");
+            }
+
             const uploadImage = async (dataUri: string, bucketPath: 'avatars' | 'banners'): Promise<string> => {
-                const supabase = getSupabase();
                 const file = dataURItoFile(dataUri, `${user.uid}-${uuidv4()}.jpg`);
                 const filePath = `${bucketPath}/${user.uid}/${file.name}`;
                 
