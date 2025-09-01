@@ -20,8 +20,8 @@ export async function POST(req: NextRequest) {
         email,
         birthDate: new Date(birthDate),
         // Default values
-        avatar: `https://placehold.co/128x128.png`,
-        banner: `https://placehold.co/600x200.png`,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`,
+        banner: `https://placehold.co/600x200.png?text=Zispr`,
         bio: `Novo usuário do Zispr!`,
         location: '',
         website: '',
@@ -39,13 +39,17 @@ export async function POST(req: NextRequest) {
     const client = await clientPromise;
     const db = client.db();
     
-    // Opcional: Criar uma coleção de posts para o usuário se não existir.
-    // Esta etapa é mais para garantir que a estrutura esteja pronta.
-    // A coleção será efetivamente usada quando o usuário criar seu primeiro post.
-    const userCollectionExists = await db.listCollections({ name: `posts_${uid}` }).hasNext();
-    if (!userCollectionExists) {
-        await db.createCollection(`posts_${uid}`);
-    }
+    const postsCollection = db.collection('posts');
+    // We can create an initial welcome post for the user in MongoDB
+    await postsCollection.insertOne({
+        authorId: uid,
+        content: "Bem-vindo ao Zispr! Este é o meu primeiro post.",
+        createdAt: new Date(),
+        likes: [],
+        comments: [],
+        retweets: [],
+        isFirstPost: true,
+    });
 
     return NextResponse.json({ message: 'Usuário criado com sucesso em todos os sistemas.' }, { status: 201 });
 

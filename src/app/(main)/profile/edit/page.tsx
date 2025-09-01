@@ -58,17 +58,23 @@ export default function EditProfilePage() {
             if (currentUser) {
                 setUser(currentUser);
                 try {
-                    const userDocRef = doc(db, 'users', currentUser.uid);
-                    const userDoc = await getDoc(userDocRef);
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
+                    const supabase = getSupabase();
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('uid', currentUser.uid)
+                        .single();
+
+                    if (error) throw error;
+                    
+                    if (data) {
                         const initialData: UserProfileData = {
-                            displayName: userData.displayName || '',
-                            handle: userData.handle || '',
-                            bio: userData.bio || '',
-                            location: userData.location || '',
-                            avatar: userData.avatar || '',
-                            banner: userData.banner || '',
+                            displayName: data.displayName || '',
+                            handle: data.handle || '',
+                            bio: data.bio || '',
+                            location: data.location || '',
+                            avatar: data.avatar || '',
+                            banner: data.banner || '',
                         };
                         setProfileData(initialData);
                     }
@@ -119,7 +125,6 @@ export default function EditProfilePage() {
         setIsSaving(true);
         
         try {
-            const userRef = doc(db, 'users', user.uid);
             let avatarUrl = profileData.avatar;
             let bannerUrl = profileData.banner;
             
@@ -155,7 +160,7 @@ export default function EditProfilePage() {
                 bannerUrl = await uploadImage(newBannerDataUri, 'banners');
             }
 
-            const firestoreUpdateData: any = {
+            const supabaseUpdateData = {
                 displayName: profileData.displayName,
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
                 bio: profileData.bio,
@@ -163,8 +168,14 @@ export default function EditProfilePage() {
                 avatar: avatarUrl,
                 banner: bannerUrl,
             };
-            
-            await updateDoc(userRef, firestoreUpdateData);
+
+            const supabase = getSupabase();
+            const { error: supabaseError } = await supabase
+                .from('users')
+                .update(supabaseUpdateData)
+                .eq('uid', user.uid);
+
+            if (supabaseError) throw supabaseError;
     
             toast({
                 title: 'Perfil Salvo!',

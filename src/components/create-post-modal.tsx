@@ -7,7 +7,7 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { onSnapshot, doc, addDoc, collection, serverTimestamp, writeBatch, query, where, getDocs, increment, updateDoc } from 'firebase/firestore';
+import { onSnapshot, doc, addDoc, collection, serverTimestamp, writeBatch, query, where, getDocs, increment, updateDoc, arrayUnion } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
@@ -114,13 +114,20 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
 
     useEffect(() => {
         if (!user) return;
-        const userDocRef = doc(db, "users", user.uid);
-        const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
-            if (doc.exists()) {
-                setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
+        
+        const fetchZisprUser = async () => {
+            const supabase = getSupabase();
+            const { data, error } = await supabase
+                .from('users')
+                .select('uid, displayName, handle, avatar, isVerified')
+                .eq('uid', user.uid)
+                .single();
+            if (data) {
+                setZisprUser(data as ZisprUser);
             }
-        });
-        return () => unsubscribeUser();
+        }
+        fetchZisprUser();
+
     }, [user]);
 
     const resetModalState = useCallback(() => {
@@ -178,15 +185,11 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
 
         setIsPosting(true);
+        const supabase = getSupabase();
         
         try {
-            const batch = writeBatch(db);
-            const postsCollectionRef = collection(db, "posts");
-            const newPostRef = doc(postsCollectionRef);
-
-            let imageUrl = '';
+            let imageUrl: string | null = null;
             if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
-                const supabase = getSupabase();
                 const file = dataURItoFile(postImageDataUri, `${user.uid}-${uuidv4()}.jpg`);
                 const filePath = `posts/${user.uid}/${file.name}`;
                 
@@ -194,103 +197,40 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     .from('zispr')
                     .upload(filePath, file, { upsert: true });
 
-                if (uploadError) {
-                    throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
-                }
+                if (uploadError) throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
 
                 const { data: urlData } = supabase.storage
                     .from('zispr')
                     .getPublicUrl(filePath);
 
-                if (!urlData?.publicUrl) {
-                    throw new Error("Não foi possível obter a URL pública da imagem após o upload.");
-                }
+                if (!urlData?.publicUrl) throw new Error("Não foi possível obter a URL pública da imagem.");
                 
                 imageUrl = urlData.publicUrl;
             }
 
             const hashtags = extractHashtags(newPostContent);
-            const mentionedHandles = extractMentions(newPostContent);
+            const mentions = extractMentions(newPostContent);
             
             const postData = {
                 authorId: zisprUser.uid,
-                author: zisprUser.displayName,
-                handle: zisprUser.handle,
-                avatar: zisprUser.avatar,
-                avatarFallback: zisprUser.displayName[0],
-                isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
                 content: newPostContent,
-                image: imageUrl || null,
+                image: imageUrl,
                 spotifyUrl: extractSpotifyUrl(newPostContent),
                 location: location.trim() || null,
                 quotedPostId: quotedPost ? quotedPost.id : null,
                 poll: pollData ? { options: pollData.options.map(o => o.text), votes: pollData.options.map(() => 0), voters: {} } : null,
                 replySettings: replySetting,
-                createdAt: serverTimestamp(),
-                editedAt: null,
-                comments: 0,
-                retweets: [],
-                likes: [],
-                views: 0,
-                isPinned: false,
                 hashtags,
-                mentions: mentionedHandles,
+                mentions,
             };
-            
-            batch.set(newPostRef, postData);
-            
-             // Handle hashtag counts
-            if (hashtags.length > 0) {
-                const hashtagCollection = collection(db, "hashtags");
-                for (const tag of hashtags) {
-                    const hashtagRef = doc(hashtagCollection, tag);
-                    const docSnap = await getDoc(hashtagRef);
-                    if (docSnap.exists()) {
-                        batch.update(hashtagRef, { count: increment(1) });
-                    } else {
-                        batch.set(hashtagRef, { name: tag, count: 1 });
-                    }
-                }
-            }
 
-            // Handle mention notifications
-            if (mentionedHandles.length > 0) {
-                const usersRef = collection(db, "users");
-                const q = query(usersRef, where("handle", "in", mentionedHandles));
-                const querySnapshot = await getDocs(q);
-                querySnapshot.forEach(userDoc => {
-                    const mentionedUserId = userDoc.id;
-                    if (mentionedUserId !== user.uid) { // Don't notify for self-mention
-                        const notificationRef = doc(collection(db, 'notifications'));
-                        batch.set(notificationRef, {
-                            toUserId: mentionedUserId,
-                            fromUserId: user.uid,
-                            fromUser: {
-                                name: zisprUser.displayName,
-                                handle: zisprUser.handle,
-                                avatar: zisprUser.avatar,
-                                isVerified: zisprUser.isVerified || false,
-                            },
-                            type: 'mention',
-                            text: 'mencionou você em um post',
-                            postContent: newPostContent.substring(0, 50),
-                            postId: newPostRef.id,
-                            createdAt: serverTimestamp(),
-                            read: false,
-                        });
-                    }
-                });
-            }
+            // Insert post into Supabase
+            const { error: insertError } = await supabase.from('posts').insert([postData]);
 
-            // If it's a quote post, increment the original post's retweet count
-             if (quotedPost) {
-                const originalPostRef = doc(db, 'posts', quotedPost.id);
-                batch.update(originalPostRef, {
-                    retweets: arrayUnion(user.uid) // This logic might need adjustment depending on how quotes vs retweets are counted
-                });
-            }
+            if (insertError) throw insertError;
             
-            await batch.commit();
+            // This is where Firebase could be used for notifications if needed.
+            // For now, we keep it simple.
 
             resetModalState();
             toast({
@@ -300,7 +240,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         } catch (error: any) {
             console.error("Erro ao criar post:", error);
             toast({ title: "Falha ao criar o post", description: error.message || "Por favor, tente novamente.", variant: "destructive" });
-            setIsPosting(false);
+        } finally {
+             setIsPosting(false);
         }
     };
     
