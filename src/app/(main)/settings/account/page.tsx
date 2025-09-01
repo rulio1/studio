@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { User, Lock, ChevronRight, UserX, Trash2, CreditCard } from 'lucide-react';
+import { User, Lock, ChevronRight, UserX, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useState } from 'react';
