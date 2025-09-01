@@ -16,6 +16,10 @@ export function getSupabase(token?: string) {
             headers: {
               Authorization: `Bearer ${token}`
             }
+          },
+          // This tells Supabase to trust the project_id from the Firebase JWT
+          auth: {
+            jwtSecretIsProjectId: true,
           }
         }
       );
