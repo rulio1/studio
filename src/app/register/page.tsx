@@ -68,7 +68,7 @@ export default function RegisterPage() {
 
         const handle = values.email.split('@')[0].replace(/[^a-z0-9_]/g, '');
         
-        // This part sends the data to a serverless function to be inserted into MongoDB
+        // Envia dados para nossa API para criar registros no Supabase e MongoDB
         const response = await fetch('/api/user/create', {
           method: 'POST',
           headers: {
@@ -79,7 +79,7 @@ export default function RegisterPage() {
             displayName: values.name,
             email: values.email,
             handle: `@${handle}`,
-            birthDate: values.birthDate,
+            birthDate: values.birthDate.toISOString(),
           }),
         });
 
