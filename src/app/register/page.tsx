@@ -12,9 +12,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useState } from 'react';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -66,27 +66,25 @@ export default function RegisterPage() {
             displayName: values.name,
         });
 
-        const handle = values.email.split('@')[0].replace(/[^a-z0-9_]/g, '');
+        const handle = values.email.split('@')[0].replace(/[^a-z0-9_]/gi, '').toLowerCase();
         
-        // Envia dados para nossa API para criar registros no Supabase e MongoDB
-        const response = await fetch('/api/user/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        await setDoc(doc(db, 'users', user.uid), {
             uid: user.uid,
             displayName: values.name,
             email: values.email,
             handle: `@${handle}`,
-            birthDate: values.birthDate.toISOString(),
-          }),
+            birthDate: values.birthDate,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(values.name)}&background=random&color=fff`,
+            banner: `https://placehold.co/600x200.png?text=Zispr`,
+            bio: `Novo usuário do Zispr!`,
+            location: '',
+            website: '',
+            followers: [],
+            following: [],
+            createdAt: serverTimestamp(),
+            searchableDisplayName: values.name.toLowerCase(),
+            searchableHandle: handle,
         });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Falha ao salvar dados do usuário.');
-        }
         
         toast({
             title: "Conta Criada!",

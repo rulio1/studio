@@ -7,7 +7,8 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { onSnapshot, doc, addDoc, collection, serverTimestamp, writeBatch, query, where, getDocs, increment, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, addDoc, collection, serverTimestamp, writeBatch, query, where, getDocs, increment, updateDoc, getDoc } from 'firebase/firestore';
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
@@ -15,13 +16,11 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
-import { fileToDataUri, extractSpotifyUrl, dataURItoFile, extractHashtags, extractMentions } from '@/lib/utils';
+import { fileToDataUri, extractSpotifyUrl, extractHashtags, extractMentions } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
-import { getSupabase } from '@/lib/supabase';
-
 
 interface Post {
     id: string;
@@ -115,19 +114,14 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     useEffect(() => {
         if (!user) return;
         
-        const fetchZisprUser = async () => {
-            const supabase = getSupabase();
-            const { data, error } = await supabase
-                .from('users')
-                .select('uid, displayName, handle, avatar, isVerified')
-                .eq('uid', user.uid)
-                .single();
-            if (data) {
-                setZisprUser(data as ZisprUser);
+        const userDocRef = doc(db, 'users', user.uid);
+        const unsubscribe = onSnapshot(userDocRef, (doc) => {
+            if (doc.exists()) {
+                setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
             }
-        }
-        fetchZisprUser();
+        });
 
+        return () => unsubscribe();
     }, [user]);
 
     const resetModalState = useCallback(() => {
@@ -151,9 +145,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 textareaRef.current?.focus();
             }, 150);
         } else {
-            resetModalState();
+            // Do not reset state here, let it be handled by onOpenChange or successful post
         }
-    }, [open, resetModalState]);
+    }, [open]);
 
      const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -177,51 +171,129 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const handleCreatePost = async () => {
         if (!user || !zisprUser) return;
         
+        const isPostEmpty = !newPostContent.trim() && !postImagePreview && !quotedPost && !pollData;
+        if (isPostEmpty) {
+             toast({
+                title: "Não é possível postar",
+                description: "O post precisa de conteúdo, uma imagem, uma enquete ou um post quotado.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         setIsPosting(true);
         
         try {
+            const batch = writeBatch(db);
+            const postRef = doc(collection(db, "posts"));
             let imageUrl: string | null = null;
-            if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
-                const supabase = getSupabase();
-                const file = dataURItoFile(postImageDataUri, `${user.uid}-${uuidv4()}.jpg`);
-                const filePath = `posts/${user.uid}/${file.name}`;
-                
-                const { error: uploadError } = await supabase.storage
-                    .from('zispr')
-                    .upload(filePath, file, { upsert: true });
-
-                if (uploadError) throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
-
-                const { data: urlData } = supabase.storage
-                    .from('zispr')
-                    .getPublicUrl(filePath);
-
-                if (!urlData?.publicUrl) throw new Error("Não foi possível obter a URL pública da imagem.");
-                
-                imageUrl = urlData.publicUrl;
+            
+            if (postImageDataUri) {
+                const storage = getStorage();
+                const imageRef = storageRef(storage, `posts/${user.uid}/${uuidv4()}`);
+                await uploadString(imageRef, postImageDataUri, 'data_url');
+                imageUrl = await getDownloadURL(imageRef);
             }
             
-            const postData = {
+            const hashtags = extractHashtags(newPostContent);
+            const mentionedHandles = extractMentions(newPostContent);
+            
+            const postData: any = {
                 authorId: zisprUser.uid,
+                author: zisprUser.displayName,
+                handle: zisprUser.handle,
+                avatar: zisprUser.avatar,
+                avatarFallback: zisprUser.displayName[0],
                 content: newPostContent,
+                createdAt: serverTimestamp(),
+                likes: [],
+                retweets: [],
+                comments: 0,
+                views: 0,
                 image: imageUrl,
                 spotifyUrl: extractSpotifyUrl(newPostContent),
+                hashtags: hashtags,
+                mentions: mentionedHandles,
+                isVerified: zisprUser.isVerified || false,
                 location: location.trim() || null,
-                quotedPostId: quotedPost ? quotedPost.id : null,
-                pollOptions: pollData ? pollData.options.map(o => o.text) : null,
                 replySettings: replySetting,
             };
-            
-            const response = await fetch('/api/posts/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(postData),
-            });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Falha ao criar post.');
+            if (quotedPost) {
+                postData.quotedPostId = quotedPost.id;
             }
+            
+            if (pollData && pollData.options.some(o => o.text.trim())) {
+                postData.poll = {
+                    options: pollData.options.map(o => o.text),
+                    votes: pollData.options.map(() => 0),
+                    voters: {}
+                }
+            }
+            
+            batch.set(postRef, postData);
+            
+            if (mentionedHandles.length > 0) {
+                const usersRef = collection(db, "users");
+                const q = query(usersRef, where("handle", "in", mentionedHandles));
+                const querySnapshot = await getDocs(q);
+                for (const userDoc of querySnapshot.docs) {
+                    const mentionedUserId = userDoc.id;
+                    const mentionedUserData = userDoc.data();
+                    const prefs = mentionedUserData.notificationPreferences;
+                    const canSendNotification = !prefs || prefs['mention'] !== false;
+
+                    if (mentionedUserId !== user.uid && canSendNotification) {
+                        const notificationRef = doc(collection(db, 'notifications'));
+                        batch.set(notificationRef, {
+                            toUserId: mentionedUserId,
+                            fromUserId: user.uid,
+                            fromUser: {
+                                name: zisprUser.displayName,
+                                handle: zisprUser.handle,
+                                avatar: zisprUser.avatar,
+                                isVerified: zisprUser.isVerified || false,
+                            },
+                            type: 'mention',
+                            text: 'mencionou você em um post',
+                            postContent: newPostContent.substring(0, 50),
+                            postId: postRef.id,
+                            createdAt: serverTimestamp(),
+                            read: false,
+                        });
+                    }
+                }
+            }
+
+            if (quotedPost) {
+                const originalPostRef = doc(db, 'posts', quotedPost.id);
+                batch.update(originalPostRef, { comments: increment(1) });
+                if (quotedPost.authorId !== user.uid) {
+                    const authorDoc = await getDoc(doc(db, 'users', quotedPost.authorId));
+                    if(authorDoc.exists()){
+                         const authorData = authorDoc.data();
+                         const prefs = authorData.notificationPreferences;
+                         const canSendNotification = !prefs || prefs['retweet'] !== false;
+                         if(canSendNotification){
+                             const notificationRef = doc(collection(db, 'notifications'));
+                             batch.set(notificationRef, {
+                                 toUserId: quotedPost.authorId,
+                                 fromUserId: user.uid,
+                                 fromUser: { name: zisprUser.displayName, handle: zisprUser.handle, avatar: zisprUser.avatar, isVerified: zisprUser.isVerified || false },
+                                 type: 'retweet', // Using 'retweet' for quotes
+                                 text: 'quotou seu post',
+                                 postContent: newPostContent.substring(0, 50),
+                                 postId: postRef.id,
+                                 createdAt: serverTimestamp(),
+                                 read: false,
+                             });
+                         }
+                    }
+                }
+            }
+
+
+            await batch.commit();
 
             resetModalState();
             toast({
@@ -278,6 +350,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             <DialogContent 
                 className="p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl flex flex-col h-auto max-h-[80svh]"
                 hideCloseButton={true}
+                onCloseAutoFocus={(e) => e.preventDefault()}
             >
                 <DialogHeader className="p-4 flex flex-row items-center justify-between border-b">
                     <DialogClose asChild>
@@ -295,7 +368,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                 <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
                                 <AvatarFallback>{zisprUser?.displayName?.[0]}</AvatarFallback>
                             </Avatar>
-                            <div className="w-0.5 flex-1 bg-border my-2"></div>
+                            { (quotedPost || newPostContent.length > 100 || postImagePreview) && <div className="w-0.5 flex-1 bg-border my-2"></div>}
                         </div>
                         <div className="w-full">
                             <Textarea
@@ -419,9 +492,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                 <svg className="h-full w-full" viewBox="0 0 20 20">
                                     <circle className="text-muted" strokeWidth="2" stroke="currentColor" fill="transparent" r="8" cx="10" cy="10"/>
                                     <circle
-                                        className="text-primary"
+                                        className={cn("transition-all duration-300", newPostContent.length > MAX_CHARS ? 'text-destructive' : 'text-primary')}
                                         strokeWidth="2"
-                                        strokeDasharray={`${(newPostContent.length / MAX_CHARS) * 2 * Math.PI * 8}, 100`}
+                                        strokeDasharray={`${(newPostContent.length / MAX_CHARS) * 2 * Math.PI * 8}, 1000`}
                                         strokeLinecap="round"
                                         stroke="currentColor"
                                         fill="transparent"
