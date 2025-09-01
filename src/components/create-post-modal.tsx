@@ -7,7 +7,7 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, getDocs, query, where, updateDoc } from 'firebase/firestore';
+import { onSnapshot, doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
@@ -148,20 +148,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
     }, [open, resetModalState]);
 
-    const extractHashtags = (content: string) => {
-        const regex = /#(\w+)/g;
-        const matches = content.match(regex);
-        if (!matches) return [];
-        return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
-    };
-    
-    const extractMentions = (content: string) => {
-        const regex = /@(\w+)/g;
-        const matches = content.match(regex);
-        if (!matches) return [];
-        return [...new Set(matches)];
-    };
-
      const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -214,10 +200,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 
                 imageUrl = urlData.publicUrl;
             }
-
-            const hashtags = extractHashtags(newPostContent);
-            const mentionedHandles = extractMentions(newPostContent);
-            const spotifyUrl = extractSpotifyUrl(newPostContent);
             
             const postData = {
                 authorId: user.uid,
@@ -226,65 +208,27 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 avatar: zisprUser.avatar,
                 avatarFallback: zisprUser.displayName[0],
                 content: newPostContent,
-                hashtags: hashtags,
-                mentions: mentionedHandles,
                 image: imageUrl,
-                spotifyUrl: spotifyUrl,
+                spotifyUrl: extractSpotifyUrl(newPostContent),
                 location: location.trim() || null,
-                createdAt: serverTimestamp(),
-                comments: 0,
-                retweets: [],
-                likes: [],
-                views: 0,
                 isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
                 quotedPostId: quotedPost ? quotedPost.id : null,
                 poll: pollData ? { options: pollData.options.map(o => o.text), votes: pollData.options.map(() => 0), voters: {} } : null,
                 replySettings: replySetting,
-                status: 'published',
             };
 
-            await runTransaction(db, async (transaction) => {
-                const postRef = doc(collection(db, "posts"));
-                transaction.set(postRef, postData);
-
-                if (hashtags.length > 0) {
-                    for (const tag of hashtags) {
-                        const hashtagRef = doc(db, 'hashtags', tag);
-                        const hashtagDoc = await transaction.get(hashtagRef);
-                        if (hashtagDoc.exists()) {
-                            transaction.update(hashtagRef, { count: (hashtagDoc.data().count || 0) + 1 });
-                        } else {
-                            transaction.set(hashtagRef, { name: tag, count: 1 });
-                        }
-                    }
-                }
-
-                if (mentionedHandles.length > 0) {
-                    const usersRef = collection(db, "users");
-                    const q = query(usersRef, where("handle", "in", mentionedHandles));
-                    const querySnapshot = await getDocs(q);
-                    querySnapshot.forEach(userDoc => {
-                        const mentionedUserId = userDoc.id;
-                         const notificationRef = doc(collection(db, 'notifications'));
-                        transaction.set(notificationRef, {
-                            toUserId: mentionedUserId,
-                            fromUserId: user.uid,
-                            fromUser: {
-                                name: zisprUser.displayName,
-                                handle: zisprUser.handle,
-                                avatar: zisprUser.avatar,
-                                isVerified: zisprUser.isVerified || false,
-                            },
-                            type: 'mention',
-                            text: 'mencionou você em um post',
-                            postContent: newPostContent.substring(0, 50),
-                            postId: postRef.id,
-                            createdAt: serverTimestamp(),
-                            read: false,
-                        });
-                    });
-                }
+            const response = await fetch('/api/posts/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(postData),
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Falha ao criar o post.');
+            }
 
             resetModalState();
             toast({
