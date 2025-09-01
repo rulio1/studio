@@ -5,7 +5,7 @@ import BottomNavBar from '@/components/bottom-nav-bar';
 import CreatePostFAB from '@/components/create-post-fab';
 import HomeLoading from '@/app/(main)/home/loading';
 import { usePathname, useRouter } from 'next/navigation';
-import React, { useState, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import DesktopSidebar from '@/components/desktop-sidebar';
@@ -17,18 +17,32 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const { toast } = useToast();
-    const [user, setUser] = useState<FirebaseUser | null>(auth.currentUser);
+    const [user, setUser] = useState<FirebaseUser | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const initialLoadTime = useRef(new Date());
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            if (!currentUser) {
-                // This check is now primarily handled by the parent MainLayout
-            } else {
+            if (currentUser) {
                 setUser(currentUser);
+                setIsLoading(false);
+            } else {
+                router.push('/login');
             }
         });
-        return () => unsubscribe();
+        
+        // Fallback timer
+        const timer = setTimeout(() => {
+            if (!auth.currentUser) {
+                 router.push('/login');
+            }
+             setIsLoading(false);
+        }, 2500);
+
+        return () => {
+            unsubscribe();
+            clearTimeout(timer);
+        };
     }, [router]);
     
     useEffect(() => {
@@ -64,6 +78,10 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
     
         return () => unsubscribe();
     }, [user, router, toast]);
+
+    if (isLoading) {
+        return <HomeLoading />;
+    }
 
     const fabBlacklist = [
         '/messages/',
@@ -111,46 +129,6 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
     );
 }
 
-
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-    const [isLoading, setIsLoading] = useState(true);
-    const router = useRouter();
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                // If after checking, there's no user, redirect.
-                router.push('/login');
-            } else {
-                // If there is a user, stop loading and show the content.
-                setIsLoading(false);
-            }
-        });
-
-        // Handle case where auth takes a while to initialize
-        const timer = setTimeout(() => {
-            if (auth.currentUser === null) {
-                setIsLoading(false); // Stop loading even if there's no user, to prevent infinite spinner
-                router.push('/login');
-            } else {
-                // Also handle the case where user is available but loading state hasn't changed
-                setIsLoading(false);
-            }
-        }, 2500); // 2.5-second timeout as a fallback
-
-        return () => {
-            unsubscribe();
-            clearTimeout(timer);
-        };
-    }, [router]);
-
-    if (isLoading) {
-        return <HomeLoading />;
-    }
-
-    return (
-        <Suspense fallback={<HomeLoading />}>
-            <MainLayoutClient>{children}</MainLayoutClient>
-        </Suspense>
-    );
+    return <MainLayoutClient>{children}</MainLayoutClient>;
 }
