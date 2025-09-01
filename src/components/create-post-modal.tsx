@@ -185,12 +185,12 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
 
         setIsPosting(true);
-        const supabase = getSupabase();
         
         try {
             let imageUrl: string | null = null;
             // 1. Handle image upload first, if an image is selected
             if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
+                const supabase = getSupabase();
                 const file = dataURItoFile(postImageDataUri, `${user.uid}-${uuidv4()}.jpg`);
                 const filePath = `posts/${user.uid}/${file.name}`;
                 
