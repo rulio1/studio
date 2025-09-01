@@ -175,7 +175,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     };
 
     const handleCreatePost = async () => {
-        if ((!newPostContent.trim() && !postImageDataUri && !quotedPost && !pollData) || !user || !zisprUser) {
+        if ((!newPostContent.trim() && !postImagePreview && !quotedPost && !pollData) || !user || !zisprUser) {
             toast({
                 title: "Não é possível postar",
                 description: "O post precisa de conteúdo ou uma imagem.",
@@ -207,9 +207,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 
                 imageUrl = urlData.publicUrl;
             }
-
-            const hashtags = extractHashtags(newPostContent);
-            const mentions = extractMentions(newPostContent);
             
             const postData = {
                 authorId: zisprUser.uid,
@@ -220,17 +217,20 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 quotedPostId: quotedPost ? quotedPost.id : null,
                 poll: pollData ? { options: pollData.options.map(o => o.text), votes: pollData.options.map(() => 0), voters: {} } : null,
                 replySettings: replySetting,
-                hashtags,
-                mentions,
+                hashtags: extractHashtags(newPostContent),
+                mentions: extractMentions(newPostContent),
             };
 
-            // Insert post into Supabase
-            const { error: insertError } = await supabase.from('posts').insert([postData]);
+            const response = await fetch('/api/posts/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(postData),
+            });
 
-            if (insertError) throw insertError;
-            
-            // This is where Firebase could be used for notifications if needed.
-            // For now, we keep it simple.
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Falha ao criar post.');
+            }
 
             resetModalState();
             toast({
@@ -259,7 +259,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setShowPollCreator(!showPollCreator);
     };
     
-    const isSubmitDisabled = (!newPostContent.trim() && !postImageDataUri && !quotedPost && !pollData) || isPosting || newPostContent.length > MAX_CHARS;
+    const isSubmitDisabled = (!newPostContent.trim() && !postImagePreview && !quotedPost && !pollData) || isPosting || newPostContent.length > MAX_CHARS;
     
     const QuotedPostPreview = ({ post }: { post: Post }) => (
         <div className="mt-2 border rounded-xl p-3">
