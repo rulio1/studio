@@ -123,8 +123,7 @@ export default function EditProfilePage() {
             let avatarUrl = profileData.avatar;
             let bannerUrl = profileData.banner;
             
-            const firebaseToken = await user.getIdToken();
-            const supabase = getSupabase(firebaseToken);
+            const supabase = getSupabase();
 
             const uploadImage = async (dataUri: string, bucketPath: 'avatars' | 'banners'): Promise<string> => {
                 const file = dataURItoFile(dataUri, `${bucketPath}-${user.uid}-${uuidv4()}`);
