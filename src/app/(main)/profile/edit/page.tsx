@@ -12,7 +12,6 @@ import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { getSupabase } from '@/lib/supabase';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
@@ -124,23 +123,9 @@ export default function EditProfilePage() {
             let bannerUrl = profileData.banner;
             
             const uploadImage = async (dataUri: string, bucketPath: 'avatars' | 'banners'): Promise<string> => {
-                const supabase = getSupabase();
-                const file = dataURItoFile(dataUri, `${bucketPath}-${user.uid}-${uuidv4()}`);
-                const filePath = `${user.uid}/${file.name}`;
-                
-                const { error: uploadError } = await supabase.storage
-                    .from('zispr')
-                    .upload(filePath, file, { upsert: true });
-
-                if (uploadError) {
-                    throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
-                }
-
-                const { data: urlData } = supabase.storage
-                    .from('zispr')
-                    .getPublicUrl(filePath);
-
-                return urlData.publicUrl;
+                // Upload logic will be re-implemented with a new storage solution
+                toast({title: "Upload de Imagem", description: "A funcionalidade de upload será reimplementada em breve."});
+                return '';
             };
 
             if (newAvatarDataUri) {
@@ -151,14 +136,15 @@ export default function EditProfilePage() {
                 bannerUrl = await uploadImage(newBannerDataUri, 'banners');
             }
 
-            const firestoreUpdateData = {
+            const firestoreUpdateData: any = {
                 displayName: profileData.displayName,
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
                 bio: profileData.bio,
                 location: profileData.location,
-                avatar: avatarUrl,
-                banner: bannerUrl,
             };
+
+            if(avatarUrl) firestoreUpdateData.avatar = avatarUrl;
+            if(bannerUrl) firestoreUpdateData.banner = bannerUrl;
             
             await updateDoc(userRef, firestoreUpdateData);
     

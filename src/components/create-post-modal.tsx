@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, getDocs, query, where, updateDoc } from 'firebase/firestore';
-import { getSupabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
@@ -196,22 +195,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         try {
             let imageUrl = '';
             if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
-                const supabase = getSupabase();
-                const file = dataURItoFile(postImageDataUri, `post-image-${uuidv4()}`);
-                const filePath = `${user.uid}/${file.name}`;
-                
-                const { error: uploadError } = await supabase.storage
-                    .from('zispr')
-                    .upload(filePath, file, { upsert: true });
-
-                if (uploadError) {
-                    throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
-                }
-
-                const { data: urlData } = supabase.storage
-                    .from('zispr')
-                    .getPublicUrl(filePath);
-                imageUrl = urlData.publicUrl;
+                // Upload logic will be re-implemented with a new storage solution
+                toast({title: "Upload de Imagem", description: "A funcionalidade de upload será reimplementada em breve."});
             }
 
             const hashtags = extractHashtags(newPostContent);
