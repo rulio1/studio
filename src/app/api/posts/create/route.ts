@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb';
 import { getSupabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { dataURItoFile } from '@/lib/utils';
-import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
+
 
 // Helper function to connect to the database and get the posts collection
 async function getPostsCollection() {
