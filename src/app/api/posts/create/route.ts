@@ -12,10 +12,10 @@ const extractHashtags = (content: string): string[] => {
 export async function POST(req: NextRequest) {
   try {
     const postData = await req.json();
-    const { authorId, content } = postData;
+    const { authorId, author, handle, avatar, content } = postData;
 
-    if (!authorId || content === undefined) {
-      return NextResponse.json({ error: 'Dados do post ausentes (ID do autor ou conteúdo).' }, { status: 400 });
+    if (!authorId || !author || !handle || !avatar || content === undefined) {
+      return NextResponse.json({ error: 'Dados do post incompletos.' }, { status: 400 });
     }
 
     const client = await clientPromise;
@@ -23,10 +23,8 @@ export async function POST(req: NextRequest) {
     
     const hashtags = extractHashtags(content);
 
-    // O authorId já é a string do UID do Firebase, que é o _id na coleção de usuários
     const newPost = {
         ...postData,
-        authorId: authorId, 
         hashtags: hashtags,
         createdAt: new Date(),
         editedAt: null,

@@ -117,7 +117,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         const userDocRef = doc(db, "users", user.uid);
         const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
-                setZisprUser(doc.data() as ZisprUser);
+                setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
             }
         });
         return () => unsubscribeUser();
@@ -206,16 +206,16 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             }
             
             const postData = {
-                authorId: user.uid,
+                authorId: zisprUser.uid,
                 author: zisprUser.displayName,
                 handle: zisprUser.handle,
                 avatar: zisprUser.avatar,
                 avatarFallback: zisprUser.displayName[0],
+                isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
                 content: newPostContent,
                 image: imageUrl || undefined,
                 spotifyUrl: extractSpotifyUrl(newPostContent),
                 location: location.trim() || null,
-                isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
                 quotedPostId: quotedPost ? quotedPost.id : null,
                 poll: pollData ? { options: pollData.options.map(o => o.text), votes: pollData.options.map(() => 0), voters: {} } : null,
                 replySettings: replySetting,
