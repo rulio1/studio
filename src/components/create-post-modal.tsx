@@ -176,18 +176,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
 
     const handleCreatePost = async () => {
         if (!user || !zisprUser) return;
-
-        const isPostEmpty = !newPostContent.trim() && !postImagePreview && !quotedPost && !pollData;
-
-        if (isPostEmpty) {
-            toast({
-                title: "Não é possível postar",
-                description: "O post precisa de conteúdo, uma imagem, uma enquete ou um post quotado.",
-                variant: "destructive",
-            });
-            return;
-        }
-
+        
         setIsPosting(true);
         
         try {
