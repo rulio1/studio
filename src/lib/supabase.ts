@@ -1,18 +1,33 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Re-export the type for convenience
-export type { SupabaseClient };
-
 // This is a singleton pattern to ensure we only have one instance of the Supabase client
 let supabase: SupabaseClient | undefined;
 
-export function getSupabase() {
+export function getSupabase(token?: string) {
+  // If a token is provided, we're likely in a secure, user-specific context.
+  // We should create a new client with the user's auth token.
+  if (token) {
+    const supabaseWithAuth = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          global: {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        }
+      );
+      return supabaseWithAuth;
+  }
+  
+  // If we already have a client instance and no token is provided, return it.
   if (supabase) {
     return supabase;
   }
 
-  // Ensure these variables are set in your environment
+  // If no instance exists and no token is provided, create a new anonymous client.
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error('Supabase URL and Anon Key must be provided.');
   }

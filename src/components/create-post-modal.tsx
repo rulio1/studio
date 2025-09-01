@@ -192,17 +192,18 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
 
         setIsPosting(true);
-        const supabase = getSupabase();
         
         try {
             let imageUrl = '';
             if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
+                const firebaseToken = await user.getIdToken();
+                const supabase = getSupabase(firebaseToken);
                 const file = dataURItoFile(postImageDataUri, `post-image-${uuidv4()}`);
                 const filePath = `${user.uid}/${file.name}`;
                 
                 const { error: uploadError } = await supabase.storage
                     .from('zispr')
-                    .upload(filePath, file);
+                    .upload(filePath, file, { upsert: true });
 
                 if (uploadError) {
                     throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
