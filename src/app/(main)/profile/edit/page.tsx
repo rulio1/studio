@@ -129,13 +129,13 @@ export default function EditProfilePage() {
                 const filePath = `${user.uid}/${file.name}`;
                 
                 const { error: uploadError } = await supabase.storage
-                    .from('images')
+                    .from('zispr')
                     .upload(filePath, file, { upsert: true });
 
                 if (uploadError) throw uploadError;
 
                 const { data: urlData } = supabase.storage
-                    .from('images')
+                    .from('zispr')
                     .getPublicUrl(filePath);
 
                 return urlData.publicUrl;

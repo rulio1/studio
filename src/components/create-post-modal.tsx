@@ -205,7 +205,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 const filePath = `${user.uid}/${file.name}`;
                 
                 const { error: uploadError } = await supabase.storage
-                    .from('images')
+                    .from('zispr')
                     .upload(filePath, file);
 
                 if (uploadError) {
@@ -213,7 +213,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 }
 
                 const { data: urlData } = supabase.storage
-                    .from('images')
+                    .from('zispr')
                     .getPublicUrl(filePath);
 
                 imageUrl = urlData.publicUrl;
