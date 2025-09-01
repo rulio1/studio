@@ -18,6 +18,7 @@ import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 import { fileToDataUri, dataURItoFile } from '@/lib/utils';
 import { v4 as uuidv4 } from 'uuid';
+import { getSupabase } from '@/lib/supabase';
 
 
 interface UserProfileData {
@@ -123,9 +124,23 @@ export default function EditProfilePage() {
             let bannerUrl = profileData.banner;
             
             const uploadImage = async (dataUri: string, bucketPath: 'avatars' | 'banners'): Promise<string> => {
-                // Upload logic will be re-implemented with a new storage solution
-                toast({title: "Upload de Imagem", description: "A funcionalidade de upload será reimplementada em breve."});
-                return '';
+                const supabase = getSupabase();
+                const file = dataURItoFile(dataUri, `${user.uid}-${uuidv4()}.jpg`);
+                const filePath = `${bucketPath}/${user.uid}/${file.name}`;
+                
+                const { error: uploadError } = await supabase.storage
+                    .from('zispr')
+                    .upload(filePath, file, { upsert: true });
+
+                if (uploadError) {
+                    throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
+                }
+
+                const { data: urlData } = supabase.storage
+                    .from('zispr')
+                    .getPublicUrl(filePath);
+
+                return urlData.publicUrl;
             };
 
             if (newAvatarDataUri) {
@@ -141,10 +156,9 @@ export default function EditProfilePage() {
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
                 bio: profileData.bio,
                 location: profileData.location,
+                avatar: avatarUrl,
+                banner: bannerUrl,
             };
-
-            if(avatarUrl) firestoreUpdateData.avatar = avatarUrl;
-            if(bannerUrl) firestoreUpdateData.banner = bannerUrl;
             
             await updateDoc(userRef, firestoreUpdateData);
     

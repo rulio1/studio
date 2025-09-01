@@ -20,6 +20,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
+import { getSupabase } from '@/lib/supabase';
 
 
 interface Post {
@@ -195,8 +196,23 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         try {
             let imageUrl = '';
             if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
-                // Upload logic will be re-implemented with a new storage solution
-                toast({title: "Upload de Imagem", description: "A funcionalidade de upload será reimplementada em breve."});
+                const supabase = getSupabase();
+                const file = dataURItoFile(postImageDataUri, `${user.uid}-${uuidv4()}.jpg`);
+                const filePath = `posts/${user.uid}/${file.name}`;
+                
+                const { error: uploadError } = await supabase.storage
+                    .from('zispr')
+                    .upload(filePath, file, { upsert: true });
+
+                if (uploadError) {
+                    throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
+                }
+
+                const { data: urlData } = supabase.storage
+                    .from('zispr')
+                    .getPublicUrl(filePath);
+                
+                imageUrl = urlData.publicUrl;
             }
 
             const hashtags = extractHashtags(newPostContent);
