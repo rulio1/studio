@@ -53,7 +53,8 @@ storage = getStorage(app);
 
 // Push Notifications (Client-side)
 const requestNotificationPermission = async (userId: string) => {
-    if (!isSupported()) {
+    const isMessagingSupported = await isSupported();
+    if (!isMessagingSupported) {
         console.log('Firebase Messaging is not supported in this browser.');
         return { success: false, message: 'Notificações não são suportadas neste navegador.' };
     }
@@ -63,12 +64,15 @@ const requestNotificationPermission = async (userId: string) => {
         const permission = await Notification.requestPermission();
         
         if (permission === 'granted') {
-            const VAPID_KEY = 'YOUR_VAPID_KEY_HERE'; // You need to generate this in Firebase Console -> Project Settings -> Cloud Messaging
+            // You would typically get this from your Firebase project settings
+            const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY; 
+            if (!VAPID_KEY) {
+                console.error('VAPID key is not configured in environment variables.');
+                return { success: false, message: 'Configuração de notificação incompleta.' };
+            }
             const token = await getToken(messaging, { vapidKey: VAPID_KEY });
 
             if (token) {
-                // You would typically save this token to the user's document in Firestore
-                // to send them targeted notifications from your server.
                 console.log('FCM Token:', token);
                 const { doc, updateDoc } = await import('firebase/firestore');
                 const userDocRef = doc(db, 'users', userId);
