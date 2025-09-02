@@ -186,9 +186,12 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
             <div className="flex items-center gap-2 text-sm">
                 <Avatar className="h-5 w-5">
                     <AvatarImage src={post.avatar} />
-                    <AvatarFallback>{post.author[0]}</AvatarFallback>
+                    <AvatarFallback>{post.avatarFallback || post.author[0]}</AvatarFallback>
                 </Avatar>
-                <span className="font-bold">{post.author}</span>
+                 <span className="font-bold flex items-center gap-1">
+                    {post.author}
+                    {(post.isVerified || post.handle === '@rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
+                </span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>
             <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>

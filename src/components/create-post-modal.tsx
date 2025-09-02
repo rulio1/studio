@@ -7,9 +7,9 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch, addDoc } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
+import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
@@ -223,10 +223,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             let imageUrl: string | null = null;
             if (postImageDataUri) {
                 const apiKey = "9796138e5afeeb164d2a8fbfc047d72a";
-                if (!apiKey) {
-                    throw new Error("A chave da API do ImgBB não está configurada.");
-                }
-
                 const base64Data = postImageDataUri.split(',')[1];
                 
                 const form = new FormData();
@@ -248,6 +244,20 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             const hashtags = extractHashtags(newPostContent);
             const mentionedHandles = extractMentions(newPostContent);
             const spotifyUrl = extractSpotifyUrl(newPostContent);
+            
+            const quotedPostData = quotedPost ? {
+                id: quotedPost.id,
+                authorId: quotedPost.authorId,
+                author: quotedPost.author,
+                handle: quotedPost.handle,
+                avatar: quotedPost.avatar,
+                avatarFallback: quotedPost.avatarFallback,
+                content: quotedPost.content,
+                image: quotedPost.image || null,
+                isVerified: quotedPost.isVerified || false,
+                createdAt: quotedPost.createdAt
+            } : null;
+
 
             const postData = {
                 authorId: user.uid,
@@ -258,6 +268,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 content: newPostContent,
                 isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
                 quotedPostId: quotedPost ? quotedPost.id : null,
+                quotedPost: quotedPostData,
                 location: location.trim() || null,
                 poll: pollData ? { options: pollData.options.map(o => o.text), votes: pollData.options.map(() => 0), voters: {} } : null,
                 replySettings: replySetting,
@@ -272,12 +283,12 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 views: 0,
                 status: 'published',
             };
-
-            await runTransaction(db, async (transaction) => {
-                const postRef = doc(collection(db, "posts"));
-                transaction.set(postRef, postData);
-
-                if (hashtags.length > 0) {
+            
+            const postRef = doc(collection(db, "posts"));
+            await addDoc(collection(db, "posts"), postData);
+            
+            if (hashtags.length > 0) {
+                 await runTransaction(db, async (transaction) => {
                     for (const tag of hashtags) {
                         const hashtagRef = doc(db, 'hashtags', tag);
                         const hashtagDoc = await transaction.get(hashtagRef);
@@ -288,8 +299,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                             transaction.set(hashtagRef, { name: tag, count: 1 });
                         }
                     }
-                }
-            });
+                });
+            }
             
             resetModalState();
             toast({
@@ -327,9 +338,12 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             <div className="flex items-center gap-2 text-sm">
                 <Avatar className="h-5 w-5">
                     <AvatarImage src={post.avatar} />
-                    <AvatarFallback>{post.author[0]}</AvatarFallback>
+                    <AvatarFallback>{post.avatarFallback || post.author[0]}</AvatarFallback>
                 </Avatar>
-                <span className="font-bold">{post.author}</span>
+                <span className="font-bold flex items-center gap-1">
+                    {post.author}
+                     {(post.isVerified || post.handle === '@rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
+                </span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>
             <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
