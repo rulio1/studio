@@ -17,6 +17,7 @@ import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 import { fileToDataUri } from '@/lib/utils';
+import { uploadImage } from '@/actions/storage';
 
 
 interface UserProfileData {
@@ -87,10 +88,10 @@ export default function EditProfilePage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 1 * 1024 * 1024) { // 1MB limit for Base64
+        if (file.size > 4 * 1024 * 1024) { // 4MB limit
             toast({
                 title: 'Imagem muito grande',
-                description: 'Por favor, selecione uma imagem menor que 1MB.',
+                description: 'Por favor, selecione uma imagem menor que 4MB.',
                 variant: 'destructive',
             });
             return;
@@ -119,13 +120,23 @@ export default function EditProfilePage() {
         try {
             const userRef = doc(db, 'users', user.uid);
             
+            let avatarUrl = profileData.avatar;
+            if (newAvatarDataUri) {
+                avatarUrl = await uploadImage(newAvatarDataUri, user.uid, 'avatars');
+            }
+
+            let bannerUrl = profileData.banner;
+            if (newBannerDataUri) {
+                bannerUrl = await uploadImage(newBannerDataUri, user.uid, 'banners');
+            }
+            
             const firestoreUpdateData = {
                 displayName: profileData.displayName,
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
                 bio: profileData.bio,
                 location: profileData.location,
-                avatar: newAvatarDataUri || profileData.avatar,
-                banner: newBannerDataUri || profileData.banner,
+                avatar: avatarUrl,
+                banner: bannerUrl,
             };
             
             await updateDoc(userRef, firestoreUpdateData);

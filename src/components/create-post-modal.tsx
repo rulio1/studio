@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
+import { uploadImage } from '@/actions/storage';
 
 
 interface Post {
@@ -142,9 +143,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             setTimeout(() => {
                 textareaRef.current?.focus();
             }, 150);
-        } else {
-            // Do not reset state here, it will clear before animation finishes.
-            // Let the onOpenChange handler from the parent manage the final reset.
         }
     }, [open]);
 
@@ -186,10 +184,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 1 * 1024 * 1024) { // 1MB limit for Base64
+        if (file.size > 4 * 1024 * 1024) { // 4MB limit
             toast({
                 title: 'Imagem muito grande',
-                description: 'Por favor, selecione uma imagem menor que 1MB.',
+                description: 'Por favor, selecione uma imagem menor que 4MB.',
                 variant: 'destructive',
             });
             return;
@@ -217,6 +215,14 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
         
         try {
+            let imageUrl: string | null = null;
+            if (postImageDataUri) {
+                imageUrl = await uploadImage(postImageDataUri, user.uid, 'posts');
+                if (!imageUrl) {
+                    throw new Error("Falha ao fazer upload da imagem.");
+                }
+            }
+
             const hashtags = extractHashtags(newPostContent);
             const mentionedHandles = extractMentions(newPostContent);
             const spotifyUrl = extractSpotifyUrl(newPostContent);
@@ -230,7 +236,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 content: newPostContent,
                 hashtags: hashtags,
                 mentions: mentionedHandles,
-                image: postImageDataUri, // Save the Data URI directly
+                image: imageUrl,
                 spotifyUrl: spotifyUrl,
                 location: location.trim() || null,
                 createdAt: serverTimestamp(),
@@ -287,15 +293,15 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     });
                 }
             });
-
-            onOpenChange(false);
+            
+            resetModalState();
             toast({
                 title: "Post criado!",
                 description: "Seu post foi publicado com sucesso.",
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast({ title: "Falha ao criar o post", description: "Por favor, tente novamente.", variant: "destructive" });
+            toast({ title: "Falha ao criar o post", description: error.message || "Por favor, tente novamente.", variant: "destructive" });
         } finally {
             setIsPosting(false);
         }
@@ -339,7 +345,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const CurrentReplyOption = replyOptions[replySetting];
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) resetModalState(); else onOpenChange(true); }}>
             <DialogContent 
                 className="p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl flex flex-col h-auto max-h-[80svh]"
                 hideCloseButton={true}
@@ -360,7 +366,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                 <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
                                 <AvatarFallback>{zisprUser?.displayName?.[0]}</AvatarFallback>
                             </Avatar>
-                            <div className="w-0.5 flex-1 bg-border my-2"></div>
+                            { (newPostContent || postImagePreview || quotedPost) && <div className="w-0.5 flex-1 bg-border my-2"></div> }
                         </div>
                         <div className="w-full">
                             <Textarea
@@ -484,7 +490,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                 <svg className="h-full w-full" viewBox="0 0 20 20">
                                     <circle className="text-muted" strokeWidth="2" stroke="currentColor" fill="transparent" r="8" cx="10" cy="10"/>
                                     <circle
-                                        className="text-primary"
+                                        className={newPostContent.length > MAX_CHARS ? 'text-destructive' : 'text-primary'}
                                         strokeWidth="2"
                                         strokeDasharray={`${(newPostContent.length / MAX_CHARS) * 2 * Math.PI * 8}, 100`}
                                         strokeLinecap="round"
@@ -496,8 +502,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                         style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
                                     />
                                 </svg>
-                                {newPostContent.length > MAX_CHARS && (
-                                    <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-destructive">{MAX_CHARS - newPostContent.length}</span>
+                                {newPostContent.length > 260 && (
+                                    <span className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${newPostContent.length > MAX_CHARS ? 'text-destructive' : ''}`}>{MAX_CHARS - newPostContent.length}</span>
                                 )}
                             </div>
                             <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
