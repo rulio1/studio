@@ -9,16 +9,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { uploadImage } from '@/lib/supabase';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 import { fileToDataUri } from '@/lib/utils';
-import { v4 as uuidv4 } from 'uuid';
 
 
 interface UserProfileData {
@@ -123,20 +122,16 @@ export default function EditProfilePage() {
             let avatarUrl = profileData.avatar;
             let bannerUrl = profileData.banner;
 
-            // Upload Avatar if changed
             if (newAvatarDataUri) {
-                const avatarPath = `avatars/${user.uid}/${uuidv4()}`;
-                const imageStorageRef = storageRef(storage, avatarPath);
-                await uploadString(imageStorageRef, newAvatarDataUri, 'data_url');
-                avatarUrl = await getDownloadURL(imageStorageRef);
+                const uploadedUrl = await uploadImage(newAvatarDataUri, user.uid, 'avatars');
+                if (!uploadedUrl) throw new Error("Falha no upload do avatar");
+                avatarUrl = uploadedUrl;
             }
             
-            // Upload Banner if changed
             if (newBannerDataUri) {
-                const bannerPath = `banners/${user.uid}/${uuidv4()}`;
-                const imageStorageRef = storageRef(storage, bannerPath);
-                await uploadString(imageStorageRef, newBannerDataUri, 'data_url');
-                bannerUrl = await getDownloadURL(imageStorageRef);
+                const uploadedUrl = await uploadImage(newBannerDataUri, user.uid, 'banners');
+                if (!uploadedUrl) throw new Error("Falha no upload do banner");
+                bannerUrl = uploadedUrl;
             }
 
             const firestoreUpdateData = {
@@ -161,7 +156,7 @@ export default function EditProfilePage() {
             console.error('Erro ao salvar perfil: ', error);
             toast({
                 title: 'Falha ao Salvar',
-                description: 'Não foi possível salvar as alterações do seu perfil. Por favor, tente novamente.',
+                description: error.message || 'Não foi possível salvar as alterações do seu perfil. Por favor, tente novamente.',
                 variant: 'destructive',
             });
         } finally {

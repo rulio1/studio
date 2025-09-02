@@ -6,10 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, getDocs, query, where, updateDoc } from 'firebase/firestore';
-import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
-import { v4 as uuidv4 } from 'uuid';
+import { uploadImage } from '@/lib/supabase';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
 import { Button } from './ui/button';
@@ -198,12 +197,12 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
         
         try {
-            let imageUrl = postImagePreview || ''; 
-            if (postImageDataUri && postImageDataUri.startsWith('data:image')) {
-                const imagePath = `posts/${user.uid}/${uuidv4()}`;
-                const imageStorageRef = storageRef(storage, imagePath);
-                await uploadString(imageStorageRef, postImageDataUri, 'data_url');
-                imageUrl = await getDownloadURL(imageStorageRef);
+            let imageUrl: string | null = null;
+            if (postImageDataUri) {
+                imageUrl = await uploadImage(postImageDataUri, user.uid, 'posts');
+                if (!imageUrl) {
+                    throw new Error("Falha ao fazer upload da imagem.");
+                }
             }
 
             const hashtags = extractHashtags(newPostContent);
