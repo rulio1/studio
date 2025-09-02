@@ -11,7 +11,7 @@ import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
@@ -151,17 +151,49 @@ export default function EditProfilePage() {
                 bannerUrl = await uploadToImgBB(newBannerDataUri);
             }
             
+            const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
+            
             const firestoreUpdateData = {
                 displayName: profileData.displayName,
-                handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
+                handle: handleWithAt,
                 bio: profileData.bio,
                 location: profileData.location,
                 avatar: avatarUrl,
                 banner: bannerUrl,
             };
             
+            const batch = writeBatch(db);
+
+            // 1. Update user document
             const userRef = doc(db, 'users', user.uid);
-            await updateDoc(userRef, firestoreUpdateData);
+            batch.update(userRef, firestoreUpdateData);
+
+            // 2. Update all user's posts
+            const postsQuery = query(collection(db, 'posts'), where('authorId', '==', user.uid));
+            const postsSnapshot = await getDocs(postsQuery);
+            postsSnapshot.forEach((postDoc) => {
+                const postRef = doc(db, 'posts', postDoc.id);
+                batch.update(postRef, {
+                    author: profileData.displayName,
+                    handle: handleWithAt,
+                    avatar: avatarUrl
+                });
+            });
+
+            // 3. Update all user's comments
+            const commentsQuery = query(collection(db, 'comments'), where('authorId', '==', user.uid));
+            const commentsSnapshot = await getDocs(commentsQuery);
+            commentsSnapshot.forEach((commentDoc) => {
+                const commentRef = doc(db, 'comments', commentDoc.id);
+                batch.update(commentRef, {
+                    author: profileData.displayName,
+                    handle: handleWithAt,
+                    avatar: avatarUrl
+                });
+            });
+
+            // Commit all changes at once
+            await batch.commit();
     
             toast({
                 title: 'Perfil Salvo!',
