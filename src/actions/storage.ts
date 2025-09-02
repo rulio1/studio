@@ -1,10 +1,9 @@
-
 'use server';
 
-import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp, runTransaction, doc } from 'firebase/firestore';
-import { db, storage } from '@/lib/firebase'; // Reutilizando a instância do cliente
-import { v4 as uuidv4 } from 'uuid';
+import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import axios from 'axios';
+import FormData from 'form-data';
 
 interface PostData {
     authorId: string;
@@ -45,14 +44,32 @@ const extractSpotifyUrl = (text: string): string | null => {
     return match ? match[0] : null;
 };
 
-
 export async function createPostWithImage(postData: PostData, imageDataUri: string | null) {
     try {
         let imageUrl: string | null = null;
         if (imageDataUri) {
-            const imageRef = storageRef(storage, `posts/${postData.authorId}/${uuidv4()}`);
-            const snapshot = await uploadString(imageRef, imageDataUri, 'data_url');
-            imageUrl = await getDownloadURL(snapshot.ref);
+            const apiKey = process.env.IMGBB_API_KEY;
+            if (!apiKey) {
+                throw new Error("A chave da API do ImgBB não está configurada no servidor.");
+            }
+
+            // Remove the data URI prefix
+            const base64Data = imageDataUri.split(',')[1];
+            
+            const form = new FormData();
+            form.append('image', base64Data);
+
+            const response = await axios.post(`https://api.imgbb.com/1/upload?key=${apiKey}`, form, {
+                headers: {
+                    ...form.getHeaders(),
+                },
+            });
+
+            if (response.data.success) {
+                imageUrl = response.data.data.url;
+            } else {
+                throw new Error(response.data.error?.message || 'Falha ao fazer upload da imagem para o ImgBB.');
+            }
         }
 
         const hashtags = extractHashtags(postData.content);
