@@ -1,7 +1,8 @@
+
 'use server';
 
-import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, doc, runTransaction, serverTimestamp, getFirestore } from 'firebase/firestore';
+import * as admin from 'firebase-admin';
 import axios from 'axios';
 import FormData from 'form-data';
 
@@ -22,6 +23,23 @@ interface PostData {
         voters: Record<string, number>;
     } | null;
 }
+
+// Inicializa o Firebase Admin SDK se ainda não tiver sido inicializado
+if (admin.apps.length === 0) {
+    try {
+        admin.initializeApp({
+            credential: admin.credential.cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+            }),
+        });
+    } catch (error: any) {
+        console.error('Firebase admin initialization error', error);
+    }
+}
+
+const db = getFirestore();
 
 const extractHashtags = (content: string) => {
     const regex = /#(\w+)/g;
@@ -89,7 +107,7 @@ export async function createPostWithImage(postData: PostData, imageDataUri: stri
             views: 0,
             status: 'published',
         };
-
+        
         await runTransaction(db, async (transaction) => {
             const postRef = doc(collection(db, "posts"));
             transaction.set(postRef, finalPostData);
