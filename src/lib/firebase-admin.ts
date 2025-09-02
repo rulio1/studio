@@ -1,36 +1,21 @@
 
+'use server';
+
 import * as admin from 'firebase-admin';
 
-// This function ensures that the Firebase Admin SDK is initialized only once.
+// Esta função garante que o Firebase Admin SDK seja inicializado apenas uma vez.
 const initializeFirebaseAdmin = () => {
     if (admin.apps.length === 0) {
         try {
-            const projectId = process.env.FIREBASE_PROJECT_ID;
-            const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-            const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-
-            if (!projectId) {
-                throw new Error('Firebase Admin SDK: FIREBASE_PROJECT_ID environment variable is not set.');
-            }
-            if (!clientEmail) {
-                throw new Error('Firebase Admin SDK: FIREBASE_CLIENT_EMAIL environment variable is not set.');
-            }
-            if (!privateKey) {
-                throw new Error('Firebase Admin SDK: FIREBASE_PRIVATE_KEY environment variable is not set.');
-            }
-            
+            // O SDK do Firebase Admin procurará automaticamente as variáveis de ambiente
+            // FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL e FIREBASE_PRIVATE_KEY
+            // quando `initializeApp` é chamado sem argumentos em um ambiente de servidor.
             admin.initializeApp({
-                credential: admin.credential.cert({
-                    projectId: projectId,
-                    clientEmail: clientEmail,
-                    // Replace literal \n with actual newlines
-                    privateKey: privateKey.replace(/\\n/g, '\n'),
-                }),
-                storageBucket: `${projectId}.appspot.com`
+                storageBucket: `${process.env.FIREBASE_PROJECT_ID}.appspot.com`
             });
         } catch (error: any) {
             console.error('Firebase admin initialization error:', error.message);
-            // Throw a more specific error to help with debugging
+            // Lança um erro mais específico para ajudar na depuração
             throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
         }
     }
