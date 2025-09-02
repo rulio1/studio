@@ -201,10 +201,15 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     };
 
     const handleCreatePost = async () => {
-        if ((!newPostContent.trim() && !postImageDataUri && !quotedPost) || !user || !zisprUser) {
+        if (!newPostContent.trim() && !postImageDataUri && !quotedPost) {
             toast({ title: "Não é possível criar um post vazio.", variant: "destructive" });
             return;
         }
+        if (!user || !zisprUser) {
+            toast({ title: "Você precisa estar logado para postar.", variant: "destructive" });
+            return;
+        }
+        
         setIsPosting(true);
 
         try {
