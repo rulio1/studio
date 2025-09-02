@@ -1,8 +1,8 @@
 
 'use server';
 
-import { collection, doc, runTransaction, serverTimestamp, getFirestore } from 'firebase/firestore';
-import * as admin from 'firebase-admin';
+import { collection, runTransaction, doc, serverTimestamp, getDoc, writeBatch } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import axios from 'axios';
 import FormData from 'form-data';
 
@@ -46,24 +46,6 @@ const extractSpotifyUrl = (text: string): string | null => {
 };
 
 export async function createPostWithImage(postData: PostData, imageDataUri: string | null) {
-    if (admin.apps.length === 0) {
-        try {
-            const serviceAccount = {
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-            };
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount),
-            });
-        } catch (error: any) {
-            console.error('Firebase admin initialization error', error);
-            return { success: false, error: 'Falha na inicialização do servidor.' };
-        }
-    }
-    
-    const db = admin.firestore();
-
     try {
         let imageUrl: string | null = null;
         if (imageDataUri) {
@@ -100,7 +82,7 @@ export async function createPostWithImage(postData: PostData, imageDataUri: stri
             hashtags,
             mentions: mentionedHandles,
             spotifyUrl,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: serverTimestamp(),
             comments: 0,
             retweets: [],
             likes: [],
@@ -108,16 +90,17 @@ export async function createPostWithImage(postData: PostData, imageDataUri: stri
             status: 'published',
         };
         
-        await db.runTransaction(async (transaction) => {
-            const postRef = db.collection("posts").doc();
+        await runTransaction(db, async (transaction) => {
+            const postRef = doc(collection(db, "posts"));
             transaction.set(postRef, finalPostData);
 
             if (hashtags.length > 0) {
                 for (const tag of hashtags) {
-                    const hashtagRef = db.collection('hashtags').doc(tag);
+                    const hashtagRef = doc(db, 'hashtags', tag);
                     const hashtagDoc = await transaction.get(hashtagRef);
-                    if (hashtagDoc.exists) {
-                        transaction.update(hashtagRef, { count: admin.firestore.FieldValue.increment(1) });
+                    if (hashtagDoc.exists()) {
+                        const currentCount = hashtagDoc.data().count || 0;
+                        transaction.update(hashtagRef, { count: currentCount + 1 });
                     } else {
                         transaction.set(hashtagRef, { name: tag, count: 1 });
                     }
@@ -129,6 +112,8 @@ export async function createPostWithImage(postData: PostData, imageDataUri: stri
 
     } catch (error: any) {
         console.error("Erro ao criar post no servidor: ", error);
-        return { success: false, error: error.message || "Ocorreu um erro desconhecido." };
+        // Garante que o objeto de erro seja serializável
+        const errorMessage = error.message || "Ocorreu um erro desconhecido.";
+        return { success: false, error: errorMessage };
     }
 }
