@@ -6,16 +6,15 @@ import { dataURItoFile } from './utils';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("Supabase URL or Anon Key is missing. Please check your .env.local file.");
-    // We don't throw an error here to allow the app to build,
-    // but features using Supabase will not work.
+// We only initialize the client if the keys are provided.
+// This avoids crashes if the environment variables are not set.
+let supabase: SupabaseClient | null = null;
+if (supabaseUrl && supabaseAnonKey) {
+    supabase = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+    console.error("Supabase URL or Anon Key is missing. Please check your environment variables.");
 }
 
-// Ensure createClient is called only when keys are available
-export const supabase: SupabaseClient | null = (supabaseUrl && supabaseAnonKey) 
-    ? createClient(supabaseUrl, supabaseAnonKey) 
-    : null;
 
 /**
  * Uploads an image to Supabase Storage.
@@ -26,7 +25,7 @@ export const supabase: SupabaseClient | null = (supabaseUrl && supabaseAnonKey)
  */
 export async function uploadImage(dataUri: string, userId: string, bucketName: 'posts' | 'avatars' | 'banners'): Promise<string | null> {
     if (!supabase) {
-        console.error("Supabase client is not initialized.");
+        console.error("Supabase client is not initialized. Cannot upload image.");
         return null;
     }
     
