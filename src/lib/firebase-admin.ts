@@ -23,6 +23,7 @@ const initializeFirebaseAdmin = () => {
                 credential: admin.credential.cert({
                     projectId: projectId,
                     clientEmail: clientEmail,
+                    // Replace literal \n with actual newlines
                     privateKey: privateKey.replace(/\\n/g, '\n'),
                 }),
                 storageBucket: `${projectId}.appspot.com`
