@@ -222,7 +222,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         try {
             let imageUrl: string | null = null;
             if (postImageDataUri) {
-                const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
+                const apiKey = "9796138e5afeeb164d2a8fbfc047d72a";
                 if (!apiKey) {
                     throw new Error("A chave da API do ImgBB não está configurada.");
                 }
@@ -515,3 +515,5 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         </Dialog>
     );
 }
+
+    
