@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, getDocs, query, where, updateDoc } from 'firebase/firestore';
-import { uploadImage } from '@/lib/supabase';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
 import { Button } from './ui/button';
@@ -144,9 +143,30 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 textareaRef.current?.focus();
             }, 150);
         } else {
-            resetModalState();
+            // Do not reset state here, it will clear before animation finishes.
+            // Let the onOpenChange handler from the parent manage the final reset.
         }
-    }, [open, resetModalState]);
+    }, [open]);
+
+    // Add a separate effect to clean up when the dialog is fully closed.
+    useEffect(() => {
+        if (!open) {
+            const timer = setTimeout(() => {
+                setNewPostContent('');
+                setPostImageDataUri(null);
+                setPostImagePreview(null);
+                setReplySetting('everyone');
+                setLocation('');
+                setShowPollCreator(false);
+                setPollData(null);
+                if (imageInputRef.current) {
+                    imageInputRef.current.value = '';
+                }
+            }, 300); // Delay matches dialog animation
+            return () => clearTimeout(timer);
+        }
+    }, [open]);
+
 
     const extractHashtags = (content: string) => {
         const regex = /#(\w+)/g;
@@ -166,10 +186,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 4 * 1024 * 1024) {
+        if (file.size > 1 * 1024 * 1024) { // 1MB limit for Base64
             toast({
                 title: 'Imagem muito grande',
-                description: 'Por favor, selecione uma imagem menor que 4MB.',
+                description: 'Por favor, selecione uma imagem menor que 1MB.',
                 variant: 'destructive',
             });
             return;
@@ -197,14 +217,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
         
         try {
-            let imageUrl: string | null = null;
-            if (postImageDataUri) {
-                imageUrl = await uploadImage(postImageDataUri, user.uid, 'posts');
-                if (!imageUrl) {
-                    throw new Error("Falha ao fazer upload da imagem.");
-                }
-            }
-
             const hashtags = extractHashtags(newPostContent);
             const mentionedHandles = extractMentions(newPostContent);
             const spotifyUrl = extractSpotifyUrl(newPostContent);
@@ -218,7 +230,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 content: newPostContent,
                 hashtags: hashtags,
                 mentions: mentionedHandles,
-                image: imageUrl,
+                image: postImageDataUri, // Save the Data URI directly
                 spotifyUrl: spotifyUrl,
                 location: location.trim() || null,
                 createdAt: serverTimestamp(),
@@ -276,7 +288,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 }
             });
 
-            resetModalState();
+            onOpenChange(false);
             toast({
                 title: "Post criado!",
                 description: "Seu post foi publicado com sucesso.",

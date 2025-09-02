@@ -12,7 +12,6 @@ import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { uploadImage } from '@/lib/supabase';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
@@ -88,10 +87,10 @@ export default function EditProfilePage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 4 * 1024 * 1024) { // 4MB limit
+        if (file.size > 1 * 1024 * 1024) { // 1MB limit for Base64
             toast({
                 title: 'Imagem muito grande',
-                description: 'Por favor, selecione uma imagem menor que 4MB.',
+                description: 'Por favor, selecione uma imagem menor que 1MB.',
                 variant: 'destructive',
             });
             return;
@@ -119,28 +118,14 @@ export default function EditProfilePage() {
     
         try {
             const userRef = doc(db, 'users', user.uid);
-            let avatarUrl = profileData.avatar;
-            let bannerUrl = profileData.banner;
-
-            if (newAvatarDataUri) {
-                const uploadedUrl = await uploadImage(newAvatarDataUri, user.uid, 'avatars');
-                if (!uploadedUrl) throw new Error("Falha no upload do avatar");
-                avatarUrl = uploadedUrl;
-            }
             
-            if (newBannerDataUri) {
-                const uploadedUrl = await uploadImage(newBannerDataUri, user.uid, 'banners');
-                if (!uploadedUrl) throw new Error("Falha no upload do banner");
-                bannerUrl = uploadedUrl;
-            }
-
             const firestoreUpdateData = {
                 displayName: profileData.displayName,
                 handle: profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`,
                 bio: profileData.bio,
                 location: profileData.location,
-                avatar: avatarUrl,
-                banner: bannerUrl,
+                avatar: newAvatarDataUri || profileData.avatar,
+                banner: newBannerDataUri || profileData.banner,
             };
             
             await updateDoc(userRef, firestoreUpdateData);
