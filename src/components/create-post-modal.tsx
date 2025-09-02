@@ -201,7 +201,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     };
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() && !postImageDataUri && !quotedPost) {
+        if (!newPostContent.trim() && !postImageDataUri && !quotedPost && !pollData) {
             toast({ title: "Não é possível criar um post vazio.", variant: "destructive" });
             return;
         }
