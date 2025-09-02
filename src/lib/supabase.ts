@@ -1,27 +1,23 @@
 
 'use server';
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import { dataURItoFile } from './utils';
 
-// This function creates a Supabase client configured to run on the server
-// with elevated service_role privileges. This allows bypassing RLS for uploads.
-const getSupabaseAdmin = () => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+// Esta função agora é chamada apenas no servidor, então podemos usar process.env diretamente.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-        console.error("Supabase server credentials are missing. Check environment variables.");
-        throw new Error("Configuração do servidor de armazenamento ausente.");
+if (!supabaseUrl || !supabaseServiceKey) {
+    console.error("Supabase server credentials are missing. Check environment variables.");
+}
+
+const supabaseAdmin = createClient(supabaseUrl!, supabaseServiceKey!, {
+    auth: {
+        persistSession: false
     }
-
-    return createClient(supabaseUrl, supabaseServiceKey, {
-        auth: {
-            persistSession: false
-        }
-    });
-};
+});
 
 /**
  * Uploads an image to Supabase Storage using a server-side action.
@@ -34,7 +30,11 @@ const getSupabaseAdmin = () => {
  * @returns The public URL of the uploaded image.
  */
 export async function uploadImage(dataUri: string, userId: string, bucketName: 'posts' | 'avatars' | 'banners'): Promise<string | null> {
-    const supabaseAdmin = getSupabaseAdmin();
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+        console.error("Supabase URL ou Chave de Serviço estão faltando. Upload cancelado.");
+        throw new Error("Configuração do servidor de armazenamento ausente.");
+    }
     
     try {
         const file = dataURItoFile(dataUri, `${uuidv4()}.jpg`);
