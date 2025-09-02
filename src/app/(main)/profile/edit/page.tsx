@@ -16,9 +16,8 @@ import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
-import { fileToDataUri, dataURItoFile } from '@/lib/utils';
-import { v4 as uuidv4 } from 'uuid';
-import { getSupabase } from '@/lib/supabase';
+import { fileToDataUri } from '@/lib/utils';
+import { uploadImageToSupabase } from '@/lib/supabase';
 
 
 interface UserProfileData {
@@ -122,41 +121,13 @@ export default function EditProfilePage() {
         try {
             let avatarUrl = profileData.avatar;
             let bannerUrl = profileData.banner;
-            
-            const supabase = getSupabase();
-            if (!supabase) {
-                throw new Error("A conexão com o Supabase não está configurada. Verifique as variáveis de ambiente.");
-            }
-
-            const uploadImage = async (dataUri: string, bucketPath: 'avatars' | 'banners'): Promise<string> => {
-                const file = dataURItoFile(dataUri, `${user.uid}-${uuidv4()}.jpg`);
-                const filePath = `${bucketPath}/${user.uid}/${file.name}`;
-                
-                const { error: uploadError } = await supabase.storage
-                    .from('zispr')
-                    .upload(filePath, file, { upsert: true });
-
-                if (uploadError) {
-                    throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
-                }
-
-                const { data: urlData } = supabase.storage
-                    .from('zispr')
-                    .getPublicUrl(filePath);
-
-                if (!urlData.publicUrl) {
-                    throw new Error("Não foi possível obter a URL pública da imagem após o upload.");
-                }
-                
-                return urlData.publicUrl;
-            };
 
             if (newAvatarDataUri) {
-                avatarUrl = await uploadImage(newAvatarDataUri, 'avatars');
+                avatarUrl = await uploadImageToSupabase(newAvatarDataUri, 'avatars', user.uid);
             }
             
             if (newBannerDataUri) {
-                bannerUrl = await uploadImage(newBannerDataUri, 'banners');
+                bannerUrl = await uploadImageToSupabase(newBannerDataUri, 'banners', user.uid);
             }
 
             const firestoreUpdateData = {

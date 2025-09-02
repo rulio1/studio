@@ -14,13 +14,12 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
-import { fileToDataUri, extractSpotifyUrl, extractHashtags, extractMentions, cn, dataURItoFile } from '@/lib/utils';
+import { fileToDataUri, extractSpotifyUrl, extractHashtags, extractMentions, cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
-import { getSupabase } from '@/lib/supabase';
-import { v4 as uuidv4 } from 'uuid';
+import { uploadImageToSupabase } from '@/lib/supabase';
 
 interface Post {
     id: string;
@@ -179,30 +178,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         try {
             let imageUrl: string | null = null;
             if (postImageDataUri) {
-                const supabase = getSupabase();
-                 if (!supabase) {
-                    throw new Error("A conexão com o Supabase não está configurada.");
-                }
-
-                const file = dataURItoFile(postImageDataUri, `${user.uid}-${uuidv4()}.jpg`);
-                const filePath = `posts/${user.uid}/${file.name}`;
-                
-                const { error: uploadError } = await supabase.storage
-                    .from('zispr')
-                    .upload(filePath, file, { upsert: true });
-
-                if (uploadError) {
-                    throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
-                }
-
-                const { data: urlData } = supabase.storage
-                    .from('zispr')
-                    .getPublicUrl(filePath);
-
-                if (!urlData.publicUrl) {
-                    throw new Error("Não foi possível obter a URL pública da imagem.");
-                }
-                imageUrl = urlData.publicUrl;
+                imageUrl = await uploadImageToSupabase(postImageDataUri, 'posts', user.uid);
             }
 
             const hashtags = extractHashtags(newPostContent);

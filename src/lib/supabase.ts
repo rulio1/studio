@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+import { v4 as uuidv4 } from 'uuid';
+import { dataURItoFile } from './utils';
 
 // As variáveis de ambiente da Vercel podem ter nomes longos e confusos.
 // Vamos pegar as chaves corretas, priorizando os nomes mais simples.
@@ -29,3 +31,39 @@ export const getSupabase = () => {
 
     return supabase;
 };
+
+/**
+ * Faz upload de uma imagem (em formato data URI) para um bucket específico no Supabase Storage.
+ * @param dataUri A imagem codificada em data URI.
+ * @param bucketPath O caminho do bucket (ex: 'avatars' ou 'posts').
+ * @param userId O ID do usuário para organizar os arquivos.
+ * @returns A URL pública da imagem após o upload.
+ */
+export async function uploadImageToSupabase(dataUri: string, bucketPath: 'avatars' | 'banners' | 'posts', userId: string): Promise<string> {
+    const supabaseClient = getSupabase();
+    if (!supabaseClient) {
+        throw new Error("A conexão com o Supabase não está configurada. Verifique as variáveis de ambiente.");
+    }
+
+    const file = dataURItoFile(dataUri, `${userId}-${uuidv4()}.jpg`);
+    const filePath = `${bucketPath}/${userId}/${file.name}`;
+    
+    const { error: uploadError } = await supabaseClient.storage
+        .from('zispr')
+        .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+        console.error("Supabase upload error:", uploadError);
+        throw new Error(`Falha no upload da imagem: ${uploadError.message}`);
+    }
+
+    const { data: urlData } = supabaseClient.storage
+        .from('zispr')
+        .getPublicUrl(filePath);
+
+    if (!urlData.publicUrl) {
+        throw new Error("Não foi possível obter a URL pública da imagem após o upload.");
+    }
+    
+    return urlData.publicUrl;
+}
