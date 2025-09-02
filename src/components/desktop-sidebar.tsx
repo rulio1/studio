@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck, Rocket } from 'lucide-react';
+import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck } from 'lucide-react';
 import CreatePostModal from './create-post-modal';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
@@ -157,12 +157,6 @@ export default function DesktopSidebar() {
                 <Button className="w-full rounded-full mt-4 p-6 text-lg" onClick={() => setIsModalOpen(true)}>
                     <Feather className="mr-2 h-5 w-5" />
                     Postar
-                </Button>
-                 <Button variant="outline" className="w-full rounded-full mt-2" asChild>
-                    <Link href="/pricing">
-                        <Rocket className="mr-2 h-5 w-5" />
-                        Upgrade para o Pro
-                    </Link>
                 </Button>
             </div>
 

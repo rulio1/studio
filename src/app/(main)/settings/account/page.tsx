@@ -2,13 +2,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { User, Lock, ChevronRight, UserX, Trash2, CreditCard } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { User, Lock, ChevronRight, UserX, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { createPortalSession } from '@/actions/stripe';
 
 const SettingsItem = ({ icon, title, description, onClick, isDestructive = false, disabled = false }: { icon: React.ElementType, title: string, description: string, onClick?: () => void, isDestructive?: boolean, disabled?: boolean }) => {
     const Icon = icon;
@@ -27,32 +22,6 @@ const SettingsItem = ({ icon, title, description, onClick, isDestructive = false
 export default function AccountSettingsPage() {
     const router = useRouter();
     const { user } = useAuth();
-    const { toast } = useToast();
-    const [isPortalLoading, setIsPortalLoading] = useState(false);
-
-    const redirectToCustomerPortal = async () => {
-        if (!user) return;
-        setIsPortalLoading(true);
-        try {
-            const { url, error } = await createPortalSession(user.uid);
-            if (error) {
-                throw new Error(error);
-            }
-            if(url) {
-                router.push(url);
-            } else {
-                 throw new Error('Could not create customer portal session.');
-            }
-        } catch (error: any) {
-            toast({
-                title: "Erro ao abrir portal",
-                description: error.message,
-                variant: "destructive"
-            });
-            setIsPortalLoading(false);
-        }
-    };
-
 
     return (
         <main className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -68,16 +37,6 @@ export default function AccountSettingsPage() {
                 description="Altere sua senha a qualquer momento."
                 onClick={() => router.push('/settings/account/change-password')}
             />
-            <div className="relative">
-                <SettingsItem 
-                    icon={CreditCard}
-                    title="Gerenciar Assinatura"
-                    description="Altere seu plano, cartão de crédito e veja seu histórico de pagamentos."
-                    onClick={redirectToCustomerPortal}
-                    disabled={isPortalLoading}
-                />
-                 {isPortalLoading && <Loader2 className="absolute top-1/2 right-4 -translate-y-1/2 h-5 w-5 animate-spin" />}
-            </div>
              <SettingsItem 
                 icon={UserX} 
                 title="Desativar sua conta" 
