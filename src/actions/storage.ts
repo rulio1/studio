@@ -1,7 +1,7 @@
 
 'use server';
 
-import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'firebase-storage';
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, runTransaction, doc } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase'; // Reutilizando a instância do cliente
 import { v4 as uuidv4 } from 'uuid';
