@@ -201,7 +201,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     };
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() && !postImageDataUri && !quotedPost && !pollData) {
+        if ((!newPostContent.trim() && !postImageDataUri && !quotedPost) && !pollData) {
             toast({ title: "Não é possível criar um post vazio.", variant: "destructive" });
             return;
         }
@@ -214,6 +214,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
 
         try {
             let imageUrl: string | null = null;
+            // 1. Handle image upload first, if it exists
             if (postImageDataUri) {
                 const imageRef = storageRef(storage, `posts/${user.uid}/${uuidv4()}`);
                 await uploadString(imageRef, postImageDataUri, 'data_url');
@@ -224,6 +225,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             const mentionedHandles = extractMentions(newPostContent);
             const spotifyUrl = extractSpotifyUrl(newPostContent);
             
+            // 2. Prepare the post data, now with the final imageUrl
             const postData = {
                 authorId: user.uid,
                 author: zisprUser.displayName,
@@ -247,7 +249,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 replySettings: replySetting,
                 status: 'published',
             };
-
+            
+            // 3. Run Firestore transaction to save the post and update hashtags
             await runTransaction(db, async (transaction) => {
                 const postRef = doc(collection(db, "posts"));
                 transaction.set(postRef, postData);
@@ -271,7 +274,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 description: "Seu post foi publicado com sucesso.",
             });
         } catch (error: any) {
-            console.error(error);
+            console.error("Falha ao criar o post:", error);
             toast({ title: "Falha ao criar o post", description: error.message || "Por favor, tente novamente.", variant: "destructive" });
         } finally {
             setIsPosting(false);
@@ -292,7 +295,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setShowPollCreator(!showPollCreator);
     };
     
-    const isSubmitDisabled = (!newPostContent.trim() && !postImageDataUri && !quotedPost && !pollData) || isPosting || newPostContent.length > MAX_CHARS;
+    const isSubmitDisabled = (newPostContent.length === 0 && !postImageDataUri && !quotedPost && !pollData) || isPosting || newPostContent.length > MAX_CHARS;
     
     const QuotedPostPreview = ({ post }: { post: Post }) => (
         <div className="mt-2 border rounded-xl p-3">
