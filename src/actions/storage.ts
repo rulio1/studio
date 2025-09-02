@@ -46,15 +46,15 @@ const extractSpotifyUrl = (text: string): string | null => {
 };
 
 export async function createPostWithImage(postData: PostData, imageDataUri: string | null) {
-    // Inicializa o Firebase Admin SDK se ainda não tiver sido inicializado
     if (admin.apps.length === 0) {
         try {
+            const serviceAccount = {
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+            };
             admin.initializeApp({
-                credential: admin.credential.cert({
-                    projectId: process.env.FIREBASE_PROJECT_ID,
-                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                    privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-                }),
+                credential: admin.credential.cert(serviceAccount),
             });
         } catch (error: any) {
             console.error('Firebase admin initialization error', error);
@@ -62,8 +62,7 @@ export async function createPostWithImage(postData: PostData, imageDataUri: stri
         }
     }
     
-    // Obtém a instância do Firestore APÓS a inicialização
-    const db = getFirestore();
+    const db = admin.firestore();
 
     try {
         let imageUrl: string | null = null;
@@ -73,7 +72,6 @@ export async function createPostWithImage(postData: PostData, imageDataUri: stri
                 throw new Error("A chave da API do ImgBB não está configurada no servidor.");
             }
 
-            // Remove the data URI prefix
             const base64Data = imageDataUri.split(',')[1];
             
             const form = new FormData();
@@ -102,7 +100,7 @@ export async function createPostWithImage(postData: PostData, imageDataUri: stri
             hashtags,
             mentions: mentionedHandles,
             spotifyUrl,
-            createdAt: serverTimestamp(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
             comments: 0,
             retweets: [],
             likes: [],
@@ -110,16 +108,16 @@ export async function createPostWithImage(postData: PostData, imageDataUri: stri
             status: 'published',
         };
         
-        await runTransaction(db, async (transaction) => {
-            const postRef = doc(collection(db, "posts"));
+        await db.runTransaction(async (transaction) => {
+            const postRef = db.collection("posts").doc();
             transaction.set(postRef, finalPostData);
 
             if (hashtags.length > 0) {
                 for (const tag of hashtags) {
-                    const hashtagRef = doc(db, 'hashtags', tag);
+                    const hashtagRef = db.collection('hashtags').doc(tag);
                     const hashtagDoc = await transaction.get(hashtagRef);
-                    if (hashtagDoc.exists()) {
-                        transaction.update(hashtagRef, { count: (hashtagDoc.data().count || 0) + 1 });
+                    if (hashtagDoc.exists) {
+                        transaction.update(hashtagRef, { count: admin.firestore.FieldValue.increment(1) });
                     } else {
                         transaction.set(hashtagRef, { name: tag, count: 1 });
                     }
