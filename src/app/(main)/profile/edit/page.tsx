@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
@@ -17,8 +17,8 @@ import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 import { fileToDataUri } from '@/lib/utils';
-import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
-import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
+import FormData from 'form-data';
 
 
 interface UserProfileData {
@@ -114,25 +114,41 @@ export default function EditProfilePage() {
         setProfileData({ ...profileData, [e.target.id]: e.target.value });
     };
     
+    const uploadToImgBB = async (dataUri: string): Promise<string> => {
+        const apiKey = "9796138e5afeeb164d2a8fbfc047d72a";
+        if (!apiKey) {
+            throw new Error("A chave da API do ImgBB não está configurada.");
+        }
+
+        const base64Data = dataUri.split(',')[1];
+        
+        const form = new FormData();
+        form.append('image', base64Data);
+
+        const response = await axios.post(`https://api.imgbb.com/1/upload?key=${apiKey}`, form, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        if (response.data.success) {
+            return response.data.data.url;
+        } else {
+            throw new Error(response.data.error?.message || 'Falha ao fazer upload da imagem para o ImgBB.');
+        }
+    };
+    
     const handleSave = async () => {
         if (!user) return;
         setIsSaving(true);
     
         try {
-            const userRef = doc(db, 'users', user.uid);
-            
             let avatarUrl = profileData.avatar;
             if (newAvatarDataUri) {
-                const imageRef = storageRef(storage, `avatars/${user.uid}/${uuidv4()}`);
-                await uploadString(imageRef, newAvatarDataUri, 'data_url');
-                avatarUrl = await getDownloadURL(imageRef);
+                avatarUrl = await uploadToImgBB(newAvatarDataUri);
             }
 
             let bannerUrl = profileData.banner;
             if (newBannerDataUri) {
-                const imageRef = storageRef(storage, `banners/${user.uid}/${uuidv4()}`);
-                await uploadString(imageRef, newBannerDataUri, 'data_url');
-                bannerUrl = await getDownloadURL(imageRef);
+                bannerUrl = await uploadToImgBB(newBannerDataUri);
             }
             
             const firestoreUpdateData = {
@@ -144,6 +160,7 @@ export default function EditProfilePage() {
                 banner: bannerUrl,
             };
             
+            const userRef = doc(db, 'users', user.uid);
             await updateDoc(userRef, firestoreUpdateData);
     
             toast({
