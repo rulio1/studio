@@ -5,23 +5,32 @@ import * as admin from 'firebase-admin';
 const initializeFirebaseAdmin = () => {
     if (admin.apps.length === 0) {
         try {
-            // Check if the environment variables are set
-            if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-                // This will be caught by the outer catch block
-                throw new Error('Firebase Admin SDK environment variables are not set.');
+            const projectId = process.env.FIREBASE_PROJECT_ID;
+            const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+            const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+            if (!projectId) {
+                throw new Error('Firebase Admin SDK: FIREBASE_PROJECT_ID environment variable is not set.');
             }
+            if (!clientEmail) {
+                throw new Error('Firebase Admin SDK: FIREBASE_CLIENT_EMAIL environment variable is not set.');
+            }
+            if (!privateKey) {
+                throw new Error('Firebase Admin SDK: FIREBASE_PRIVATE_KEY environment variable is not set.');
+            }
+            
             admin.initializeApp({
                 credential: admin.credential.cert({
-                    projectId: process.env.FIREBASE_PROJECT_ID,
-                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                    privateKey: (process.env.FIREBASE_PRIVATE_KEY).replace(/\\n/g, '\n'),
+                    projectId: projectId,
+                    clientEmail: clientEmail,
+                    privateKey: privateKey.replace(/\\n/g, '\n'),
                 }),
-                storageBucket: `${process.env.FIREBASE_PROJECT_ID}.appspot.com`
+                storageBucket: `${projectId}.appspot.com`
             });
         } catch (error: any) {
-            console.error('Firebase admin initialization error', error.stack);
-            // Throwing the error can help debug issues during deployment
-            throw new Error('Firebase Admin SDK initialization failed.');
+            console.error('Firebase admin initialization error:', error.message);
+            // Throw a more specific error to help with debugging
+            throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
         }
     }
     return {
