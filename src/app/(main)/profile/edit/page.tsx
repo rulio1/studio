@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
@@ -17,7 +17,8 @@ import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 import { fileToDataUri } from '@/lib/utils';
-import { uploadImage } from '@/actions/storage';
+import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
 
 
 interface UserProfileData {
@@ -122,12 +123,16 @@ export default function EditProfilePage() {
             
             let avatarUrl = profileData.avatar;
             if (newAvatarDataUri) {
-                avatarUrl = await uploadImage(newAvatarDataUri, user.uid, 'avatars');
+                const imageRef = storageRef(storage, `avatars/${user.uid}/${uuidv4()}`);
+                await uploadString(imageRef, newAvatarDataUri, 'data_url');
+                avatarUrl = await getDownloadURL(imageRef);
             }
 
             let bannerUrl = profileData.banner;
             if (newBannerDataUri) {
-                bannerUrl = await uploadImage(newBannerDataUri, user.uid, 'banners');
+                const imageRef = storageRef(storage, `banners/${user.uid}/${uuidv4()}`);
+                await uploadString(imageRef, newBannerDataUri, 'data_url');
+                bannerUrl = await getDownloadURL(imageRef);
             }
             
             const firestoreUpdateData = {

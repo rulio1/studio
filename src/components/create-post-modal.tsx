@@ -6,9 +6,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, getDocs, query, where, updateDoc } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
+import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -19,7 +20,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
-import { uploadImage } from '@/actions/storage';
+import { v4 as uuidv4 } from 'uuid';
 
 
 interface Post {
@@ -200,27 +201,18 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     };
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() && !postImageDataUri && !quotedPost) {
+        if ((!newPostContent.trim() && !postImageDataUri && !quotedPost) || !user || !zisprUser) {
+            toast({ title: "Não é possível criar um post vazio.", variant: "destructive" });
             return;
         }
-        if (!user || !zisprUser) {
-             toast({
-                title: "Usuário não autenticado.",
-                description: "Por favor, faça login para postar.",
-                variant: "destructive",
-            });
-            return;
-        }
-
         setIsPosting(true);
-        
+
         try {
             let imageUrl: string | null = null;
             if (postImageDataUri) {
-                imageUrl = await uploadImage(postImageDataUri, user.uid, 'posts');
-                if (!imageUrl) {
-                    throw new Error("Falha ao fazer upload da imagem.");
-                }
+                const imageRef = storageRef(storage, `posts/${user.uid}/${uuidv4()}`);
+                await uploadString(imageRef, postImageDataUri, 'data_url');
+                imageUrl = await getDownloadURL(imageRef);
             }
 
             const hashtags = extractHashtags(newPostContent);
@@ -265,32 +257,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                             transaction.set(hashtagRef, { name: tag, count: 1 });
                         }
                     }
-                }
-
-                if (mentionedHandles.length > 0) {
-                    const usersRef = collection(db, "users");
-                    const q = query(usersRef, where("handle", "in", mentionedHandles));
-                    const querySnapshot = await getDocs(q);
-                    querySnapshot.forEach(userDoc => {
-                        const mentionedUserId = userDoc.id;
-                         const notificationRef = doc(collection(db, 'notifications'));
-                        transaction.set(notificationRef, {
-                            toUserId: mentionedUserId,
-                            fromUserId: user.uid,
-                            fromUser: {
-                                name: zisprUser.displayName,
-                                handle: zisprUser.handle,
-                                avatar: zisprUser.avatar,
-                                isVerified: zisprUser.isVerified || false,
-                            },
-                            type: 'mention',
-                            text: 'mencionou você em um post',
-                            postContent: newPostContent.substring(0, 50),
-                            postId: postRef.id,
-                            createdAt: serverTimestamp(),
-                            read: false,
-                        });
-                    });
                 }
             });
             
