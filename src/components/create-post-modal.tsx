@@ -7,7 +7,7 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
 import { Button } from './ui/button';
@@ -19,7 +19,8 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
-import { createPostWithImage } from '@/actions/storage';
+import axios from 'axios';
+import FormData from 'form-data';
 
 
 interface Post {
@@ -82,6 +83,28 @@ const replyOptions: Record<ReplySetting, { icon: React.ElementType, text: string
 };
 
 const MAX_CHARS = 280;
+
+const extractHashtags = (content: string) => {
+    const regex = /#(\w+)/g;
+    const matches = content.match(regex);
+    if (!matches) return [];
+    return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
+};
+
+const extractMentions = (content: string) => {
+    const regex = /@(\w+)/g;
+    const matches = content.match(regex);
+    if (!matches) return [];
+    return [...new Set(matches)];
+};
+
+const extractSpotifyUrl = (text: string): string | null => {
+    if (!text) return null;
+    const spotifyRegex = /(https?:\/\/(?:open|play)\.spotify\.com\/(?:track|album|artist|playlist)\/[a-zA-Z0-9]+)/;
+    const match = text.match(spotifyRegex);
+    return match ? match[0] : null;
+};
+
 
 export default function CreatePostModal({ open, onOpenChange, quotedPost }: CreatePostModalProps) {
     const [newPostContent, setNewPostContent] = useState('');
@@ -197,6 +220,35 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
 
         try {
+            let imageUrl: string | null = null;
+            if (postImageDataUri) {
+                const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
+                if (!apiKey) {
+                    throw new Error("A chave da API do ImgBB não está configurada.");
+                }
+
+                const base64Data = postImageDataUri.split(',')[1];
+                
+                const form = new FormData();
+                form.append('image', base64Data);
+
+                const response = await axios.post(`https://api.imgbb.com/1/upload?key=${apiKey}`, form, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+
+                if (response.data.success) {
+                    imageUrl = response.data.data.url;
+                } else {
+                    throw new Error(response.data.error?.message || 'Falha ao fazer upload da imagem para o ImgBB.');
+                }
+            }
+
+            const hashtags = extractHashtags(newPostContent);
+            const mentionedHandles = extractMentions(newPostContent);
+            const spotifyUrl = extractSpotifyUrl(newPostContent);
+
             const postData = {
                 authorId: user.uid,
                 author: zisprUser.displayName,
@@ -209,23 +261,46 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 location: location.trim() || null,
                 poll: pollData ? { options: pollData.options.map(o => o.text), votes: pollData.options.map(() => 0), voters: {} } : null,
                 replySettings: replySetting,
+                image: imageUrl,
+                hashtags,
+                mentions: mentionedHandles,
+                spotifyUrl,
+                createdAt: serverTimestamp(),
+                comments: 0,
+                retweets: [],
+                likes: [],
+                views: 0,
+                status: 'published',
             };
 
-            const result = await createPostWithImage(postData, postImageDataUri);
+            await runTransaction(db, async (transaction) => {
+                const postRef = doc(collection(db, "posts"));
+                transaction.set(postRef, postData);
+
+                if (hashtags.length > 0) {
+                    for (const tag of hashtags) {
+                        const hashtagRef = doc(db, 'hashtags', tag);
+                        const hashtagDoc = await transaction.get(hashtagRef);
+                        if (hashtagDoc.exists()) {
+                            const currentCount = hashtagDoc.data().count || 0;
+                            transaction.update(hashtagRef, { count: currentCount + 1 });
+                        } else {
+                            transaction.set(hashtagRef, { name: tag, count: 1 });
+                        }
+                    }
+                }
+            });
             
-            if(result.success) {
-                resetModalState();
-                toast({
-                    title: "Post criado!",
-                    description: "Seu post foi publicado com sucesso.",
-                });
-            } else {
-                 throw new Error(result.error || "Ocorreu um erro desconhecido no servidor.");
-            }
+            resetModalState();
+            toast({
+                title: "Post criado!",
+                description: "Seu post foi publicado com sucesso.",
+            });
 
         } catch (error: any) {
             console.error("Falha ao criar o post:", error);
-            toast({ title: "Falha ao criar o post", description: error.message || "Por favor, tente novamente.", variant: "destructive" });
+            const errorMessage = error.response?.data?.error?.message || error.message || "Por favor, tente novamente.";
+            toast({ title: "Falha ao criar o post", description: errorMessage, variant: "destructive" });
         } finally {
             setIsPosting(false);
         }
