@@ -24,23 +24,6 @@ interface PostData {
     } | null;
 }
 
-// Inicializa o Firebase Admin SDK se ainda não tiver sido inicializado
-if (admin.apps.length === 0) {
-    try {
-        admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-            }),
-        });
-    } catch (error: any) {
-        console.error('Firebase admin initialization error', error);
-    }
-}
-
-const db = getFirestore();
-
 const extractHashtags = (content: string) => {
     const regex = /#(\w+)/g;
     const matches = content.match(regex);
@@ -63,6 +46,25 @@ const extractSpotifyUrl = (text: string): string | null => {
 };
 
 export async function createPostWithImage(postData: PostData, imageDataUri: string | null) {
+    // Inicializa o Firebase Admin SDK se ainda não tiver sido inicializado
+    if (admin.apps.length === 0) {
+        try {
+            admin.initializeApp({
+                credential: admin.credential.cert({
+                    projectId: process.env.FIREBASE_PROJECT_ID,
+                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                    privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+                }),
+            });
+        } catch (error: any) {
+            console.error('Firebase admin initialization error', error);
+            return { success: false, error: 'Falha na inicialização do servidor.' };
+        }
+    }
+    
+    // Obtém a instância do Firestore APÓS a inicialização
+    const db = getFirestore();
+
     try {
         let imageUrl: string | null = null;
         if (imageDataUri) {
