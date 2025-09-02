@@ -6,21 +6,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db, storage } from '@/lib/firebase';
-import { addDoc, collection, doc, onSnapshot, serverTimestamp, runTransaction, getDocs, query, where, updateDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
-import { fileToDataUri, extractSpotifyUrl } from '@/lib/utils';
+import { fileToDataUri } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
-import { v4 as uuidv4 } from 'uuid';
+import { createPostWithImage } from '@/actions/storage';
 
 
 interface Post {
@@ -147,7 +146,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
     }, [open]);
 
-    // Add a separate effect to clean up when the dialog is fully closed.
     useEffect(() => {
         if (!open) {
             const timer = setTimeout(() => {
@@ -166,20 +164,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
     }, [open]);
 
-
-    const extractHashtags = (content: string) => {
-        const regex = /#(\w+)/g;
-        const matches = content.match(regex);
-        if (!matches) return [];
-        return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
-    };
-    
-    const extractMentions = (content: string) => {
-        const regex = /@(\w+)/g;
-        const matches = content.match(regex);
-        if (!matches) return [];
-        return [...new Set(matches)];
-    };
 
      const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -213,19 +197,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
 
         try {
-            let imageUrl: string | null = null;
-            // 1. Handle image upload first, if it exists
-            if (postImageDataUri) {
-                const imageRef = storageRef(storage, `posts/${user.uid}/${uuidv4()}`);
-                await uploadString(imageRef, postImageDataUri, 'data_url');
-                imageUrl = await getDownloadURL(imageRef);
-            }
-
-            const hashtags = extractHashtags(newPostContent);
-            const mentionedHandles = extractMentions(newPostContent);
-            const spotifyUrl = extractSpotifyUrl(newPostContent);
-            
-            // 2. Prepare the post data, now with the final imageUrl
             const postData = {
                 authorId: user.uid,
                 author: zisprUser.displayName,
@@ -233,46 +204,25 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 avatar: zisprUser.avatar,
                 avatarFallback: zisprUser.displayName[0],
                 content: newPostContent,
-                hashtags: hashtags,
-                mentions: mentionedHandles,
-                image: imageUrl,
-                spotifyUrl: spotifyUrl,
-                location: location.trim() || null,
-                createdAt: serverTimestamp(),
-                comments: 0,
-                retweets: [],
-                likes: [],
-                views: 0,
                 isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
                 quotedPostId: quotedPost ? quotedPost.id : null,
+                location: location.trim() || null,
                 poll: pollData ? { options: pollData.options.map(o => o.text), votes: pollData.options.map(() => 0), voters: {} } : null,
                 replySettings: replySetting,
-                status: 'published',
             };
-            
-            // 3. Run Firestore transaction to save the post and update hashtags
-            await runTransaction(db, async (transaction) => {
-                const postRef = doc(collection(db, "posts"));
-                transaction.set(postRef, postData);
 
-                if (hashtags.length > 0) {
-                    for (const tag of hashtags) {
-                        const hashtagRef = doc(db, 'hashtags', tag);
-                        const hashtagDoc = await transaction.get(hashtagRef);
-                        if (hashtagDoc.exists()) {
-                            transaction.update(hashtagRef, { count: (hashtagDoc.data().count || 0) + 1 });
-                        } else {
-                            transaction.set(hashtagRef, { name: tag, count: 1 });
-                        }
-                    }
-                }
-            });
+            const result = await createPostWithImage(postData, postImageDataUri);
             
-            resetModalState();
-            toast({
-                title: "Post criado!",
-                description: "Seu post foi publicado com sucesso.",
-            });
+            if(result.success) {
+                resetModalState();
+                toast({
+                    title: "Post criado!",
+                    description: "Seu post foi publicado com sucesso.",
+                });
+            } else {
+                 throw new Error(result.error || "Ocorreu um erro desconhecido no servidor.");
+            }
+
         } catch (error: any) {
             console.error("Falha ao criar o post:", error);
             toast({ title: "Falha ao criar o post", description: error.message || "Por favor, tente novamente.", variant: "destructive" });
