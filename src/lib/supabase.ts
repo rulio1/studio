@@ -23,7 +23,6 @@ if (supabaseUrl && supabaseAnonKey) {
 export async function uploadImage(dataUri: string, userId: string, bucketName: 'posts' | 'avatars' | 'banners'): Promise<string | null> {
     if (!supabase) {
         console.error("Supabase client is not initialized. Cannot upload image.");
-        // This will be shown to the user in the toast.
         throw new Error("A conexão com o serviço de armazenamento não foi inicializada.");
     }
     
@@ -35,8 +34,6 @@ export async function uploadImage(dataUri: string, userId: string, bucketName: '
             .from(bucketName)
             .upload(filePath, file, {
                 cacheControl: '3600',
-                // Set upsert to false. We want a unique file for each upload.
-                // The new RLS policies will handle permissions correctly.
                 upsert: false, 
             });
 
