@@ -6,16 +6,12 @@ import { dataURItoFile } from './utils';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// We only initialize the client if the keys are provided.
-// This avoids crashes if the environment variables are not set.
 let supabase: SupabaseClient | null = null;
 if (supabaseUrl && supabaseAnonKey) {
     supabase = createClient(supabaseUrl, supabaseAnonKey);
 } else {
-    // This error will be caught during development if the .env file is missing keys
-    console.error("Supabase URL or Anon Key is missing. Please check your .env file.");
+    console.error("Supabase URL or Anon Key is missing. Please check your .env.local file.");
 }
-
 
 /**
  * Uploads an image to Supabase Storage.
@@ -27,22 +23,26 @@ if (supabaseUrl && supabaseAnonKey) {
 export async function uploadImage(dataUri: string, userId: string, bucketName: 'posts' | 'avatars' | 'banners'): Promise<string | null> {
     if (!supabase) {
         console.error("Supabase client is not initialized. Cannot upload image.");
-        return null;
+        // This will be shown to the user in the toast.
+        throw new Error("A conexão com o serviço de armazenamento não foi inicializada.");
     }
     
     try {
         const file = dataURItoFile(dataUri, `${uuidv4()}.jpg`);
-        const filePath = `${userId}/${bucketName}/${file.name}`;
+        const filePath = `${userId}/${file.name}`;
 
         const { error: uploadError } = await supabase.storage
             .from(bucketName)
             .upload(filePath, file, {
                 cacheControl: '3600',
-                upsert: false,
+                // Set upsert to false. We want a unique file for each upload.
+                // The new RLS policies will handle permissions correctly.
+                upsert: false, 
             });
 
         if (uploadError) {
-            // Throw the specific Supabase error to be caught below
+            // Throw the specific Supabase error to be caught by the calling function.
+            // This will give us a more detailed error message.
             throw uploadError;
         }
 
@@ -53,8 +53,9 @@ export async function uploadImage(dataUri: string, userId: string, bucketName: '
         return data.publicUrl;
 
     } catch (error: any) {
-        // Log the detailed error from Supabase for easier debugging
+        // Log the detailed error for easier debugging and re-throw a user-friendly message.
         console.error("Error uploading image to Supabase:", error.message || error);
-        return null;
+        // This message can be displayed to the user in a toast.
+        throw new Error(`Falha no upload da imagem: ${error.message}`);
     }
 }
