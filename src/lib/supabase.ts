@@ -12,7 +12,8 @@ let supabase: SupabaseClient | null = null;
 if (supabaseUrl && supabaseAnonKey) {
     supabase = createClient(supabaseUrl, supabaseAnonKey);
 } else {
-    console.error("Supabase URL or Anon Key is missing. Please check your environment variables.");
+    // This error will be caught during development if the .env file is missing keys
+    console.error("Supabase URL or Anon Key is missing. Please check your .env file.");
 }
 
 
@@ -41,7 +42,7 @@ export async function uploadImage(dataUri: string, userId: string, bucketName: '
             });
 
         if (uploadError) {
-            console.error('Supabase upload error:', uploadError);
+            // Throw the specific Supabase error to be caught below
             throw uploadError;
         }
 
@@ -51,8 +52,9 @@ export async function uploadImage(dataUri: string, userId: string, bucketName: '
 
         return data.publicUrl;
 
-    } catch (error) {
-        console.error("Error uploading image to Supabase:", error);
+    } catch (error: any) {
+        // Log the detailed error from Supabase for easier debugging
+        console.error("Error uploading image to Supabase:", error.message || error);
         return null;
     }
 }
