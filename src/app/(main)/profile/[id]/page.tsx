@@ -361,7 +361,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
                     )}
                      {post.image && (
                         <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); onImageClick(post); }}>
-                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint="Imagem do perfil" />
+                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
                         </div>
                     )}
                     <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
@@ -1107,7 +1107,7 @@ export default function ProfilePage() {
                     alt="Banner"
                     layout="fill"
                     objectFit="cover"
-                    data-ai-hint="Imagem do perfil"
+                    data-ai-hint="profile banner"
                 />
             )}
         </div>
@@ -1121,7 +1121,7 @@ export default function ProfilePage() {
                             </div>
                         ) : (
                            <>
-                             <AvatarImage src={profileUser.avatar} data-ai-hint="Imagem do perfil" alt={profileUser.displayName} />
+                             <AvatarImage src={profileUser.avatar} data-ai-hint="profile avatar" alt={profileUser.displayName} />
                              <AvatarFallback className="text-4xl">{profileUser.displayName?.[0]}</AvatarFallback>
                            </>
                         )}
