@@ -76,7 +76,7 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
     // Specific logic for chat page
     if (pathname.startsWith('/chat')) {
         return (
-            <div className="flex min-h-svh justify-center">
+            <div className="flex h-screen justify-center">
                 <DesktopSidebar />
                 <main className="flex-1 min-w-0 max-w-2xl md:border-x">
                     <div className="animate-fade-in animate-slide-in-from-bottom h-full">
