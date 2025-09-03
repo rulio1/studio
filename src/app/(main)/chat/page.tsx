@@ -216,9 +216,9 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <main className="flex-1 relative">
-        <ScrollArea className="absolute inset-0" ref={scrollAreaRef}>
-            <div className="p-4 space-y-6 pb-32 md:pb-24">
+      <main className="flex-1 overflow-y-auto">
+        <ScrollArea className="h-full" ref={scrollAreaRef}>
+            <div className="p-4 space-y-6 pb-4">
                  {isLoadingHistory ? (
                      <div className="flex justify-center items-center h-full">
                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -255,22 +255,22 @@ export default function ChatPage() {
                  )}
             </div>
         </ScrollArea>
-        <div className="fixed bottom-0 left-0 right-0 p-4 pt-2 border-t bg-background/80 backdrop-blur-lg pb-24 md:pb-4">
-            <div className="relative flex items-center rounded-2xl border bg-muted p-2 max-w-2xl mx-auto">
-                <Input 
-                    placeholder="Pergunte qualquer coisa ao Zispr AI..." 
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                    disabled={isLoading}
-                    className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-                <Button onClick={handleSend} disabled={isLoading || !input.trim()} size="icon" className="rounded-full">
-                    <Send className="h-5 w-5" />
-                </Button>
-            </div>
-        </div>
       </main>
+      <footer className="p-4 pt-2 border-t bg-background/80 backdrop-blur-lg">
+          <div className="relative flex items-center rounded-2xl border bg-muted p-2 max-w-2xl mx-auto">
+              <Input 
+                  placeholder="Pergunte qualquer coisa ao Zispr AI..." 
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                  disabled={isLoading}
+                  className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              <Button onClick={handleSend} disabled={isLoading || !input.trim()} size="icon" className="rounded-full">
+                  <Send className="h-5 w-5" />
+              </Button>
+          </div>
+      </footer>
     </div>
 
      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
