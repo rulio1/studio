@@ -482,16 +482,18 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                             </Avatar>
                             { (newPostContent || postImagePreview || quotedPost) && <div className="w-0.5 flex-1 bg-border my-2"></div> }
                         </div>
-                        <div className="w-full relative">
-                            <Textarea
-                                ref={textareaRef}
-                                placeholder="O que está acontecendo?"
-                                className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none min-h-[80px]"
-                                value={newPostContent}
-                                onChange={handleTextChange}
-                                disabled={isPosting}
-                            />
-                            {showSuggestions && suggestions.length > 0 && <SuggestionPopup />}
+                        <div className="w-full">
+                            <div className="relative">
+                                <Textarea
+                                    ref={textareaRef}
+                                    placeholder="O que está acontecendo?"
+                                    className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none min-h-[80px]"
+                                    value={newPostContent}
+                                    onChange={handleTextChange}
+                                    disabled={isPosting}
+                                />
+                                {showSuggestions && suggestions.length > 0 && <SuggestionPopup />}
+                            </div>
                             {showPollCreator && (
                                 <div className="mt-2">
                                     <PollCreator onChange={setPollData} />
@@ -520,7 +522,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                 </div>
                             )}
                             {quotedPost && (
-                                <div className="w-full">
+                                <div className="w-full mt-2">
                                     <QuotedPostPreview post={quotedPost} />
                                 </div>
                             )}
@@ -534,8 +536,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     </div>
                     
                     <div className="pl-12 flex flex-col gap-2">
-                        {quotedPost && (
-                            <div className="flex items-center gap-2 -mt-2">
+                         {quotedPost && (
+                            <div className="flex items-center gap-2">
                                <span className="text-sm text-muted-foreground">Respondendo a</span>
                                <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-sm font-semibold">{quotedPost.handle}</span>
                             </div>
