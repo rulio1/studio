@@ -530,7 +530,7 @@ useEffect(() => {
                 </Avatar>
                 <span className="font-bold flex items-center gap-1">
                     {post.author}
-                    {(post.isVerified || post.handle === '@rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
+                    {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
                 </span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>
@@ -608,7 +608,7 @@ useEffect(() => {
     }, [post.createdAt, post.repostedAt]);
     
     const isZisprAccount = post.handle === '@Zispr';
-    const isVerified = post.isVerified || post.handle === '@rulio';
+    const isVerified = post.isVerified || post.handle === '@Rulio';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
 
@@ -847,7 +847,7 @@ useEffect(() => {
   }
   
     const isZisprAccount = zisprUser.handle === '@Zispr';
-    const isZisprUserVerified = zisprUser.isVerified || zisprUser.handle === '@rulio';
+    const isZisprUserVerified = zisprUser.isVerified || zisprUser.handle === '@Rulio';
     const navItems = [
         { href: '/home', icon: Home, label: 'Início' },
         { href: '/notifications', icon: Bell, label: 'Notificações' },

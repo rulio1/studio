@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -199,7 +200,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
                 </Avatar>
                 <span className="font-bold flex items-center gap-1">
                     {post.author}
-                    {(post.isVerified || post.handle === '@rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
+                    {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
                 </span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>
@@ -230,7 +231,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
     }, [post.createdAt, post.repostedAt]);
     
     const isZisprAccount = post.handle === '@Zispr';
-    const isVerified = post.isVerified || post.handle === '@rulio';
+    const isVerified = post.isVerified || post.handle === '@Rulio';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
     const isRetweeted = Array.isArray(post.retweets) && post.retweets.includes(user?.uid || '');
     const isLiked = Array.isArray(post.likes) && post.likes.includes(user?.uid || '');
@@ -1075,7 +1076,7 @@ export default function ProfilePage() {
     }
 
     const isZisprAccount = profileUser.handle === '@Zispr';
-    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@rulio';
+    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@Rulio';
     const canViewLikes = isOwnProfile || !profileUser.likesArePrivate;
     const tabIndicatorPositions: { [key: string]: number } = {
         posts: 0,

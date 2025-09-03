@@ -248,7 +248,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 avatar: zisprUser.avatar,
                 avatarFallback: zisprUser.displayName[0],
                 content: newPostContent,
-                isVerified: zisprUser.isVerified || zisprUser.handle === '@rulio',
+                isVerified: zisprUser.isVerified || zisprUser.handle === '@Rulio',
                 quotedPostId: quotedPost ? quotedPost.id : null,
                 quotedPost: quotedPostData,
                 location: location.trim() || null,
@@ -323,7 +323,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 </Avatar>
                 <span className="font-bold flex items-center gap-1">
                     {post.author}
-                     {(post.isVerified || post.handle === '@rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
+                     {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
                 </span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>

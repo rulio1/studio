@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -190,7 +191,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
                 </Avatar>
                  <span className="font-bold flex items-center gap-1">
                     {post.author}
-                    {(post.isVerified || post.handle === '@rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
+                    {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
                 </span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>
@@ -236,7 +237,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment, onReply }
     };
     
     const isZisprAccount = comment.handle === '@Zispr';
-    const isVerified = comment.isVerified || comment.handle === '@rulio';
+    const isVerified = comment.isVerified || comment.handle === '@Rulio';
 
     return (
         <li className="p-4 flex gap-4 relative border-b">
@@ -787,7 +788,7 @@ export default function PostDetailPage() {
     }
     
     const isZisprAccount = post.handle === '@Zispr';
-    const isPostVerified = post.isVerified || post.handle === '@rulio';
+    const isPostVerified = post.isVerified || post.handle === '@Rulio';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
     return (

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -224,7 +225,7 @@ export default function ConversationPage() {
     }
     
     const isZisprAccount = otherUser.handle === '@Zispr';
-    const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@rulio';
+    const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@Rulio';
 
   return (
     <div className="flex flex-col h-screen bg-background pb-20 md:pb-0">
