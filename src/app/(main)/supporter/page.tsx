@@ -8,7 +8,7 @@ import { BadgeCheck, CheckCircle, HandHeart } from "lucide-react";
 const tiers = [
   {
     name: "Apoiador Básico",
-    price: "R$ 5",
+    price: "R$5",
     priceSuffix: "/mês",
     description: "Para quem quer dar o primeiro passo e ajudar a plataforma a crescer.",
     features: [
@@ -19,7 +19,7 @@ const tiers = [
   },
   {
     name: "Apoiador VIP",
-    price: "R$ 20",
+    price: "R$20",
     priceSuffix: "/mês",
     description: "Para os entusiastas que desejam uma experiência aprimorada e acesso antecipado.",
     features: [
@@ -32,7 +32,7 @@ const tiers = [
   },
   {
     name: "Apoiador Patrocinador",
-    price: "R$ 50",
+    price: "R$50",
     priceSuffix: "/mês",
     description: "Para visionários que acreditam no potencial máximo do Zispr.",
     features: [
@@ -68,8 +68,10 @@ export default function SupporterPage() {
             </CardHeader>
             <CardContent className="flex-1 space-y-6">
               <div className="text-center">
-                <span className="text-4xl font-bold">{tier.price}</span>
-                <span className="text-muted-foreground">{tier.priceSuffix}</span>
+                <p className="flex justify-center items-baseline">
+                    <span className="text-4xl font-bold">{tier.price}</span>
+                    <span className="text-xl font-medium text-muted-foreground">{tier.priceSuffix}</span>
+                </p>
               </div>
               <ul className="space-y-3 text-sm">
                 {tier.features.map((feature) => (
