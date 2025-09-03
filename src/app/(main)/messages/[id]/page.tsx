@@ -13,6 +13,14 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, updateDoc, increment, setDoc, arrayUnion } from 'firebase/firestore';
 
 
+const VerifiedBadge = () => (
+    <svg viewBox="0 0 22 22" className="h-4 w-4 text-primary fill-current" aria-label="Conta verificada">
+        <g>
+            <path d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-1.002-1.438-1.344-1.282-.734-2.735-.824-4.093-.24-1.314.568-2.344 1.874-2.88 3.238-.537-1.364-1.566-2.67-2.88-3.238-1.358-.584-2.81.09-4.094.24-.586.342-1.084.803-1.438 1.344-.355.54-.552 1.17-.57 1.816-.027 1.02.21 2.02.636 2.91.43.886 1.02 1.67 1.747 2.294.722.622 1.583 1.06 2.5 1.27.915.21 1.86.14 2.76-.095.89-.227 1.73-.695 2.44-1.33.715.637 1.55.11 2.44 1.33.9.237 1.845.305 2.76.095.918-.21 1.778-.648 2.5-1.27.726-.623 1.316-1.408 1.747-2.294.425-.89.662-1.89.636-2.91zM8.463 14.83l-2.94-2.94.706-.707 2.233 2.234 4.78-4.78.706.706-5.488 5.488z"></path>
+        </g>
+    </svg>
+);
+
 interface ZisprUser {
     uid: string;
     displayName: string;
@@ -224,7 +232,7 @@ export default function ConversationPage() {
     }
     
     const isZisprAccount = otherUser.handle === '@Zispr';
-    const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@rulio';
+    const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@Rulio';
 
   return (
     <div className="flex flex-col h-screen bg-background pb-20 md:pb-0">
@@ -250,7 +258,7 @@ export default function ConversationPage() {
                     <div>
                         <h1 className="text-lg font-bold flex items-center gap-1">
                             {otherUser.displayName}
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isOtherUserVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isOtherUserVerified && <VerifiedBadge />)}
                         </h1>
                         <p className="text-xs text-muted-foreground">{otherUser.handle}</p>
                     </div>
