@@ -12,12 +12,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { auth, db } from '@/lib/firebase';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
-import { useState, useEffect } from 'react';
+import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { FcGoogle } from 'react-icons/fc';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Endereço de e-mail inválido." }),
@@ -28,51 +26,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-
-  useEffect(() => {
-    const handleRedirectResult = async () => {
-        try {
-            const result = await getRedirectResult(auth);
-            if (result) {
-                setIsGoogleLoading(true);
-                const user = result.user;
-                const userDocRef = doc(db, 'users', user.uid);
-                const userDoc = await getDoc(userDocRef);
-
-                if (!userDoc.exists()) {
-                    const handle = user.email?.split('@')[0].replace(/[^a-z0-9_]/g, '') || `user${Date.now()}`;
-                    await setDoc(userDocRef, {
-                        uid: user.uid,
-                        displayName: user.displayName,
-                        searchableDisplayName: user.displayName?.toLowerCase(),
-                        email: user.email,
-                        createdAt: serverTimestamp(),
-                        handle: `@${handle}`,
-                        searchableHandle: handle.toLowerCase(),
-                        avatar: user.photoURL || `https://placehold.co/128x128.png?text=${user.displayName?.[0] || 'Z'}`,
-                        banner: 'https://placehold.co/600x200.png',
-                        bio: '',
-                        location: '',
-                        website: '',
-                        followers: [],
-                        following: [],
-                        savedPosts: [],
-                        isVerified: false,
-                    });
-                }
-                toast({ title: 'Login bem-sucedido', description: `Bem-vindo de volta, ${user.displayName}!` });
-                router.push('/home');
-            }
-        } catch (error: any) {
-            console.error("Redirect result error:", error);
-            toast({ title: 'Falha no Login com Google', description: 'Ocorreu um erro ao processar o login.', variant: 'destructive' });
-            setIsGoogleLoading(false);
-        }
-    };
-    handleRedirectResult();
-  }, [router, toast]);
-
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -81,22 +34,6 @@ export default function LoginPage() {
       password: '',
     },
   });
-  
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    const provider = new GoogleAuthProvider();
-    try {
-        await signInWithRedirect(auth, provider);
-    } catch (error: any) {
-        toast({
-            title: 'Falha no Login com Google',
-            description: 'Não foi possível iniciar o login com o Google. Tente novamente.',
-            variant: 'destructive',
-        });
-        setIsGoogleLoading(false);
-    }
-  };
-
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -132,18 +69,6 @@ export default function LoginPage() {
               <CardDescription>Faça login para continuar no Zispr.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-               <Button variant="outline" type="button" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
-                  {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FcGoogle className="mr-2 h-4 w-4" />}
-                  Entrar com o Google
-              </Button>
-              <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">Ou continue com</span>
-                  </div>
-              </div>
               <FormField
                 control={form.control}
                 name="email"
