@@ -13,9 +13,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { auth, db } from '@/lib/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { FcGoogle } from 'react-icons/fc';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Endereço de e-mail inválido." }),
@@ -26,6 +28,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -34,6 +37,64 @@ export default function LoginPage() {
       password: '',
     },
   });
+  
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+            // If user doesn't exist, create a document for them
+            const handle = user.email?.split('@')[0].replace(/[^a-z0-9_]/g, '') || `user${Date.now()}`;
+            await setDoc(userDocRef, {
+                uid: user.uid,
+                displayName: user.displayName,
+                searchableDisplayName: user.displayName?.toLowerCase(),
+                email: user.email,
+                createdAt: serverTimestamp(),
+                handle: `@${handle}`,
+                searchableHandle: handle.toLowerCase(),
+                avatar: user.photoURL || `https://placehold.co/128x128.png?text=${user.displayName?.[0] || 'Z'}`,
+                banner: 'https://placehold.co/600x200.png',
+                bio: '',
+                location: '',
+                website: '',
+                followers: [],
+                following: [],
+                communities: [],
+                savedPosts: [],
+                isVerified: false,
+            });
+        }
+
+        toast({
+            title: 'Login bem-sucedido',
+            description: `Bem-vindo de volta, ${user.displayName}!`,
+        });
+        router.push('/home');
+
+    } catch (error: any) {
+        let description = 'Ocorreu um erro inesperado. Tente novamente.';
+        if (error.code === 'auth/popup-closed-by-user') {
+            description = 'A janela de login foi fechada. Por favor, tente novamente.';
+        } else if (error.code === 'auth/cancelled-popup-request') {
+            description = 'Múltiplas solicitações de login abertas. Por favor, complete uma delas.';
+        }
+        toast({
+            title: 'Falha no Login com Google',
+            description,
+            variant: 'destructive',
+        });
+    } finally {
+        setIsGoogleLoading(false);
+    }
+  };
+
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -66,9 +127,21 @@ export default function LoginPage() {
           <form onSubmit={form.handleSubmit(handleSubmit)}>
             <CardHeader className="space-y-1 text-center">
               <CardTitle className="text-2xl font-headline">Bem-vindo de Volta</CardTitle>
-              <CardDescription>Digite seu e-mail e senha para entrar.</CardDescription>
+              <CardDescription>Faça login para continuar no Zispr.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
+               <Button variant="outline" type="button" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+                  {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FcGoogle className="mr-2 h-4 w-4" />}
+                  Entrar com o Google
+              </Button>
+              <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">Ou continue com</span>
+                  </div>
+              </div>
               <FormField
                 control={form.control}
                 name="email"

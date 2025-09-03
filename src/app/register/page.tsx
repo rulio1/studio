@@ -13,8 +13,8 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useState } from 'react';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -22,6 +22,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { FcGoogle } from 'react-icons/fc';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
@@ -44,6 +45,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -54,6 +56,65 @@ export default function RegisterPage() {
       password: '',
     },
   });
+  
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+            const handle = user.email?.split('@')[0].replace(/[^a-z0-9_]/g, '') || `user${Date.now()}`;
+            await setDoc(userDocRef, {
+                uid: user.uid,
+                displayName: user.displayName,
+                searchableDisplayName: user.displayName?.toLowerCase(),
+                email: user.email,
+                createdAt: serverTimestamp(),
+                handle: `@${handle}`,
+                searchableHandle: handle.toLowerCase(),
+                avatar: user.photoURL || `https://placehold.co/128x128.png?text=${user.displayName?.[0] || 'Z'}`,
+                banner: 'https://placehold.co/600x200.png',
+                bio: '',
+                location: '',
+                website: '',
+                followers: [],
+                following: [],
+                communities: [],
+                savedPosts: [],
+                isVerified: false,
+            });
+             toast({
+                title: "Conta Criada!",
+                description: "Seu perfil foi criado com as informações do Google.",
+            });
+        } else {
+             toast({
+                title: "Login bem-sucedido",
+                description: `Bem-vindo de volta, ${user.displayName}!`,
+            });
+        }
+        router.push('/home');
+
+    } catch (error: any) {
+        let description = 'Ocorreu um erro inesperado. Tente novamente.';
+        if (error.code === 'auth/popup-closed-by-user') {
+            description = 'A janela de login foi fechada. Por favor, tente novamente.';
+        }
+        toast({
+            title: 'Falha no Login com Google',
+            description,
+            variant: 'destructive',
+        });
+    } finally {
+        setIsGoogleLoading(false);
+    }
+  };
+
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -119,6 +180,18 @@ export default function RegisterPage() {
               <CardDescription>Insira seus dados abaixo para começar.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
+              <Button variant="outline" type="button" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+                  {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FcGoogle className="mr-2 h-4 w-4" />}
+                  Inscrever-se com o Google
+              </Button>
+              <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">Ou</span>
+                  </div>
+              </div>
               <FormField
                 control={form.control}
                 name="name"
@@ -163,7 +236,7 @@ export default function RegisterPage() {
                           mode="single"
                           selected={field.value}
                           onSelect={(date) => {
-                            field.onChange(date);
+                            if(date) field.onChange(date);
                             setIsCalendarOpen(false);
                           }}
                           disabled={(date) =>
