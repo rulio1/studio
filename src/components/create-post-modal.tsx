@@ -164,17 +164,26 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     
     const handleSuggestionClick = (suggestion: string) => {
         const { start } = getCurrentWord();
-        if (start === -1) return;
+        if (start === -1 || !textareaRef.current) return;
     
-        const text = textareaRef.current!.value;
+        const text = textareaRef.current.value;
+        const currentWord = text.substring(start, textareaRef.current.selectionStart);
         const textBefore = text.substring(0, start);
-        const textAfter = text.substring(start + suggestionQuery.length + 1);
+        const textAfter = text.substring(start + currentWord.length);
         const newText = `${textBefore}${suggestion} ${textAfter}`;
     
         setNewPostContent(newText);
         setShowSuggestions(false);
         setSuggestionQuery('');
-        textareaRef.current?.focus();
+
+        // Move cursor to the end of the inserted suggestion
+         setTimeout(() => {
+            if (textareaRef.current) {
+                const newCursorPosition = start + suggestion.length + 1;
+                textareaRef.current.focus();
+                textareaRef.current.setSelectionRange(newCursorPosition, newCursorPosition);
+            }
+        }, 0);
     };
 
     useEffect(() => {
@@ -418,7 +427,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const CurrentReplyOption = replyOptions[replySetting];
 
     const SuggestionPopup = () => (
-        <div className="absolute z-10 w-full mt-1 bg-background border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-10 w-full mt-1 bg-background border rounded-lg shadow-lg">
             {suggestions.map((suggestion, index) => (
                 suggestion.type === 'mention' ? (
                     <div 
