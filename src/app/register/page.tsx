@@ -161,7 +161,8 @@ export default function RegisterPage() {
                         {...field} 
                         onChange={handleDateChange}
                         disabled={isLoading}
-                        maxLength={10} 
+                        maxLength={10}
+                        inputMode="numeric"
                        />
                     </FormControl>
                     <FormMessage />
