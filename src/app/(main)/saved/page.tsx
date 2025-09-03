@@ -195,7 +195,7 @@ export default function SavedPage() {
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
                     <div>
-                        <h1 className="text-xl font-bold">Itens Salvos</h1>
+                        <h1 className="text-xl font-bold">Salvos</h1>
                         <p className="text-sm text-muted-foreground">{chirpUser?.handle}</p>
                     </div>
                 </div>
