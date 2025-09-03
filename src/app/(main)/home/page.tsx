@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Home, Mail, MessageCircle, Settings, User, Repeat, Heart, BarChart2, Bird, X, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Loader2, Trash2, Edit, Save, BadgeCheck, LogOut, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Star, PenSquare } from 'lucide-react';
+import { Bell, Home, Mail, MessageCircle, Settings, User, Repeat, Heart, BarChart2, Bird, X, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Loader2, Trash2, Edit, Save, BadgeCheck, LogOut, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Star, PenSquare, HandHeart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -495,7 +495,7 @@ useEffect(() => {
                                 onClick={async (e) => {
                                     e.stopPropagation();
                                     const usersRef = collection(db, "users");
-                                    const q = query(usersRef, where("handle", "==", part));
+                                    const q = query(usersRef, where("handle", "==", handle));
                                     const querySnapshot = await getDocs(q);
                                     if (!querySnapshot.empty) {
                                         const userDoc = querySnapshot.docs[0];
@@ -903,6 +903,11 @@ useEffect(() => {
                                     </Link>
                                 </SheetClose>
                             ))}
+                            <SheetClose asChild>
+                                <Link href="/supporter" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                                    <HandHeart className="h-6 w-6" /> Seja um Apoiador
+                                </Link>
+                            </SheetClose>
                           </nav>
                           <div className="p-4 border-t mt-auto flex flex-col gap-2">
                             <SheetClose asChild>

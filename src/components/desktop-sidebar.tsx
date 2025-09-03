@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck } from 'lucide-react';
+import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck, HandHeart } from 'lucide-react';
 import CreatePostModal from './create-post-modal';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
@@ -158,6 +158,14 @@ export default function DesktopSidebar() {
                                 </div>
                             </li>
                         ))}
+                         <li>
+                            <Link href="/supporter" passHref>
+                                <Button variant="ghost" className={`w-full justify-start text-xl p-6 ${getIsActive('/supporter') ? 'font-bold' : ''}`}>
+                                    <HandHeart className="h-7 w-7 mr-4" />
+                                    <span>Seja um Apoiador</span>
+                                </Button>
+                            </Link>
+                        </li>
                     </ul>
                 </nav>
 
