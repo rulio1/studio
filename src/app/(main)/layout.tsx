@@ -85,7 +85,7 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
                 </main>
                  <RightSidebar />
                 <div className="md:hidden">
-                    <BottomNavBar />
+                    {/* BottomNavBar is intentionally hidden on chat page for mobile */}
                 </div>
             </div>
         );
