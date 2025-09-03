@@ -25,20 +25,6 @@ const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
 
-// Enable offline persistence for Firestore
-try {
-    enableIndexedDbPersistence(db).catch((err) => {
-        if (err.code == 'failed-precondition') {
-            console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-        } else if (err.code == 'unimplemented') {
-            console.warn('The current browser does not support all of the features required to enable persistence.');
-        }
-    });
-} catch (error) {
-    console.error("Error enabling Firestore persistence: ", error);
-}
-
-
 // Push Notifications (Client-side)
 const requestNotificationPermission = async (userId: string) => {
     const isMessagingSupported = await isSupported();
