@@ -8,9 +8,9 @@ import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch, addDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch, addDoc, query, where, limit, getDocs } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck } from 'lucide-react';
+import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
@@ -20,6 +20,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
+import { useDebounce } from 'use-debounce';
 
 
 interface Post {
@@ -104,6 +105,10 @@ const extractSpotifyUrl = (text: string): string | null => {
     return match ? match[0] : null;
 };
 
+interface Suggestion {
+    type: 'mention' | 'hashtag';
+    data: any;
+}
 
 export default function CreatePostModal({ open, onOpenChange, quotedPost }: CreatePostModalProps) {
     const [newPostContent, setNewPostContent] = useState('');
@@ -121,8 +126,91 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const [showPollCreator, setShowPollCreator] = useState(false);
     const [pollData, setPollData] = useState<PollData | null>(null);
 
+    const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+    const [suggestionQuery, setSuggestionQuery] = useState('');
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [suggestionType, setSuggestionType] = useState<'mention' | 'hashtag' | null>(null);
+    const [debouncedSuggestionQuery] = useDebounce(suggestionQuery, 300);
 
     const { toast } = useToast();
+
+    const getCurrentWord = () => {
+        if (!textareaRef.current) return { word: null, start: -1 };
+        const cursor = textareaRef.current.selectionStart;
+        const text = textareaRef.current.value;
+        const textBeforeCursor = text.substring(0, cursor);
+        const lastWordMatch = textBeforeCursor.match(/([@#]\w*)$/);
+        if (lastWordMatch) {
+            const word = lastWordMatch[1];
+            const start = textBeforeCursor.lastIndexOf(word);
+            return { word, start };
+        }
+        return { word: null, start: -1 };
+    };
+
+    const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setNewPostContent(e.target.value);
+    
+        const { word } = getCurrentWord();
+    
+        if (word && (word.startsWith('@') || word.startsWith('#'))) {
+            setSuggestionType(word.startsWith('@') ? 'mention' : 'hashtag');
+            setSuggestionQuery(word.substring(1));
+            setShowSuggestions(true);
+        } else {
+            setShowSuggestions(false);
+        }
+    };
+    
+    const handleSuggestionClick = (suggestion: string) => {
+        const { start } = getCurrentWord();
+        if (start === -1) return;
+    
+        const text = textareaRef.current!.value;
+        const textBefore = text.substring(0, start);
+        const textAfter = text.substring(start + suggestionQuery.length + 1);
+        const newText = `${textBefore}${suggestion} ${textAfter}`;
+    
+        setNewPostContent(newText);
+        setShowSuggestions(false);
+        setSuggestionQuery('');
+        textareaRef.current?.focus();
+    };
+
+    useEffect(() => {
+        const fetchSuggestions = async () => {
+            if (!debouncedSuggestionQuery) {
+                setSuggestions([]);
+                return;
+            }
+    
+            try {
+                let q;
+                if (suggestionType === 'mention') {
+                    q = query(collection(db, 'users'), where('handle', '>=', `@${debouncedSuggestionQuery}`), where('handle', '<=', `@${debouncedSuggestionQuery}\uf8ff`), limit(5));
+                } else { // hashtag
+                    q = query(collection(db, 'hashtags'), where('name', '>=', debouncedSuggestionQuery), where('name', '<=', `${debouncedSuggestionQuery}\uf8ff`), limit(5));
+                }
+    
+                const snapshot = await getDocs(q);
+                const results = snapshot.docs.map(doc => ({
+                    type: suggestionType!,
+                    data: doc.data()
+                }));
+                setSuggestions(results);
+            } catch (error) {
+                console.error("Error fetching suggestions:", error);
+                setSuggestions([]);
+            }
+        };
+    
+        if (showSuggestions && debouncedSuggestionQuery) {
+            fetchSuggestions();
+        } else {
+            setSuggestions([]);
+        }
+    }, [debouncedSuggestionQuery, showSuggestions, suggestionType]);
+
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -158,6 +246,8 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
         onOpenChange(false);
         setIsPosting(false);
+        setShowSuggestions(false);
+        setSuggestionQuery('');
     }, [onOpenChange]);
 
     useEffect(() => {
@@ -171,20 +261,11 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     useEffect(() => {
         if (!open) {
             const timer = setTimeout(() => {
-                setNewPostContent('');
-                setPostImageDataUri(null);
-                setPostImagePreview(null);
-                setReplySetting('everyone');
-                setLocation('');
-                setShowPollCreator(false);
-                setPollData(null);
-                if (imageInputRef.current) {
-                    imageInputRef.current.value = '';
-                }
-            }, 300); // Delay matches dialog animation
+                resetModalState();
+            }, 300); 
             return () => clearTimeout(timer);
         }
-    }, [open]);
+    }, [open, resetModalState]);
 
 
      const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -219,8 +300,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
 
         try {
-            // NOTE: Image upload logic to ImgBB has been removed to isolate auth issues.
-            // The image URI will be stored, but not from a persistent URL.
             let imageUrl: string | null = postImageDataUri;
 
             const hashtags = extractHashtags(newPostContent);
@@ -254,7 +333,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 location: location.trim() || null,
                 poll: pollData ? { options: pollData.options.map(o => o.text), votes: pollData.options.map(() => 0), voters: {} } : null,
                 replySettings: replySetting,
-                image: imageUrl, // Storing data URI for now
+                image: imageUrl,
                 hashtags,
                 mentions: mentionedHandles,
                 spotifyUrl,
@@ -338,6 +417,38 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     
     const CurrentReplyOption = replyOptions[replySetting];
 
+    const SuggestionPopup = () => (
+        <div className="absolute z-10 w-full mt-1 bg-background border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            {suggestions.map((suggestion, index) => (
+                suggestion.type === 'mention' ? (
+                    <div 
+                        key={index} 
+                        className="flex items-center p-2 hover:bg-muted cursor-pointer"
+                        onClick={() => handleSuggestionClick(suggestion.data.handle)}
+                    >
+                        <Avatar className="h-8 w-8 mr-2">
+                            <AvatarImage src={suggestion.data.avatar} />
+                            <AvatarFallback>{suggestion.data.displayName[0]}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="font-bold">{suggestion.data.displayName}</p>
+                            <p className="text-sm text-muted-foreground">{suggestion.data.handle}</p>
+                        </div>
+                    </div>
+                ) : (
+                    <div 
+                        key={index} 
+                        className="p-2 hover:bg-muted cursor-pointer"
+                        onClick={() => handleSuggestionClick(`#${suggestion.data.name}`)}
+                    >
+                        <p className="font-bold">#{suggestion.data.name}</p>
+                        <p className="text-sm text-muted-foreground">{suggestion.data.count.toLocaleString()} posts</p>
+                    </div>
+                )
+            ))}
+        </div>
+    );
+
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) resetModalState(); else onOpenChange(true); }}>
             <DialogContent 
@@ -362,15 +473,16 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                             </Avatar>
                             { (newPostContent || postImagePreview || quotedPost) && <div className="w-0.5 flex-1 bg-border my-2"></div> }
                         </div>
-                        <div className="w-full">
+                        <div className="w-full relative">
                             <Textarea
                                 ref={textareaRef}
                                 placeholder="O que está acontecendo?"
                                 className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none min-h-[80px]"
                                 value={newPostContent}
-                                onChange={(e) => setNewPostContent(e.target.value)}
+                                onChange={handleTextChange}
                                 disabled={isPosting}
                             />
+                            {showSuggestions && suggestions.length > 0 && <SuggestionPopup />}
                             {showPollCreator && (
                                 <div className="mt-2">
                                     <PollCreator onChange={setPollData} />
