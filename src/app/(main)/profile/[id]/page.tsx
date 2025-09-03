@@ -1076,6 +1076,7 @@ export default function ProfilePage() {
     }
 
     const isZisprAccount = profileUser.handle === '@Zispr';
+    const isRulioAccount = profileUser.handle === '@Rulio';
     const isProfileVerified = profileUser.isVerified || profileUser.handle === '@Rulio';
     const canViewLikes = isOwnProfile || !profileUser.likesArePrivate;
     const tabIndicatorPositions: { [key: string]: number } = {
@@ -1166,6 +1167,17 @@ export default function ProfilePage() {
                     </CardHeader>
                     <CardContent className="p-3 pt-0">
                         <p className="text-xs text-muted-foreground">Esta é a conta oficial do Zispr. Fique de olho para anúncios, dicas e atualizações importantes da plataforma.</p>
+                    </CardContent>
+                </Card>
+            )}
+            {isRulioAccount && (
+                <Card className="mt-4 border-primary/50">
+                    <CardHeader className="flex-row items-center gap-3 space-y-0 p-3">
+                        <Info className="h-4 w-4 text-primary" />
+                        <CardTitle className="text-sm">Fundador e CEO do Zispr</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-3 pt-0">
+                        <p className="text-xs text-muted-foreground">Esta é a conta do fundador do Zispr. Siga para atualizações sobre o desenvolvimento e o futuro da plataforma.</p>
                     </CardContent>
                 </Card>
             )}
