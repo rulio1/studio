@@ -17,8 +17,6 @@ import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 import { fileToDataUri } from '@/lib/utils';
-import axios from 'axios';
-import FormData from 'form-data';
 
 
 interface UserProfileData {
@@ -114,42 +112,16 @@ export default function EditProfilePage() {
         setProfileData({ ...profileData, [e.target.id]: e.target.value });
     };
     
-    const uploadToImgBB = async (dataUri: string): Promise<string> => {
-        const apiKey = "9796138e5afeeb164d2a8fbfc047d72a";
-        if (!apiKey) {
-            throw new Error("A chave da API do ImgBB não está configurada.");
-        }
-
-        const base64Data = dataUri.split(',')[1];
-        
-        const form = new FormData();
-        form.append('image', base64Data);
-
-        const response = await axios.post(`https://api.imgbb.com/1/upload?key=${apiKey}`, form, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
-
-        if (response.data.success) {
-            return response.data.data.url;
-        } else {
-            throw new Error(response.data.error?.message || 'Falha ao fazer upload da imagem para o ImgBB.');
-        }
-    };
-    
     const handleSave = async () => {
         if (!user) return;
         setIsSaving(true);
     
         try {
-            let avatarUrl = profileData.avatar;
-            if (newAvatarDataUri) {
-                avatarUrl = await uploadToImgBB(newAvatarDataUri);
-            }
-
-            let bannerUrl = profileData.banner;
-            if (newBannerDataUri) {
-                bannerUrl = await uploadToImgBB(newBannerDataUri);
-            }
+            // NOTE: Image upload to ImgBB has been removed to isolate auth issues.
+            // We use the local data URI from the cropper directly.
+            // This is not a persistent solution for images, but helps debug.
+            let avatarUrl = newAvatarDataUri || profileData.avatar;
+            let bannerUrl = newBannerDataUri || profileData.banner;
             
             const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
             

@@ -19,8 +19,6 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
-import axios from 'axios';
-import FormData from 'form-data';
 
 
 interface Post {
@@ -220,26 +218,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
 
         try {
-            let imageUrl: string | null = null;
-            if (postImageDataUri) {
-                const apiKey = "9796138e5afeeb164d2a8fbfc047d72a";
-                const base64Data = postImageDataUri.split(',')[1];
-                
-                const form = new FormData();
-                form.append('image', base64Data);
-
-                const response = await axios.post(`https://api.imgbb.com/1/upload?key=${apiKey}`, form, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                });
-
-                if (response.data.success) {
-                    imageUrl = response.data.data.url;
-                } else {
-                    throw new Error(response.data.error?.message || 'Falha ao fazer upload da imagem para o ImgBB.');
-                }
-            }
+            // NOTE: Image upload logic to ImgBB has been removed to isolate auth issues.
+            // The image URI will be stored, but not from a persistent URL.
+            let imageUrl: string | null = postImageDataUri;
 
             const hashtags = extractHashtags(newPostContent);
             const mentionedHandles = extractMentions(newPostContent);
@@ -272,7 +253,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 location: location.trim() || null,
                 poll: pollData ? { options: pollData.options.map(o => o.text), votes: pollData.options.map(() => 0), voters: {} } : null,
                 replySettings: replySetting,
-                image: imageUrl,
+                image: imageUrl, // Storing data URI for now
                 hashtags,
                 mentions: mentionedHandles,
                 spotifyUrl,
@@ -284,7 +265,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 status: 'published',
             };
             
-            const postRef = doc(collection(db, "posts"));
             await addDoc(collection(db, "posts"), postData);
             
             if (hashtags.length > 0) {
@@ -310,7 +290,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
 
         } catch (error: any) {
             console.error("Falha ao criar o post:", error);
-            const errorMessage = error.response?.data?.error?.message || error.message || "Por favor, tente novamente.";
+            const errorMessage = error.message || "Por favor, tente novamente.";
             toast({ title: "Falha ao criar o post", description: errorMessage, variant: "destructive" });
         } finally {
             setIsPosting(false);
@@ -529,5 +509,3 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         </Dialog>
     );
 }
-
-    
