@@ -31,6 +31,7 @@ export default function ChatPage() {
 
     useEffect(() => {
         if (authUser) {
+            setIsLoadingUser(true);
             const userDocRef = doc(db, 'users', authUser.uid);
             getDoc(userDocRef).then(docSnap => {
                 if (docSnap.exists()) {
@@ -100,7 +101,7 @@ export default function ChatPage() {
 
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-[calc(100svh-var(--bottom-nav-height))] bg-background">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center gap-4 px-4 py-2">
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -118,9 +119,9 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col overflow-hidden">
         <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-            <div className="space-y-6 pb-24">
+            <div className="space-y-6 pb-4">
                  {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                         <Bot className="h-16 w-16 mb-4" />
