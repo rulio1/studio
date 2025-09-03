@@ -67,7 +67,6 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
 
     const fabBlacklist = [
         '/messages/',
-        '/chat',
         '/profile/edit',
         '/privacy',
     ];
@@ -78,6 +77,10 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
         '/profile/edit',
         '/settings'
     ].some(path => pathname.startsWith(path));
+    
+     const noBottomNav = [
+        '/chat',
+    ].some(path => pathname.startsWith(path));
 
     if (hideSidebars) {
          return (
@@ -87,9 +90,9 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
                         {children}
                     </div>
                 </main>
-                 <div className="md:hidden">
+                 {!noBottomNav && <div className="md:hidden">
                     <BottomNavBar />
-                </div>
+                </div>}
             </div>
         );
     }

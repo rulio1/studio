@@ -118,9 +118,9 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col pb-24">
+      <main className="flex-1 flex flex-col">
         <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-            <div className="space-y-6">
+            <div className="space-y-6 pb-24">
                  {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                         <Bot className="h-16 w-16 mb-4" />
@@ -166,8 +166,8 @@ export default function ChatPage() {
                 )}
             </div>
         </ScrollArea>
-        <div className="fixed bottom-24 inset-x-4">
-             <div className="relative flex items-center rounded-2xl bg-muted p-2">
+        <div className="p-4 bg-background border-t">
+           <div className="relative flex items-center rounded-2xl bg-muted p-2">
                  <Input 
                     placeholder="Pergunte qualquer coisa ao Zispr AI..." 
                     value={input}
