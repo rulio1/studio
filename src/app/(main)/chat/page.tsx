@@ -167,22 +167,22 @@ export default function ChatPage() {
                 )}
             </div>
         </ScrollArea>
-        </main>
-        <div className="p-4 bg-background border-t">
-           <div className="relative flex items-center rounded-2xl bg-muted p-2">
-                 <Input 
-                    placeholder="Pergunte qualquer coisa ao Zispr AI..." 
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                    disabled={isLoading}
-                    className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-                <Button onClick={handleSend} disabled={isLoading || !input.trim()} size="icon" className="rounded-full">
-                    <Send className="h-5 w-5" />
-                </Button>
-            </div>
-        </div>
+      </main>
+      <footer className="p-4 bg-background border-t">
+         <div className="relative flex items-center rounded-2xl bg-muted p-2">
+               <Input 
+                  placeholder="Pergunte qualquer coisa ao Zispr AI..." 
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                  disabled={isLoading}
+                  className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              <Button onClick={handleSend} disabled={isLoading || !input.trim()} size="icon" className="rounded-full">
+                  <Send className="h-5 w-5" />
+              </Button>
+          </div>
+      </footer>
     </div>
   );
 }

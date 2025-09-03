@@ -69,6 +69,7 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
         '/messages/',
         '/profile/edit',
         '/privacy',
+        '/chat'
     ];
     const showFab = !fabBlacklist.some(path => pathname.startsWith(path) && pathname !== '/messages');
     
@@ -77,22 +78,18 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
         '/profile/edit',
         '/settings'
     ].some(path => pathname.startsWith(path));
-    
-     const noBottomNav = [
-        '/chat',
-    ].some(path => pathname.startsWith(path));
 
     if (hideSidebars) {
          return (
             <div className="flex min-h-svh justify-center">
                 <main className="w-full md:max-w-2xl md:border-x">
-                    <div className="animate-fade-in animate-slide-in-from-bottom">
+                    <div className="animate-fade-in animate-slide-in-from-bottom h-full">
                         {children}
                     </div>
                 </main>
-                 {!noBottomNav && <div className="md:hidden">
+                <div className="md:hidden">
                     <BottomNavBar />
-                </div>}
+                </div>
             </div>
         );
     }
