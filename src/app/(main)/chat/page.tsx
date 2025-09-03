@@ -119,8 +119,8 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+      <main className="flex-1 overflow-y-auto">
+        <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
             <div className="space-y-6 pb-4">
                  {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
@@ -167,6 +167,7 @@ export default function ChatPage() {
                 )}
             </div>
         </ScrollArea>
+        </main>
         <div className="p-4 bg-background border-t">
            <div className="relative flex items-center rounded-2xl bg-muted p-2">
                  <Input 
@@ -182,7 +183,6 @@ export default function ChatPage() {
                 </Button>
             </div>
         </div>
-      </main>
     </div>
   );
 }
