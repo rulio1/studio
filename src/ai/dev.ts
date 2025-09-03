@@ -2,3 +2,5 @@
 import './flows/chat-flow';
 import './flows/post-generator-flow';
 import './flows/image-generator-flow';
+// Tools
+import './tools/user-lookup-tool';
