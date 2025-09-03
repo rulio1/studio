@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { BadgeCheck, CheckCircle, HandHeart, Loader2 } from "lucide-react";
+import { BadgeCheck, CheckCircle, HandHeart, Loader2, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 
@@ -63,53 +63,63 @@ export default function SupporterPage() {
   const { toast } = useToast();
   
   return (
-    <div className="flex flex-col items-center p-4 md:p-8 animate-fade-in bg-background">
-      <div className="text-center mb-8">
-        <HandHeart className="mx-auto h-16 w-16 text-primary mb-4" />
-        <h1 className="text-4xl font-bold tracking-tight">Seja um Apoiador do Zispr</h1>
-        <p className="mt-2 text-lg text-muted-foreground max-w-2xl">
-          Sua contribuição é fundamental para manter a plataforma funcionando, crescendo e livre de grandes corporações. Escolha um plano e ganhe benefícios exclusivos!
+    <>
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
+        <div className="flex items-center gap-4 px-4 py-2">
+            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-xl font-bold">Seja um Apoiador</h1>
+        </div>
+      </header>
+      <div className="flex flex-col items-center p-4 md:p-8 animate-fade-in bg-background">
+        <div className="text-center mb-8">
+          <HandHeart className="mx-auto h-16 w-16 text-primary mb-4" />
+          <h1 className="text-4xl font-bold tracking-tight">Seja um Apoiador do Zispr</h1>
+          <p className="mt-2 text-lg text-muted-foreground max-w-2xl">
+            Sua contribuição é fundamental para manter a plataforma funcionando, crescendo e livre de grandes corporações. Escolha um plano e ganhe benefícios exclusivos!
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl">
+          {tiers.map((tier) => (
+            <Card key={tier.name} className={`flex flex-col ${tier.variant === 'default' ? 'border-primary ring-2 ring-primary shadow-lg' : ''}`}>
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl">{tier.name}</CardTitle>
+                <CardDescription>{tier.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 space-y-6">
+                <div className="text-center">
+                  <p className="flex justify-center items-baseline">
+                      <span className="text-4xl font-bold">{tier.price}</span>
+                      <span className="text-xl font-medium text-muted-foreground">{tier.priceSuffix}</span>
+                  </p>
+                </div>
+                <ul className="space-y-3 text-sm">
+                  {tier.features.map((feature) => (
+                    <li key={feature.text} className="flex items-start">
+                      {feature.icon}
+                      <span>{feature.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  className="w-full" 
+                  variant={tier.variant as "default" | "secondary"}
+                  disabled={true}
+                >
+                  {tier.buttonText}
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+        <p className="mt-8 text-xs text-muted-foreground text-center max-w-md">
+          O sistema de pagamento será habilitado em breve. Agradecemos sua paciência e interesse em apoiar o Zispr!
         </p>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl">
-        {tiers.map((tier) => (
-          <Card key={tier.name} className={`flex flex-col ${tier.variant === 'default' ? 'border-primary ring-2 ring-primary shadow-lg' : ''}`}>
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl">{tier.name}</CardTitle>
-              <CardDescription>{tier.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 space-y-6">
-              <div className="text-center">
-                <p className="flex justify-center items-baseline">
-                    <span className="text-4xl font-bold">{tier.price}</span>
-                    <span className="text-xl font-medium text-muted-foreground">{tier.priceSuffix}</span>
-                </p>
-              </div>
-              <ul className="space-y-3 text-sm">
-                {tier.features.map((feature) => (
-                  <li key={feature.text} className="flex items-start">
-                    {feature.icon}
-                    <span>{feature.text}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full" 
-                variant={tier.variant as "default" | "secondary"}
-                disabled={true}
-              >
-                {tier.buttonText}
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-       <p className="mt-8 text-xs text-muted-foreground text-center max-w-md">
-        O sistema de pagamento será habilitado em breve. Agradecemos sua paciência e interesse em apoiar o Zispr!
-      </p>
-    </div>
+    </>
   );
 }
