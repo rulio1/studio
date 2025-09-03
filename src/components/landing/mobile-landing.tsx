@@ -89,16 +89,6 @@ export default function MobileLanding() {
       <footer className="w-full p-4 text-center mt-auto">
         <p className="text-xs text-muted-foreground">
             &copy; 2025 Zispr Inc. Todos os direitos reservados.
-            <br />
-            Desenvolvido por{' '}
-            <a 
-                href="https://www.instagram.com/ru.li.o/" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="underline hover:text-primary"
-            >
-                Rulio
-            </a>.
         </p>
       </footer>
     </div>
