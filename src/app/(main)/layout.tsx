@@ -93,7 +93,6 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
     
     const hideSidebars = [
         '/profile/edit',
-        '/settings'
     ].some(path => pathname.startsWith(path));
 
     if (hideSidebars) {
