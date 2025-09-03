@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Bot, Loader2, Send, MoreHorizontal, Trash2 } from 'lucide-react';
 import { chat, ChatHistory } from '@/ai/flows/chat-flow';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, writeBatch, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -47,7 +46,7 @@ export default function ChatPage() {
     const [isLoadingHistory, setIsLoadingHistory] = useState(true);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-    const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (authUser) {
@@ -79,15 +78,7 @@ export default function ChatPage() {
     }, [authUser]);
 
     const scrollToBottom = () => {
-        if (scrollAreaRef.current) {
-            const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
-            if (viewport) {
-                viewport.scrollTo({
-                    top: viewport.scrollHeight,
-                    behavior: 'smooth'
-                });
-            }
-        }
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     useEffect(() => {
@@ -216,45 +207,42 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto">
-        <ScrollArea className="h-full" ref={scrollAreaRef}>
-            <div className="p-4 space-y-6">
-                 {isLoadingHistory ? (
-                     <div className="flex justify-center items-center h-full">
-                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                     </div>
-                 ) : messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
-                        <Bot className="h-16 w-16 mb-4" />
-                        <h2 className="text-2xl font-bold text-foreground">Zispr AI está aqui para ajudar</h2>
-                        <p>Pergunte-me qualquer coisa, ou apenas diga oi!</p>
-                    </div>
-                 ) : (
-                    messages.map((message, index) => (
-                        <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
-                            {message.role === 'model' && (
-                                <Avatar className="h-8 w-8">
-                                    <AvatarFallback><Bot /></AvatarFallback>
-                                </Avatar>
-                            )}
-                            <div className={`rounded-lg px-4 py-2 max-w-xs md:max-w-md ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                                <p className="text-sm whitespace-pre-wrap">{message.content || <Loader2 className="h-5 w-5 animate-spin" />}</p>
-                            </div>
-                            {message.role === 'user' && (
-                                zisprUser ? (
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarImage src={zisprUser.avatar} alt="User" />
-                                        <AvatarFallback>{zisprUser.displayName?.[0] || 'U'}</AvatarFallback>
-                                    </Avatar>
-                                ) : (
-                                    <Skeleton className="h-8 w-8 rounded-full" />
-                                )
-                            )}
+      <main className="flex-1 overflow-y-auto p-4 space-y-6">
+             {isLoadingHistory ? (
+                 <div className="flex justify-center items-center h-full">
+                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                 </div>
+             ) : messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
+                    <Bot className="h-16 w-16 mb-4" />
+                    <h2 className="text-2xl font-bold text-foreground">Zispr AI está aqui para ajudar</h2>
+                    <p>Pergunte-me qualquer coisa, ou apenas diga oi!</p>
+                </div>
+             ) : (
+                messages.map((message, index) => (
+                    <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
+                        {message.role === 'model' && (
+                            <Avatar className="h-8 w-8">
+                                <AvatarFallback><Bot /></AvatarFallback>
+                            </Avatar>
+                        )}
+                        <div className={`rounded-lg px-4 py-2 max-w-xs md:max-w-md ${message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                            <p className="text-sm whitespace-pre-wrap">{message.content || <Loader2 className="h-5 w-5 animate-spin" />}</p>
                         </div>
-                    ))
-                 )}
-            </div>
-        </ScrollArea>
+                        {message.role === 'user' && (
+                            zisprUser ? (
+                                <Avatar className="h-8 w-8">
+                                    <AvatarImage src={zisprUser.avatar} alt="User" />
+                                    <AvatarFallback>{zisprUser.displayName?.[0] || 'U'}</AvatarFallback>
+                                </Avatar>
+                            ) : (
+                                <Skeleton className="h-8 w-8 rounded-full" />
+                            )
+                        )}
+                    </div>
+                ))
+             )}
+            <div ref={messagesEndRef} />
       </main>
       <footer className="p-4 pt-2 border-t bg-background">
           <div className="relative flex items-center rounded-2xl border bg-muted p-2 max-w-2xl mx-auto">
