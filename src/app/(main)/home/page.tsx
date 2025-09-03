@@ -448,6 +448,7 @@ useEffect(() => {
 
   const handleSignOut = async () => {
     await signOut(auth);
+    setZisprUser(null);
     router.push('/login');
   };
 

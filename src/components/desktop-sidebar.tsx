@@ -111,6 +111,7 @@ export default function DesktopSidebar() {
 
     const handleSignOut = async () => {
         await signOut(auth);
+        setZisprUser(null);
         router.push('/login');
     };
     
