@@ -13,11 +13,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { auth, db } from '@/lib/firebase';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { FaGoogle } from 'react-icons/fa';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Endereço de e-mail inválido." }),
@@ -28,7 +26,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -37,56 +34,6 @@ export default function LoginPage() {
       password: '',
     },
   });
-
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    const provider = new GoogleAuthProvider();
-    try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-
-        // Check if user exists in Firestore
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (!userDoc.exists()) {
-            // New user, create a document in Firestore
-            const handle = (user.email?.split('@')[0] || `user${Date.now()}`).replace(/[^a-z0-9_]/g, '');
-            await setDoc(userDocRef, {
-                uid: user.uid,
-                displayName: user.displayName || 'Usuário',
-                searchableDisplayName: (user.displayName || 'Usuário').toLowerCase(),
-                email: user.email,
-                createdAt: serverTimestamp(),
-                handle: `@${handle}`,
-                searchableHandle: handle.toLowerCase(),
-                avatar: user.photoURL || `https://placehold.co/128x128.png?text=${(user.displayName || 'U')[0]}`,
-                banner: 'https://placehold.co/600x200.png',
-                bio: '',
-                location: '',
-                website: '',
-                birthDate: null,
-                followers: [],
-                following: [],
-                savedPosts: [],
-                isVerified: false,
-            });
-        }
-        
-        toast({ title: 'Login bem-sucedido', description: `Bem-vindo de volta, ${user.displayName}!` });
-        router.push('/home');
-
-    } catch (error: any) {
-        console.error(error);
-        if (error.code === 'auth/unauthorized-domain') {
-             toast({ title: 'Erro de Domínio', description: 'O domínio deste aplicativo não foi autorizado para login com o Google. Verifique as configurações do Firebase.', variant: 'destructive' });
-        } else {
-            toast({ title: 'Falha no Login com Google', description: 'Não foi possível fazer login com o Google. Tente novamente.', variant: 'destructive' });
-        }
-    } finally {
-        setIsGoogleLoading(false);
-    }
-  };
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -122,18 +69,6 @@ export default function LoginPage() {
               <CardDescription>Digite seu e-mail e senha para entrar.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-               <Button variant="outline" type="button" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
-                  {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FaGoogle className="mr-2 h-4 w-4" />}
-                  Entrar com Google
-              </Button>
-               <div className="relative">
-                   <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                   </div>
-                   <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">ou continue com</span>
-                   </div>
-                </div>
               <FormField
                 control={form.control}
                 name="email"
@@ -141,7 +76,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="nome@exemplo.com" {...field} disabled={isLoading || isGoogleLoading} />
+                      <Input placeholder="nome@exemplo.com" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -159,13 +94,13 @@ export default function LoginPage() {
                       </Link>
                     </div>
                     <FormControl>
-                      <Input type="password" {...field} disabled={isLoading || isGoogleLoading} />
+                      <Input type="password" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Entrar
               </Button>
