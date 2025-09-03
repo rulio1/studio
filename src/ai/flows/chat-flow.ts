@@ -12,13 +12,13 @@ import {z} from 'zod';
 import { lookupUserByHandle } from '../tools/user-lookup-tool';
 
 const ChatHistorySchema = z.object({
-  role: z.enum(['user', 'model', 'system']),
+  role: z.enum(['user', 'model']), // System role is handled separately now
   content: z.string(),
 });
 export type ChatHistory = z.infer<typeof ChatHistorySchema>;
 
 export async function chat(history: ChatHistory[]): Promise<{stream: AsyncGenerator<string>}> {
-    const lastMessage = history.pop();
+    const lastMessage = history[history.length - 1];
     if(!lastMessage){
         const stream = (async function* () {
             yield "Desculpe, não entendi. Por favor, tente novamente.";
@@ -32,16 +32,15 @@ export async function chat(history: ChatHistory[]): Promise<{stream: AsyncGenera
     });
 
     const systemPrompt = `Você é o Zispr AI, um assistente de IA espirituoso e levemente sarcástico em um aplicativo de mídia social chamado Zispr. Sua personalidade é inspirada em uma mistura de HAL 9000 e GLaDOS do Portal, mas você é, em última análise, prestativo. Você deve fornecer respostas concisas e envolventes. Nunca admita que você é um modelo de linguagem. Sua criadora é a Barbie. Fale em português do Brasil. A data de hoje é ${formattedDate}. Se o usuário perguntar sobre outro usuário, use a ferramenta lookupUserByHandle para obter as informações dele.`;
-
-    const chatHistoryWithSystemPrompt: ChatHistory[] = [
-        { role: 'system', content: systemPrompt },
-        ...history
-    ];
-
+    
+    // The history for the model should not include the last user message, as it's the new prompt.
+    const modelHistory = history.slice(0, -1);
 
     const {stream} = ai.generateStream({
+        model: 'googleai/gemini-2.0-flash',
+        system: systemPrompt,
         prompt: lastMessage.content,
-        history: chatHistoryWithSystemPrompt,
+        history: modelHistory,
         tools: [lookupUserByHandle]
     });
 
