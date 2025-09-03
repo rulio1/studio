@@ -167,7 +167,7 @@ export default function ChatPage() {
             </div>
         </ScrollArea>
         <div className="fixed bottom-24 inset-x-4">
-            <div className="relative flex items-center rounded-2xl border bg-background/80 backdrop-blur-lg p-2">
+             <div className="relative flex items-center rounded-2xl bg-muted p-2">
                  <Input 
                     placeholder="Pergunte qualquer coisa ao Zispr AI..." 
                     value={input}
