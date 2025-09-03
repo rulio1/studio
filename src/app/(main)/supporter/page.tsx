@@ -21,7 +21,7 @@ const tiers = [
     features: [
       { text: "Selo de verificação Bronze", icon: <BadgeCheck className="h-5 w-5 text-amber-600 mr-2 shrink-0 mt-0.5" /> },
     ],
-    buttonText: "Apoiar",
+    buttonText: "Em breve",
     variant: "secondary",
   },
   {
@@ -35,7 +35,7 @@ const tiers = [
       { text: "Opções avançadas de tema", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
       { text: "Acesso a novas features em primeira mão", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
     ],
-    buttonText: "Seja VIP",
+    buttonText: "Em breve",
     variant: "default",
   },
   {
@@ -52,7 +52,7 @@ const tiers = [
       { text: "Acesso a testes beta", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
       { text: "Estatísticas avançadas do perfil", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
     ],
-    buttonText: "Patrocinar",
+    buttonText: "Em breve",
     variant: "secondary",
   }
 ];
@@ -61,45 +61,7 @@ export default function SupporterPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState<TierName | null>(null);
-
-  const handlePayment = async (tier: typeof tiers[0]) => {
-    if (!user) {
-        router.push('/login?redirect=/supporter');
-        return;
-    }
-
-    setIsLoading(tier.name);
-
-    try {
-      const response = await fetch('/api/create-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: tier.name,
-          price: tier.priceId,
-          userId: user.uid
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao criar o link de pagamento.');
-      }
-
-      const { init_point } = await response.json();
-      window.location.href = init_point;
-
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Erro ao processar pagamento",
-        description: "Não foi possível iniciar o checkout. Por favor, tente novamente.",
-        variant: "destructive",
-      });
-      setIsLoading(null);
-    }
-  };
-
+  
   return (
     <div className="flex flex-col items-center p-4 md:p-8 animate-fade-in bg-background">
       <div className="text-center mb-8">
@@ -136,18 +98,17 @@ export default function SupporterPage() {
             <CardFooter>
               <Button 
                 className="w-full" 
-                variant={tier.variant as "default" | "secondary"} 
-                onClick={() => handlePayment(tier)}
-                disabled={!!isLoading}
+                variant={tier.variant as "default" | "secondary"}
+                disabled={true}
               >
-                {isLoading === tier.name ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : tier.buttonText}
+                {tier.buttonText}
               </Button>
             </CardFooter>
           </Card>
         ))}
       </div>
        <p className="mt-8 text-xs text-muted-foreground text-center max-w-md">
-        O pagamento é processado de forma segura pelo Mercado Pago. Você pode cancelar sua assinatura a qualquer momento.
+        O sistema de pagamento será habilitado em breve. Agradecemos sua paciência e interesse em apoiar o Zispr!
       </p>
     </div>
   );
