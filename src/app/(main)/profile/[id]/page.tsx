@@ -588,7 +588,7 @@ export default function ProfilePage() {
         if (!profileId) return;
         setIsLoadingReplies(true);
         try {
-            const q = query(collection(db, "comments"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
+            const q = query(collection(db, "comments"), where("authorId", "==", profileId));
             const snapshot = await getDocs(q);
     
             if (snapshot.empty) {
@@ -597,14 +597,11 @@ export default function ProfilePage() {
                 return;
             }
     
-            // 1. Get all unique post IDs from the replies
             const postIds = [...new Set(snapshot.docs.map(doc => doc.data().postId))];
             
-            // 2. Fetch all original posts in one go (or chunked if necessary)
             const postDocs = await getDocs(query(collection(db, "posts"), where(documentId(), "in", postIds)));
             const postsMap = new Map(postDocs.docs.map(doc => [doc.id, doc.data()]));
     
-            // 3. Map replies and enrich them with original post data
             const repliesData = snapshot.docs.map(doc => {
                 const commentData = doc.data();
                 const originalPost = postsMap.get(commentData.postId);
@@ -622,6 +619,12 @@ export default function ProfilePage() {
                         authorHandle: originalPost.handle
                     } : null
                 } as Reply;
+            });
+            
+            repliesData.sort((a, b) => {
+                 const timeA = a.createdAt?.toMillis() || 0;
+                 const timeB = b.createdAt?.toMillis() || 0;
+                 return timeB - timeA;
             });
     
             setUserReplies(repliesData);
