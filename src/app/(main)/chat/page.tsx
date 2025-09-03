@@ -182,7 +182,7 @@ export default function ChatPage() {
 
   return (
     <>
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-background pb-20 md:pb-0">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between gap-4 px-4 py-2">
             <div className="flex items-center gap-4">
