@@ -39,7 +39,7 @@ export async function chat(history: ChatHistory[]): Promise<{stream: AsyncGenera
     ];
 
 
-    const {stream} = await ai.generate({
+    const {stream} = ai.generateStream({
         prompt: lastMessage.content,
         history: chatHistoryWithSystemPrompt,
         tools: [lookupUserByHandle]
