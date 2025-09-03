@@ -16,25 +16,25 @@ import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { useState } from 'react';
-import { CalendarIcon, Loader2 } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
+import { parse } from 'date-fns';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
   email: z.string().email({ message: "Endereço de e-mail inválido." }),
   password: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres." }),
-  birthDate: z.date({
-    required_error: "A data de nascimento é obrigatória.",
-    invalid_type_error: "Formato de data inválido.",
-  })
-}).refine(data => {
-    const today = new Date();
-    const sixteenYearsAgo = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
-    return data.birthDate <= sixteenYearsAgo;
+  birthDate: z.string().refine((val) => /^\d{2}\/\d{2}\/\d{4}$/.test(val), {
+    message: "Por favor, insira a data no formato DD/MM/AAAA.",
+  }),
+}).refine((data) => {
+    try {
+        const date = parse(data.birthDate, 'dd/MM/yyyy', new Date());
+        const today = new Date();
+        const sixteenYearsAgo = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
+        return date <= sixteenYearsAgo;
+    } catch (e) {
+        return false;
+    }
 }, {
     message: "Você deve ter pelo menos 16 anos para se cadastrar.",
     path: ['birthDate'],
@@ -44,7 +44,6 @@ export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,6 +51,7 @@ export default function RegisterPage() {
       name: '',
       email: '',
       password: '',
+      birthDate: '',
     },
   });
 
@@ -66,6 +66,8 @@ export default function RegisterPage() {
         });
 
         const handle = values.email.split('@')[0].replace(/[^a-z0-9_]/g, '');
+        
+        const birthDateAsDate = parse(values.birthDate, 'dd/MM/yyyy', new Date());
 
         await setDoc(doc(db, "users", user.uid), {
             uid: user.uid,
@@ -80,7 +82,7 @@ export default function RegisterPage() {
             bio: '',
             location: '',
             website: '',
-            birthDate: values.birthDate,
+            birthDate: birthDateAsDate,
             followers: [],
             following: [],
             savedPosts: [],
@@ -135,47 +137,11 @@ export default function RegisterPage() {
                 control={form.control}
                 name="birthDate"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>Data de Nascimento</FormLabel>
-                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                            disabled={isLoading}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP", { locale: ptBR })
-                            ) : (
-                              <span>Selecione uma data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={(date) => {
-                            if(date) field.onChange(date);
-                            setIsCalendarOpen(false);
-                          }}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                          locale={ptBR}
-                          captionLayout="dropdown-buttons"
-                          fromYear={1920}
-                          toYear={new Date().getFullYear()}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <Input placeholder="DD/MM/AAAA" {...field} disabled={isLoading} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
