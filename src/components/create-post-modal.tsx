@@ -532,6 +532,12 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                             )}
                         </div>
                     </div>
+                     {quotedPost && (
+                        <div className="flex items-center gap-2 pl-12 -mt-2">
+                           <span className="text-sm text-muted-foreground">Respondendo a</span>
+                           <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-sm font-semibold">{quotedPost.handle}</span>
+                        </div>
+                    )}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="flex items-center gap-2 text-primary self-start rounded-full -ml-2 h-auto py-1 px-2">
