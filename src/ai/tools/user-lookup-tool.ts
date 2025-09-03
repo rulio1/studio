@@ -11,7 +11,7 @@ import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 const UserLookupInputSchema = z.object({
-    handle: z.string().describe("The user's handle, including the '@' symbol (e.g., '@Rulio')."),
+    handle: z.string().describe("The user's handle, which may or may not include the '@' symbol (e.g., '@Rulio' or 'Rulio')."),
 });
 
 const UserLookupOutputSchema = z.object({
@@ -32,12 +32,15 @@ export const lookupUserByHandle = ai.defineTool(
     },
     async (input) => {
         try {
+            // Ensure the handle starts with @ for the query
+            const formattedHandle = input.handle.startsWith('@') ? input.handle : `@${input.handle}`;
+
             const usersRef = collection(db, "users");
-            const q = query(usersRef, where("handle", "==", input.handle), limit(1));
+            const q = query(usersRef, where("handle", "==", formattedHandle), limit(1));
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
-                throw new Error(`User with handle ${input.handle} not found.`);
+                throw new Error(`User with handle ${formattedHandle} not found.`);
             }
 
             const userDoc = querySnapshot.docs[0];
