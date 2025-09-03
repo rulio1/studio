@@ -217,7 +217,7 @@ export default function ChatPage() {
 
       <main className="flex-1 relative">
         <ScrollArea className="absolute inset-0" ref={scrollAreaRef}>
-            <div className="p-4 space-y-6 pb-20">
+            <div className="p-4 space-y-6 pb-24 md:pb-20">
                  {isLoadingHistory ? (
                      <div className="flex justify-center items-center h-full">
                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
