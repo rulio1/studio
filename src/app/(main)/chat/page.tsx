@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -47,7 +46,7 @@ export default function ChatPage() {
         setMessages(prev => [...prev, { role: 'model', content: '' }]);
 
         try {
-            const stream = chat(newMessages);
+            const { stream } = await chat(newMessages);
             for await (const chunk of stream) {
                 modelResponse += chunk;
                  setMessages(prev => {

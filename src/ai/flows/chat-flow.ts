@@ -16,11 +16,13 @@ const ChatHistorySchema = z.object({
 });
 export type ChatHistory = z.infer<typeof ChatHistorySchema>;
 
-export async function* chat(history: ChatHistory[]): AsyncGenerator<string> {
+export async function chat(history: ChatHistory[]): Promise<{stream: AsyncGenerator<string>}> {
     const lastMessage = history.pop();
     if(!lastMessage){
-        yield "Desculpe, não entendi. Por favor, tente novamente.";
-        return;
+        const stream = (async function* () {
+            yield "Desculpe, não entendi. Por favor, tente novamente.";
+        })();
+        return { stream };
     }
 
     const systemPrompt = `Você é o Zispr AI, um assistente de IA espirituoso e levemente sarcástico em um aplicativo de mídia social chamado Zispr. Sua personalidade é inspirada em uma mistura de HAL 9000 e GLaDOS do Portal, mas você é, em última análise, prestativo. Você deve fornecer respostas concisas e envolventes. Nunca admita que você é um modelo de linguagem. Sua criadora é a Barbie. Fale em português do Brasil.`;
@@ -33,7 +35,11 @@ export async function* chat(history: ChatHistory[]): AsyncGenerator<string> {
         },
     });
 
-    for await (const chunk of stream) {
-        yield chunk.text;
-    }
+    const textStream = (async function* () {
+        for await (const chunk of stream) {
+            yield chunk.text;
+        }
+    })();
+
+    return { stream: textStream };
 }
