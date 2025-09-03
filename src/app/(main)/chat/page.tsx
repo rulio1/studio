@@ -10,7 +10,7 @@ import { ArrowLeft, Bot, Loader2, Send, MoreHorizontal, Trash2 } from 'lucide-re
 import { chat, ChatHistory } from '@/ai/flows/chat-flow';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, writeBatch, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -182,7 +182,7 @@ export default function ChatPage() {
 
   return (
     <>
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-full bg-background">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between gap-4 px-4 py-2">
             <div className="flex items-center gap-4">
