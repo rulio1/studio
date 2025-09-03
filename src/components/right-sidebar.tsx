@@ -7,17 +7,12 @@ import { db, auth } from '@/lib/firebase';
 import { collection, query, orderBy, limit, onSnapshot, doc, getDocs, writeBatch, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { useDebounce } from 'use-debounce';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Search, Loader2, MoreHorizontal, BadgeCheck, Bird } from 'lucide-react';
+import { Search, Loader2, MoreHorizontal, BadgeCheck, Bird, HandHeart } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
-
-interface Trend {
-    name: string;
-    count: number;
-}
 
 interface UserToFollow {
     uid: string;
@@ -36,7 +31,6 @@ export default function RightSidebar() {
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
-    const [trends, setTrends] = useState<Trend[]>([]);
     const [usersToFollow, setUsersToFollow] = useState<UserToFollow[]>([]);
     const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<CurrentZisprUser | null>(null);
@@ -64,13 +58,6 @@ export default function RightSidebar() {
         }
     }, [debouncedSearchTerm, router]);
 
-    const fetchTrends = useCallback(() => {
-        const trendsQuery = query(collection(db, 'hashtags'), orderBy('count', 'desc'), limit(5));
-        return onSnapshot(trendsQuery, (snapshot) => {
-            setTrends(snapshot.docs.map(doc => doc.data() as Trend));
-        }, (error) => console.error(error));
-    }, []);
-
     const fetchUsersToFollow = useCallback(() => {
         if (!currentUser) return () => {};
         
@@ -89,13 +76,11 @@ export default function RightSidebar() {
     }, [currentUser, zisprUser?.following]);
 
     useEffect(() => {
-        const unsubTrends = fetchTrends();
         const unsubUsers = fetchUsersToFollow();
         return () => {
-            unsubTrends();
             unsubUsers();
         };
-    }, [fetchTrends, fetchUsersToFollow]);
+    }, [fetchUsersToFollow]);
     
     const handleFollow = async (targetUserId: string) => {
         if (!currentUser) return;
@@ -132,35 +117,20 @@ export default function RightSidebar() {
                     />
                 </div>
 
-                <Card>
+                 <Card className="bg-primary/5 border-primary/20">
                     <CardHeader>
-                        <CardTitle>Tópicos do Momento</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <HandHeart className="text-primary"/>
+                            Seja um Apoiador
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {isLoading ? (
-                             <div className="space-y-4">
-                                <Skeleton className="h-8 w-full" />
-                                <Skeleton className="h-8 w-4/5" />
-                                <Skeleton className="h-8 w-3/5" />
-                            </div>
-                        ) : (
-                             <ul className="space-y-2">
-                                {trends.map(trend => (
-                                    <li key={trend.name} className="group cursor-pointer" onClick={() => router.push(`/search?q=%23${trend.name}`)}>
-                                        <div className="flex justify-between items-center">
-                                            <div >
-                                                <p className="font-bold group-hover:underline">#{trend.name}</p>
-                                                <p className="text-sm text-muted-foreground">{trend.count.toLocaleString()} posts</p>
-                                            </div>
-                                             <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-                                            </Button>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                         <Button variant="link" className="p-0 h-auto mt-4" onClick={() => router.push('/search')}>Mostrar mais</Button>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Apoie o Zispr para obter benefícios exclusivos e ajudar a plataforma a crescer!
+                        </p>
+                         <Button className="w-full rounded-full font-bold" onClick={() => router.push('/supporter')}>
+                           Ver Planos
+                        </Button>
                     </CardContent>
                 </Card>
 
