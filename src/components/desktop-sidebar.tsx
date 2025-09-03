@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck, HandHeart } from 'lucide-react';
+import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck, Bot } from 'lucide-react';
 import CreatePostModal from './create-post-modal';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
@@ -164,6 +164,14 @@ export default function DesktopSidebar() {
                     <Feather className="mr-2 h-5 w-5" />
                     Postar
                 </Button>
+
+                <Link href="/chat" className='w-full'>
+                    <Button variant="ghost" className="w-full justify-start text-xl p-6 mt-2">
+                        <Bot className="h-7 w-7 mr-4" />
+                        <span>Zispr AI</span>
+                    </Button>
+                </Link>
+
             </div>
 
             <div className="w-full mb-4">
