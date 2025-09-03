@@ -532,34 +532,38 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                             )}
                         </div>
                     </div>
-                     {quotedPost && (
-                        <div className="flex items-center gap-2 pl-12 -mt-2">
-                           <span className="text-sm text-muted-foreground">Respondendo a</span>
-                           <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-sm font-semibold">{quotedPost.handle}</span>
-                        </div>
-                    )}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="flex items-center gap-2 text-primary self-start rounded-full -ml-2 h-auto py-1 px-2">
-                                <CurrentReplyOption.icon className="h-4 w-4"/>
-                                <span className="font-bold text-sm">{CurrentReplyOption.text}</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem onSelect={() => setReplySetting('everyone')}>
-                                <Globe className="mr-2 h-4 w-4"/>
-                                <span>Qualquer pessoa</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => setReplySetting('following')}>
-                                <Users className="mr-2 h-4 w-4"/>
-                                <span>Contas que você segue</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => setReplySetting('mentioned')}>
-                                <AtSign className="mr-2 h-4 w-4"/>
-                                <span>Apenas contas que você menciona</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    
+                    <div className="pl-12 flex flex-col gap-2">
+                        {quotedPost && (
+                            <div className="flex items-center gap-2 -mt-2">
+                               <span className="text-sm text-muted-foreground">Respondendo a</span>
+                               <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-sm font-semibold">{quotedPost.handle}</span>
+                            </div>
+                        )}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="flex items-center gap-2 text-primary self-start rounded-full -ml-2 h-auto py-1 px-2">
+                                    <CurrentReplyOption.icon className="h-4 w-4"/>
+                                    <span className="font-bold text-sm">{CurrentReplyOption.text}</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onSelect={() => setReplySetting('everyone')}>
+                                    <Globe className="mr-2 h-4 w-4"/>
+                                    <span>Qualquer pessoa</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setReplySetting('following')}>
+                                    <Users className="mr-2 h-4 w-4"/>
+                                    <span>Contas que você segue</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setReplySetting('mentioned')}>
+                                    <AtSign className="mr-2 h-4 w-4"/>
+                                    <span>Apenas contas que você menciona</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+
                 </main>
 
                 <DialogFooter className="p-2 border-t mt-auto">
