@@ -139,15 +139,9 @@ const ContentRenderer = ({ content, spotifyUrl }: { content: string, spotifyUrl?
                         <a 
                             key={index} 
                             className="text-primary hover:underline"
-                            onClick={async (e) => {
+                            onClick={(e) => {
                                 e.stopPropagation();
-                                const usersRef = collection(db, "users");
-                                const q = query(usersRef, where("handle", "==", part));
-                                const querySnapshot = await getDocs(q);
-                                if (!querySnapshot.empty) {
-                                    const userDoc = querySnapshot.docs[0];
-                                    router.push(`/profile/${userDoc.id}`);
-                                }
+                                router.push(`/${handle}`);
                             }}
                         >
                             {part}
@@ -242,7 +236,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment, onReply }
         <li className="p-4 flex gap-4 relative border-b">
             {!isLastComment && <div className="absolute left-10 top-16 bottom-0 w-0.5 bg-border -translate-x-1/2"></div>}
             <div className="relative">
-                 <Avatar className="h-12 w-12 cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
+                 <Avatar className="h-12 w-12 cursor-pointer" onClick={() => router.push(`/${comment.handle.substring(1)}`)}>
                     {isZisprAccount ? (
                         <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
                             <Bird className="h-6 w-6 text-primary" />
@@ -257,7 +251,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment, onReply }
             </div>
             <div className='w-full'>
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
+                    <div className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => router.push(`/${comment.handle.substring(1)}`)}>
                         <p className="font-bold flex items-center gap-1">
                             {comment.author} 
                             {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
@@ -289,7 +283,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment, onReply }
                                         <Flag className="mr-2 h-4 w-4"/>
                                         Denunciar comentário
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => router.push(`/profile/${comment.authorId}`)}>
+                                    <DropdownMenuItem onClick={() => router.push(`/${comment.handle.substring(1)}`)}>
                                         <UserRound className="mr-2 h-4 w-4"/>
                                         Ir para perfil de {comment.handle}
                                     </DropdownMenuItem>
@@ -804,7 +798,7 @@ export default function PostDetailPage() {
             <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
                 <div className="p-4 border-b">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
+                        <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => router.push(`/${post.handle.substring(1)}`)}>
                              <Avatar className="h-12 w-12">
                                 {isZisprAccount ? (
                                     <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
@@ -876,7 +870,7 @@ export default function PostDetailPage() {
                                             Nota da comunidade
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => router.push(`/profile/${post.authorId}`)}>
+                                        <DropdownMenuItem onClick={() => router.push(`/${post.handle.substring(1)}`)}>
                                             <UserRound className="mr-2 h-4 w-4"/>
                                             Ir para perfil de {post.handle}
                                         </DropdownMenuItem>

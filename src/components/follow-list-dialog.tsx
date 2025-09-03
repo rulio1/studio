@@ -47,7 +47,7 @@ const UserItem = ({ user, currentUser, onToggleFollow, onDialogClose }: { user: 
 
     const handleUserClick = () => {
         onDialogClose();
-        router.push(`/profile/${user.uid}`);
+        router.push(`/${user.handle.substring(1)}`);
     };
     
     return (

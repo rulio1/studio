@@ -234,7 +234,7 @@ export default function ConversationPage() {
                 <Button variant="ghost" size="icon" onClick={() => router.push('/messages')}>
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push(`/profile/${otherUser.uid}`)}>
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push(`/${otherUser.handle.substring(1)}`)}>
                     <Avatar className="h-8 w-8">
                          {isZisprAccount ? (
                             <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">

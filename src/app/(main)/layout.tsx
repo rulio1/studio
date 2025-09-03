@@ -53,7 +53,7 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
                                 if (notification.postId) {
                                     router.push(`/post/${notification.postId}`);
                                 } else if (notification.fromUserId) {
-                                    router.push(`/profile/${notification.fromUserId}`);
+                                    router.push(`/${notification.fromUser.handle.substring(1)}`);
                                 }
                             }
                         });

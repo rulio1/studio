@@ -231,7 +231,7 @@ function SearchPageClient() {
         return (
             <li key={user.uid} className="p-4 hover:bg-muted/50">
                 <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/profile/${user.uid}`)}>
+                    <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/${user.handle.substring(1)}`)}>
                         <Avatar className="h-12 w-12"><AvatarImage src={user.avatar} /><AvatarFallback>{user.displayName[0]}</AvatarFallback></Avatar>
                         <div>
                             <p className="font-bold flex items-center gap-1">
@@ -251,7 +251,7 @@ function SearchPageClient() {
     return (
         <li key={user.uid} className="p-4 hover:bg-muted/50">
             <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/profile/${user.uid}`)}>
+                <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => router.push(`/${user.handle.substring(1)}`)}>
                     <Avatar className="h-12 w-12">
                         {isZisprAccount ? (
                              <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">

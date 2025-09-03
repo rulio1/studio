@@ -16,6 +16,7 @@ interface ZisprUser {
     uid: string;
     avatar: string;
     displayName: string;
+    handle: string;
 }
 
 
@@ -113,7 +114,7 @@ export default function BottomNavBar() {
                     {isLoading ? (
                         <Skeleton className="h-8 w-8 rounded-full" />
                     ) : user && zisprUser ? (
-                        <Link href={`/profile/${user.uid}`} className={`transition-opacity hover:opacity-80 ${pathname.startsWith(`/profile/`) ? 'border-2 border-primary rounded-full p-0.5' : ''}`}>
+                        <Link href={`/${zisprUser.handle.substring(1)}`} className={`transition-opacity hover:opacity-80 ${pathname.startsWith(`/${zisprUser.handle.substring(1)}`) ? 'border-2 border-primary rounded-full p-0.5' : ''}`}>
                              <Avatar className="h-8 w-8">
                                 <AvatarImage src={zisprUser.avatar} alt={zisprUser.displayName} />
                                 <AvatarFallback>{zisprUser.displayName?.[0]}</AvatarFallback>
