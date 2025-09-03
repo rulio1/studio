@@ -22,11 +22,9 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            if (!currentUser) {
-                // This check is now primarily handled by the parent MainLayout
-            } else {
-                setUser(currentUser);
-            }
+            // A verificação principal agora é feita no componente pai (MainLayout)
+            // Este useEffect agora é principalmente para funcionalidades em tempo real como notificações.
+            setUser(currentUser);
         });
         return () => unsubscribe();
     }, [router]);
@@ -119,24 +117,23 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (!user) {
-                // If after checking, there's no user, redirect.
-                router.push('/login');
+                // Se não houver usuário após a verificação, redirecione para o login.
+                // Isso desmontará os componentes filhos e seus listeners antes do erro.
+                router.replace('/login');
             } else {
-                // If there is a user, stop loading and show the content.
+                // Se houver um usuário, pare de carregar e mostre o conteúdo.
                 setIsLoading(false);
             }
         });
 
-        // Handle case where auth takes a while to initialize
+        // Um fallback para o caso de a autenticação demorar a inicializar
         const timer = setTimeout(() => {
             if (auth.currentUser === null) {
-                setIsLoading(false); // Stop loading even if there's no user, to prevent infinite spinner
-                router.push('/login');
+                router.replace('/login');
             } else {
-                // Also handle the case where user is available but loading state hasn't changed
                 setIsLoading(false);
             }
-        }, 2500); // 2.5-second timeout as a fallback
+        }, 2000); 
 
         return () => {
             unsubscribe();

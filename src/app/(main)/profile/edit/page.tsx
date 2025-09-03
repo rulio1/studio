@@ -200,7 +200,7 @@ export default function EditProfilePage() {
                 description: 'Suas alterações foram salvas com sucesso.',
             });
             
-            router.push(`/profile/${user.uid}`);
+            router.push(`/${handleWithAt.substring(1)}`);
     
         } catch (error: any) {
             console.error('Erro ao salvar perfil: ', error);
