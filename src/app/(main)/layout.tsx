@@ -1,4 +1,3 @@
-
 'use client';
 
 import BottomNavBar from '@/components/bottom-nav-bar';
@@ -22,8 +21,6 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            // A verificação principal agora é feita no componente pai (MainLayout)
-            // Este useEffect agora é principalmente para funcionalidades em tempo real como notificações.
             setUser(currentUser);
         });
         return () => unsubscribe();
@@ -128,10 +125,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
         // Um fallback para o caso de a autenticação demorar a inicializar
         const timer = setTimeout(() => {
-            if (auth.currentUser === null) {
-                router.replace('/login');
-            } else {
-                setIsLoading(false);
+             // Se após 2 segundos ainda estivermos carregando, significa que não há usuário
+            if (isLoading) {
+                // Verificação final
+                if (auth.currentUser === null) {
+                    router.replace('/login');
+                } else {
+                    setIsLoading(false);
+                }
             }
         }, 2000); 
 
@@ -139,7 +140,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             unsubscribe();
             clearTimeout(timer);
         };
-    }, [router]);
+    }, [router, isLoading]);
 
     if (isLoading) {
         return <HomeLoading />;
