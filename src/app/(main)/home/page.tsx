@@ -495,7 +495,7 @@ useEffect(() => {
                                 onClick={async (e) => {
                                     e.stopPropagation();
                                     const usersRef = collection(db, "users");
-                                    const q = query(usersRef, where("handle", "==", handle));
+                                    const q = query(usersRef, where("handle", "==", part));
                                     const querySnapshot = await getDocs(q);
                                     if (!querySnapshot.empty) {
                                         const userDoc = querySnapshot.docs[0];
