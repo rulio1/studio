@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Check, CheckCircle, HandHeart } from "lucide-react";
+import { BadgeCheck, CheckCircle, HandHeart } from "lucide-react";
 
 const tiers = [
   {
@@ -12,7 +12,7 @@ const tiers = [
     priceSuffix: "/mês",
     description: "Para quem quer dar o primeiro passo e ajudar a plataforma a crescer.",
     features: [
-      "Selo de verificação na cor bronze",
+      { text: "Selo de verificação", icon: <BadgeCheck className="h-5 w-5 text-amber-600 mr-2 shrink-0 mt-0.5" /> },
     ],
     buttonText: "Apoiar",
     variant: "secondary",
@@ -23,9 +23,9 @@ const tiers = [
     priceSuffix: "/mês",
     description: "Para os entusiastas que desejam uma experiência aprimorada e acesso antecipado.",
     features: [
-      "Selo de verificação na cor prata",
-      "Opções avançadas de tema",
-      "Acesso a novas features em primeira mão",
+      { text: "Selo de verificação", icon: <BadgeCheck className="h-5 w-5 text-slate-400 mr-2 shrink-0 mt-0.5" /> },
+      { text: "Opções avançadas de tema", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
+      { text: "Acesso a novas features em primeira mão", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
     ],
     buttonText: "Seja VIP",
     variant: "default",
@@ -36,12 +36,12 @@ const tiers = [
     priceSuffix: "/mês",
     description: "Para visionários que acreditam no potencial máximo do Zispr.",
     features: [
-      "Selo de verificação na cor ouro",
-      "Experiência sem anúncios",
-      "Acesso ao Clube de Patrocinadores",
-      "Maior visibilidade para seus posts",
-      "Acesso a testes beta",
-      "Estatísticas avançadas do perfil",
+      { text: "Selo de verificação", icon: <BadgeCheck className="h-5 w-5 text-yellow-400 mr-2 shrink-0 mt-0.5" /> },
+      { text: "Experiência sem anúncios", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
+      { text: "Acesso ao Clube de Patrocinadores", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
+      { text: "Maior visibilidade para seus posts", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
+      { text: "Acesso a testes beta", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
+      { text: "Estatísticas avançadas do perfil", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
     ],
     buttonText: "Patrocinar",
     variant: "secondary",
@@ -73,9 +73,9 @@ export default function SupporterPage() {
               </div>
               <ul className="space-y-3 text-sm">
                 {tier.features.map((feature) => (
-                  <li key={feature} className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" />
-                    <span>{feature}</span>
+                  <li key={feature.text} className="flex items-start">
+                    {feature.icon}
+                    <span>{feature.text}</span>
                   </li>
                 ))}
               </ul>
