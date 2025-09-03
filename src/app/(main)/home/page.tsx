@@ -447,9 +447,12 @@ useEffect(() => {
 
 
   const handleSignOut = async () => {
-    setZisprUser(null);
-    await signOut(auth);
-    router.push('/login');
+    try {
+        await signOut(auth);
+        window.location.href = '/login';
+    } catch (error) {
+        toast({ title: 'Erro ao sair', variant: 'destructive' });
+    }
   };
 
   const handlePostClick = (postId: string) => {

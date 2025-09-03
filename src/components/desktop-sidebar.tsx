@@ -21,6 +21,7 @@ import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut
 import CreatePostModal from './create-post-modal';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 interface ZisprUser {
     uid: string;
@@ -33,6 +34,7 @@ interface ZisprUser {
 export default function DesktopSidebar() {
     const pathname = usePathname();
     const router = useRouter();
+    const { toast } = useToast();
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,9 +112,12 @@ export default function DesktopSidebar() {
     }, [user]);
 
     const handleSignOut = async () => {
-        setZisprUser(null);
-        await signOut(auth);
-        router.push('/login');
+        try {
+            await signOut(auth);
+            window.location.href = '/login';
+        } catch (error) {
+            toast({ title: 'Erro ao sair', variant: 'destructive' });
+        }
     };
     
     const getIsActive = (href: string) => {
