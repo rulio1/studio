@@ -170,6 +170,9 @@ export default function RegisterPage() {
                           }
                           initialFocus
                           locale={ptBR}
+                          captionLayout="dropdown-buttons"
+                          fromYear={1920}
+                          toYear={new Date().getFullYear()}
                         />
                       </PopoverContent>
                     </Popover>
