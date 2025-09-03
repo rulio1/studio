@@ -215,9 +215,9 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col overflow-y-auto">
-        <ScrollArea className="flex-1" ref={scrollAreaRef}>
-            <div className="p-4 space-y-6 pb-4">
+      <main className="flex-1 relative">
+        <ScrollArea className="absolute inset-0" ref={scrollAreaRef}>
+            <div className="p-4 space-y-6 pb-24 md:pb-20">
                  {isLoadingHistory ? (
                      <div className="flex justify-center items-center h-full">
                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -254,8 +254,8 @@ export default function ChatPage() {
                  )}
             </div>
         </ScrollArea>
-        <div className="p-4 pt-2 border-t bg-background">
-            <div className="relative flex items-center rounded-2xl border bg-muted p-2">
+        <div className="fixed bottom-0 left-0 right-0 p-4 pt-2 border-t bg-background/80 backdrop-blur-lg md:bottom-auto md:relative md:bg-background">
+            <div className="relative flex items-center rounded-2xl border bg-muted p-2 max-w-2xl mx-auto">
                 <Input 
                     placeholder="Pergunte qualquer coisa ao Zispr AI..." 
                     value={input}
