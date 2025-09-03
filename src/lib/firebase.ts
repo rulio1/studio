@@ -1,6 +1,6 @@
 
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, initializeAuth, browserLocalPersistence, Auth } from "firebase/auth";
+import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore, initializeFirestore, enableIndexedDbPersistence, memoryLocalCache } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 import { getMessaging, getToken, isSupported } from "firebase/messaging";
@@ -15,29 +15,18 @@ const firebaseConfig = {
 };
 
 let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
-let storage: FirebaseStorage;
-
 if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
 } else {
     app = getApp();
 }
 
-try {
-    auth = initializeAuth(app, {
-        persistence: browserLocalPersistence
-    });
-} catch (error) {
-    auth = getAuth(app);
-}
+const auth: Auth = getAuth(app);
+const db: Firestore = getFirestore(app);
+const storage: FirebaseStorage = getStorage(app);
 
+// Enable offline persistence for Firestore
 try {
-    db = initializeFirestore(app, {
-      experimentalForceLongPolling: true,
-      localCache: memoryLocalCache(),
-    });
     enableIndexedDbPersistence(db).catch((err) => {
         if (err.code == 'failed-precondition') {
             console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
@@ -46,10 +35,9 @@ try {
         }
     });
 } catch (error) {
-    db = getFirestore(app);
+    console.error("Error enabling Firestore persistence: ", error);
 }
 
-storage = getStorage(app);
 
 // Push Notifications (Client-side)
 const requestNotificationPermission = async (userId: string) => {
