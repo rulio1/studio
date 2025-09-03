@@ -74,7 +74,6 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
     const showFab = !fabBlacklist.some(path => pathname.startsWith(path) && pathname !== '/messages');
     
     const hideSidebars = [
-        '/chat',
         '/profile/edit',
         '/settings'
     ].some(path => pathname.startsWith(path));
