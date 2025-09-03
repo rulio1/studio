@@ -73,6 +73,24 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
     ];
     const showFab = !fabBlacklist.some(path => pathname.startsWith(path) && pathname !== '/messages');
     
+    // Specific logic for chat page
+    if (pathname.startsWith('/chat')) {
+        return (
+            <div className="flex min-h-svh justify-center">
+                <DesktopSidebar />
+                <main className="flex-1 min-w-0 max-w-2xl md:border-x">
+                    <div className="animate-fade-in animate-slide-in-from-bottom h-full">
+                        {children}
+                    </div>
+                </main>
+                 <RightSidebar />
+                <div className="md:hidden">
+                    <BottomNavBar />
+                </div>
+            </div>
+        );
+    }
+    
     const hideSidebars = [
         '/profile/edit',
         '/settings'
