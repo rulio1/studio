@@ -882,13 +882,13 @@ useEffect(() => {
                                     <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
                                 </Avatar>
                             </div>
-                            <div className="flex flex-col">
+                             <Link href={`/profile/${zisprUser.uid}`} className="cursor-pointer">
                                 <div className="flex items-center gap-1 font-bold text-lg">
                                     {zisprUser.displayName}
                                     {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className="h-5 w-5 text-primary" />)}
                                 </div>
                                 <p className="text-sm text-muted-foreground">{zisprUser.handle}</p>
-                            </div>
+                            </Link>
                             <div className="flex gap-4 mt-2 text-sm">
                                 <p><span className="font-bold">{zisprUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
                                 <p><span className="font-bold">{zisprUser.followers?.length || 0}</span> <span className="text-muted-foreground">Seguidores</span></p>
