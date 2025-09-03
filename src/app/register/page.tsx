@@ -18,6 +18,7 @@ import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { parse } from 'date-fns';
+import React from 'react';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
@@ -54,6 +55,21 @@ export default function RegisterPage() {
       birthDate: '',
     },
   });
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value.replace(/\D/g, ''); // Remove non-digit characters
+    let formattedDate = '';
+    if (input.length > 0) {
+      formattedDate = input.substring(0, 2);
+    }
+    if (input.length > 2) {
+      formattedDate += '/' + input.substring(2, 4);
+    }
+    if (input.length > 4) {
+      formattedDate += '/' + input.substring(4, 8);
+    }
+    form.setValue('birthDate', formattedDate, { shouldValidate: true });
+  };
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -140,7 +156,13 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Data de Nascimento</FormLabel>
                     <FormControl>
-                      <Input placeholder="DD/MM/AAAA" {...field} disabled={isLoading} />
+                      <Input 
+                        placeholder="DD/MM/AAAA" 
+                        {...field} 
+                        onChange={handleDateChange}
+                        disabled={isLoading}
+                        maxLength={10} 
+                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
