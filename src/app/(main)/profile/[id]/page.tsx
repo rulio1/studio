@@ -105,6 +105,13 @@ interface Reply {
     content: string;
     createdAt: any;
     postId: string;
+    replyingTo: {
+        handle: string;
+    };
+    originalPost: {
+        content: string;
+        authorHandle: string;
+    } | null;
 }
 
 interface ZisprUser {
@@ -440,7 +447,19 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
                             <p className="text-muted-foreground">{reply.handle} · {time}</p>
                         </div>
                     </div>
-                    <p className="mb-2 whitespace-pre-wrap">{reply.content}</p>
+                    {reply.replyingTo && (
+                        <p className="text-sm text-muted-foreground">
+                            Respondendo a <span className="text-primary">{reply.replyingTo.handle}</span>
+                        </p>
+                    )}
+                    <p className="mb-1 whitespace-pre-wrap">{reply.content}</p>
+                    {reply.originalPost && (
+                         <div className="mt-2 border rounded-xl p-2 cursor-pointer hover:bg-muted/50 text-sm">
+                            <p className="text-muted-foreground line-clamp-2">
+                                <span className="font-bold text-foreground">{reply.originalPost.authorHandle}</span>: {reply.originalPost.content}
+                            </p>
+                         </div>
+                    )}
                 </div>
             </div>
         </li>
@@ -568,24 +587,50 @@ export default function ProfilePage() {
     const fetchUserReplies = useCallback(async () => {
         if (!profileId) return;
         setIsLoadingReplies(true);
-        const q = query(collection(db, "comments"), where("authorId", "==", profileId));
-        const snapshot = await getDocs(q);
-        let repliesData = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                ...data,
-                time: '', 
-            } as Reply;
-        });
-        // Sort replies client-side
-        repliesData.sort((a, b) => {
-            const timeA = a.createdAt?.toMillis() || 0;
-            const timeB = b.createdAt?.toMillis() || 0;
-            return timeB - timeA;
-        });
-        setUserReplies(repliesData);
-        setIsLoadingReplies(false);
+        try {
+            const q = query(collection(db, "comments"), where("authorId", "==", profileId), orderBy("createdAt", "desc"));
+            const snapshot = await getDocs(q);
+    
+            if (snapshot.empty) {
+                setUserReplies([]);
+                setIsLoadingReplies(false);
+                return;
+            }
+    
+            // 1. Get all unique post IDs from the replies
+            const postIds = [...new Set(snapshot.docs.map(doc => doc.data().postId))];
+            
+            // 2. Fetch all original posts in one go (or chunked if necessary)
+            const postDocs = await getDocs(query(collection(db, "posts"), where(documentId(), "in", postIds)));
+            const postsMap = new Map(postDocs.docs.map(doc => [doc.id, doc.data()]));
+    
+            // 3. Map replies and enrich them with original post data
+            const repliesData = snapshot.docs.map(doc => {
+                const commentData = doc.data();
+                const originalPost = postsMap.get(commentData.postId);
+                const originalPostAuthorHandle = originalPost ? originalPost.handle : '';
+    
+                return {
+                    id: doc.id,
+                    ...commentData,
+                    time: '', 
+                    replyingTo: {
+                        handle: originalPostAuthorHandle
+                    },
+                    originalPost: originalPost ? {
+                        content: originalPost.content,
+                        authorHandle: originalPost.handle
+                    } : null
+                } as Reply;
+            });
+    
+            setUserReplies(repliesData);
+        } catch (error) {
+            console.error("Error fetching user replies:", error);
+            setUserReplies([]);
+        } finally {
+            setIsLoadingReplies(false);
+        }
     }, [profileId]);
 
 
