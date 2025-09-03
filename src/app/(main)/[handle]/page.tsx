@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -636,6 +637,7 @@ export default function ProfilePage() {
             const usersRef = collection(db, "users");
             const q = query(usersRef, where("handle", "==", `@${profileHandle}`));
             
+            // This listener is for the profile being viewed
             const unsubscribeProfile = onSnapshot(q, async (querySnapshot) => {
                  if (querySnapshot.empty) {
                     setIsLoading(false);
@@ -647,19 +649,23 @@ export default function ProfilePage() {
                 const profileData = { uid: profileDoc.id, ...profileDoc.data() } as ZisprUser;
                 setProfileUser(profileData);
                 
+                // This listener is for the currently logged-in user
                 const userDocRef = doc(db, "users", user.uid);
-                const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists()) {
-                    const currentUserData = { uid: userDoc.id, ...userDoc.data() } as ZisprUser;
-                    setZisprUser(currentUserData);
-                    setIsFollowing(profileData.followers?.includes(user.uid));
-                    setIsFollowedBy(currentUserData.followers?.includes(profileData.uid));
-                }
+                const unsubscribeCurrentUser = onSnapshot(userDocRef, (userDoc) => {
+                    if (userDoc.exists()) {
+                        const currentUserData = { uid: userDoc.id, ...userDoc.data() } as ZisprUser;
+                        setZisprUser(currentUserData);
+                        setIsFollowing(profileData.followers?.includes(user.uid));
+                        setIsFollowedBy(currentUserData.followers?.includes(profileData.uid));
+                    }
+                });
 
                 await fetchUserPosts(user, profileData);
                 await fetchUserReplies(profileData.uid);
                 await fetchLikedPosts(user, profileData);
                 setIsLoading(false);
+
+                return () => unsubscribeCurrentUser();
             }, (error) => {
                  console.error("Error fetching profile data:", error);
                  toast({ title: "Error fetching profile", variant: "destructive" });
