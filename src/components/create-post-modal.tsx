@@ -427,7 +427,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const CurrentReplyOption = replyOptions[replySetting];
 
     const SuggestionPopup = () => (
-        <div className="absolute z-10 w-full mt-1 bg-background border rounded-lg shadow-lg">
+        <div className="absolute z-10 w-full mt-1 bg-background border rounded-lg shadow-lg max-h-60 overflow-y-auto">
             {suggestions.map((suggestion, index) => (
                 suggestion.type === 'mention' ? (
                     <div 
