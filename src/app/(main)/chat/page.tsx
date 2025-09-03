@@ -128,6 +128,7 @@ export default function ChatPage() {
                     }
                     return updatedMessages;
                  });
+                 scrollToBottom();
             }
             
             await updateDoc(modelMessageRef, { content: modelResponse });
