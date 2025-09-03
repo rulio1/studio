@@ -13,9 +13,9 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -47,6 +47,50 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+        try {
+            const result = await getRedirectResult(auth);
+            if (result) {
+                setIsGoogleLoading(true);
+                const user = result.user;
+                const userDocRef = doc(db, 'users', user.uid);
+                const userDoc = await getDoc(userDocRef);
+
+                if (!userDoc.exists()) {
+                    const handle = user.email?.split('@')[0].replace(/[^a-z0-9_]/g, '') || `user${Date.now()}`;
+                    await setDoc(userDocRef, {
+                        uid: user.uid,
+                        displayName: user.displayName,
+                        searchableDisplayName: user.displayName?.toLowerCase(),
+                        email: user.email,
+                        createdAt: serverTimestamp(),
+                        handle: `@${handle}`,
+                        searchableHandle: handle.toLowerCase(),
+                        avatar: user.photoURL || `https://placehold.co/128x128.png?text=${user.displayName?.[0] || 'Z'}`,
+                        banner: 'https://placehold.co/600x200.png',
+                        bio: '',
+                        location: '',
+                        website: '',
+                        followers: [],
+                        following: [],
+                        savedPosts: [],
+                        isVerified: false,
+                    });
+                }
+                toast({ title: 'Login bem-sucedido', description: `Bem-vindo de volta, ${user.displayName}!` });
+                router.push('/home');
+            }
+        } catch (error: any) {
+            console.error("Redirect result error:", error);
+            toast({ title: 'Falha no Login com Google', description: 'Ocorreu um erro ao processar o login.', variant: 'destructive' });
+            setIsGoogleLoading(false);
+        }
+    };
+    handleRedirectResult();
+  }, [router, toast]);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,56 +105,13 @@ export default function RegisterPage() {
     setIsGoogleLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (!userDoc.exists()) {
-            const handle = user.email?.split('@')[0].replace(/[^a-z0-9_]/g, '') || `user${Date.now()}`;
-            await setDoc(userDocRef, {
-                uid: user.uid,
-                displayName: user.displayName,
-                searchableDisplayName: user.displayName?.toLowerCase(),
-                email: user.email,
-                createdAt: serverTimestamp(),
-                handle: `@${handle}`,
-                searchableHandle: handle.toLowerCase(),
-                avatar: user.photoURL || `https://placehold.co/128x128.png?text=${user.displayName?.[0] || 'Z'}`,
-                banner: 'https://placehold.co/600x200.png',
-                bio: '',
-                location: '',
-                website: '',
-                followers: [],
-                following: [],
-                communities: [],
-                savedPosts: [],
-                isVerified: false,
-            });
-             toast({
-                title: "Conta Criada!",
-                description: "Seu perfil foi criado com as informações do Google.",
-            });
-        } else {
-             toast({
-                title: "Login bem-sucedido",
-                description: `Bem-vindo de volta, ${user.displayName}!`,
-            });
-        }
-        router.push('/home');
-
-    } catch (error: any) {
-        let description = 'Ocorreu um erro inesperado. Tente novamente.';
-        if (error.code === 'auth/popup-closed-by-user') {
-            description = 'A janela de login foi fechada. Por favor, tente novamente.';
-        }
+        await signInWithRedirect(auth, provider);
+    } catch (error) {
         toast({
             title: 'Falha no Login com Google',
-            description,
+            description: 'Não foi possível iniciar o login com o Google. Tente novamente.',
             variant: 'destructive',
         });
-    } finally {
         setIsGoogleLoading(false);
     }
   };
@@ -144,7 +145,6 @@ export default function RegisterPage() {
             birthDate: values.birthDate,
             followers: [],
             following: [],
-            communities: [],
             savedPosts: [],
             isVerified: false,
         });
