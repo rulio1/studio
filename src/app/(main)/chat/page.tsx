@@ -9,13 +9,39 @@ import { Input } from '@/components/ui/input';
 import { ArrowLeft, Bot, Loader2, Send } from 'lucide-react';
 import { chat, ChatHistory } from '@/ai/flows/chat-flow';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/hooks/use-auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
+
+interface ZisprUser {
+    displayName: string;
+    avatar: string;
+}
 
 export default function ChatPage() {
     const router = useRouter();
+    const { user: authUser } = useAuth();
+    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [messages, setMessages] = useState<ChatHistory[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingUser, setIsLoadingUser] = useState(true);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (authUser) {
+            const userDocRef = doc(db, 'users', authUser.uid);
+            getDoc(userDocRef).then(docSnap => {
+                if (docSnap.exists()) {
+                    setZisprUser(docSnap.data() as ZisprUser);
+                }
+                setIsLoadingUser(false);
+            });
+        } else {
+            setIsLoadingUser(false);
+        }
+    }, [authUser]);
 
     const scrollToBottom = () => {
         if (scrollAreaRef.current) {
@@ -113,10 +139,18 @@ export default function ChatPage() {
                             <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                         </div>
                          {message.role === 'user' && (
-                            <Avatar className="h-8 w-8">
-                                <AvatarImage src="https://placehold.co/40x40.png" alt="User" />
-                                <AvatarFallback>U</AvatarFallback>
-                            </Avatar>
+                             isLoadingUser ? (
+                                <Skeleton className="h-8 w-8 rounded-full" />
+                            ) : zisprUser ? (
+                                <Avatar className="h-8 w-8">
+                                    <AvatarImage src={zisprUser.avatar} alt="User" />
+                                    <AvatarFallback>{zisprUser.displayName?.[0] || 'U'}</AvatarFallback>
+                                </Avatar>
+                            ) : (
+                                 <Avatar className="h-8 w-8">
+                                    <AvatarFallback>U</AvatarFallback>
+                                </Avatar>
+                            )
                         )}
                     </div>
                 ))}
