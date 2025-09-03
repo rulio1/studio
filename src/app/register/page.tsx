@@ -98,7 +98,11 @@ export default function RegisterPage() {
 
     } catch (error: any) {
         console.error(error);
-        toast({ title: 'Falha no Cadastro com Google', description: 'Não foi possível se cadastrar com o Google. Tente novamente.', variant: 'destructive' });
+        if (error.code === 'auth/unauthorized-domain') {
+             toast({ title: 'Erro de Domínio', description: 'O domínio deste aplicativo não foi autorizado para login com o Google. Verifique as configurações do Firebase.', variant: 'destructive' });
+        } else {
+            toast({ title: 'Falha no Cadastro com Google', description: 'Não foi possível se cadastrar com o Google. Tente novamente.', variant: 'destructive' });
+        }
     } finally {
         setIsGoogleLoading(false);
     }
