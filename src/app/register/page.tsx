@@ -13,8 +13,8 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useState } from 'react';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -22,6 +22,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { FaGoogle } from 'react-icons/fa';
 
 
 const formSchema = z.object({
@@ -45,6 +46,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -55,6 +57,52 @@ export default function RegisterPage() {
       password: '',
     },
   });
+
+   const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+            const handle = (user.email?.split('@')[0] || `user${Date.now()}`).replace(/[^a-z0-9_]/g, '');
+            await setDoc(userDocRef, {
+                uid: user.uid,
+                displayName: user.displayName || 'Usuário',
+                searchableDisplayName: (user.displayName || 'Usuário').toLowerCase(),
+                email: user.email,
+                createdAt: serverTimestamp(),
+                handle: `@${handle}`,
+                searchableHandle: handle.toLowerCase(),
+                avatar: user.photoURL || `https://placehold.co/128x128.png?text=${(user.displayName || 'U')[0]}`,
+                banner: 'https://placehold.co/600x200.png',
+                bio: '',
+                location: '',
+                website: '',
+                birthDate: null, 
+                followers: [],
+                following: [],
+                savedPosts: [],
+                isVerified: false,
+            });
+             toast({ title: 'Conta Criada!', description: "Sua conta foi criada com sucesso." });
+        } else {
+             toast({ title: 'Login bem-sucedido', description: `Bem-vindo de volta, ${user.displayName}!` });
+        }
+        
+        router.push('/home');
+
+    } catch (error: any) {
+        console.error(error);
+        toast({ title: 'Falha no Cadastro com Google', description: 'Não foi possível se cadastrar com o Google. Tente novamente.', variant: 'destructive' });
+    } finally {
+        setIsGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -120,6 +168,18 @@ export default function RegisterPage() {
               <CardDescription>Insira seus dados abaixo para começar.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
+              <Button variant="outline" type="button" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+                  {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FaGoogle className="mr-2 h-4 w-4" />}
+                  Inscreva-se com o Google
+              </Button>
+               <div className="relative">
+                   <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                   </div>
+                   <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">ou</span>
+                   </div>
+                </div>
               <FormField
                 control={form.control}
                 name="name"
@@ -127,7 +187,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Nome</FormLabel>
                     <FormControl>
-                      <Input placeholder="Seu Nome" {...field} disabled={isLoading} />
+                      <Input placeholder="Seu Nome" {...field} disabled={isLoading || isGoogleLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -148,7 +208,7 @@ export default function RegisterPage() {
                               "w-full pl-3 text-left font-normal",
                               !field.value && "text-muted-foreground"
                             )}
-                            disabled={isLoading}
+                            disabled={isLoading || isGoogleLoading}
                           >
                             {field.value ? (
                               format(field.value, "PPP", { locale: ptBR })
@@ -186,7 +246,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="nome@exemplo.com" {...field} disabled={isLoading} />
+                      <Input placeholder="nome@exemplo.com" {...field} disabled={isLoading || isGoogleLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -199,13 +259,13 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Senha</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} disabled={isLoading} />
+                      <Input type="password" {...field} disabled={isLoading || isGoogleLoading} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Criar Conta
               </Button>
