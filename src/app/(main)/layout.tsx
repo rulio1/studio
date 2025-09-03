@@ -1,3 +1,4 @@
+
 'use client';
 
 import BottomNavBar from '@/components/bottom-nav-bar';
@@ -9,7 +10,7 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import DesktopSidebar from '@/components/desktop-sidebar';
 import RightSidebar from '@/components/right-sidebar';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDoc, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 function MainLayoutClient({ children }: { children: React.ReactNode }) {
@@ -34,13 +35,17 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
             where("toUserId", "==", user.uid)
         );
     
-        const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
+        const unsubscribe = onSnapshot(notificationsQuery, async (snapshot) => {
+            for (const change of snapshot.docChanges()) {
                 if (change.type === "added") {
                     const notification = change.doc.data();
                     const notificationTime = notification.createdAt?.toDate();
     
                     if (notificationTime && notificationTime > initialLoadTime.current) {
+                        
+                        const fromUserDoc = await getDoc(doc(db, "users", notification.fromUserId));
+                        const fromUserData = fromUserDoc.data();
+
                         toast({
                             title: `${notification.fromUser.name}`,
                             description: `${notification.text}`,
@@ -48,13 +53,13 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
                                 if (notification.postId) {
                                     router.push(`/post/${notification.postId}`);
                                 } else if (notification.fromUserId) {
-                                    router.push(`/${notification.fromUser.handle.substring(1)}`);
+                                    router.push(`/profile/${notification.fromUserId}`);
                                 }
                             }
                         });
                     }
                 }
-            });
+            }
         });
     
         return () => unsubscribe();

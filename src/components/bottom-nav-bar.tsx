@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Home, Search, Bell, Mail } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -114,7 +114,7 @@ export default function BottomNavBar() {
                     {isLoading ? (
                         <Skeleton className="h-8 w-8 rounded-full" />
                     ) : user && zisprUser ? (
-                        <Link href={`/${zisprUser.handle.substring(1)}`} className={`transition-opacity hover:opacity-80 ${pathname.startsWith(`/${zisprUser.handle.substring(1)}`) ? 'border-2 border-primary rounded-full p-0.5' : ''}`}>
+                        <Link href={`/profile/${zisprUser.uid}`} className={`transition-opacity hover:opacity-80 ${pathname.startsWith(`/profile/${zisprUser.uid}`) ? 'border-2 border-primary rounded-full p-0.5' : ''}`}>
                              <Avatar className="h-8 w-8">
                                 <AvatarImage src={zisprUser.avatar} alt={zisprUser.displayName} />
                                 <AvatarFallback>{zisprUser.displayName?.[0]}</AvatarFallback>

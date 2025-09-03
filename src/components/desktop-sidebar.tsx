@@ -47,7 +47,7 @@ export default function DesktopSidebar() {
         { href: '/notifications', icon: Bell, label: 'Notificações', count: notificationCount },
         { href: '/messages', icon: Mail, label: 'Mensagens', count: messageCount },
         { href: '/saved', icon: Bookmark, label: 'Salvos', count: 0 },
-        { href: zisprUser ? `/${zisprUser.handle.substring(1)}` : '#', icon: User, label: 'Perfil', count: 0 },
+        { href: zisprUser ? `/profile/${zisprUser.uid}` : '#', icon: User, label: 'Perfil', count: 0 },
     ];
 
     useEffect(() => {
@@ -122,8 +122,8 @@ export default function DesktopSidebar() {
     
     const getIsActive = (href: string) => {
         if (href === '/home') return pathname === href;
-        if (href.startsWith(`/${zisprUser?.handle.substring(1)}`) && zisprUser) {
-            return pathname === `/${zisprUser.handle.substring(1)}`;
+        if (zisprUser && href.startsWith(`/profile/${zisprUser.uid}`)) {
+            return pathname === `/profile/${zisprUser.uid}`;
         }
         return pathname.startsWith(href);
     };

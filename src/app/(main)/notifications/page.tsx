@@ -69,7 +69,7 @@ const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notif
     
     const handleItemClick = () => {
         if (notification.type === 'follow' || notification.type === 'unfollow') {
-            router.push(`/${notification.fromUser.handle.substring(1)}`);
+            router.push(`/profile/${notification.fromUserId}`);
         } else if (notification.postId) {
             router.push(`/post/${notification.postId}`);
         }
@@ -77,7 +77,7 @@ const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notif
     
     const handleAvatarClick = (e: React.MouseEvent) => {
         e.stopPropagation(); // Impede que o clique no avatar acione o clique no item da lista
-        router.push(`/${notification.fromUser.handle.substring(1)}`);
+        router.push(`/profile/${notification.fromUserId}`);
     };
 
     const onFollowBackClick = async (e: React.MouseEvent) => {

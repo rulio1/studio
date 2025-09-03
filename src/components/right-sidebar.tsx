@@ -191,11 +191,11 @@ export default function RightSidebar() {
 
                                     return (
                                         <li key={user.uid} className="flex items-center gap-2">
-                                            <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/${user.handle.substring(1)}`)}>
+                                            <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
                                                 <AvatarImage src={user.avatar} alt={user.displayName} />
                                                 <AvatarFallback>{user.displayName[0]}</AvatarFallback>
                                             </Avatar>
-                                            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => router.push(`/${user.handle.substring(1)}`)}>
+                                            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
                                                 <p className="font-bold flex items-center gap-1 hover:underline truncate">
                                                     {user.displayName}
                                                     {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
