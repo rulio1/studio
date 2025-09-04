@@ -38,13 +38,6 @@ export async function POST(req: Request) {
         payer: {
             email: userEmail,
         },
-        payment_methods: {
-            excluded_payment_types: [
-                { id: "bolbradesco" },
-                { id: "pec" }
-            ],
-            installments: 1,
-        },
         back_urls: {
           success: `${YOUR_DOMAIN}/profile/${userId}?payment_success=true`,
           failure: `${YOUR_DOMAIN}/supporter?payment_canceled=true`,
