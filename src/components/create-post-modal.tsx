@@ -461,7 +461,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     return (
         <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) resetModalState(); else onOpenChange(true); }}>
             <DialogContent 
-                className="p-0 gap-0 rounded-2xl bg-background/80 backdrop-blur-lg sm:max-w-xl flex flex-col h-auto max-h-[80svh]"
+                className="p-0 gap-0 rounded-2xl bg-background sm:max-w-xl flex flex-col h-auto max-h-[80svh]"
                 hideCloseButton={true}
             >
                 <DialogHeader className="p-4 flex flex-row items-center justify-between border-b">
