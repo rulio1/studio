@@ -1,2 +1,2 @@
-// This file has been removed to simplify Firebase Admin initialization.
-// The logic now resides directly in the API routes that use it.
+// Este arquivo foi intencionalmente removido para simplificar a inicialização do Firebase Admin.
+// A lógica agora reside diretamente nas rotas de API que a utilizam.
