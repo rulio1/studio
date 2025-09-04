@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -601,45 +599,85 @@ export default function PostDetailPage() {
         if (!user || !post || !zisprUser) return;
     
         const postRef = doc(db, "posts", post.id);
-        const field = action === 'like' ? 'likes' : 'retweets';
-        const isActioned = action === 'like' ? post.isLiked : post.isRetweeted;
+        const originalPost = { ...post };
+        const isActioned = action === 'like' ? originalPost.isLiked : originalPost.isRetweeted;
     
-        if (isActioned) {
-            await updateDoc(postRef, { [field]: arrayRemove(user.uid) });
-        } else {
-             const batch = writeBatch(db);
-             // Add like/retweet
-            batch.update(postRef, { [field]: arrayUnion(user.uid) });
-            
-            // Create notification if not own post
-            if (user.uid !== post.authorId) {
-                const authorDoc = await getDoc(doc(db, 'users', post.authorId));
-                if (authorDoc.exists()) {
-                    const authorData = authorDoc.data();
-                    const prefs = authorData.notificationPreferences;
-                    const canSendNotification = !prefs || prefs[action] !== false;
-                    if (canSendNotification) {
-                        const notificationRef = doc(collection(db, 'notifications'));
-                        batch.set(notificationRef, {
-                            toUserId: post.authorId,
-                            fromUserId: user.uid,
-                            fromUser: {
-                                name: zisprUser.displayName,
-                                handle: zisprUser.handle,
-                                avatar: zisprUser.avatar,
-                                isVerified: zisprUser.isVerified || false,
-                            },
-                            type: action,
-                            text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
-                            postContent: post.content.substring(0, 50),
-                            postId: post.id,
-                            createdAt: serverTimestamp(),
-                            read: false,
-                        });
+        // Optimistic UI update
+        const newLikes = originalPost.likes ? [...originalPost.likes] : [];
+        const newRetweets = originalPost.retweets ? [...originalPost.retweets] : [];
+    
+        if (action === 'like') {
+            if (isActioned) {
+                const index = newLikes.indexOf(user.uid);
+                if (index > -1) newLikes.splice(index, 1);
+            } else {
+                newLikes.push(user.uid);
+            }
+        } else { // retweet
+            if (isActioned) {
+                const index = newRetweets.indexOf(user.uid);
+                if (index > -1) newRetweets.splice(index, 1);
+            } else {
+                newRetweets.push(user.uid);
+            }
+        }
+    
+        setPost({
+            ...originalPost,
+            likes: newLikes,
+            retweets: newRetweets,
+            isLiked: newLikes.includes(user.uid),
+            isRetweeted: newRetweets.includes(user.uid),
+        });
+    
+        // Firebase update
+        try {
+            const batch = writeBatch(db);
+            const field = action === 'like' ? 'likes' : 'retweets';
+    
+            if (isActioned) {
+                batch.update(postRef, { [field]: arrayRemove(user.uid) });
+            } else {
+                batch.update(postRef, { [field]: arrayUnion(user.uid) });
+    
+                if (user.uid !== post.authorId) {
+                    const authorDoc = await getDoc(doc(db, 'users', post.authorId));
+                    if (authorDoc.exists()) {
+                        const authorData = authorDoc.data();
+                        const prefs = authorData.notificationPreferences;
+                        const canSendNotification = !prefs || prefs[action] !== false;
+                        if (canSendNotification) {
+                            const notificationRef = doc(collection(db, 'notifications'));
+                            batch.set(notificationRef, {
+                                toUserId: post.authorId,
+                                fromUserId: user.uid,
+                                fromUser: {
+                                    name: zisprUser.displayName,
+                                    handle: zisprUser.handle,
+                                    avatar: zisprUser.avatar,
+                                    isVerified: zisprUser.isVerified || false,
+                                },
+                                type: action,
+                                text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
+                                postContent: post.content.substring(0, 50),
+                                postId: post.id,
+                                createdAt: serverTimestamp(),
+                                read: false,
+                            });
+                        }
                     }
                 }
             }
             await batch.commit();
+        } catch (error) {
+            console.error(`Error ${action === 'like' ? 'liking' : 'retweeting'} post:`, error);
+            toast({
+                title: "Erro",
+                description: "Não foi possível completar a ação. Tente novamente.",
+                variant: "destructive"
+            });
+            // Revert UI on failure
+            setPost(originalPost);
         }
     };
 
@@ -942,7 +980,7 @@ export default function PostDetailPage() {
                         </button>
                         <Popover>
                             <PopoverTrigger asChild>
-                                <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-2 hover:text-green-500 transition-colors`}>
+                                <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-2 hover:text-green-500 transition-colors ${post.isRetweeted ? 'text-green-500' : ''}`}>
                                     <Repeat className="h-5 w-5" />
                                     <span>{Array.isArray(post.retweets) ? post.retweets.length : 0}</span>
                                 </button>
@@ -969,7 +1007,7 @@ export default function PostDetailPage() {
                             </PopoverContent>
                         </Popover>
                         <button onClick={() => handlePostAction('like')} className={`flex items-center gap-2 ${post.isLiked ? 'text-red-500' : ''}`}>
-                             <Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
+                             <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
                             <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
                         </button>
                         <div className="flex items-center gap-2">

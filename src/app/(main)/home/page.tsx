@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -257,61 +255,105 @@ useEffect(() => {
     
         const isActioned = action === 'like' ? post.isLiked : post.retweets.includes(user.uid);
     
-        const batch = writeBatch(db);
+        // Optimistic UI update
+        const updateLocalPosts = (localPosts: Post[], setLocalPosts: React.Dispatch<React.SetStateAction<Post[]>>) => {
+            setLocalPosts(localPosts.map(p => {
+                if (p.id === postId) {
+                    const newLikes = p.likes ? [...p.likes] : [];
+                    const newRetweets = p.retweets ? [...p.retweets] : [];
     
-        if (isActioned) {
-            const field = action === 'like' ? 'likes' : 'retweets';
-            batch.update(postRef, { [field]: arrayRemove(user.uid) });
+                    if (action === 'like') {
+                        if (isActioned) {
+                            const index = newLikes.indexOf(user.uid);
+                            if (index > -1) newLikes.splice(index, 1);
+                        } else {
+                            newLikes.push(user.uid);
+                        }
+                    } else { // retweet
+                        if (isActioned) {
+                            const index = newRetweets.indexOf(user.uid);
+                            if (index > -1) newRetweets.splice(index, 1);
+                        } else {
+                            newRetweets.push(user.uid);
+                        }
+                    }
+                    return { ...p, likes: newLikes, retweets: newRetweets, isLiked: newLikes.includes(user.uid), isRetweeted: newRetweets.includes(user.uid) };
+                }
+                return p;
+            }));
+        };
     
-            if (action === 'retweet') {
-                const repostQuery = query(collection(db, 'reposts'), where('userId', '==', user.uid), where('postId', '==', postId));
-                const repostSnapshot = await getDocs(repostQuery);
-                repostSnapshot.forEach(doc => batch.delete(doc.ref));
-            }
-        } else {
-            const field = action === 'like' ? 'likes' : 'retweets';
-            batch.update(postRef, { [field]: arrayUnion(user.uid) });
+        updateLocalPosts(allPosts, setAllPosts);
+        updateLocalPosts(followingPosts, setFollowingPosts);
     
-            if (action === 'retweet') {
-                const repostRef = doc(collection(db, 'reposts'));
-                batch.set(repostRef, {
-                    userId: user.uid,
-                    postId: postId,
-                    originalPostAuthorId: authorId,
-                    repostedAt: serverTimestamp()
-                });
-            }
+        // Firebase update
+        try {
+            const batch = writeBatch(db);
     
-            if (user.uid !== authorId) {
-                const authorDoc = await getDoc(doc(db, 'users', authorId));
-                if (authorDoc.exists()) {
-                    const authorData = authorDoc.data();
-                    const prefs = authorData.notificationPreferences;
-                    const canSendNotification = !prefs || prefs[action] !== false;
-
-                    if (canSendNotification) {
-                        const notificationRef = doc(collection(db, 'notifications'));
-                        batch.set(notificationRef, {
-                            toUserId: authorId,
-                            fromUserId: user.uid,
-                            fromUser: {
-                                name: zisprUser.displayName,
-                                handle: zisprUser.handle,
-                                avatar: zisprUser.avatar,
-                                isVerified: zisprUser.isVerified || false,
-                            },
-                            type: action,
-                            text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
-                            postContent: post.content.substring(0, 50),
-                            postId: post.id,
-                            createdAt: serverTimestamp(),
-                            read: false,
-                        });
+            if (isActioned) {
+                const field = action === 'like' ? 'likes' : 'retweets';
+                batch.update(postRef, { [field]: arrayRemove(user.uid) });
+    
+                if (action === 'retweet') {
+                    const repostQuery = query(collection(db, 'reposts'), where('userId', '==', user.uid), where('postId', '==', postId));
+                    const repostSnapshot = await getDocs(repostQuery);
+                    repostSnapshot.forEach(doc => batch.delete(doc.ref));
+                }
+            } else {
+                const field = action === 'like' ? 'likes' : 'retweets';
+                batch.update(postRef, { [field]: arrayUnion(user.uid) });
+    
+                if (action === 'retweet') {
+                    const repostRef = doc(collection(db, 'reposts'));
+                    batch.set(repostRef, {
+                        userId: user.uid,
+                        postId: postId,
+                        originalPostAuthorId: authorId,
+                        repostedAt: serverTimestamp()
+                    });
+                }
+    
+                if (user.uid !== authorId) {
+                    const authorDoc = await getDoc(doc(db, 'users', authorId));
+                    if (authorDoc.exists()) {
+                        const authorData = authorDoc.data();
+                        const prefs = authorData.notificationPreferences;
+                        const canSendNotification = !prefs || prefs[action] !== false;
+    
+                        if (canSendNotification) {
+                            const notificationRef = doc(collection(db, 'notifications'));
+                            batch.set(notificationRef, {
+                                toUserId: authorId,
+                                fromUserId: user.uid,
+                                fromUser: {
+                                    name: zisprUser.displayName,
+                                    handle: zisprUser.handle,
+                                    avatar: zisprUser.avatar,
+                                    isVerified: zisprUser.isVerified || false,
+                                },
+                                type: action,
+                                text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
+                                postContent: post.content.substring(0, 50),
+                                postId: post.id,
+                                createdAt: serverTimestamp(),
+                                read: false,
+                            });
+                        }
                     }
                 }
             }
+            await batch.commit();
+        } catch (error) {
+            console.error(`Error ${action === 'like' ? 'liking' : 'retweeting'} post:`, error);
+            toast({
+                title: "Erro",
+                description: "Não foi possível completar a ação. Tente novamente.",
+                variant: "destructive"
+            });
+            // Revert UI on failure
+            updateLocalPosts(allPosts, setAllPosts);
+            updateLocalPosts(followingPosts, setFollowingPosts);
         }
-        await batch.commit();
     };
 
     const handleQuoteClick = (post: Post) => {
@@ -758,7 +800,7 @@ useEffect(() => {
                     
                     <Popover>
                         <PopoverTrigger asChild>
-                             <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1 hover:text-green-500 transition-colors`}>
+                             <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1 hover:text-green-500 transition-colors ${post.isRetweeted ? 'text-green-500' : ''}`}>
                                 <Repeat className="h-5 w-5" />
                                 <span>{Array.isArray(post.retweets) ? post.retweets.length : 0}</span>
                             </button>
@@ -843,7 +885,7 @@ useEffect(() => {
              <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                 <div className="flex items-center justify-between px-4 py-2">
                     <Skeleton className="h-8 w-8 rounded-full" />
-                    <Bird className="h-6 w-6" />
+                    <Bird className="h-6 w-6 text-primary" />
                     <Skeleton className="h-8 w-8 rounded-full" />
                 </div>
              </header>
