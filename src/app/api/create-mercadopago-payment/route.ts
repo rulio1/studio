@@ -39,8 +39,8 @@ export async function POST(req: Request) {
             email: userEmail,
         },
         payment_methods: {
-            excluded_payment_types: [], // Removido para evitar conflitos
-            enabled_payment_types: ['credit_card', 'debit_card', 'pix'], // Apenas os métodos desejados
+            excluded_payment_types: [], // Explicitamente vazio para não excluir nada
+            enabled_payment_types: ['pix'], // Forçando apenas PIX
             installments: 1,
         },
         back_urls: {
