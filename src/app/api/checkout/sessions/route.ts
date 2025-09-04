@@ -3,10 +3,11 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
 import * as admin from 'firebase-admin';
 
-// Função para inicializar o Firebase Admin SDK se ainda não foi inicializado
-const ensureFirebaseAdminInitialized = () => {
+// Esta função garante que o Firebase Admin seja inicializado apenas uma vez.
+const initializeFirebaseAdmin = () => {
     if (admin.apps.length === 0) {
         try {
+            // Usa as Credenciais Padrão do Aplicativo, ideal para ambientes como Vercel/GCP.
             admin.initializeApp({
                 credential: admin.credential.applicationDefault(),
             });
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
   }
   
   try {
-    const db = ensureFirebaseAdminInitialized();
+    const db = initializeFirebaseAdmin();
     const body = await req.json();
     const { priceId, userId, userEmail, tier } = body;
 
