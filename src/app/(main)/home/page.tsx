@@ -802,7 +802,7 @@ useEffect(() => {
                 <div className="p-8 text-center text-muted-foreground border-t">
                     <h3 className="text-xl font-bold text-foreground">Sua timeline está um pouco vazia...</h3>
                     <p className="mt-2 mb-4">Encontre pessoas para seguir e veja os posts delas aqui!</p>
-                    <Button onClick={() => router.push('/search')}>Encontrar Pessoas</Button>
+                    <Button onClick={() => router.push('/search?tab=new-users')}>Encontrar Pessoas</Button>
                 </div>
             )
         }

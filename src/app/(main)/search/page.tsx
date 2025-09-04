@@ -72,6 +72,7 @@ function SearchPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryFromUrl = searchParams.get('q') || '';
+  const tabFromUrl = searchParams.get('tab');
   
   const [searchTerm, setSearchTerm] = useState(typeof queryFromUrl === 'string' ? queryFromUrl : '');
   const [trends, setTrends] = useState<Trend[]>([]);
@@ -81,7 +82,7 @@ function SearchPageClient() {
   const [isSearching, setIsSearching] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [posts, setPosts] = useState<PostSearchResult[]>([]);
-  const [activeTab, setActiveTab] = useState('trending');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'trending');
 
 
   const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
