@@ -147,6 +147,12 @@ const badgeColors = {
     gold: 'text-yellow-400'
 };
 
+const badgeBorderColors = {
+    bronze: 'border-amber-600/50',
+    silver: 'border-slate-400/50',
+    gold: 'border-yellow-400/50'
+};
+
 const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => {
     const router = useRouter();
     const parts = content.split(/(#\w+|@\w+|https?:\/\/[^\s]+)/g);
@@ -1152,6 +1158,7 @@ export default function ProfilePage() {
     const isRulioAccount = profileUser.handle === '@Rulio';
     const isProfileVerified = profileUser.isVerified || profileUser.handle === '@Rulio';
     const badgeColor = profileUser.badgeTier ? badgeColors[profileUser.badgeTier] : 'text-primary';
+    const supporterCardBorderColor = profileUser.badgeTier ? badgeBorderColors[profileUser.badgeTier] : 'border-primary/50';
     const canViewLikes = isOwnProfile || !profileUser.likesArePrivate;
     const tabIndicatorPositions: { [key: string]: number } = {
         posts: 0,
@@ -1256,7 +1263,7 @@ export default function ProfilePage() {
                 </Card>
             )}
              {profileUser.supporterTier && (
-                 <Card className="mt-4 border-primary/50">
+                 <Card className={`mt-4 ${supporterCardBorderColor}`}>
                     <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 p-3">
                         <div className="flex items-center gap-3">
                             <HandHeart className="h-4 w-4 text-primary" />
