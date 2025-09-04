@@ -39,11 +39,8 @@ export async function POST(req: Request) {
             email: userEmail,
         },
         payment_methods: {
-            excluded_payment_types: [
-                { id: 'bolbradesco' },
-                { id: 'pec' }
-            ],
-            enabled_payment_types: ['ticket', 'credit_card', 'debit_card', 'pix'],
+            excluded_payment_types: [], // Removido para evitar conflitos
+            enabled_payment_types: ['credit_card', 'debit_card', 'pix'], // Apenas os métodos desejados
             installments: 1,
         },
         back_urls: {
