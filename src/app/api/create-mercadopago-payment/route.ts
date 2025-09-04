@@ -38,6 +38,10 @@ export async function POST(req: Request) {
         payer: {
             email: userEmail,
         },
+        payment_methods: {
+          default_payment_method_id: 'pix',
+          enabled_payment_types: ['pix'],
+        },
         back_urls: {
           success: `${YOUR_DOMAIN}/profile/${userId}?payment_success=true`,
           failure: `${YOUR_DOMAIN}/supporter?payment_canceled=true`,
