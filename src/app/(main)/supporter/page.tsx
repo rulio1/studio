@@ -9,40 +9,40 @@ import { BadgeCheck, CheckCircle, HandHeart, Loader2, ArrowLeft } from "lucide-r
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 
-type TierName = "Básico" | "VIP" | "Patrocinador";
+type TierName = "Apoiador Básico" | "Apoiador VIP" | "Apoiador Patrocinador";
 
 const tiers = [
   {
     name: "Apoiador Básico" as TierName,
     price: "R$5",
     priceSuffix: "/mês",
-    priceId: 5,
+    priceId: "price_1PgQyYRxS51YwJrY8zN3VfW2", // Substitua pelo seu Price ID do Stripe
     description: "Para quem quer dar o primeiro passo e ajudar a plataforma a crescer.",
     features: [
       { text: "Selo de verificação Bronze", icon: <BadgeCheck className="h-5 w-5 text-amber-600 mr-2 shrink-0 mt-0.5" /> },
     ],
-    buttonText: "Em breve",
+    buttonText: "Apoiar",
     variant: "secondary",
   },
   {
     name: "Apoiador VIP" as TierName,
     price: "R$20",
     priceSuffix: "/mês",
-    priceId: 20,
+    priceId: "price_1PgR0CRxS51YwJrYgYV3fL1O", // Substitua pelo seu Price ID do Stripe
     description: "Para os entusiastas que desejam uma experiência aprimorada e acesso antecipado.",
     features: [
       { text: "Selo de verificação Prata", icon: <BadgeCheck className="h-5 w-5 text-slate-400 mr-2 shrink-0 mt-0.5" /> },
       { text: "Opções avançadas de tema", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
       { text: "Acesso a novas features em primeira mão", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
     ],
-    buttonText: "Em breve",
+    buttonText: "Apoiar",
     variant: "default",
   },
   {
     name: "Apoiador Patrocinador" as TierName,
     price: "R$50",
     priceSuffix: "/mês",
-    priceId: 50,
+    priceId: "price_1PgR0iRxS51YwJrYy0qGkRz9", // Substitua pelo seu Price ID do Stripe
     description: "Para visionários que acreditam no potencial máximo do Zispr.",
     features: [
       { text: "Selo de verificação Ouro", icon: <BadgeCheck className="h-5 w-5 text-yellow-400 mr-2 shrink-0 mt-0.5" /> },
@@ -52,7 +52,7 @@ const tiers = [
       { text: "Acesso a testes beta", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
       { text: "Estatísticas avançadas do perfil", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
     ],
-    buttonText: "Em breve",
+    buttonText: "Apoiar",
     variant: "secondary",
   }
 ];
@@ -61,6 +61,49 @@ export default function SupporterPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState<string | null>(null);
+
+  const handleCheckout = async (priceId: string) => {
+    if (!user) {
+      toast({ title: "Você precisa estar logado para apoiar.", variant: "destructive" });
+      router.push("/login");
+      return;
+    }
+    
+    setIsLoading(priceId);
+
+    try {
+      const response = await fetch('/api/create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceId: priceId,
+          userId: user.uid,
+          userEmail: user.email,
+        }),
+      });
+
+      const { url, error } = await response.json();
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      if (url) {
+        router.push(url);
+      }
+
+    } catch (error: any) {
+        toast({
+            title: "Erro no Checkout",
+            description: "Não foi possível iniciar o processo de pagamento. Por favor, tente novamente.",
+            variant: "destructive",
+        });
+        console.error("Stripe checkout error:", error);
+    } finally {
+        setIsLoading(null);
+    }
+  };
   
   return (
     <>
@@ -108,17 +151,19 @@ export default function SupporterPage() {
                 <Button 
                   className="w-full" 
                   variant={tier.variant as "default" | "secondary"}
-                  disabled={true}
+                  disabled={!!isLoading}
+                  onClick={() => handleCheckout(tier.priceId)}
                 >
-                  {tier.buttonText}
+                  {isLoading === tier.priceId ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    tier.buttonText
+                  )}
                 </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
-        <p className="mt-8 text-xs text-muted-foreground text-center max-w-md">
-          O sistema de pagamento será habilitado em breve. Agradecemos sua paciência e interesse em apoiar o Zispr!
-        </p>
       </div>
     </>
   );
