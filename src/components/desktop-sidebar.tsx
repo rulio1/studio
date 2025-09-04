@@ -142,7 +142,7 @@ export default function DesktopSidebar() {
     return (
         <aside className="sticky top-0 h-screen w-64 hidden md:flex flex-col justify-between items-end p-2 border-r">
             <div className="flex flex-col items-start gap-2 w-full">
-                <Link href="/home" className="p-3">
+                <Link href="/home" className="w-full flex justify-center p-3">
                     <Bird className="h-8 w-8 text-primary" />
                 </Link>
 
