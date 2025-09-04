@@ -21,4 +21,7 @@ const initializeFirebaseAdmin = () => {
     };
 };
 
-export { initializeFirebaseAdmin };
+// Exporta o db diretamente para uso nos webhooks
+const { db } = initializeFirebaseAdmin();
+
+export { initializeFirebaseAdmin, db };
