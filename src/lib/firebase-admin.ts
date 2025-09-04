@@ -1,10 +1,24 @@
 
 'use server';
 
-// Este arquivo foi intencionalmente deixado em branco.
-// A inicialização do Admin SDK estava causando problemas persistentes no ambiente do servidor Next.js.
-// A funcionalidade de upload de imagem foi refatorada para usar o SDK do cliente (web) do Firebase,
-// que é mais simples e não requer credenciais de administrador no servidor para esta tarefa.
-// Isso elimina a necessidade deste arquivo e do `gcp-credentials.json`.
+import * as admin from 'firebase-admin';
 
-export {};
+const initializeFirebaseAdmin = () => {
+    if (admin.apps.length === 0) {
+        try {
+            // As credenciais são lidas automaticamente das variáveis de ambiente
+            // no Vercel/Firebase Hosting. Não é mais necessário o credential.cert().
+            admin.initializeApp();
+        } catch (error: any) {
+            console.error('Firebase admin initialization error', error.stack);
+            throw new Error('Firebase Admin SDK initialization failed.');
+        }
+    }
+    // Retorna as instâncias do db e auth do admin
+    return {
+        db: admin.firestore(),
+        auth: admin.auth(),
+    };
+};
+
+export { initializeFirebaseAdmin };

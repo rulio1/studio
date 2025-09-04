@@ -1,8 +1,10 @@
 
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
+
+// Inicialize o Firebase Admin SDK
+const { db } = initializeFirebaseAdmin();
 
 export async function POST(req: Request) {
   if (req.method !== 'POST') {
@@ -14,16 +16,16 @@ export async function POST(req: Request) {
     const { priceId, userId, userEmail, tier } = body;
 
     if (!priceId || !userId || !userEmail || !tier) {
-      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
+      return NextResponse.json({ error: { message: 'Missing required parameters' } }, { status: 400 });
     }
 
     const YOUR_DOMAIN = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     
-    const userRef = doc(db, 'users', userId);
-    const userDoc = await getDoc(userRef);
+    const userRef = db.collection('users').doc(userId);
+    const userDoc = await userRef.get();
 
-    if (!userDoc.exists()) {
-        return NextResponse.json({ error: 'User not found.' }, { status: 404 });
+    if (!userDoc.exists) {
+        return NextResponse.json({ error: { message: 'User not found.' } }, { status: 404 });
     }
 
     let customerId = userDoc.data()?.stripeCustomerId;
@@ -37,7 +39,7 @@ export async function POST(req: Request) {
             },
         });
         customerId = customer.id;
-        await updateDoc(userRef, { stripeCustomerId: customerId });
+        await userRef.update({ stripeCustomerId: customerId });
     }
 
     const session = await stripe.checkout.sessions.create({
