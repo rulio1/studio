@@ -3,8 +3,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe/server';
-import { db } from '@/lib/firebase-admin';
+import * as admin from 'firebase-admin';
 import { doc, updateDoc, serverTimestamp, collection, query, where, getDocs, limit } from 'firebase/firestore';
+
+
+// Função para inicializar o Firebase Admin SDK se ainda não foi inicializado
+const ensureFirebaseAdminInitialized = () => {
+    if (admin.apps.length === 0) {
+        try {
+            admin.initializeApp({
+                credential: admin.credential.applicationDefault(),
+            });
+        } catch (error: any) {
+            console.error('Firebase admin initialization error', error.stack);
+            throw new Error('Firebase Admin SDK initialization failed.');
+        }
+    }
+    return {
+        db: admin.firestore(),
+    };
+};
 
 type TierName = "Apoiador Básico" | "Apoiador VIP" | "Apoiador Patrocinador";
 
@@ -15,6 +33,7 @@ const tierToBadge: Record<TierName, 'bronze' | 'silver' | 'gold'> = {
 };
 
 export async function POST(req: NextRequest) {
+    const { db } = ensureFirebaseAdminInitialized();
     const body = await req.text();
     const signature = headers().get('Stripe-Signature') as string;
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string;

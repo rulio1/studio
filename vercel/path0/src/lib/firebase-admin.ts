@@ -4,13 +4,11 @@ import * as admin from 'firebase-admin';
 const initializeFirebaseAdmin = () => {
     if (admin.apps.length === 0) {
         try {
-            admin.initializeApp({
-                credential: admin.credential.cert({
-                    projectId: process.env.FIREBASE_PROJECT_ID,
-                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                    privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-                }),
-            });
+            // This method uses Application Default Credentials,
+            // which is the preferred method for production environments like Vercel.
+            // It will automatically look for the credentials from the environment variables
+            // set up by the Vercel-Firebase integration or `GOOGLE_APPLICATION_CREDENTIALS`.
+            admin.initializeApp();
         } catch (error: any) {
             console.error('Firebase admin initialization error', error.stack);
             // Throwing the error can help debug issues during deployment

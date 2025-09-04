@@ -1,10 +1,23 @@
-
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
-import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
+import * as admin from 'firebase-admin';
 
-// Inicialize o Firebase Admin SDK
-const { db } = initializeFirebaseAdmin();
+// Função para inicializar o Firebase Admin SDK se ainda não foi inicializado
+const ensureFirebaseAdminInitialized = () => {
+    if (admin.apps.length === 0) {
+        try {
+            admin.initializeApp({
+                credential: admin.credential.applicationDefault(),
+            });
+        } catch (error: any) {
+            console.error('Firebase admin initialization error', error.stack);
+            throw new Error('Firebase Admin SDK initialization failed.');
+        }
+    }
+    return {
+        db: admin.firestore(),
+    };
+};
 
 export async function POST(req: Request) {
   if (req.method !== 'POST') {
@@ -12,6 +25,7 @@ export async function POST(req: Request) {
   }
   
   try {
+    const { db } = ensureFirebaseAdminInitialized();
     const body = await req.json();
     const { priceId, userId, userEmail, tier } = body;
 
