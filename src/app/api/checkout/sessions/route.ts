@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export async function POST(req: Request) {
@@ -19,20 +19,25 @@ export async function POST(req: Request) {
 
     const YOUR_DOMAIN = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     
-    // Check if user already has a Stripe customer ID
-    const userDoc = await getDoc(doc(db, 'users', userId));
-    const userData = userDoc.data();
-    let customerId = userData?.stripeCustomerId;
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
 
-    // If not, create a new Stripe customer
+    if (!userDoc.exists()) {
+        return NextResponse.json({ error: 'User not found.' }, { status: 404 });
+    }
+
+    let customerId = userDoc.data()?.stripeCustomerId;
+
     if (!customerId) {
         const customer = await stripe.customers.create({
             email: userEmail,
+            name: userDoc.data()?.displayName,
             metadata: {
                 firebaseUID: userId,
             },
         });
         customerId = customer.id;
+        await updateDoc(userRef, { stripeCustomerId: customerId });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -57,7 +62,7 @@ export async function POST(req: Request) {
             tier: tier,
         }
       },
-      currency: 'brl', // Forçar a moeda para Reais, habilitando o PIX.
+      currency: 'brl',
     });
 
     return NextResponse.json({ sessionId: session.id }, { status: 200 });
