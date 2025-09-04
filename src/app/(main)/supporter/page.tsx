@@ -88,7 +88,7 @@ export default function SupporterPage() {
       }
 
       if (init_point) {
-        window.open(init_point, '_blank');
+        window.location.href = init_point;
       }
 
     } catch (error: any) {
