@@ -39,8 +39,10 @@ export async function POST(req: Request) {
             email: userEmail,
         },
         payment_methods: {
-            excluded_payment_types: [], // Explicitamente vazio para não excluir nada
-            enabled_payment_types: ['pix'], // Forçando apenas PIX
+            excluded_payment_types: [
+                { id: "bolbradesco" },
+                { id: "pec" }
+            ],
             installments: 1,
         },
         back_urls: {
