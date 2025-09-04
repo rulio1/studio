@@ -617,7 +617,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                 <svg className="h-full w-full" viewBox="0 0 20 20">
                                     <circle className="text-muted" strokeWidth="2" stroke="currentColor" fill="transparent" r="8" cx="10" cy="10"/>
                                     <circle
-                                        className={newPostContent.length > MAX_CHARS ? 'text-destructive' : 'text-primary'}
+                                        className={newPostContent.length > MAX_CHARS ? 'text-destructive' : 'text-foreground'}
                                         strokeWidth="2"
                                         strokeDasharray={`${(newPostContent.length / MAX_CHARS) * 2 * Math.PI * 8}, 100`}
                                         strokeLinecap="round"
