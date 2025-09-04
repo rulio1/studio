@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { setDoc, doc, serverTimestamp } from 'firestore';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { parse } from 'date-fns';
@@ -104,10 +104,20 @@ export default function RegisterPage() {
             savedPosts: [],
             isVerified: false,
         });
+
+        // Enviar e-mail de boas-vindas
+        await fetch('/api/send-welcome-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: values.email,
+            name: values.name,
+          }),
+        });
         
         toast({
-        title: "Conta Criada!",
-        description: "Agora você pode fazer login com sua nova conta.",
+          title: "Conta Criada!",
+          description: "Agora você pode fazer login com sua nova conta.",
         });
         router.push('/home');
 
