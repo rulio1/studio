@@ -5,7 +5,7 @@ import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe/server';
 import * as admin from 'firebase-admin';
 
-// Esta função garante que o Firebase Admin seja inicializado apenas uma vez.
+// This function ensures that the Firebase Admin SDK is initialized only once.
 if (admin.apps.length === 0) {
     try {
         admin.initializeApp({
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
             console.log(`✅ User ${firebaseUID} successfully marked as supporter with ${badgeTier} badge.`);
         } catch (dbError) {
             console.error('Firestore update error:', dbError);
-            return NextResponse.json({ status: 'error', message: 'Database update failed' }, { status: 200 });
+            return NextResponse.json({ status: 'error', message: 'Database update failed' }, { status: 500 });
         }
     }
     

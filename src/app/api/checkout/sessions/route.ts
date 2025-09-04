@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
 import * as admin from 'firebase-admin';
 
-// Esta função garante que o Firebase Admin seja inicializado apenas uma vez.
+// This function ensures that the Firebase Admin SDK is initialized only once.
 if (admin.apps.length === 0) {
     try {
         admin.initializeApp({
@@ -81,6 +81,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('Stripe session creation error:', error);
-    return NextResponse.json({ error: { message: error.message || 'Firebase Admin SDK initialization failed.' } }, { status: 500 });
+    return NextResponse.json({ error: { message: error.message || 'An internal server error occurred.' } }, { status: 500 });
   }
 }
