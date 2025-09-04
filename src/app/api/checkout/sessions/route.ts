@@ -50,7 +50,14 @@ export async function POST(req: Request) {
       metadata: {
         firebaseUID: userId,
         tier: tier,
-      }
+      },
+      subscription_data: {
+        metadata: {
+            firebaseUID: userId,
+            tier: tier,
+        }
+      },
+      currency: 'brl', // Forçar a moeda para Reais, habilitando o PIX.
     });
 
     return NextResponse.json({ sessionId: session.id }, { status: 200 });
