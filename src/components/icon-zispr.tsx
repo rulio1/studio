@@ -1,0 +1,18 @@
+import * as React from "react";
+
+const IconZispr = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 256 256"
+    width={256}
+    height={256}
+    {...props}
+  >
+    <path
+      fill="hsl(var(--primary))"
+      d="M128 25.4A102.6 102.6 0 0 0 25.4 128c0 56.6 46 102.6 102.6 102.6S230.6 184.6 230.6 128A102.6 102.6 0 0 0 128 25.4zm-38.3 124.7a38.4 38.4 0 0 1-38.3-38.4A38.4 38.4 0 0 1 89.7 73.4a38.4 38.4 0 0 1 38.3 38.3 38.4 38.4 0 0 1-38.3 38.4zm76.6 0a38.4 38.4 0 0 1-38.3-38.4 38.4 38.4 0 0 1 38.3-38.3 38.4 38.4 0 0 1 38.3 38.3 38.4 38.4 0 0 1-38.3 38.4z"
+    />
+  </svg>
+);
+
+export default IconZispr;
