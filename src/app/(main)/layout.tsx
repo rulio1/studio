@@ -73,19 +73,23 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
     ];
     const showFab = !fabBlacklist.some(path => pathname.startsWith(path) && pathname !== '/messages');
     
-    // Specific logic for chat page
-    if (pathname.startsWith('/chat')) {
+    // Specific logic for chat and conversation pages
+    const isChatPage = pathname.startsWith('/chat');
+    const isConversationPage = /^\/messages\/[^/]+$/.test(pathname);
+    
+    if (isChatPage || isConversationPage) {
+        const pageClass = isConversationPage ? 'h-full' : 'h-full';
         return (
             <div className="flex h-screen justify-center">
                 <DesktopSidebar />
                 <main className="flex-1 min-w-0 max-w-2xl md:border-x">
-                    <div className="animate-fade-in animate-slide-in-from-bottom h-full">
+                    <div className={`animate-fade-in animate-slide-in-from-bottom ${pageClass}`}>
                         {children}
                     </div>
                 </main>
                  <RightSidebar />
                 <div className="md:hidden">
-                    {/* BottomNavBar is intentionally hidden on chat page for mobile */}
+                    {/* BottomNavBar is intentionally hidden on chat/conversation pages for mobile */}
                 </div>
             </div>
         );

@@ -187,7 +187,7 @@ export default function ConversationPage() {
 
     if (isLoading) {
         return (
-             <div className="flex flex-col h-screen bg-background">
+             <div className="flex flex-col h-full bg-background">
                  <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                      <div className="flex items-center gap-4 px-4 py-2">
                         <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -208,7 +208,7 @@ export default function ConversationPage() {
 
      if (!otherUser) {
         return (
-             <div className="flex flex-col h-screen bg-background">
+             <div className="flex flex-col h-full bg-background">
                  <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                      <div className="flex items-center gap-4 px-4 py-2">
                         <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -228,7 +228,7 @@ export default function ConversationPage() {
     const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@Rulio';
 
   return (
-    <div className="flex flex-col h-screen bg-background pb-20 md:pb-0">
+    <div className="flex flex-col h-full bg-background">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2">
             <div className="flex items-center gap-4">
@@ -301,7 +301,7 @@ export default function ConversationPage() {
                 })}
             </div>
         </ScrollArea>
-        <div className="p-4 pt-2 border-t bg-background">
+        <footer className="p-4 pt-2 border-t bg-background">
            <div className="relative flex items-center rounded-2xl border bg-muted p-2">
               <Input 
                   placeholder="Inicie uma nova mensagem"
@@ -315,7 +315,7 @@ export default function ConversationPage() {
                   {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
               </Button>
           </div>
-      </div>
+      </footer>
       </div>
     </div>
   );
