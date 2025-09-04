@@ -4,18 +4,17 @@ import { stripe } from '@/lib/stripe/server';
 import * as admin from 'firebase-admin';
 
 // Esta função garante que o Firebase Admin seja inicializado apenas uma vez.
-const initializeFirebaseAdmin = () => {
-    if (admin.apps.length === 0) {
-        try {
-            // Usa as Credenciais Padrão do Aplicativo, ideal para ambientes como Vercel/GCP.
-            admin.initializeApp();
-        } catch (error: any) {
-            console.error('Firebase admin initialization error', error.stack);
-            throw new Error('Firebase Admin SDK initialization failed.');
-        }
+if (admin.apps.length === 0) {
+    try {
+        admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+        });
+    } catch (error: any) {
+        console.error('Firebase admin initialization error', error.stack);
     }
-    return admin.firestore();
-};
+}
+
+const db = admin.firestore();
 
 export async function POST(req: Request) {
   if (req.method !== 'POST') {
@@ -23,7 +22,6 @@ export async function POST(req: Request) {
   }
   
   try {
-    const db = initializeFirebaseAdmin();
     const body = await req.json();
     const { priceId, userId, userEmail, tier } = body;
 
@@ -83,6 +81,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('Stripe session creation error:', error);
-    return NextResponse.json({ error: { message: error.message } }, { status: 500 });
+    return NextResponse.json({ error: { message: error.message || 'Firebase Admin SDK initialization failed.' } }, { status: 500 });
   }
 }

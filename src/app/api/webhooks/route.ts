@@ -6,18 +6,17 @@ import { stripe } from '@/lib/stripe/server';
 import * as admin from 'firebase-admin';
 
 // Esta função garante que o Firebase Admin seja inicializado apenas uma vez.
-const initializeFirebaseAdmin = () => {
-    if (admin.apps.length === 0) {
-        try {
-            // Usa as Credenciais Padrão do Aplicativo, ideal para ambientes como Vercel/GCP.
-            admin.initializeApp();
-        } catch (error: any) {
-            console.error('Firebase admin initialization error', error.stack);
-            throw new Error('Firebase Admin SDK initialization failed.');
-        }
+if (admin.apps.length === 0) {
+    try {
+        admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+        });
+    } catch (error: any) {
+        console.error('Firebase admin initialization error', error.stack);
     }
-    return admin.firestore();
-};
+}
+
+const db = admin.firestore();
 
 type TierName = "Apoiador Básico" | "Apoiador VIP" | "Apoiador Patrocinador";
 
@@ -28,7 +27,6 @@ const tierToBadge: Record<TierName, 'bronze' | 'silver' | 'gold'> = {
 };
 
 export async function POST(req: NextRequest) {
-    const db = initializeFirebaseAdmin();
     const body = await req.text();
     const signature = headers().get('Stripe-Signature') as string;
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string;
