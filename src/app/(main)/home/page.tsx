@@ -944,7 +944,7 @@ useEffect(() => {
                       </SheetContent>
                     </Sheet>
                     <div className="flex-1 flex justify-center">
-                        <Bird className="h-6 w-6" />
+                        <Bird className="h-6 w-6 text-primary" />
                     </div>
                     <div className="w-8"></div>
                 </div>
