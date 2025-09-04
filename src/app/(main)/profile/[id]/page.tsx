@@ -5,10 +5,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Info, Star, PenSquare, Lock } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Info, Star, PenSquare, Lock, HandHeart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp, deleteDoc, setDoc, documentId, addDoc, runTransaction, increment } from 'firebase/firestore';
@@ -134,6 +134,7 @@ interface ZisprUser {
     pinnedPostId?: string;
     isVerified?: boolean;
     badgeTier?: 'bronze' | 'silver' | 'gold';
+    supporterTier?: string;
     likesArePrivate?: boolean;
     notificationPreferences?: {
         [key: string]: boolean;
@@ -479,6 +480,7 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
 export default function ProfilePage() {
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const profileId = params.id as string;
     const { toast } = useToast();
 
@@ -513,6 +515,18 @@ export default function ProfilePage() {
     const [isFollowListOpen, setIsFollowListOpen] = useState(false);
     
     const isOwnProfile = currentUser?.uid === profileId;
+
+    useEffect(() => {
+        if (searchParams.get('payment_success') === 'true') {
+            toast({
+                title: "Bem-vindo, Apoiador!",
+                description: "Obrigado por apoiar o Zispr! Seu selo de verificação foi aplicado.",
+                duration: 5000,
+            });
+            // Remove o parâmetro da URL para não mostrar o toast novamente
+            router.replace(`/profile/${profileId}`, undefined);
+        }
+    }, [searchParams, toast, profileId, router]);
 
     const fetchUserPosts = useCallback(async (userToFetch: FirebaseUser, profileData: ZisprUser) => {
         if (!userToFetch || !profileData) return;
@@ -1238,6 +1252,24 @@ export default function ProfilePage() {
                     </CardHeader>
                     <CardContent className="p-3 pt-0">
                         <p className="text-xs text-muted-foreground">Esta é a conta do fundador do Zispr. Siga para atualizações sobre o desenvolvimento e o futuro da plataforma.</p>
+                    </CardContent>
+                </Card>
+            )}
+             {profileUser.supporterTier && (
+                 <Card className="mt-4 border-primary/50">
+                    <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 p-3">
+                        <div className="flex items-center gap-3">
+                            <HandHeart className="h-4 w-4 text-primary" />
+                            <CardTitle className="text-sm">{profileUser.supporterTier}</CardTitle>
+                        </div>
+                        {!isOwnProfile && !zisprUser?.supporterTier && (
+                             <Button size="sm" className="rounded-full" onClick={() => router.push('/supporter')}>
+                                Torne-se um Apoiador
+                            </Button>
+                        )}
+                    </CardHeader>
+                    <CardContent className="p-3 pt-0">
+                        <p className="text-xs text-muted-foreground">Este usuário apoia o Zispr e ajuda a manter a plataforma funcionando. Obrigado!</p>
                     </CardContent>
                 </Card>
             )}
