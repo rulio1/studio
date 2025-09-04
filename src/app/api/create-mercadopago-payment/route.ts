@@ -43,7 +43,6 @@ export async function POST(req: Request) {
           failure: `${YOUR_DOMAIN}/supporter?payment_canceled=true`,
           pending: `${YOUR_DOMAIN}/supporter?payment_pending=true`
         },
-        auto_return: 'approved',
         notification_url: notification_url,
         external_reference: userId,
       },
