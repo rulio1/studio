@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
 import * as admin from 'firebase-admin';
@@ -14,9 +15,7 @@ const ensureFirebaseAdminInitialized = () => {
             throw new Error('Firebase Admin SDK initialization failed.');
         }
     }
-    return {
-        db: admin.firestore(),
-    };
+    return admin.firestore();
 };
 
 export async function POST(req: Request) {
@@ -25,7 +24,7 @@ export async function POST(req: Request) {
   }
   
   try {
-    const { db } = ensureFirebaseAdminInitialized();
+    const db = ensureFirebaseAdminInitialized();
     const body = await req.json();
     const { priceId, userId, userEmail, tier } = body;
 

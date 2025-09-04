@@ -4,8 +4,6 @@ import Stripe from 'stripe';
 import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe/server';
 import * as admin from 'firebase-admin';
-import { doc, updateDoc, serverTimestamp, collection, query, where, getDocs, limit } from 'firebase/firestore';
-
 
 // Função para inicializar o Firebase Admin SDK se ainda não foi inicializado
 const ensureFirebaseAdminInitialized = () => {
@@ -19,9 +17,7 @@ const ensureFirebaseAdminInitialized = () => {
             throw new Error('Firebase Admin SDK initialization failed.');
         }
     }
-    return {
-        db: admin.firestore(),
-    };
+    return admin.firestore();
 };
 
 type TierName = "Apoiador Básico" | "Apoiador VIP" | "Apoiador Patrocinador";
@@ -33,7 +29,7 @@ const tierToBadge: Record<TierName, 'bronze' | 'silver' | 'gold'> = {
 };
 
 export async function POST(req: NextRequest) {
-    const { db } = ensureFirebaseAdminInitialized();
+    const db = ensureFirebaseAdminInitialized();
     const body = await req.text();
     const signature = headers().get('Stripe-Signature') as string;
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string;
@@ -58,10 +54,10 @@ export async function POST(req: NextRequest) {
         }
 
         try {
-            const userRef = doc(db, 'users', firebaseUID);
+            const userRef = db.collection('users').doc(firebaseUID);
             const badgeTier = tierToBadge[tier as TierName] || 'bronze';
 
-            await updateDoc(userRef, {
+            await userRef.update({
                 isVerified: true,
                 supporterTier: tier,
                 badgeTier: badgeTier,
@@ -69,7 +65,7 @@ export async function POST(req: NextRequest) {
                 stripeSubscriptionId: session.subscription,
                 stripePriceId: session.line_items?.data[0].price?.id,
                 stripeCurrentPeriodEnd: session.subscription ? new Date((await stripe.subscriptions.retrieve(session.subscription as string)).current_period_end * 1000) : null,
-                lastPaymentDate: serverTimestamp(),
+                lastPaymentDate: admin.firestore.FieldValue.serverTimestamp(),
             });
 
             console.log(`✅ User ${firebaseUID} successfully marked as supporter with ${badgeTier} badge.`);
@@ -83,16 +79,16 @@ export async function POST(req: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
 
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("stripeCustomerId", "==", customerId), limit(1));
-        const querySnapshot = await getDocs(q);
+        const usersRef = db.collection("users");
+        const q = usersRef.where("stripeCustomerId", "==", customerId).limit(1);
+        const querySnapshot = await q.get();
 
         if (!querySnapshot.empty) {
             const userDoc = querySnapshot.docs[0];
-            const userRef = doc(db, 'users', userDoc.id);
+            const userRef = userDoc.ref;
 
             if (subscription.status !== 'active' || subscription.cancel_at_period_end) {
-                 await updateDoc(userRef, {
+                 await userRef.update({
                     isVerified: false,
                     supporterTier: null,
                     badgeTier: null,
