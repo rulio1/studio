@@ -9,6 +9,8 @@ import { BadgeCheck, CheckCircle, HandHeart, Loader2, ArrowLeft } from "lucide-r
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { getStripe } from "@/lib/stripe/client";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 
 type TierName = "Apoiador Básico" | "Apoiador VIP" | "Apoiador Patrocinador";
@@ -64,6 +66,7 @@ export default function SupporterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState('stripe');
 
   const handleCheckout = async (tier: typeof tiers[0]) => {
     if (!user) {
@@ -75,13 +78,31 @@ export default function SupporterPage() {
     setIsLoading(tier.name);
 
     try {
+        if (paymentMethod === 'stripe') {
+            await handleStripeCheckout(tier);
+        } else if (paymentMethod === 'gocardless') {
+            await handleGoCardlessCheckout(tier);
+        }
+    } catch (error: any) {
+        toast({
+            title: "Erro no Checkout",
+            description: error.message || "Não foi possível iniciar o processo de pagamento. Por favor, tente novamente.",
+            variant: "destructive",
+        });
+        console.error("Checkout error:", error);
+    } finally {
+        setIsLoading(null);
+    }
+  };
+
+  const handleStripeCheckout = async (tier: typeof tiers[0]) => {
       const response = await fetch('/api/checkout/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           priceId: tier.priceId,
-          userId: user.uid,
-          userEmail: user.email,
+          userId: user?.uid,
+          userEmail: user?.email,
           tier: tier.name
         }),
       });
@@ -101,18 +122,31 @@ export default function SupporterPage() {
       if (stripeError) {
           throw stripeError;
       }
+  }
 
-    } catch (error: any) {
-        toast({
-            title: "Erro no Checkout",
-            description: error.message || "Não foi possível iniciar o processo de pagamento. Por favor, tente novamente.",
-            variant: "destructive",
-        });
-        console.error("Stripe checkout error:", error);
-    } finally {
-        setIsLoading(null);
-    }
-  };
+  const handleGoCardlessCheckout = async (tier: typeof tiers[0]) => {
+      const response = await fetch('/api/checkout/gocardless', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: parseInt(tier.price) * 100, // em centavos
+          currency: 'BRL',
+          tier: tier.name,
+          userId: user?.uid,
+          userEmail: user?.email,
+        }),
+      });
+
+      const { redirectUrl, error } = await response.json();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (redirectUrl) {
+          window.location.href = redirectUrl;
+      }
+  }
   
   return (
     <>
@@ -132,6 +166,24 @@ export default function SupporterPage() {
             Sua contribuição é fundamental para manter a plataforma funcionando, crescendo e livre de grandes corporações. Escolha um plano e ganhe benefícios exclusivos!
           </p>
         </div>
+
+        <Card className="w-full max-w-md mb-8">
+            <CardHeader>
+                <CardTitle>Forma de Pagamento</CardTitle>
+            </CardHeader>
+            <CardContent>
+                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="flex gap-4">
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="stripe" id="stripe" />
+                        <Label htmlFor="stripe">Cartão de Crédito / Pix</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="gocardless" id="gocardless" />
+                        <Label htmlFor="gocardless">Débito Bancário</Label>
+                    </div>
+                </RadioGroup>
+            </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl">
           {tiers.map((tier) => (
@@ -160,7 +212,7 @@ export default function SupporterPage() {
                 <Button 
                   className="w-full" 
                   variant={tier.variant as "default" | "secondary"}
-                  disabled={!!isLoading || !tier.priceId}
+                  disabled={!!isLoading || (paymentMethod === 'stripe' && !tier.priceId)}
                   onClick={() => handleCheckout(tier)}
                 >
                   {isLoading === tier.name ? (
