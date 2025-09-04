@@ -8,12 +8,15 @@ import { useToast } from "@/hooks/use-toast";
 import { BadgeCheck, CheckCircle, HandHeart, Loader2, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
+import { getStripe } from "@/lib/stripe/client";
+
 
 type TierName = "Apoiador Básico" | "Apoiador VIP" | "Apoiador Patrocinador";
 
 const tiers = [
   {
     name: "Apoiador Básico" as TierName,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_BASIC_PRICE_ID,
     price: "5",
     priceSuffix: "/mês",
     description: "Para quem quer dar o primeiro passo e ajudar a plataforma a crescer.",
@@ -25,6 +28,7 @@ const tiers = [
   },
   {
     name: "Apoiador VIP" as TierName,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_VIP_PRICE_ID,
     price: "20",
     priceSuffix: "/mês",
     description: "Para os entusiastas que desejam uma experiência aprimorada e acesso antecipado.",
@@ -38,6 +42,7 @@ const tiers = [
   },
   {
     name: "Apoiador Patrocinador" as TierName,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_SPONSOR_PRICE_ID,
     price: "50",
     priceSuffix: "/mês",
     description: "Para visionários que acreditam no potencial máximo do Zispr.",
@@ -70,34 +75,40 @@ export default function SupporterPage() {
     setIsLoading(tier.name);
 
     try {
-      const response = await fetch('/api/create-mercadopago-payment', {
+      const response = await fetch('/api/checkout/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: tier.name,
-          price: parseFloat(tier.price),
+          priceId: tier.priceId,
           userId: user.uid,
           userEmail: user.email,
+          tier: tier.name
         }),
       });
 
-      const { init_point, error } = await response.json();
+      const { sessionId, error } = await response.json();
 
       if (error) {
-        throw new Error(error);
+        throw new Error(error.message);
       }
+      
+      const stripe = await getStripe();
+      if (!stripe) {
+          throw new Error('Stripe.js has not loaded yet.');
+      }
+      const { error: stripeError } = await stripe.redirectToCheckout({ sessionId });
 
-      if (init_point) {
-        window.location.href = init_point;
+      if (stripeError) {
+          throw stripeError;
       }
 
     } catch (error: any) {
         toast({
             title: "Erro no Checkout",
-            description: "Não foi possível iniciar o processo de pagamento. Por favor, tente novamente.",
+            description: error.message || "Não foi possível iniciar o processo de pagamento. Por favor, tente novamente.",
             variant: "destructive",
         });
-        console.error("Mercado Pago checkout error:", error);
+        console.error("Stripe checkout error:", error);
     } finally {
         setIsLoading(null);
     }
@@ -149,7 +160,7 @@ export default function SupporterPage() {
                 <Button 
                   className="w-full" 
                   variant={tier.variant as "default" | "secondary"}
-                  disabled={!!isLoading}
+                  disabled={!!isLoading || !tier.priceId}
                   onClick={() => handleCheckout(tier)}
                 >
                   {isLoading === tier.name ? (
