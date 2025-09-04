@@ -1,4 +1,3 @@
-
 'use server';
 
 import * as admin from 'firebase-admin';
@@ -6,22 +5,27 @@ import * as admin from 'firebase-admin';
 const initializeFirebaseAdmin = () => {
     if (admin.apps.length === 0) {
         try {
-            // As credenciais são lidas automaticamente das variáveis de ambiente
-            // no Vercel/Firebase Hosting. Não é mais necessário o credential.cert().
-            admin.initializeApp();
+            // Este método é o preferido para ambientes de produção como Vercel/Firebase Hosting,
+            // onde as credenciais são fornecidas como variáveis de ambiente.
+            admin.initializeApp({
+                credential: admin.credential.cert({
+                    projectId: process.env.FIREBASE_PROJECT_ID,
+                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                    privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+                }),
+            });
         } catch (error: any) {
             console.error('Firebase admin initialization error', error.stack);
             throw new Error('Firebase Admin SDK initialization failed.');
         }
     }
-    // Retorna as instâncias do db e auth do admin
     return {
         db: admin.firestore(),
         auth: admin.auth(),
     };
 };
 
-// Exporta o db diretamente para uso nos webhooks
-const { db } = initializeFirebaseAdmin();
+// Exporta o db e auth inicializados para uso em todo o backend.
+const { db, auth } = initializeFirebaseAdmin();
 
-export { initializeFirebaseAdmin, db };
+export { initializeFirebaseAdmin, db, auth };

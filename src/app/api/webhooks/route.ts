@@ -4,7 +4,7 @@ import Stripe from 'stripe';
 import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe/server';
 import { db } from '@/lib/firebase-admin';
-import { doc, updateDoc, serverTimestamp, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 type TierName = "Apoiador Básico" | "Apoiador VIP" | "Apoiador Patrocinador";
 
