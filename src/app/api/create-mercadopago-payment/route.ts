@@ -39,8 +39,8 @@ export async function POST(req: Request) {
             email: userEmail,
         },
         payment_methods: {
-          default_payment_method_id: 'pix',
-          enabled_payment_types: ['pix'],
+            enabled_payment_types: ['ticket', 'credit_card', 'debit_card', 'pix'],
+            installments: 1,
         },
         back_urls: {
           success: `${YOUR_DOMAIN}/profile/${userId}?payment_success=true`,

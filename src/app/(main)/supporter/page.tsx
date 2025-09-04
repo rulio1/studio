@@ -88,7 +88,7 @@ export default function SupporterPage() {
       }
 
       if (init_point) {
-        router.push(init_point);
+        window.open(init_point, '_blank');
       }
 
     } catch (error: any) {
