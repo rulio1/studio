@@ -8,9 +8,7 @@ const initializeFirebaseAdmin = () => {
     if (admin.apps.length === 0) {
         try {
             // Usa as Credenciais Padrão do Aplicativo, ideal para ambientes como Vercel/GCP.
-            admin.initializeApp({
-                credential: admin.credential.applicationDefault(),
-            });
+            admin.initializeApp();
         } catch (error: any) {
             console.error('Firebase admin initialization error', error.stack);
             throw new Error('Firebase Admin SDK initialization failed.');
