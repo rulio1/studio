@@ -6,6 +6,15 @@ import { db } from '@/lib/firebase';
 
 const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN as string });
 
+type TierName = "Apoiador Básico" | "Apoiador VIP" | "Apoiador Patrocinador";
+
+const tierToBadge: Record<TierName, 'bronze' | 'silver' | 'gold'> = {
+    "Apoiador Básico": "bronze",
+    "Apoiador VIP": "silver",
+    "Apoiador Patrocinador": "gold",
+};
+
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -17,21 +26,24 @@ export async function POST(req: Request) {
         
         if (paymentInfo && paymentInfo.status === 'approved') {
             const userId = paymentInfo.external_reference;
-            const tier = paymentInfo.additional_info?.items?.[0]?.title;
+            const tierTitle = paymentInfo.additional_info?.items?.[0]?.title as TierName;
 
             if (!userId) {
                 console.error('Webhook Error: Missing userId in payment external_reference.');
                 return NextResponse.json({ error: 'Missing userId in external_reference' }, { status: 400 });
             }
 
+            const badgeTier = tierToBadge[tierTitle] || 'bronze';
+
             try {
                 const userRef = doc(db, 'users', userId);
                 await updateDoc(userRef, {
                     isVerified: true, 
-                    supporterTier: tier || 'Unknown',
+                    supporterTier: tierTitle || 'Apoiador Básico',
+                    badgeTier: badgeTier,
                     lastPaymentDate: serverTimestamp(),
                 });
-                console.log(`✅ User ${userId} successfully marked as supporter.`);
+                console.log(`✅ User ${userId} successfully marked as supporter with ${badgeTier} badge.`);
             } catch (dbError) {
                 console.error('Firestore update error:', dbError);
                 // Mesmo que o DB falhe, respondemos 200 para o MP não continuar tentando.

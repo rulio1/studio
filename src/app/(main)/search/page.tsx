@@ -30,6 +30,7 @@ interface UserSearchResult {
     bio: string;
     followers?: string[];
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
 }
 
 interface PostSearchResult {
@@ -40,6 +41,12 @@ interface PostSearchResult {
     avatar?: string;
     avatarFallback?: string;
 }
+
+const badgeColors = {
+    bronze: 'text-amber-600',
+    silver: 'text-slate-400',
+    gold: 'text-yellow-400'
+};
 
 const PostContent = ({ content }: { content: string }) => {
     const router = useRouter();
@@ -228,6 +235,8 @@ function SearchPageClient() {
     const isFollowing = user.followers?.includes(currentUser?.uid || '');
     const isZisprAccount = user.handle === '@Zispr';
     const isVerified = user.isVerified || user.handle === '@Rulio';
+    const badgeColor = user.badgeTier ? badgeColors[user.badgeTier] : 'text-primary';
+
 
     if (currentUser?.uid === user.uid) {
         return (
@@ -238,7 +247,7 @@ function SearchPageClient() {
                         <div>
                             <p className="font-bold flex items-center gap-1">
                                 {user.displayName}
-                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                             </p>
                             <p className="text-sm text-muted-foreground">{user.handle}</p>
                             <p className="text-sm mt-1">{user.bio}</p>
@@ -269,7 +278,7 @@ function SearchPageClient() {
                     <div>
                         <p className="font-bold flex items-center gap-1">
                             {user.displayName}
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                         </p>
                         <p className="text-sm text-muted-foreground">{user.handle}</p>
                         <p className="text-sm mt-1">{user.bio}</p>

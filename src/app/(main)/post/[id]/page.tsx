@@ -67,6 +67,7 @@ interface Post {
     hashtags?: string[];
     mentions?: string[];
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
     poll?: {
         options: string[];
         votes: number[];
@@ -95,6 +96,7 @@ interface Comment {
     isLiked: boolean;
     isRetweeted: boolean;
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
     postId: string;
 }
 
@@ -105,10 +107,17 @@ interface ZisprUser {
     savedPosts?: string[];
     pinnedPostId?: string;
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
     notificationPreferences?: {
         [key: string]: boolean;
     };
 }
+
+const badgeColors = {
+    bronze: 'text-amber-600',
+    silver: 'text-slate-400',
+    gold: 'text-yellow-400'
+};
 
 const ContentRenderer = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => {
     const router = useRouter();
@@ -182,6 +191,7 @@ const CommentContent = ({ content }: { content: string }) => (
 
 const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => {
     const router = useRouter();
+    const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     return (
         <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
             <div className="flex items-center gap-2 text-sm">
@@ -191,7 +201,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
                 </Avatar>
                  <span className="font-bold flex items-center gap-1">
                     {post.author}
-                    {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
+                    {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}
                 </span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>
@@ -238,6 +248,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment, onReply }
     
     const isZisprAccount = comment.handle === '@Zispr';
     const isVerified = comment.isVerified || comment.handle === '@Rulio';
+    const badgeColor = comment.badgeTier ? badgeColors[comment.badgeTier] : 'text-primary';
 
     return (
         <li className="p-4 flex gap-4 relative border-b">
@@ -261,7 +272,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment, onReply }
                     <div className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
                         <p className="font-bold flex items-center gap-1">
                             {comment.author} 
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                         </p>
                         <p className="text-muted-foreground">{comment.handle} · {time}</p>
                          {comment.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
@@ -789,6 +800,7 @@ export default function PostDetailPage() {
     
     const isZisprAccount = post.handle === '@Zispr';
     const isPostVerified = post.isVerified || post.handle === '@Rulio';
+    const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
     return (
@@ -821,7 +833,7 @@ export default function PostDetailPage() {
                             <div>
                                 <p className="font-bold flex items-center gap-1">
                                     {post.author} 
-                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                                 </p>
                                 <p className="text-sm text-muted-foreground">{post.handle}</p>
                             </div>
@@ -977,7 +989,7 @@ export default function PostDetailPage() {
                              <Textarea 
                                 ref={replyTextareaRef}
                                 placeholder="Poste sua resposta" 
-                                className="bg-muted border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 p-3 pr-24 resize-none rounded-2xl"
+                                className="bg-background border-none text-base focus-visible:ring-0 focus-visible:ring-offset-0 p-3 pr-24 resize-none rounded-2xl"
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
                                 rows={1}

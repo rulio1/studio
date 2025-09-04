@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -78,6 +79,7 @@ interface Post {
     repostedAt?: any;
     isPinned?: boolean;
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
     isFirstPost?: boolean;
     poll?: {
         options: string[];
@@ -105,10 +107,17 @@ interface ZisprUser {
     savedPosts?: string[];
     pinnedPostId?: string;
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
     notificationPreferences?: {
         [key: string]: boolean;
     };
 }
+
+const badgeColors = {
+    bronze: 'text-amber-600',
+    silver: 'text-slate-400',
+    gold: 'text-yellow-400'
+};
 
 export default function HomePage() {
   const [allPosts, setAllPosts] = useState<Post[]>([]);
@@ -520,27 +529,30 @@ useEffect(() => {
         );
     };
 
-    const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => (
-        <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
-            <div className="flex items-center gap-2 text-sm">
-                <Avatar className="h-5 w-5">
-                    <AvatarImage src={post.avatar} />
-                    <AvatarFallback>{post.avatarFallback || post.author[0]}</AvatarFallback>
-                </Avatar>
-                <span className="font-bold flex items-center gap-1">
-                    {post.author}
-                    {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
-                </span>
-                <span className="text-muted-foreground">{post.handle}</span>
-            </div>
-            <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
-            {post.image && (
-                <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
-                    <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+    const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => {
+        const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
+        return (
+            <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
+                <div className="flex items-center gap-2 text-sm">
+                    <Avatar className="h-5 w-5">
+                        <AvatarImage src={post.avatar} />
+                        <AvatarFallback>{post.avatarFallback || post.author[0]}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-bold flex items-center gap-1">
+                        {post.author}
+                        {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}
+                    </span>
+                    <span className="text-muted-foreground">{post.handle}</span>
                 </div>
-            )}
-        </div>
-    );
+                <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
+                {post.image && (
+                    <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
+                        <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+                    </div>
+                )}
+            </div>
+        )
+    };
     
     const handleVote = async (postId: string, optionIndex: number) => {
         if (!user) return;
@@ -608,6 +620,7 @@ useEffect(() => {
     
     const isZisprAccount = post.handle === '@Zispr';
     const isVerified = post.isVerified || post.handle === '@Rulio';
+    const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
 
@@ -649,7 +662,7 @@ useEffect(() => {
                     <div className="flex items-center gap-2 text-sm flex-wrap">
                         <p className="font-bold text-base flex items-center gap-1">
                             {post.author} 
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                         </p>
                         <p className="text-muted-foreground">{post.handle} · {time}</p>
                         
@@ -847,6 +860,8 @@ useEffect(() => {
   
     const isZisprAccount = zisprUser.handle === '@Zispr';
     const isZisprUserVerified = zisprUser.isVerified || zisprUser.handle === '@Rulio';
+    const zisprUserBadgeColor = zisprUser.badgeTier ? badgeColors[zisprUser.badgeTier] : 'text-primary';
+
     const navItems = [
         { href: '/home', icon: Home, label: 'Início' },
         { href: '/notifications', icon: Bell, label: 'Notificações' },
@@ -885,7 +900,7 @@ useEffect(() => {
                              <Link href={`/profile/${zisprUser.uid}`} className="cursor-pointer">
                                 <div className="flex items-center gap-1 font-bold text-lg">
                                     {zisprUser.displayName}
-                                    {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className="h-5 w-5 text-primary" />)}
+                                    {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className={`h-5 w-5 ${zisprUserBadgeColor}`} />)}
                                 </div>
                                 <p className="text-sm text-muted-foreground">{zisprUser.handle}</p>
                             </Link>

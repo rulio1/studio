@@ -26,7 +26,14 @@ interface UserSearchResult {
     handle: string;
     avatar: string;
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
 }
+
+const badgeColors = {
+    bronze: 'text-amber-600',
+    silver: 'text-slate-400',
+    gold: 'text-yellow-400'
+};
 
 export default function NewMessageModal({ open, onOpenChange, currentUser }: NewMessageModalProps) {
     const router = useRouter();
@@ -118,6 +125,7 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                             {results.map(user => {
                                 const isZisprAccount = user.handle === '@Zispr';
                                 const isVerified = user.isVerified || user.handle === '@Rulio';
+                                const badgeColor = user.badgeTier ? badgeColors[user.badgeTier] : 'text-primary';
                                 return (
                                     <li key={user.uid}>
                                         <button 
@@ -132,7 +140,7 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                                             <div>
                                                 <p className="font-semibold flex items-center gap-1">
                                                     {user.displayName}
-                                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                                                 </p>
                                                 <p className="text-sm text-muted-foreground">{user.handle}</p>
                                             </div>

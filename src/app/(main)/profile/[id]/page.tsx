@@ -82,6 +82,7 @@ interface Post {
     repostedAt?: any;
     isPinned?: boolean;
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
     isFirstPost?: boolean;
     isUpdate?: boolean;
     poll?: {
@@ -132,11 +133,18 @@ interface ZisprUser {
     savedPosts?: string[];
     pinnedPostId?: string;
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
     likesArePrivate?: boolean;
     notificationPreferences?: {
         [key: string]: boolean;
     };
 }
+
+const badgeColors = {
+    bronze: 'text-amber-600',
+    silver: 'text-slate-400',
+    gold: 'text-yellow-400'
+};
 
 const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => {
     const router = useRouter();
@@ -198,6 +206,7 @@ const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: st
 
 const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => {
     const router = useRouter();
+    const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     return (
         <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
             <div className="flex items-center gap-2 text-sm">
@@ -207,7 +216,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
                 </Avatar>
                 <span className="font-bold flex items-center gap-1">
                     {post.author}
-                    {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
+                    {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}
                 </span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>
@@ -239,6 +248,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
     
     const isZisprAccount = post.handle === '@Zispr';
     const isVerified = post.isVerified || post.handle === '@Rulio';
+    const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
     const isRetweeted = Array.isArray(post.retweets) && post.retweets.includes(user?.uid || '');
     const isLiked = Array.isArray(post.likes) && post.likes.includes(user?.uid || '');
@@ -287,7 +297,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
                         <div className="flex items-center gap-2 text-sm flex-wrap">
                             <p className="font-bold text-base flex items-center gap-1">
                                 {post.author} 
-                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                             </p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
                             
@@ -756,6 +766,7 @@ export default function ProfilePage() {
                         handle: currentZisprUser.handle,
                         avatar: currentZisprUser.avatar,
                         isVerified: currentZisprUser.isVerified || false,
+                        badgeTier: currentZisprUser.badgeTier || null
                     },
                     type: 'follow',
                     text: 'seguiu você',
@@ -1126,6 +1137,7 @@ export default function ProfilePage() {
     const isZisprAccount = profileUser.handle === '@Zispr';
     const isRulioAccount = profileUser.handle === '@Rulio';
     const isProfileVerified = profileUser.isVerified || profileUser.handle === '@Rulio';
+    const badgeColor = profileUser.badgeTier ? badgeColors[profileUser.badgeTier] : 'text-primary';
     const canViewLikes = isOwnProfile || !profileUser.likesArePrivate;
     const tabIndicatorPositions: { [key: string]: number } = {
         posts: 0,
@@ -1143,7 +1155,7 @@ export default function ProfilePage() {
             <div>
                 <h1 className="text-xl font-bold flex items-center gap-1">
                     {profileUser.displayName}
-                    {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isProfileVerified && <BadgeCheck className="h-5 w-5 text-primary" />)}
+                    {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-5 w-5 ${badgeColor}`} />)}
                 </h1>
                 <p className="text-sm text-muted-foreground">{userPosts.length + (pinnedPost ? 1 : 0)} posts</p>
             </div>
@@ -1198,7 +1210,7 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-bold flex items-center gap-1">
                         {profileUser.displayName}
-                        {isZisprAccount ? <Bird className="h-6 w-6 text-primary" /> : (isProfileVerified && <BadgeCheck className="h-6 w-6 text-primary" />)}
+                        {isZisprAccount ? <Bird className="h-6 w-6 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-6 w-6 ${badgeColor}`} />)}
                     </h1>
                 </div>
                 <div className="flex items-center gap-2">

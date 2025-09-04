@@ -19,6 +19,7 @@ interface User {
     bio: string;
     followers: string[];
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
 }
 
 interface ZisprUser {
@@ -39,12 +40,20 @@ interface FollowListDialogProps {
     onToggleFollow: (targetUser: User, currentZisprUser: ZisprUser, isCurrentlyFollowing: boolean) => Promise<void>;
 }
 
+const badgeColors = {
+    bronze: 'text-amber-600',
+    silver: 'text-slate-400',
+    gold: 'text-yellow-400'
+};
+
+
 const UserItem = ({ user, currentUser, onToggleFollow, onDialogClose }: { user: User, currentUser: ZisprUser, onToggleFollow: (targetUser: User, currentZisprUser: ZisprUser, isCurrentlyFollowing: boolean) => Promise<void>, onDialogClose: () => void }) => {
     const router = useRouter();
     const isFollowing = currentUser.following.includes(user.uid);
     const isCurrentUser = user.uid === currentUser.uid;
     const isZisprAccount = user.handle === '@Zispr';
     const isVerified = user.isVerified || user.handle === '@Rulio';
+    const badgeColor = user.badgeTier ? badgeColors[user.badgeTier] : 'text-primary';
 
     const handleUserClick = () => {
         onDialogClose();
@@ -69,7 +78,7 @@ const UserItem = ({ user, currentUser, onToggleFollow, onDialogClose }: { user: 
                 <div>
                     <p className="font-bold flex items-center gap-1">
                         {user.displayName}
-                        {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                        {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                     </p>
                     <p className="text-sm text-muted-foreground">{user.handle}</p>
                 </div>

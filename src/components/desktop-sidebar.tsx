@@ -29,7 +29,14 @@ interface ZisprUser {
     handle: string;
     avatar: string;
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
 }
+
+const badgeColors = {
+    bronze: 'text-amber-600',
+    silver: 'text-slate-400',
+    gold: 'text-yellow-400'
+};
 
 export default function DesktopSidebar() {
     const pathname = usePathname();
@@ -130,6 +137,7 @@ export default function DesktopSidebar() {
 
     const isZisprAccount = zisprUser?.handle === '@Zispr';
     const isUserVerified = zisprUser?.isVerified || zisprUser?.handle === '@Rulio';
+    const badgeColor = zisprUser?.badgeTier ? badgeColors[zisprUser.badgeTier] : 'text-primary';
 
     return (
         <aside className="sticky top-0 h-screen w-64 hidden md:flex flex-col justify-between items-end p-2 border-r">
@@ -194,7 +202,7 @@ export default function DesktopSidebar() {
                                 <div className="ml-3 text-left overflow-hidden">
                                     <p className="font-bold truncate flex items-center gap-1">
                                         {zisprUser.displayName}
-                                        {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isUserVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                                        {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isUserVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                                     </p>
                                     <p className="text-sm text-muted-foreground truncate">{zisprUser.handle}</p>
                                 </div>

@@ -29,6 +29,7 @@ interface Notification {
         avatar: string;
         handle: string;
         isVerified?: boolean;
+        badgeTier?: 'bronze' | 'silver' | 'gold';
     };
     text: string;
     postContent?: string;
@@ -46,6 +47,12 @@ const iconMap = {
     mention: { icon: AtSign, color: 'text-primary' },
     unfollow: { icon: UserX, color: 'text-muted-foreground' },
     reply: { icon: MessageCircle, color: 'text-sky-500' },
+};
+
+const badgeColors = {
+    bronze: 'text-amber-600',
+    silver: 'text-slate-400',
+    gold: 'text-yellow-400'
 };
 
 const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notification: Notification, zisprUser: ZisprUser | null, handleFollowBack: (userId: string) => Promise<void> }) => {
@@ -89,6 +96,8 @@ const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notif
 
     const isZisprAccount = notification.fromUser.handle === '@Zispr';
     const isVerified = notification.fromUser.isVerified || notification.fromUser.handle === '@Rulio';
+    const badgeColor = notification.fromUser.badgeTier ? badgeColors[notification.fromUser.badgeTier] : 'text-primary';
+
 
     return (
         <li className={`p-4 flex gap-4 hover:bg-muted/50 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`} onClick={handleItemClick}>
@@ -104,7 +113,7 @@ const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notif
                 </div>
                 <p>
                     <span className="font-bold">{notification.fromUser.name}</span>
-                    {isZisprAccount ? <Bird className="inline-block h-4 w-4 text-primary ml-1" /> : (isVerified && <BadgeCheck className="inline-block h-4 w-4 text-primary ml-1" />)}
+                    {isZisprAccount ? <Bird className="inline-block h-4 w-4 text-primary ml-1" /> : (isVerified && <BadgeCheck className={`inline-block h-4 w-4 ${badgeColor} ml-1`} />)}
                     <span className="font-normal text-muted-foreground"> {notification.text}</span>
                 </p>
                 {notification.postContent && <p className="text-muted-foreground mt-1">{notification.postContent}</p>}

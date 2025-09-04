@@ -48,6 +48,7 @@ interface Post {
     hashtags?: string[];
     mentions?: string[];
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
     isFirstPost?: boolean;
     poll?: {
         options: string[];
@@ -66,6 +67,7 @@ interface ZisprUser {
     handle: string;
     avatar: string;
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
 }
 
 interface CreatePostModalProps {
@@ -80,6 +82,12 @@ const replyOptions: Record<ReplySetting, { icon: React.ElementType, text: string
     everyone: { icon: Globe, text: 'Qualquer pessoa pode responder' },
     following: { icon: Users, text: 'Contas que você segue' },
     mentioned: { icon: AtSign, text: 'Apenas contas que você menciona' }
+};
+
+const badgeColors = {
+    bronze: 'text-amber-600',
+    silver: 'text-slate-400',
+    gold: 'text-yellow-400'
 };
 
 const MAX_CHARS = 280;
@@ -325,6 +333,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 content: quotedPost.content,
                 image: quotedPost.image || null,
                 isVerified: quotedPost.isVerified || false,
+                badgeTier: quotedPost.badgeTier || null,
                 createdAt: quotedPost.createdAt
             } : null;
 
@@ -337,6 +346,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 avatarFallback: zisprUser.displayName[0],
                 content: newPostContent,
                 isVerified: zisprUser.isVerified || zisprUser.handle === '@Rulio',
+                badgeTier: zisprUser.badgeTier || null,
                 quotedPostId: quotedPost ? quotedPost.id : null,
                 quotedPost: quotedPostData,
                 location: location.trim() || null,
@@ -402,27 +412,30 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     
     const isSubmitDisabled = (newPostContent.length === 0 && !postImageDataUri && !quotedPost && !pollData) || isPosting || newPostContent.length > MAX_CHARS;
     
-    const QuotedPostPreview = ({ post }: { post: Post }) => (
-        <div className="mt-2 border rounded-xl p-3">
-            <div className="flex items-center gap-2 text-sm">
-                <Avatar className="h-5 w-5">
-                    <AvatarImage src={post.avatar} />
-                    <AvatarFallback>{post.avatarFallback || post.author[0]}</AvatarFallback>
-                </Avatar>
-                <span className="font-bold flex items-center gap-1">
-                    {post.author}
-                     {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className="h-4 w-4 text-primary" />}
-                </span>
-                <span className="text-muted-foreground">{post.handle}</span>
-            </div>
-            <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
-            {post.image && (
-                <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
-                    <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+    const QuotedPostPreview = ({ post }: { post: Post }) => {
+        const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
+        return (
+            <div className="mt-2 border rounded-xl p-3">
+                <div className="flex items-center gap-2 text-sm">
+                    <Avatar className="h-5 w-5">
+                        <AvatarImage src={post.avatar} />
+                        <AvatarFallback>{post.avatarFallback || post.author[0]}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-bold flex items-center gap-1">
+                        {post.author}
+                         {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}
+                    </span>
+                    <span className="text-muted-foreground">{post.handle}</span>
                 </div>
-            )}
-        </div>
-    );
+                <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
+                {post.image && (
+                    <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
+                        <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+                    </div>
+                )}
+            </div>
+        )
+    };
     
     const CurrentReplyOption = replyOptions[replySetting];
 

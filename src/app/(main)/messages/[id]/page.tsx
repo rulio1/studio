@@ -20,6 +20,7 @@ interface ZisprUser {
     handle: string;
     avatar: string;
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
 }
 
 interface Message {
@@ -38,6 +39,12 @@ interface Conversation {
     unreadCounts?: Record<string, number>;
     deletedFor?: string[];
 }
+
+const badgeColors = {
+    bronze: 'text-amber-600',
+    silver: 'text-slate-400',
+    gold: 'text-yellow-400'
+};
 
 export default function ConversationPage() {
     const router = useRouter();
@@ -226,6 +233,7 @@ export default function ConversationPage() {
     
     const isZisprAccount = otherUser.handle === '@Zispr';
     const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@Rulio';
+    const badgeColor = otherUser.badgeTier ? badgeColors[otherUser.badgeTier] : 'text-primary';
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -251,7 +259,7 @@ export default function ConversationPage() {
                     <div>
                         <h1 className="text-lg font-bold flex items-center gap-1">
                             {otherUser.displayName}
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isOtherUserVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isOtherUserVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                         </h1>
                         <p className="text-xs text-muted-foreground">{otherUser.handle}</p>
                     </div>
@@ -302,7 +310,7 @@ export default function ConversationPage() {
             </div>
         </ScrollArea>
         <footer className="p-4 pt-2 border-t bg-background">
-           <div className="relative flex items-center rounded-2xl border bg-muted p-2">
+           <div className="relative flex items-center rounded-2xl border bg-background p-2">
               <Input 
                   placeholder="Inicie uma nova mensagem"
                   value={newMessage}

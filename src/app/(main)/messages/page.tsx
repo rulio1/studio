@@ -23,6 +23,7 @@ interface ZisprUser {
     avatar: string;
     handle: string;
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
 }
 
 interface Conversation {
@@ -33,6 +34,7 @@ interface Conversation {
         handle: string;
         avatar: string;
         isVerified?: boolean;
+        badgeTier?: 'bronze' | 'silver' | 'gold';
     };
     lastMessage: {
         text: string;
@@ -43,6 +45,11 @@ interface Conversation {
     deletedFor?: string[];
 }
 
+const badgeColors = {
+    bronze: 'text-amber-600',
+    silver: 'text-slate-400',
+    gold: 'text-yellow-400'
+};
 
 const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conversation; currentUserId: string | null; onActionClick: (convoId: string, action: 'pin' | 'archive' | 'delete') => void; }) => {
     const router = useRouter();
@@ -64,6 +71,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
     const messagePreview = `${isMyMessage ? 'Você: ' : ''}${convo.lastMessage.text}`;
     const isZisprAccount = convo.otherUser.handle === '@Zispr';
     const isVerified = convo.otherUser.isVerified || convo.otherUser.handle === '@Rulio';
+    const badgeColor = convo.otherUser.badgeTier ? badgeColors[convo.otherUser.badgeTier] : 'text-primary';
 
     return (
          <div
@@ -87,7 +95,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
                     <div className="flex items-baseline gap-2">
                         <p className="font-bold truncate flex items-center gap-1">
                             {convo.otherUser.name}
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">{convo.otherUser.handle}</p>
                     </div>
@@ -205,6 +213,7 @@ export default function MessagesPage() {
                         handle: otherUserData.handle,
                         avatar: otherUserData.avatar,
                         isVerified: otherUserData.isVerified,
+                        badgeTier: otherUserData.badgeTier,
                     },
                     lastMessage: {
                         ...conversationData.lastMessage,

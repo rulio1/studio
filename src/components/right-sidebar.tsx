@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -21,11 +22,18 @@ interface UserToFollow {
     avatar: string;
     followers: string[];
     isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
 }
 
 interface CurrentZisprUser {
     following?: string[];
 }
+
+const badgeColors = {
+    bronze: 'text-amber-600',
+    silver: 'text-slate-400',
+    gold: 'text-yellow-400'
+};
 
 export default function RightSidebar() {
     const router = useRouter();
@@ -158,6 +166,7 @@ export default function RightSidebar() {
                                     const isFollowing = user.followers?.includes(currentUser?.uid || '');
                                     const isZisprAccount = user.handle === '@Zispr';
                                     const isVerified = user.isVerified;
+                                    const badgeColor = user.badgeTier ? badgeColors[user.badgeTier] : 'text-primary';
 
                                     return (
                                         <li key={user.uid} className="flex items-center gap-2">
@@ -168,7 +177,7 @@ export default function RightSidebar() {
                                             <div className="flex-1 min-w-0 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
                                                 <p className="font-bold flex items-center gap-1 hover:underline truncate">
                                                     {user.displayName}
-                                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className="h-4 w-4 text-primary" />)}
+                                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                                                 </p>
                                                 <p className="text-sm text-muted-foreground truncate">{user.handle}</p>
                                             </div>
