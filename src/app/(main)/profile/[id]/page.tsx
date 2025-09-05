@@ -1232,7 +1232,7 @@ export default function ProfilePage() {
         replies: 1,
         media: 2,
         likes: 3,
-    };
+    }
 
   return (
     <div className="animate-fade-in">
@@ -1385,8 +1385,8 @@ export default function ProfilePage() {
         
         {hasBlockedYou ? (
              <EmptyState 
-                title="@"+profileUser.handle + " está bloqueado"
-                description="Você não pode ver os posts ou seguir @"+profileUser.handle
+                title={"@"+profileUser.handle + " está bloqueado"}
+                description={"Você não pode ver os posts ou seguir @"+profileUser.handle}
                 icon={UserX}
              />
         ) : (
