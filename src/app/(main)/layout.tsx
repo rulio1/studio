@@ -117,7 +117,7 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex min-h-svh justify-center">
             <DesktopSidebar />
-            <main className="flex-1 min-w-0 pb-24 md:pb-0 max-w-2xl border-x">
+            <main className="flex-1 min-w-0 pb-[var(--bottom-nav-height)] md:pb-0 max-w-2xl border-x">
                  <div className="animate-fade-in animate-slide-in-from-bottom">
                     {children}
                 </div>

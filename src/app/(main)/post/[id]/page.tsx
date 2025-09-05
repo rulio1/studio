@@ -857,7 +857,7 @@ export default function PostDetailPage() {
                 </div>
             </header>
 
-            <main className="flex-1">
+            <main className="flex-1 overflow-y-auto">
                 <div className="p-4 border-b">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
@@ -1054,7 +1054,7 @@ export default function PostDetailPage() {
                 </ul>
             </main>
             
-            <footer className="sticky bottom-0 z-10 bg-background border-t">
+            <footer className="sticky bottom-0 z-10 bg-background border-t md:pb-0 pb-[var(--bottom-nav-height)]">
                  <div className="p-4">
                     <div className="flex items-start gap-3 relative rounded-2xl border bg-muted p-2">
                         <Avatar>
