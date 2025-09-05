@@ -37,7 +37,7 @@ import { formatTimeAgo } from '@/lib/utils';
 import Poll from '@/components/poll';
 import { runTransaction } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import SpotifyEmbed from '@/components/ui/spotify-embed';
+import SpotifyEmbed from '@/components/spotify-embed';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
