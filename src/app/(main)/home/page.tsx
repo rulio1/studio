@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Home, Mail, MessageCircle, Settings, User, Repeat, Heart, BarChart2, Bird, X, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Loader2, Trash2, Edit, Save, BadgeCheck, LogOut, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Star, PenSquare, HandHeart } from 'lucide-react';
+import { Bell, Home, Mail, MessageCircle, Settings, User, Repeat, Heart, BarChart2, Bird, X, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Loader2, Trash2, Edit, Save, BadgeCheck, LogOut, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Star, PenSquare, HandHeart, Library } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -93,6 +93,12 @@ interface Post {
     spotifyUrl?: string;
 }
 
+interface Collection {
+    id: string;
+    name: string;
+    postIds: string[];
+}
+
 interface ZisprUser {
     uid: string;
     displayName: string;
@@ -106,7 +112,7 @@ interface ZisprUser {
     birthDate: Date | null;
     followers: string[];
     following: string[];
-    savedPosts?: string[];
+    collections?: Collection[];
     pinnedPostId?: string;
     isVerified?: boolean;
     badgeTier?: 'bronze' | 'silver' | 'gold';
@@ -536,17 +542,46 @@ useEffect(() => {
   };
   
   const handleSavePost = async (postId: string) => {
-    if (!user) return;
+    if (!user || !zisprUser) return;
+    
+    // For simplicity, we add to a default collection.
+    // A more advanced implementation would show a dialog to choose a collection.
     const userRef = doc(db, 'users', user.uid);
-    const isSaved = zisprUser?.savedPosts?.includes(postId);
+    
+    await runTransaction(db, async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists()) {
+            throw "User does not exist!";
+        }
 
-    if (isSaved) {
-        await updateDoc(userRef, { savedPosts: arrayRemove(postId) });
-        toast({ title: 'Post removido dos salvos' });
-    } else {
-        await updateDoc(userRef, { savedPosts: arrayUnion(postId) });
-        toast({ title: 'Post salvo!' });
-    }
+        const currentCollections = userDoc.data().collections || [];
+        let allSavedCollection = currentCollections.find((c: Collection) => c.name === 'Todos os posts salvos');
+        
+        let isSaved = false;
+        if (allSavedCollection) {
+            isSaved = allSavedCollection.postIds.includes(postId);
+        }
+
+        if (isSaved) {
+            // Remove from "All Saved Posts"
+            allSavedCollection.postIds = allSavedCollection.postIds.filter((id: string) => id !== postId);
+        } else {
+            if (allSavedCollection) {
+                // Add to existing "All Saved Posts"
+                allSavedCollection.postIds.push(postId);
+            } else {
+                // Create "All Saved Posts" collection
+                allSavedCollection = { id: uuidv4(), name: 'Todos os posts salvos', postIds: [postId] };
+                currentCollections.push(allSavedCollection);
+            }
+        }
+        
+        transaction.update(userRef, { collections: currentCollections });
+
+        toast({
+            title: isSaved ? 'Post removido dos salvos' : 'Post salvo!',
+        });
+    });
   };
   
   const handleTogglePinPost = async (postId: string) => {
@@ -744,6 +779,7 @@ useEffect(() => {
     const isVerified = post.isVerified || post.handle === '@Rulio';
     const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
+    const isSaved = zisprUser?.collections?.find(c => c.name === 'Todos os posts salvos')?.postIds.includes(post.id) ?? false;
 
 
     return (
@@ -825,7 +861,7 @@ useEffect(() => {
                                 <>
                                     <DropdownMenuItem onClick={() => handleSavePost(post.id)}>
                                         <Save className="mr-2 h-4 w-4"/>
-                                        {zisprUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
+                                        {isSaved ? 'Remover dos Salvos' : 'Salvar'}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
@@ -1002,6 +1038,7 @@ useEffect(() => {
         { href: '/notifications', icon: Bell, label: 'Notificações' },
         { href: '/messages', icon: Mail, label: 'Mensagens' },
         { href: '/saved', icon: Bookmark, label: 'Salvos' },
+        { href: '/collections', icon: Library, label: 'Coleções' },
         { href: `/profile/${zisprUser.uid}`, icon: User, label: 'Perfil' },
     ];
 
@@ -1153,8 +1190,3 @@ useEffect(() => {
     </>
   );
 }
-
-    
-
-    
-

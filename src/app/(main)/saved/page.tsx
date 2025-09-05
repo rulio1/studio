@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,106 +7,19 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, query, where, limit, orderBy, updateDoc, arrayUnion, arrayRemove, deleteDoc, onSnapshot, documentId } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, Bookmark, MessageCircle, Repeat, Heart, BarChart2, Upload, MoreHorizontal, Save, Trash2, Edit } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { formatTimeAgo } from '@/lib/utils';
-import Image from 'next/image';
+import { ArrowLeft, Loader2, Bookmark, Library } from 'lucide-react';
 import PostSkeleton from '@/components/post-skeleton';
+import { Card, CardContent } from '@/components/ui/card';
 
-interface Post {
-    id: string;
-    authorId: string;
-    avatar: string;
-    avatarFallback: string;
-    author: string;
-    handle: string;
-    time: string;
-    content: string;
-    image?: string;
-    imageHint?: string;
-    location?: string;
-    comments: number;
-    retweets: string[];
-    likes: string[];
-    views: number;
-    isLiked: boolean;
-    isRetweeted: boolean;
-    createdAt: any;
-    editedAt?: any;
-}
-
-interface ChirpUser {
-    savedPosts?: string[];
+interface ZisprUser {
     handle?: string;
+    collections?: { id: string, name: string, postIds: string[] }[];
 }
-
-const PostContent = ({ content }: { content: string }) => {
-    const router = useRouter();
-    const parts = content.split(/(#\w+)/g);
-    return (
-        <p>
-            {parts.map((part, index) => {
-                if (part.startsWith('#')) {
-                    const hashtag = part.substring(1);
-                    return (
-                        <a 
-                            key={index} 
-                            className="text-primary hover:underline"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(`/search?q=%23${hashtag}`);
-                            }}
-                        >
-                            {part}
-                        </a>
-                    );
-                }
-                return part;
-            })}
-        </p>
-    );
-};
-
-const SavedPostItem = ({ post }: { post: Post }) => {
-    const router = useRouter();
-    const [time, setTime] = useState('');
-
-    useEffect(() => {
-        if (post.createdAt) {
-            setTime(formatTimeAgo(post.createdAt.toDate()));
-        }
-    }, [post.createdAt]);
-    
-    return (
-        <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
-            <div className="flex gap-4">
-                <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
-                    <AvatarImage src={post.avatar} alt={post.handle} />
-                    <AvatarFallback>{post.avatarFallback}</AvatarFallback>
-                </Avatar>
-                <div className='w-full'>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm">
-                            <p className="font-bold text-base">{post.author}</p>
-                            <p className="text-muted-foreground">{post.handle} · {time}</p>
-                            {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
-                        </div>
-                    </div>
-                    <div className="mb-2 whitespace-pre-wrap">
-                        <PostContent content={post.content} />
-                        {post.image && <Image src={post.image} data-ai-hint={post.imageHint} width={500} height={300} alt="Imagem do post" className="mt-2 rounded-2xl border" />}
-                    </div>
-                </div>
-            </div>
-        </li>
-    );
-};
 
 export default function SavedPage() {
     const router = useRouter();
     const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [chirpUser, setChirpUser] = useState<ChirpUser | null>(null);
-    const [savedPosts, setSavedPosts] = useState<Post[]>([]);
+    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -121,71 +35,23 @@ export default function SavedPage() {
     
     useEffect(() => {
         if (!user) {
-            setChirpUser(null);
+            setZisprUser(null);
             return;
         }
         const userDocRef = doc(db, 'users', user.uid);
         const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
-                setChirpUser(doc.data() as ChirpUser);
+                setZisprUser(doc.data() as ZisprUser);
             } else {
                 router.push('/login');
             }
+            setIsLoading(false);
         });
         return () => unsubscribeUser();
     }, [user, router]);
 
 
-    useEffect(() => {
-        if (!user || !chirpUser?.savedPosts || chirpUser.savedPosts.length === 0) {
-            setSavedPosts([]);
-            setIsLoading(false);
-            return () => {};
-        }
-
-        setIsLoading(true);
-        const savedPostIds = chirpUser.savedPosts;
-        
-        // Firestore 'in' query supports up to 30 elements. Chunking is necessary.
-        const chunks = [];
-        for (let i = 0; i < savedPostIds.length; i += 30) {
-            chunks.push(savedPostIds.slice(i, i + 30));
-        }
-
-        const unsubscribes = chunks.map(chunk => {
-             const q = query(collection(db, "posts"), where(documentId(), 'in', chunk));
-             return onSnapshot(q, (snapshot) => {
-                const postsData = snapshot.docs.map(doc => {
-                    const data = doc.data();
-                    return {
-                        id: doc.id,
-                        ...data,
-                        time: '', // will be set in SavedPostItem
-                        isLiked: (Array.isArray(data.likes) ? data.likes : []).includes(user.uid),
-                        isRetweeted: (Array.isArray(data.retweets) ? data.retweets : []).includes(user.uid),
-                    } as Post;
-                });
-
-                // This logic needs to be improved to handle updates from multiple listeners
-                // For simplicity here, we'll merge new data with existing data
-                setSavedPosts(prevPosts => {
-                    const postMap = new Map(prevPosts.map(p => [p.id, p]));
-                    postsData.forEach(p => postMap.set(p.id, p));
-                    const allPosts = Array.from(postMap.values());
-                    allPosts.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-                    return allPosts.filter(p => savedPostIds.includes(p.id));
-                });
-                setIsLoading(false);
-            }, (error) => {
-                console.error("Error fetching saved posts chunk:", error);
-                setIsLoading(false);
-            });
-        });
-        
-        return () => unsubscribes.forEach(unsub => unsub());
-
-    }, [user, chirpUser]);
-
+    const allSavedPostsCount = zisprUser?.collections?.find(c => c.name === 'Todos os posts salvos')?.postIds.length ?? 0;
 
     return (
         <div className="flex flex-col h-screen bg-background">
@@ -196,30 +62,45 @@ export default function SavedPage() {
                     </Button>
                     <div>
                         <h1 className="text-xl font-bold">Salvos</h1>
-                        <p className="text-sm text-muted-foreground">{chirpUser?.handle}</p>
+                        <p className="text-sm text-muted-foreground">{zisprUser?.handle}</p>
                     </div>
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 overflow-y-auto p-4">
                 {isLoading ? (
-                    <ul className="divide-y divide-border">
-                        {[...Array(5)].map((_, i) => <li key={i} className="p-4"><PostSkeleton /></li>)}
-                    </ul>
-                ) : savedPosts.length === 0 ? (
-                    <div className="text-center p-8 mt-16">
-                        <Bookmark className="mx-auto h-16 w-16 text-muted-foreground" />
-                        <h2 className="text-2xl font-bold mt-4">Você não tem posts salvos</h2>
-                        <p className="text-muted-foreground mt-2">Clique no ícone de marcador em um post para salvá-lo aqui.</p>
+                     <div className="flex justify-center items-center h-full">
+                        <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                 ) : (
-                    <ul className="divide-y divide-border">
-                        {savedPosts.map((post) => (
-                           <SavedPostItem key={post.id} post={post} />
-                        ))}
-                    </ul>
+                    <div className='space-y-4'>
+                        <h2 className="text-lg font-bold">Minhas Coleções</h2>
+                         <Card 
+                            className="hover:bg-muted/50 cursor-pointer"
+                            onClick={() => router.push('/collections/all')}
+                         >
+                            <CardContent className="p-4 flex items-center justify-between">
+                                <div className='flex items-center gap-4'>
+                                    <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center">
+                                        <Bookmark className="h-8 w-8 text-primary-foreground" />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold">Todos os posts salvos</p>
+                                        <p className="text-sm text-muted-foreground">{allSavedPostsCount} posts</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                          <Card className="border-dashed hover:bg-muted/50 cursor-pointer">
+                            <CardContent className="p-4 flex items-center justify-center gap-2 text-muted-foreground">
+                                <Library className="h-5 w-5" />
+                                <span>Criar nova coleção</span>
+                            </CardContent>
+                        </Card>
+                    </div>
                 )}
             </main>
         </div>
     );
 }
+

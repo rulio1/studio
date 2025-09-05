@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck, Bot } from 'lucide-react';
+import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck, Bot, Library } from 'lucide-react';
 import CreatePostModal from './create-post-modal';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
@@ -54,6 +54,7 @@ export default function DesktopSidebar() {
         { href: '/notifications', icon: Bell, label: 'Notificações', count: notificationCount },
         { href: '/messages', icon: Mail, label: 'Mensagens', count: messageCount },
         { href: '/saved', icon: Bookmark, label: 'Salvos', count: 0 },
+        { href: '/collections', icon: Library, label: 'Coleções', count: 0 },
         { href: zisprUser ? `/profile/${zisprUser.uid}` : '#', icon: User, label: 'Perfil', count: 0 },
     ];
 

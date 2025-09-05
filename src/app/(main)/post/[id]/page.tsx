@@ -37,7 +37,7 @@ import { formatTimeAgo } from '@/lib/utils';
 import Poll from '@/components/poll';
 import { runTransaction } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import SpotifyEmbed from '@/components/spotify-embed';
+import SpotifyEmbed from '@/components/ui/spotify-embed';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
@@ -102,11 +102,17 @@ interface Comment {
     postId: string;
 }
 
+interface Collection {
+    id: string;
+    name: string;
+    postIds: string[];
+}
+
 interface ZisprUser {
     displayName: string;
     handle: string;
     avatar: string;
-    savedPosts?: string[];
+    collections?: Collection[];
     pinnedPostId?: string;
     isVerified?: boolean;
     badgeTier?: 'bronze' | 'silver' | 'gold';
@@ -742,20 +748,36 @@ export default function PostDetailPage() {
     const handleSavePost = async (postId: string) => {
         if (!user || !zisprUser) return;
         const userRef = doc(db, 'users', user.uid);
-        const isSaved = zisprUser.savedPosts?.includes(postId);
+        const allSavedCollection = zisprUser.collections?.find(c => c.name === 'Todos os posts salvos');
+        const isSaved = allSavedCollection?.postIds.includes(postId) ?? false;
 
-        try {
-            if (isSaved) {
-                await updateDoc(userRef, { savedPosts: arrayRemove(postId) });
-                toast({ title: 'Post removido dos salvos' });
-            } else {
-                await updateDoc(userRef, { savedPosts: arrayUnion(postId) });
-                toast({ title: 'Post salvo!' });
+        await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw "User does not exist!";
             }
-        } catch (error) {
-             console.error("Error saving post:", error);
-             toast({ title: 'Erro ao salvar post', variant: 'destructive' });
-        }
+
+            let currentCollections = userDoc.data().collections || [];
+            let allSavedCollection = currentCollections.find((c: Collection) => c.name === 'Todos os posts salvos');
+            
+            if (isSaved) {
+                // Remove from all relevant collections
+                currentCollections.forEach((collection: Collection) => {
+                    collection.postIds = collection.postIds.filter((id: string) => id !== postId);
+                });
+            } else {
+                if (allSavedCollection) {
+                    allSavedCollection.postIds.push(postId);
+                } else {
+                    const newCollection = { id: 'all_saved', name: 'Todos os posts salvos', postIds: [postId] };
+                    currentCollections.push(newCollection);
+                }
+            }
+
+            transaction.update(userRef, { collections: currentCollections });
+        });
+
+        toast({ title: isSaved ? 'Post removido dos salvos' : 'Post salvo!' });
     };
 
     const handleTogglePinPost = async () => {
@@ -853,6 +875,7 @@ export default function PostDetailPage() {
     const isPostVerified = post.isVerified || post.handle === '@Rulio';
     const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
+    const isSaved = zisprUser?.collections?.find(c => c.name === 'Todos os posts salvos')?.postIds.includes(post.id) ?? false;
 
     return (
         <div className="bg-background flex flex-col min-h-screen">
@@ -924,7 +947,7 @@ export default function PostDetailPage() {
                                     <>
                                         <DropdownMenuItem onClick={() => handleSavePost(post.id)}>
                                             <Save className="mr-2 h-4 w-4"/>
-                                            {zisprUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
+                                            {isSaved ? 'Remover dos Salvos' : 'Salvar'}
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
@@ -1168,6 +1191,3 @@ export default function PostDetailPage() {
         </div>
     );
 }
-
-
-    
