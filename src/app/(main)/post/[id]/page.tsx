@@ -857,7 +857,7 @@ export default function PostDetailPage() {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
+            <main className="flex-1 overflow-y-auto">
                 <div className="p-4 border-b">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
@@ -1035,7 +1035,27 @@ export default function PostDetailPage() {
                     </div>
                 </div>
                 
-                 <div className="p-4 bg-background border-b sticky bottom-0 md:static">
+                <div className="p-4 border-b md:hidden">
+                    <p className="text-muted-foreground">Respondendo a <span className="text-primary">{post.handle}</span></p>
+                </div>
+                
+                <ul>
+                    {comments.map((comment, index) => (
+                        <CommentItem
+                            key={comment.id}
+                            comment={comment}
+                            user={user}
+                            onEdit={handleEditCommentClick}
+                            onDelete={setCommentToDelete}
+                            isLastComment={index === comments.length - 1}
+                            onReply={handleReplyToComment}
+                        />
+                    ))}
+                </ul>
+            </main>
+            
+            <footer className="sticky bottom-0 z-10 bg-background border-t mt-auto md:static">
+                 <div className="p-4">
                     <div className="flex items-start gap-3">
                         <Avatar>
                             <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
@@ -1058,100 +1078,87 @@ export default function PostDetailPage() {
                         </div>
                     </div>
                 </div>
+            </footer>
 
-                <ul>
-                    {comments.map((comment, index) => (
-                        <CommentItem
-                            key={comment.id}
-                            comment={comment}
-                            user={user}
-                            onEdit={handleEditCommentClick}
-                            onDelete={setCommentToDelete}
-                            isLastComment={index === comments.length - 1}
-                            onReply={handleReplyToComment}
-                        />
-                    ))}
-                </ul>
 
-                {/* Post Modals */}
-                <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                        <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Essa ação não pode ser desfeita. Isso excluirá permanentemente
-                            o seu post de nossos servidores.
-                        </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeletePost} className="bg-destructive hover:bg-destructive/90">Apagar</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-                <Dialog open={isEditing} onOpenChange={setIsEditing}>
-                    <DialogContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
-                        <DialogHeader>
-                            <EditDialogTitle>Editar Post</EditDialogTitle>
-                        </DialogHeader>
-                        <Textarea 
-                            value={editedContent}
-                            onChange={(e) => setEditedContent(e.target.value)}
-                            rows={5}
-                            className="my-4"
-                        />
-                        <Button onClick={handleUpdatePost} disabled={isUpdating}>
-                            {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Salvar Alterações
-                        </Button>
-                    </DialogContent>
-                </Dialog>
-                <Suspense>
-                    {isQuoteModalOpen && <CreatePostModal
-                        open={isQuoteModalOpen}
-                        onOpenChange={setIsQuoteModalOpen}
-                        quotedPost={post}
-                    />}
-                     {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
-                     {analyticsPost && <PostAnalyticsModal post={analyticsPost} onOpenChange={() => setAnalyticsPost(null)} />}
-                </Suspense>
+            {/* Post Modals */}
+            <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Essa ação não pode ser desfeita. Isso excluirá permanentemente
+                        o seu post de nossos servidores.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeletePost} className="bg-destructive hover:bg-destructive/90">Apagar</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <Dialog open={isEditing} onOpenChange={setIsEditing}>
+                <DialogContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
+                    <DialogHeader>
+                        <EditDialogTitle>Editar Post</EditDialogTitle>
+                    </DialogHeader>
+                    <Textarea 
+                        value={editedContent}
+                        onChange={(e) => setEditedContent(e.target.value)}
+                        rows={5}
+                        className="my-4"
+                    />
+                    <Button onClick={handleUpdatePost} disabled={isUpdating}>
+                        {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Salvar Alterações
+                    </Button>
+                </DialogContent>
+            </Dialog>
+            <Suspense>
+                {isQuoteModalOpen && <CreatePostModal
+                    open={isQuoteModalOpen}
+                    onOpenChange={setIsQuoteModalOpen}
+                    quotedPost={post}
+                />}
+                 {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
+                 {analyticsPost && <PostAnalyticsModal post={analyticsPost} onOpenChange={() => setAnalyticsPost(null)} />}
+            </Suspense>
 
-                {/* Comment Modals */}
-                <AlertDialog open={!!commentToDelete} onOpenChange={(open) => !open && setCommentToDelete(null)}>
-                     <AlertDialogContent>
-                        <AlertDialogHeader>
-                        <AlertDialogTitle>Apagar comentário?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                             Essa ação não pode ser desfeita e removerá o comentário permanentemente.
-                        </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setCommentToDelete(null)}>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteComment} className="bg-destructive hover:bg-destructive/90">Apagar</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-                <Dialog open={!!editingComment} onOpenChange={(open) => !open && setEditingComment(null)}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <OtherDialogTitle>Editar Comentário</OtherDialogTitle>
-                        </DialogHeader>
-                        <Textarea 
-                            value={editedCommentContent}
-                            onChange={(e) => setEditedCommentContent(e.target.value)}
-                            rows={5}
-                            className="my-4"
-                        />
-                        <Button onClick={handleUpdateComment} disabled={isUpdatingComment}>
-                            {isUpdatingComment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Salvar Alterações
-                        </Button>
-                    </DialogContent>
-                </Dialog>
-                <Suspense>
-                    {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
-                </Suspense>
-            </main>
+            {/* Comment Modals */}
+            <AlertDialog open={!!commentToDelete} onOpenChange={(open) => !open && setCommentToDelete(null)}>
+                 <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Apagar comentário?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                         Essa ação não pode ser desfeita e removerá o comentário permanentemente.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setCommentToDelete(null)}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteComment} className="bg-destructive hover:bg-destructive/90">Apagar</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <Dialog open={!!editingComment} onOpenChange={(open) => !open && setEditingComment(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <OtherDialogTitle>Editar Comentário</OtherDialogTitle>
+                    </DialogHeader>
+                    <Textarea 
+                        value={editedCommentContent}
+                        onChange={(e) => setEditedCommentContent(e.target.value)}
+                        rows={5}
+                        className="my-4"
+                    />
+                    <Button onClick={handleUpdateComment} disabled={isUpdatingComment}>
+                        {isUpdatingComment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Salvar Alterações
+                    </Button>
+                </DialogContent>
+            </Dialog>
+            <Suspense>
+                {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
+            </Suspense>
         </div>
     );
 }
