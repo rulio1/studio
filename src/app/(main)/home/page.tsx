@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -37,16 +37,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle as EditDialogTitle, DialogTitle as OtherDialogTitle } from '@/components/ui/dialog';
-import CreatePostModal from '@/components/create-post-modal';
 import { Textarea } from '@/components/ui/textarea';
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { dataURItoFile } from '@/lib/utils';
 import Poll from '@/components/poll';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import ImageViewer from '@/components/image-viewer';
 import SpotifyEmbed from '@/components/spotify-embed';
 import { motion } from 'framer-motion';
+
+const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
+const ImageViewer = lazy(() => import('@/components/image-viewer'));
 
 
 interface Post {
@@ -1052,12 +1053,14 @@ useEffect(() => {
                 </Button>
             </DialogContent>
         </Dialog>
-        <CreatePostModal 
-            open={isQuoteModalOpen}
-            onOpenChange={setIsQuoteModalOpen}
-            quotedPost={postToQuote}
-        />
-        <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />
+        <Suspense>
+            {isQuoteModalOpen && <CreatePostModal 
+                open={isQuoteModalOpen}
+                onOpenChange={setIsQuoteModalOpen}
+                quotedPost={postToQuote}
+            />}
+            {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
+        </Suspense>
     </>
   );
 }

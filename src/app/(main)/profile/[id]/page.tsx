@@ -7,7 +7,7 @@ import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Searc
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp, deleteDoc, setDoc, documentId, addDoc, runTransaction, increment } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -40,10 +40,11 @@ import Poll from '@/components/poll';
 import { Badge } from '@/components/ui/badge';
 import FollowListDialog from '@/components/follow-list-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import CreatePostModal from '@/components/create-post-modal';
-import ImageViewer from '@/components/image-viewer';
 import SpotifyEmbed from '@/components/spotify-embed';
 import { motion } from 'framer-motion';
+
+const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
+const ImageViewer = lazy(() => import('@/components/image-viewer'));
 
 
 const EmptyState = ({ title, description, icon: Icon }: { title: string, description: string, icon?: React.ElementType }) => (
@@ -1392,22 +1393,24 @@ export default function ProfilePage() {
                 </Button>
             </DialogContent>
         </Dialog>
-        <CreatePostModal 
-            open={isQuoteModalOpen}
-            onOpenChange={setIsQuoteModalOpen}
-            quotedPost={postToQuote}
-        />
-        {isFollowListOpen && zisprUser && (
-            <FollowListDialog
-                open={isFollowListOpen}
-                onOpenChange={setIsFollowListOpen}
-                title={followListTitle}
-                userIds={followListUserIds}
-                currentUser={zisprUser}
-                onToggleFollow={handleToggleFollow}
-            />
-        )}
-        <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />
+        <Suspense>
+            {isQuoteModalOpen && <CreatePostModal 
+                open={isQuoteModalOpen}
+                onOpenChange={setIsQuoteModalOpen}
+                quotedPost={postToQuote}
+            />}
+            {isFollowListOpen && zisprUser && (
+                <FollowListDialog
+                    open={isFollowListOpen}
+                    onOpenChange={setIsFollowListOpen}
+                    title={followListTitle}
+                    userIds={followListUserIds}
+                    currentUser={zisprUser}
+                    onToggleFollow={handleToggleFollow}
+                />
+            )}
+            {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
+        </Suspense>
     </div>
   );
 }

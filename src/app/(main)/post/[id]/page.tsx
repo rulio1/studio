@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -31,14 +31,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle as EditDialogTitle, DialogTitle as OtherDialogTitle } from '@/components/ui/dialog';
-import CreatePostModal from '@/components/create-post-modal';
 import { useToast } from '@/hooks/use-toast';
 import { formatTimeAgo } from '@/lib/utils';
 import Poll from '@/components/poll';
 import { runTransaction } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import ImageViewer from '@/components/image-viewer';
 import SpotifyEmbed from '@/components/spotify-embed';
+
+const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
+const ImageViewer = lazy(() => import('@/components/image-viewer'));
 
 
 interface Post {
@@ -1088,11 +1089,13 @@ export default function PostDetailPage() {
                         </Button>
                     </DialogContent>
                 </Dialog>
-                <CreatePostModal
-                    open={isQuoteModalOpen}
-                    onOpenChange={setIsQuoteModalOpen}
-                    quotedPost={post}
-                />
+                <Suspense>
+                    {isQuoteModalOpen && <CreatePostModal
+                        open={isQuoteModalOpen}
+                        onOpenChange={setIsQuoteModalOpen}
+                        quotedPost={post}
+                    />}
+                </Suspense>
 
                 {/* Comment Modals */}
                 <AlertDialog open={!!commentToDelete} onOpenChange={(open) => !open && setCommentToDelete(null)}>
@@ -1126,7 +1129,9 @@ export default function PostDetailPage() {
                         </Button>
                     </DialogContent>
                 </Dialog>
-                <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />
+                <Suspense>
+                    {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
+                </Suspense>
             </main>
         </div>
     );
