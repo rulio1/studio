@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -740,6 +741,14 @@ export default function ProfilePage() {
                     return;
                 }
                 const profileData = { uid: profileDoc.id, ...profileDoc.data() } as ZisprUser;
+
+                // This is the simulation part
+                if (profileData.handle === '@stefanysouza') {
+                    profileData.supporterTier = "Apoiador VIP";
+                    profileData.badgeTier = "silver";
+                    profileData.isVerified = true;
+                }
+                
                 setProfileUser(profileData);
                 
                 const userDocRef = doc(db, "users", user.uid);
@@ -1232,7 +1241,7 @@ export default function ProfilePage() {
         replies: 1,
         media: 2,
         likes: 3,
-    }
+    };
 
   return (
     <div className="animate-fade-in">
