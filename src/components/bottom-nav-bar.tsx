@@ -28,12 +28,9 @@ export default function BottomNavBar() {
     const [messageCount, setMessageCount] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
-    const leftNavItems = [
+    const navItems = [
         { href: '/home', icon: Home, label: 'Início' },
         { href: '/search', icon: Search, label: 'Busca' },
-    ];
-    
-    const rightNavItems = [
         { href: '/notifications', icon: Bell, label: 'Notificações' },
         { href: '/messages', icon: Mail, label: 'Mensagens' },
     ];
@@ -101,45 +98,27 @@ export default function BottomNavBar() {
         };
     }, [user]);
 
+    const getCountForItem = (label: string) => {
+        if (label === 'Notificações') return notificationCount;
+        if (label === 'Mensagens') return messageCount;
+        return 0;
+    }
+
     return (
-        <div className="fixed bottom-0 inset-x-0 z-50 p-2 md:hidden">
-            <nav className="flex justify-around items-center h-14 w-full rounded-2xl bg-background/70 backdrop-blur-lg shadow-lg border">
-                {leftNavItems.map((item) => (
-                    <Link key={item.href} href={item.href} className={`relative flex-1 flex justify-center items-center h-full rounded-full transition-colors ${pathname.startsWith(item.href) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
+        <nav className="fixed bottom-0 inset-x-0 z-50 h-[var(--bottom-nav-height)] bg-background border-t md:hidden flex justify-around items-center">
+            {navItems.map((item) => {
+                 const count = getCountForItem(item.label);
+                return (
+                    <Link key={item.href} href={item.href} className={`relative flex-1 flex justify-center items-center h-full transition-colors ${pathname.startsWith(item.href) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                         <item.icon className="h-7 w-7" />
-                    </Link>
-                ))}
-
-                 <div className="relative flex-1 flex justify-center items-center h-full rounded-full">
-                    {isLoading ? (
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                    ) : user && zisprUser ? (
-                        <Link href={`/profile/${zisprUser.uid}`} className={`transition-opacity hover:opacity-80 ${pathname.startsWith(`/profile/${zisprUser.uid}`) ? 'border-2 border-primary rounded-full p-0.5' : ''}`}>
-                             <Avatar className="h-8 w-8">
-                                <AvatarImage src={zisprUser.avatar} alt={zisprUser.displayName} />
-                                <AvatarFallback>{zisprUser.displayName?.[0]}</AvatarFallback>
-                            </Avatar>
-                        </Link>
-                    ) : null}
-                </div>
-
-                {rightNavItems.map((item) => (
-                    <Link key={item.href} href={item.href} className={`relative flex-1 flex justify-center items-center h-full rounded-full transition-colors ${pathname.startsWith(item.href) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
-                        <item.icon className="h-7 w-7" />
-                        {item.label === 'Notificações' && notificationCount > 0 && (
-                             <Badge className="absolute top-1 right-5 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs">
-                                {notificationCount}
-                            </Badge>
-                        )}
-                        {item.label === 'Mensagens' && messageCount > 0 && (
-                             <Badge className="absolute top-1 right-5 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs">
-                                {messageCount}
+                        {count > 0 && (
+                             <Badge className="absolute top-1.5 right-[calc(50%-2rem)] h-5 w-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground p-0 text-xs">
+                                {count}
                             </Badge>
                         )}
                     </Link>
-                ))}
-            </nav>
-        </div>
+                )
+            })}
+        </nav>
     );
 }
-
