@@ -116,6 +116,8 @@ interface Reply {
         content: string;
         authorHandle: string;
     } | null;
+    isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
 }
 
 interface ZisprUser {
@@ -446,7 +448,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
 const ReplyItem = ({ reply }: { reply: Reply }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
-
+    
     useEffect(() => {
         if (reply.createdAt) {
             try {
@@ -456,6 +458,10 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
             }
         }
     }, [reply.createdAt]);
+    
+    const isZisprAccount = reply.handle === '@Zispr';
+    const isVerified = reply.isVerified || reply.handle === '@Rulio';
+    const badgeColor = reply.badgeTier ? badgeColors[reply.badgeTier] : 'text-primary';
 
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${reply.postId}`)}>
@@ -469,6 +475,7 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
                         <div className="flex items-center gap-2 text-sm">
                             <p className="font-bold text-base flex items-center gap-1">
                                 {reply.author}
+                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                             </p>
                             <p className="text-muted-foreground">{reply.handle} · {time}</p>
                         </div>
@@ -659,7 +666,12 @@ export default function ProfilePage() {
                 const commentData = doc.data();
                 const originalPost = postsMap.get(commentData.postId);
                 const originalPostAuthorHandle = originalPost ? originalPost.handle : '';
-    
+                
+                 if (commentData.handle === '@stefanysouza') {
+                    commentData.isVerified = true;
+                    commentData.badgeTier = 'silver';
+                }
+
                 return {
                     id: doc.id,
                     ...commentData,
@@ -755,10 +767,10 @@ export default function ProfilePage() {
                 }
                 const profileData = { uid: profileDoc.id, ...profileDoc.data() } as ZisprUser;
 
-                if (profileData.handle === '@stefanysouza') {
-                    profileData.supporterTier = "Apoiador VIP";
-                    profileData.badgeTier = "silver";
+                 if (profileData.handle === '@stefanysouza') {
                     profileData.isVerified = true;
+                    profileData.badgeTier = 'silver';
+                    profileData.supporterTier = 'Apoiador VIP';
                 }
                 
                 setProfileUser(profileData);
@@ -1546,5 +1558,3 @@ export default function ProfilePage() {
     );
 }
 
-
-    
