@@ -102,8 +102,8 @@ export default function BottomNavBar() {
     }, [user]);
 
     return (
-        <footer className="fixed bottom-0 inset-x-0 z-50 h-[var(--bottom-nav-height)] border-t bg-background/70 backdrop-blur-lg md:hidden">
-            <nav className="flex justify-around items-center h-full w-full px-2">
+        <div className="fixed bottom-0 inset-x-0 z-50 p-2 md:hidden">
+            <nav className="flex justify-around items-center h-14 w-full rounded-2xl bg-background/70 backdrop-blur-lg shadow-lg border">
                 {leftNavItems.map((item) => (
                     <Link key={item.href} href={item.href} className={`relative flex-1 flex justify-center items-center h-full rounded-full transition-colors ${pathname.startsWith(item.href) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                         <item.icon className="h-7 w-7" />
@@ -127,18 +127,19 @@ export default function BottomNavBar() {
                     <Link key={item.href} href={item.href} className={`relative flex-1 flex justify-center items-center h-full rounded-full transition-colors ${pathname.startsWith(item.href) ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                         <item.icon className="h-7 w-7" />
                         {item.label === 'Notificações' && notificationCount > 0 && (
-                             <Badge className="absolute top-2 right-4 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs">
+                             <Badge className="absolute top-1 right-5 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs">
                                 {notificationCount}
                             </Badge>
                         )}
                         {item.label === 'Mensagens' && messageCount > 0 && (
-                             <Badge className="absolute top-2 right-4 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs">
+                             <Badge className="absolute top-1 right-5 h-5 w-5 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-xs">
                                 {messageCount}
                             </Badge>
                         )}
                     </Link>
                 ))}
             </nav>
-        </footer>
+        </div>
     );
 }
+
