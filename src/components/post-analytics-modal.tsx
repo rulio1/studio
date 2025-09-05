@@ -1,9 +1,8 @@
-
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from './ui/button';
-import { X, Heart, Repeat, MessageCircle, BarChart2, Users, Info } from 'lucide-react';
+import { X, Heart, Repeat, MessageCircle, BarChart2, Users, Info, BadgeCheck, Bird } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -23,12 +22,20 @@ interface Post {
     likes: string[];
     views: number;
     profileVisits?: number;
+    isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
 }
 
 interface PostAnalyticsModalProps {
   post: Post | null;
   onOpenChange: (open: boolean) => void;
 }
+
+const badgeColors = {
+    bronze: 'text-amber-600',
+    silver: 'text-slate-400',
+    gold: 'text-yellow-400'
+};
 
 const StatItem = ({ value, label, tooltip }: { value: number; label: string; tooltip: string }) => (
     <div>
@@ -53,6 +60,9 @@ export default function PostAnalyticsModal({ post, onOpenChange }: PostAnalytics
   if (!post) return null;
 
   const interactions = post.likes.length + post.comments + post.retweets.length;
+  const isZisprAccount = post.handle === '@Zispr';
+  const isPostVerified = post.isVerified || post.handle === '@Rulio';
+  const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
 
   return (
     <Dialog open={!!post} onOpenChange={onOpenChange}>
@@ -68,7 +78,10 @@ export default function PostAnalyticsModal({ post, onOpenChange }: PostAnalytics
                     <AvatarFallback>{post.avatarFallback}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-bold">{post.author}</p>
+                    <p className="font-bold flex items-center gap-1">
+                        {post.author}
+                        {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
+                    </p>
                     <p className="text-sm text-muted-foreground">{post.handle}</p>
                 </div>
             </div>
