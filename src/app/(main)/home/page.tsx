@@ -944,7 +944,7 @@ useEffect(() => {
 
   return (
     <>
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
           <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
               <div className="flex items-center justify-between px-4 py-2">
                   <Sheet>
@@ -1089,3 +1089,5 @@ useEffect(() => {
     </>
   );
 }
+
+    

@@ -101,8 +101,8 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
 
     if (hideSidebars) {
          return (
-            <div className="flex min-h-svh justify-center">
-                <main className="w-full md:max-w-2xl md:border-x">
+            <div className="flex h-screen justify-center">
+                <main className="flex-1 min-w-0 max-w-2xl md:border-x">
                     <div className="animate-fade-in animate-slide-in-from-bottom h-full">
                         {children}
                     </div>
@@ -118,7 +118,7 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
         <div className="flex h-screen justify-center">
             <DesktopSidebar />
             <main className="flex-1 min-w-0 max-w-2xl border-x flex flex-col">
-                 <div className="animate-fade-in animate-slide-in-from-bottom flex-1 overflow-y-auto pb-[var(--bottom-nav-height)] md:pb-0">
+                 <div className="flex-1 overflow-y-auto pb-[var(--bottom-nav-height)] md:pb-0">
                     {children}
                 </div>
             </main>
@@ -177,3 +177,5 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </Suspense>
     );
 }
+
+    
