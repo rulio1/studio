@@ -847,7 +847,7 @@ export default function PostDetailPage() {
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
     return (
-        <div className="bg-background">
+        <div className="bg-background flex flex-col">
             <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                 <div className="flex items-center gap-4 px-4 py-2">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -857,7 +857,7 @@ export default function PostDetailPage() {
                 </div>
             </header>
 
-            <main>
+            <main className="flex-1">
                 <div className="p-4 border-b">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
@@ -1056,26 +1056,24 @@ export default function PostDetailPage() {
             
             <footer className="sticky bottom-0 z-10 bg-background border-t">
                  <div className="p-4">
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-3 relative rounded-2xl border bg-muted p-2">
                         <Avatar>
                             <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
                             <AvatarFallback>{zisprUser?.displayName?.[0]}</AvatarFallback>
                         </Avatar>
-                        <div className="w-full flex items-center gap-2">
-                            <Textarea 
-                                ref={replyTextareaRef}
-                                placeholder="Poste sua resposta" 
-                                className="flex-1 bg-background text-base p-2 resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                rows={1}
-                                disabled={isReplying}
-                            />
-                            <Button onClick={handleReply} disabled={!newComment.trim() || isReplying} size="sm" className="rounded-full">
-                                {isReplying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Responder
-                            </Button>
-                        </div>
+                        <Textarea 
+                            ref={replyTextareaRef}
+                            placeholder="Poste sua resposta" 
+                            className="flex-1 bg-transparent text-base p-2 resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            rows={1}
+                            disabled={isReplying}
+                        />
+                        <Button onClick={handleReply} disabled={!newComment.trim() || isReplying} size="sm" className="rounded-full self-end">
+                            {isReplying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Responder
+                        </Button>
                     </div>
                 </div>
             </footer>
