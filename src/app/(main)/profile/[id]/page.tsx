@@ -733,7 +733,6 @@ export default function ProfilePage() {
             setCurrentUser(user);
 
             const profileDocRef = doc(db, 'users', profileId);
-            // Use onSnapshot for real-time updates on the profile user's data
             const unsubscribeProfile = onSnapshot(profileDocRef, async (profileDoc) => {
                 if (!profileDoc.exists()) {
                     setIsLoading(false);
@@ -742,7 +741,6 @@ export default function ProfilePage() {
                 }
                 const profileData = { uid: profileDoc.id, ...profileDoc.data() } as ZisprUser;
 
-                // This is the simulation part
                 if (profileData.handle === '@stefanysouza') {
                     profileData.supporterTier = "Apoiador VIP";
                     profileData.badgeTier = "silver";
@@ -834,7 +832,6 @@ export default function ProfilePage() {
     
         await batch.commit();
         
-        // Let onSnapshot handle UI updates to avoid race conditions
     };
 
     const handleStartConversation = async () => {
@@ -944,7 +941,6 @@ export default function ProfilePage() {
         } else {
             await updateDoc(userRef, { savedPosts: arrayUnion(postId) });
         }
-        // Let onSnapshot handle UI updates
         toast({ title: isSaved ? 'Post removido dos salvos' : 'Post salvo!' });
     };
 
@@ -1083,7 +1079,6 @@ export default function ProfilePage() {
             toast({
                 title: isCurrentlyPinned ? 'Post desafixado!' : 'Post fixado no perfil!',
             });
-            // onSnapshot will handle the UI update
         } catch (error) {
             console.error("Error pinning/unpinning post: ", error);
             toast({ title: 'Erro ao fixar post.', variant: 'destructive' });
@@ -1243,296 +1238,296 @@ export default function ProfilePage() {
         likes: 3,
     };
 
-  return (
-    <div className="animate-fade-in">
-        <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm flex items-center gap-4 px-4 py-2 border-b">
-             <Button size="icon" variant="ghost" className="rounded-full" onClick={() => router.back()}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-                <h1 className="text-xl font-bold flex items-center gap-1">
-                    {profileUser.displayName}
-                    {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-5 w-5 ${badgeColor}`} />)}
-                </h1>
-                <p className="text-sm text-muted-foreground">{userPosts.length + (pinnedPost ? 1 : 0)} posts</p>
-            </div>
-        </header>
-        <main className="flex-1">
-        <div className="relative h-48 bg-muted">
-           {isZisprAccount ? (
-                <div className="w-full h-full bg-primary flex items-center justify-center">
-                    <Bird className="h-24 w-24 text-primary-foreground" />
-                </div>
-            ) : (
-                profileUser.banner && <Image
-                    src={profileUser.banner}
-                    alt="Banner"
-                    layout="fill"
-                    objectFit="cover"
-                    data-ai-hint="profile banner"
-                />
-            )}
-        </div>
-        <div className="p-4">
-            <div className="flex justify-between items-start">
-                <div className="-mt-20">
-                    <Avatar className="h-32 w-32 border-4 border-background bg-muted">
-                        {isZisprAccount ? (
-                            <div className="w-full h-full flex items-center justify-center">
-                                <Bird className="h-16 w-16 text-primary" />
-                            </div>
-                        ) : (
-                           <>
-                             <AvatarImage src={profileUser.avatar} data-ai-hint="profile avatar" alt={profileUser.displayName} />
-                             <AvatarFallback className="text-4xl">{profileUser.displayName?.[0]}</AvatarFallback>
-                           </>
-                        )}
-                    </Avatar>
-                </div>
-                {isOwnProfile ? (
-                    <Button variant="outline" className="rounded-full mt-4 font-bold" asChild>
-                      <Link href="/profile/edit">Editar perfil</Link>
-                    </Button>
-                ) : (
-                    <div className='flex items-center gap-2 mt-4'>
-                        <DropdownMenu>
-                             <DropdownMenuTrigger asChild>
-                                 <Button variant="ghost" size="icon" className="border rounded-full"><MoreHorizontal /></Button>
-                             </DropdownMenuTrigger>
-                             <DropdownMenuContent>
-                                 <DropdownMenuItem onClick={() => setIsBlockAlertOpen(true)} className="text-destructive">
-                                     <UserX className="mr-2 h-4 w-4" />
-                                     {isBlockedByYou ? 'Desbloquear' : 'Bloquear'} {profileUser.handle}
-                                 </DropdownMenuItem>
-                             </DropdownMenuContent>
-                        </DropdownMenu>
-                        <Button variant="ghost" size="icon" className="border rounded-full" onClick={handleStartConversation} disabled={isBlockedByYou || hasBlockedYou}><Mail /></Button>
-                        <Button variant="ghost" size="icon" className="border rounded-full" disabled={isBlockedByYou || hasBlockedYou}><Bell /></Button>
-                        <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={() => handleToggleFollow(profileUser, zisprUser!, isFollowing)} disabled={isBlockedByYou || hasBlockedYou}>
-                            {isBlockedByYou ? 'Bloqueado' : isFollowing ? 'Seguindo' : 'Seguir'}
-                        </Button>
-                    </div>
-                )}
-            </div>
-            <div className="mt-4">
-                <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold flex items-center gap-1">
-                        {profileUser.displayName}
-                        {isZisprAccount ? <Bird className="h-6 w-6 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-6 w-6 ${badgeColor}`} />)}
-                    </h1>
-                </div>
-                <div className="flex items-center gap-2">
-                  <p className="text-muted-foreground">{profileUser.handle}</p>
-                  {isFollowedBy && !isOwnProfile && <Badge variant="secondary">Segue você</Badge>}
-                </div>
-                {hasBlockedYou ? (
-                     <div className="mt-2 text-muted-foreground italic flex items-center gap-2">
-                        <Lock className="h-4 w-4" />
-                        <span>Você foi bloqueado por este usuário.</span>
-                     </div>
-                ) : (
-                    <p className="mt-2 whitespace-pre-wrap">{profileUser.bio}</p>
-                )}
-            </div>
-             {isZisprAccount && (
-                <Card className="mt-4 border-primary/50">
-                    <CardHeader className="flex-row items-center gap-3 space-y-0 p-3">
-                        <Info className="h-4 w-4 text-primary" />
-                        <CardTitle className="text-sm">Conta Oficial</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-3 pt-0">
-                        <p className="text-xs text-muted-foreground">Esta é a conta oficial do Zispr. Fique de olho para anúncios, dicas e atualizações importantes da plataforma.</p>
-                    </CardContent>
-                </Card>
-            )}
-            {isRulioAccount && (
-                <Card className="mt-4 border-primary/50">
-                    <CardHeader className="flex-row items-center gap-3 space-y-0 p-3">
-                        <Info className="h-4 w-4 text-primary" />
-                        <CardTitle className="text-sm">Fundador e CEO do Zispr</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-3 pt-0">
-                        <p className="text-xs text-muted-foreground">Esta é a conta do fundador do Zispr. Siga para atualizações sobre o desenvolvimento e o futuro da plataforma.</p>
-                    </CardContent>
-                </Card>
-            )}
-             {profileUser.supporterTier && (
-                 <Card className={`mt-4 ${supporterCardBorderColor}`}>
-                    <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 p-3">
-                        <div className="flex items-center gap-3">
-                            <HandHeart className="h-4 w-4 text-primary" />
-                            <CardTitle className="text-sm">{profileUser.supporterTier}</CardTitle>
-                        </div>
-                        {!isOwnProfile && !zisprUser?.supporterTier && (
-                             <Button size="sm" className="rounded-full" onClick={() => router.push('/supporter')}>
-                                Torne-se um Apoiador
-                            </Button>
-                        )}
-                    </CardHeader>
-                    <CardContent className="p-3 pt-0">
-                        <p className="text-xs text-muted-foreground">Este usuário apoia o Zispr e ajuda a manter a plataforma funcionando. Obrigado!</p>
-                    </CardContent>
-                </Card>
-            )}
-            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-muted-foreground text-sm">
-                {profileUser.location && <div className="flex items-center gap-2"><MapPin className="h-4 w-4" /><span>{profileUser.location}</span></div>}
-                {profileUser.birthDate && (
-                    <div className="flex items-center gap-2">
-                        <Gift className="h-4 w-4" />
-                        <span>
-                            {format(profileUser.birthDate.toDate(), "dd 'de' MMMM", { locale: ptBR })}
-                        </span>
-                    </div>
-                )}
-                {profileUser.createdAt && <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /><span>Ingressou em {format(profileUser.createdAt.toDate(), 'MMMM yyyy', { locale: ptBR })}</span></div>}
-            </div>
-             <div className="flex gap-4 mt-4 text-sm">
-                <button onClick={showFollowing} className="hover:underline"><span className="font-bold text-foreground">{profileUser.following?.length || 0}</span> Seguindo</button>
-                <button onClick={showFollowers} className="hover:underline"><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> Seguidores</button>
-            </div>
-        </div>
-        
-        {hasBlockedYou ? (
-             <EmptyState 
-                title={"@"+profileUser.handle + " está bloqueado"}
-                description={"Você não pode ver os posts ou seguir @"+profileUser.handle}
-                icon={UserX}
-             />
-        ) : (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="w-full justify-center p-2 border-b">
-                    <TabsList className="relative grid w-full grid-cols-4 p-1 bg-muted/50 rounded-full h-11">
-                        <TabsTrigger value="posts" className="relative z-10 rounded-full text-base">Posts</TabsTrigger>
-                        <TabsTrigger value="replies" className="relative z-10 rounded-full text-base">Respostas</TabsTrigger>
-                        <TabsTrigger value="media" className="relative z-10 rounded-full text-base">Mídia</TabsTrigger>
-                        <TabsTrigger value="likes" className="relative z-10 rounded-full text-base">Curtidas</TabsTrigger>
-                        <motion.div
-                            layoutId="profile-tab-indicator"
-                            className="absolute inset-0 h-full p-1"
-                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                            style={{
-                                left: `${activeTab === 'posts' ? 0 : activeTab === 'replies' ? 25 : activeTab === 'media' ? 50 : 75}%`,
-                                width: '25%',
-                            }}
-                        >
-                            <div className="w-full h-full bg-background rounded-full shadow-md"></div>
-                        </motion.div>
-                    </TabsList>
-                </div>
-
-                <TabsContent value="posts" className="mt-0">
-                    <PostList 
-                        posts={userPosts} 
-                        loading={isLoadingPosts} 
-                        emptyTitle="Nenhum post ainda" 
-                        emptyDescription="Quando este usuário postar, os posts aparecerão aqui."
-                        showPinnedPost={true}
-                    />
-                </TabsContent>
-                <TabsContent value="replies" className="mt-0">
-                    <ReplyList 
-                        replies={userReplies} 
-                        loading={isLoadingReplies} 
-                        emptyTitle="Nenhuma resposta ainda" 
-                        emptyDescription="Quando este usuário responder a outros, suas respostas aparecerão aqui."
-                    />
-                </TabsContent>
-                <TabsContent value="media" className="mt-0">
-                    <PostList 
-                        posts={mediaPosts} 
-                        loading={isLoadingMedia}
-                        emptyTitle="Nenhuma mídia ainda" 
-                        emptyDescription="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui."
-                    />
-                </TabsContent>
-                <TabsContent value="likes" className="mt-0">
-                    {canViewLikes ? (
-                        <PostList 
-                            posts={likedPosts} 
-                            loading={isLoadingLikes}
-                            emptyTitle="Nenhum post curtido" 
-                            emptyDescription="Quando este usuário curtir posts, eles aparecerão aqui."
-                        />
-                    ) : (
-                        <EmptyState 
-                            title="As curtidas são privadas"
-                            description={`@${profileUser.handle} optou por manter suas curtidas privadas.`}
-                            icon={Lock}
-                        />
-                    )}
-                </TabsContent>
-            </Tabs>
-        )}
-      </main>
-      <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Essa ação não pode ser desfeita. Isso excluirá permanentemente
-                    o seu post de nossos servidores.
-                </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setPostToDelete(null)}>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeletePost} className="bg-destructive hover:bg-destructive/90">Continuar</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-        <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
-            <DialogContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
-                <DialogHeader>
-                    <DialogTitle>Editar Post</DialogTitle>
-                </DialogHeader>
-                <Textarea 
-                    value={editedContent}
-                    onChange={(e) => setEditedContent(e.target.value)}
-                    rows={5}
-                    className="my-4"
-                />
-                <Button onClick={handleUpdatePost} disabled={isUpdating}>
-                    {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Salvar Alterações
+    return (
+        <div className="animate-fade-in">
+            <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm flex items-center gap-4 px-4 py-2 border-b">
+                 <Button size="icon" variant="ghost" className="rounded-full" onClick={() => router.back()}>
+                  <ArrowLeft className="h-5 w-5" />
                 </Button>
-            </DialogContent>
-        </Dialog>
-         <AlertDialog open={isBlockAlertOpen} onOpenChange={setIsBlockAlertOpen}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>{isBlockedByYou ? 'Desbloquear' : 'Bloquear'} {profileUser.handle}?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        {isBlockedByYou
-                            ? `Eles poderão seguir você e ver seus posts.`
-                            : `Eles não poderão seguir ou enviar mensagens para você, e você não verá notificações deles.`}
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleBlockUser} className={isBlockedByYou ? '' : 'bg-destructive hover:bg-destructive/90'}>
-                        {isBlockedByYou ? 'Desbloquear' : 'Bloquear'}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-        <Suspense>
-            {isQuoteModalOpen && <CreatePostModal 
-                open={isQuoteModalOpen}
-                onOpenChange={setIsQuoteModalOpen}
-                quotedPost={postToQuote}
-            />}
-            {isFollowListOpen && zisprUser && (
-                <FollowListDialog
-                    open={isFollowListOpen}
-                    onOpenChange={setIsFollowListOpen}
-                    title={followListTitle}
-                    userIds={followListUserIds}
-                    currentUser={zisprUser}
-                    onToggleFollow={handleToggleFollow}
-                />
+                <div>
+                    <h1 className="text-xl font-bold flex items-center gap-1">
+                        {profileUser.displayName}
+                        {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-5 w-5 ${badgeColor}`} />)}
+                    </h1>
+                    <p className="text-sm text-muted-foreground">{userPosts.length + (pinnedPost ? 1 : 0)} posts</p>
+                </div>
+            </header>
+            <main className="flex-1">
+            <div className="relative h-48 bg-muted">
+               {isZisprAccount ? (
+                    <div className="w-full h-full bg-primary flex items-center justify-center">
+                        <Bird className="h-24 w-24 text-primary-foreground" />
+                    </div>
+                ) : (
+                    profileUser.banner && <Image
+                        src={profileUser.banner}
+                        alt="Banner"
+                        layout="fill"
+                        objectFit="cover"
+                        data-ai-hint="profile banner"
+                    />
+                )}
+            </div>
+            <div className="p-4">
+                <div className="flex justify-between items-start">
+                    <div className="-mt-20">
+                        <Avatar className="h-32 w-32 border-4 border-background bg-muted">
+                            {isZisprAccount ? (
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <Bird className="h-16 w-16 text-primary" />
+                                </div>
+                            ) : (
+                               <>
+                                 <AvatarImage src={profileUser.avatar} data-ai-hint="profile avatar" alt={profileUser.displayName} />
+                                 <AvatarFallback className="text-4xl">{profileUser.displayName?.[0]}</AvatarFallback>
+                               </>
+                            )}
+                        </Avatar>
+                    </div>
+                    {isOwnProfile ? (
+                        <Button variant="outline" className="rounded-full mt-4 font-bold" asChild>
+                          <Link href="/profile/edit">Editar perfil</Link>
+                        </Button>
+                    ) : (
+                        <div className='flex items-center gap-2 mt-4'>
+                            <DropdownMenu>
+                                 <DropdownMenuTrigger asChild>
+                                     <Button variant="ghost" size="icon" className="border rounded-full"><MoreHorizontal /></Button>
+                                 </DropdownMenuTrigger>
+                                 <DropdownMenuContent>
+                                     <DropdownMenuItem onClick={() => setIsBlockAlertOpen(true)} className="text-destructive">
+                                         <UserX className="mr-2 h-4 w-4" />
+                                         {isBlockedByYou ? 'Desbloquear' : 'Bloquear'} {profileUser.handle}
+                                     </DropdownMenuItem>
+                                 </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button variant="ghost" size="icon" className="border rounded-full" onClick={handleStartConversation} disabled={isBlockedByYou || hasBlockedYou}><Mail /></Button>
+                            <Button variant="ghost" size="icon" className="border rounded-full" disabled={isBlockedByYou || hasBlockedYou}><Bell /></Button>
+                            <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={() => handleToggleFollow(profileUser, zisprUser!, isFollowing)} disabled={isBlockedByYou || hasBlockedYou}>
+                                {isBlockedByYou ? 'Bloqueado' : isFollowing ? 'Seguindo' : 'Seguir'}
+                            </Button>
+                        </div>
+                    )}
+                </div>
+                <div className="mt-4">
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-2xl font-bold flex items-center gap-1">
+                            {profileUser.displayName}
+                            {isZisprAccount ? <Bird className="h-6 w-6 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-6 w-6 ${badgeColor}`} />)}
+                        </h1>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-muted-foreground">{profileUser.handle}</p>
+                      {isFollowedBy && !isOwnProfile && <Badge variant="secondary">Segue você</Badge>}
+                    </div>
+                    {hasBlockedYou ? (
+                         <div className="mt-2 text-muted-foreground italic flex items-center gap-2">
+                            <Lock className="h-4 w-4" />
+                            <span>Você foi bloqueado por este usuário.</span>
+                         </div>
+                    ) : (
+                        <p className="mt-2 whitespace-pre-wrap">{profileUser.bio}</p>
+                    )}
+                </div>
+                 {isZisprAccount && (
+                    <Card className="mt-4 border-primary/50">
+                        <CardHeader className="flex-row items-center gap-3 space-y-0 p-3">
+                            <Info className="h-4 w-4 text-primary" />
+                            <CardTitle className="text-sm">Conta Oficial</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-0">
+                            <p className="text-xs text-muted-foreground">Esta é a conta oficial do Zispr. Fique de olho para anúncios, dicas e atualizações importantes da plataforma.</p>
+                        </CardContent>
+                    </Card>
+                )}
+                {isRulioAccount && (
+                    <Card className="mt-4 border-primary/50">
+                        <CardHeader className="flex-row items-center gap-3 space-y-0 p-3">
+                            <Info className="h-4 w-4 text-primary" />
+                            <CardTitle className="text-sm">Fundador e CEO do Zispr</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-0">
+                            <p className="text-xs text-muted-foreground">Esta é a conta do fundador do Zispr. Siga para atualizações sobre o desenvolvimento e o futuro da plataforma.</p>
+                        </CardContent>
+                    </Card>
+                )}
+                 {profileUser.supporterTier && (
+                     <Card className={`mt-4 ${supporterCardBorderColor}`}>
+                        <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 p-3">
+                            <div className="flex items-center gap-3">
+                                <HandHeart className="h-4 w-4 text-primary" />
+                                <CardTitle className="text-sm">{profileUser.supporterTier}</CardTitle>
+                            </div>
+                            {!isOwnProfile && !zisprUser?.supporterTier && (
+                                 <Button size="sm" className="rounded-full" onClick={() => router.push('/supporter')}>
+                                    Torne-se um Apoiador
+                                </Button>
+                            )}
+                        </CardHeader>
+                        <CardContent className="p-3 pt-0">
+                            <p className="text-xs text-muted-foreground">Este usuário apoia o Zispr e ajuda a manter a plataforma funcionando. Obrigado!</p>
+                        </CardContent>
+                    </Card>
+                )}
+                <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-muted-foreground text-sm">
+                    {profileUser.location && <div className="flex items-center gap-2"><MapPin className="h-4 w-4" /><span>{profileUser.location}</span></div>}
+                    {profileUser.birthDate && (
+                        <div className="flex items-center gap-2">
+                            <Gift className="h-4 w-4" />
+                            <span>
+                                {format(profileUser.birthDate.toDate(), "dd 'de' MMMM", { locale: ptBR })}
+                            </span>
+                        </div>
+                    )}
+                    {profileUser.createdAt && <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /><span>Ingressou em {format(profileUser.createdAt.toDate(), 'MMMM yyyy', { locale: ptBR })}</span></div>}
+                </div>
+                 <div className="flex gap-4 mt-4 text-sm">
+                    <button onClick={showFollowing} className="hover:underline"><span className="font-bold text-foreground">{profileUser.following?.length || 0}</span> Seguindo</button>
+                    <button onClick={showFollowers} className="hover:underline"><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> Seguidores</button>
+                </div>
+            </div>
+            
+            {hasBlockedYou ? (
+                 <EmptyState 
+                    title={"@"+profileUser.handle + " está bloqueado"}
+                    description={"Você não pode ver os posts ou seguir @"+profileUser.handle}
+                    icon={UserX}
+                 />
+            ) : (
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <div className="w-full justify-center p-2 border-b">
+                        <TabsList className="relative grid w-full grid-cols-4 p-1 bg-muted/50 rounded-full h-11">
+                            <TabsTrigger value="posts" className="relative z-10 rounded-full text-base">Posts</TabsTrigger>
+                            <TabsTrigger value="replies" className="relative z-10 rounded-full text-base">Respostas</TabsTrigger>
+                            <TabsTrigger value="media" className="relative z-10 rounded-full text-base">Mídia</TabsTrigger>
+                            <TabsTrigger value="likes" className="relative z-10 rounded-full text-base">Curtidas</TabsTrigger>
+                            <motion.div
+                                layoutId="profile-tab-indicator"
+                                className="absolute inset-0 h-full p-1"
+                                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                style={{
+                                    left: `${activeTab === 'posts' ? 0 : activeTab === 'replies' ? 25 : activeTab === 'media' ? 50 : 75}%`,
+                                    width: '25%',
+                                }}
+                            >
+                                <div className="w-full h-full bg-background rounded-full shadow-md"></div>
+                            </motion.div>
+                        </TabsList>
+                    </div>
+
+                    <TabsContent value="posts" className="mt-0">
+                        <PostList 
+                            posts={userPosts} 
+                            loading={isLoadingPosts} 
+                            emptyTitle="Nenhum post ainda" 
+                            emptyDescription="Quando este usuário postar, os posts aparecerão aqui."
+                            showPinnedPost={true}
+                        />
+                    </TabsContent>
+                    <TabsContent value="replies" className="mt-0">
+                        <ReplyList 
+                            replies={userReplies} 
+                            loading={isLoadingReplies} 
+                            emptyTitle="Nenhuma resposta ainda" 
+                            emptyDescription="Quando este usuário responder a outros, suas respostas aparecerão aqui."
+                        />
+                    </TabsContent>
+                    <TabsContent value="media" className="mt-0">
+                        <PostList 
+                            posts={mediaPosts} 
+                            loading={isLoadingMedia}
+                            emptyTitle="Nenhuma mídia ainda" 
+                            emptyDescription="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui."
+                        />
+                    </TabsContent>
+                    <TabsContent value="likes" className="mt-0">
+                        {canViewLikes ? (
+                            <PostList 
+                                posts={likedPosts} 
+                                loading={isLoadingLikes}
+                                emptyTitle="Nenhum post curtido" 
+                                emptyDescription="Quando este usuário curtir posts, eles aparecerão aqui."
+                            />
+                        ) : (
+                            <EmptyState 
+                                title="As curtidas são privadas"
+                                description={`@${profileUser.handle} optou por manter suas curtidas privadas.`}
+                                icon={Lock}
+                            />
+                        )}
+                    </TabsContent>
+                </Tabs>
             )}
-            {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
-            {analyticsPost && <PostAnalyticsModal post={analyticsPost} onOpenChange={() => setAnalyticsPost(null)} />}
-        </Suspense>
-    </div>
-  );
+          </main>
+          <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Essa ação não pode ser desfeita. Isso excluirá permanentemente
+                        o seu post de nossos servidores.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setPostToDelete(null)}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeletePost} className="bg-destructive hover:bg-destructive/90">Continuar</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
+                <DialogContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
+                    <DialogHeader>
+                        <DialogTitle>Editar Post</DialogTitle>
+                    </DialogHeader>
+                    <Textarea 
+                        value={editedContent}
+                        onChange={(e) => setEditedContent(e.target.value)}
+                        rows={5}
+                        className="my-4"
+                    />
+                    <Button onClick={handleUpdatePost} disabled={isUpdating}>
+                        {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Salvar Alterações
+                    </Button>
+                </DialogContent>
+            </Dialog>
+             <AlertDialog open={isBlockAlertOpen} onOpenChange={setIsBlockAlertOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{isBlockedByYou ? 'Desbloquear' : 'Bloquear'} {profileUser.handle}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {isBlockedByYou
+                                ? `Eles poderão seguir você e ver seus posts.`
+                                : `Eles não poderão seguir ou enviar mensagens para você, e você não verá notificações deles.`}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleBlockUser} className={isBlockedByYou ? '' : 'bg-destructive hover:bg-destructive/90'}>
+                            {isBlockedByYou ? 'Desbloquear' : 'Bloquear'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <Suspense>
+                {isQuoteModalOpen && <CreatePostModal 
+                    open={isQuoteModalOpen}
+                    onOpenChange={setIsQuoteModalOpen}
+                    quotedPost={postToQuote}
+                />}
+                {isFollowListOpen && zisprUser && (
+                    <FollowListDialog
+                        open={isFollowListOpen}
+                        onOpenChange={setIsFollowListOpen}
+                        title={followListTitle}
+                        userIds={followListUserIds}
+                        currentUser={zisprUser}
+                        onToggleFollow={handleToggleFollow}
+                    />
+                )}
+                {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
+                {analyticsPost && <PostAnalyticsModal post={analyticsPost} onOpenChange={() => setAnalyticsPost(null)} />}
+            </Suspense>
+        </div>
+    );
 }
