@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -15,7 +13,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
-import { fileToDataUri } from '@/lib/utils';
+import { fileToDataUri, extractSpotifyUrl } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
@@ -104,13 +102,6 @@ const extractMentions = (content: string) => {
     const matches = content.match(regex);
     if (!matches) return [];
     return [...new Set(matches)];
-};
-
-const extractSpotifyUrl = (text: string): string | null => {
-    if (!text) return null;
-    const spotifyRegex = /(https?:\/\/(?:open|play)\.spotify\.com\/(?:track|album|artist|playlist)\/[a-zA-Z0-9]+)/;
-    const match = text.match(spotifyRegex);
-    return match ? match[0] : null;
 };
 
 interface Suggestion {
