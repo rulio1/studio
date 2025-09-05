@@ -847,7 +847,7 @@ export default function PostDetailPage() {
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
     return (
-        <div className="bg-background flex flex-col">
+        <div className="bg-background flex flex-col min-h-screen">
             <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                 <div className="flex items-center gap-4 px-4 py-2">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
