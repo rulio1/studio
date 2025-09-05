@@ -2,13 +2,15 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Home, Search, Bell, Mail, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { Badge } from './ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Skeleton } from './ui/skeleton';
 
 interface ZisprUser {
     uid: string;
@@ -45,17 +47,15 @@ export default function BottomNavBar() {
 
     useEffect(() => {
         if (!user) {
-            // Reset counts and user info on logout
             setZisprUser(null);
             setNotificationCount(0);
             setMessageCount(0);
             setIsLoading(false);
-            return () => {}; // Return an empty function for cleanup
+            return () => {};
         }
         
         setIsLoading(true);
 
-        // User listener
         const userDocRef = doc(db, 'users', user.uid);
         const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
@@ -64,7 +64,6 @@ export default function BottomNavBar() {
             setIsLoading(false);
         });
 
-        // Notifications listener
         const notificationsQuery = query(
             collection(db, "notifications"),
             where("toUserId", "==", user.uid),
@@ -74,7 +73,6 @@ export default function BottomNavBar() {
             setNotificationCount(snapshot.size);
         });
 
-        // Messages listener
         const conversationsQuery = query(
             collection(db, "conversations"),
             where("participants", "array-contains", user.uid)
@@ -117,9 +115,22 @@ export default function BottomNavBar() {
             {navItems.map((item) => {
                  const count = getCountForItem(item.label);
                  const isActive = getIsActive(item.href, item.label);
+                 const isProfile = item.label === 'Perfil';
+
                 return (
                     <Link key={item.href} href={item.href} className={`relative flex-1 flex justify-center items-center h-full transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
-                        <item.icon className="h-7 w-7" />
+                        {isProfile ? (
+                            isLoading || !zisprUser ? (
+                                <Skeleton className="h-7 w-7 rounded-full" />
+                            ) : (
+                                <Avatar className={`h-7 w-7 border-2 ${isActive ? 'border-primary' : 'border-transparent'}`}>
+                                    <AvatarImage src={zisprUser.avatar} />
+                                    <AvatarFallback>{zisprUser.displayName?.[0]}</AvatarFallback>
+                                </Avatar>
+                            )
+                        ) : (
+                             <item.icon className="h-7 w-7" />
+                        )}
                         {count > 0 && (
                              <Badge className="absolute top-1.5 right-[calc(50%-2rem)] h-5 w-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground p-0 text-xs">
                                 {count}
