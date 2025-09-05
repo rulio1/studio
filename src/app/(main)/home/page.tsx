@@ -218,35 +218,91 @@ useEffect(() => {
         setIsLoadingFollowing(false);
         return () => {};
     }
-    
+
     setIsLoadingFollowing(true);
 
     const followingIds = currentUserData.following;
     const feedUserIds = [...new Set([...followingIds, currentUser.uid])];
 
-    const q = query(collection(db, "posts"), where("authorId", "in", feedUserIds), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const postsData = snapshot.docs.map(doc => {
-            const data = doc.data();
-            if (data.handle === '@stefanysouza') {
-                data.isVerified = true;
-                data.badgeTier = 'silver';
+    const postsQuery = query(collection(db, "posts"), where("authorId", "in", feedUserIds));
+    const repostsQuery = query(collection(db, "reposts"), where("userId", "in", followingIds));
+
+    const unsubPosts = onSnapshot(postsQuery, () => {
+        // We run the main logic inside the reposts snapshot listener
+        // to ensure we have both sets of data.
+    });
+
+    const unsubReposts = onSnapshot(repostsQuery, async (repostsSnapshot) => {
+        // Fetch original posts
+        const originalPostsSnapshot = await getDocs(postsQuery);
+        const originalPosts = originalPostsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
+
+        // Fetch reposts
+        const repostsData = repostsSnapshot.docs.map(doc => doc.data());
+        const repostedPostIds = repostsData.map(repost => repost.postId);
+
+        let repostedPosts: Post[] = [];
+        if (repostedPostIds.length > 0) {
+            const chunks = [];
+            for (let i = 0; i < repostedPostIds.length; i += 30) {
+                chunks.push(repostedPostIds.slice(i, i + 30));
+            }
+
+            const followingUsersSnapshot = await getDocs(query(collection(db, 'users'), where(documentId(), 'in', followingIds)));
+            const followingUsersMap = new Map(followingUsersSnapshot.docs.map(doc => [doc.id, doc.data()]));
+
+            const repostedPostsSnapshots = await Promise.all(chunks.map(chunk => getDocs(query(collection(db, "posts"), where(documentId(), "in", chunk)))));
+            const postsMap = new Map<string, Post>();
+            repostedPostsSnapshots.forEach(snapshot => {
+                snapshot.docs.forEach(doc => postsMap.set(doc.id, { id: doc.id, ...doc.data() } as Post));
+            });
+            
+            repostedPosts = repostsData.map(repost => {
+                const postData = postsMap.get(repost.postId);
+                const reposterData = followingUsersMap.get(repost.userId);
+                if (!postData || !reposterData) return null;
+                return {
+                    ...postData,
+                    repostedAt: repost.repostedAt,
+                    repostedBy: {
+                        name: reposterData.displayName,
+                        handle: reposterData.handle,
+                        avatar: reposterData.avatar,
+                    },
+                };
+            }).filter(p => p !== null) as Post[];
+        }
+
+        const allPosts = [...originalPosts, ...repostedPosts];
+        allPosts.sort((a, b) => {
+            const timeA = a.repostedAt?.toMillis() || a.createdAt?.toMillis() || 0;
+            const timeB = b.repostedAt?.toMillis() || b.createdAt?.toMillis() || 0;
+            return timeB - timeA;
+        });
+
+        const finalPosts = allPosts.map(post => {
+             if (post.handle === '@stefanysouza') {
+                post.isVerified = true;
+                post.badgeTier = 'silver';
             }
             return {
-                id: doc.id,
-                ...data,
-                isLiked: Array.isArray(data.likes) ? data.likes.includes(currentUser.uid) : false,
-                isRetweeted: Array.isArray(data.retweets) ? data.retweets.includes(currentUser.uid) : false,
-            } as Post
+            ...post,
+            isLiked: (Array.isArray(post.likes) ? post.likes : []).includes(currentUser.uid),
+            isRetweeted: (Array.isArray(post.retweets) ? post.retweets : []).includes(currentUser.uid),
+            }
         });
-        setFollowingPosts(postsData);
+
+        setFollowingPosts(finalPosts);
         setIsLoadingFollowing(false);
     }, (error) => {
         console.error("Error fetching following posts:", error);
         setIsLoadingFollowing(false);
     });
 
-    return unsubscribe;
+    return () => {
+        unsubPosts();
+        unsubReposts();
+    };
 }, []);
 
   useEffect(() => {
@@ -1101,3 +1157,4 @@ useEffect(() => {
     
 
     
+
