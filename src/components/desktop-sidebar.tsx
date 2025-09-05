@@ -54,8 +54,7 @@ export default function DesktopSidebar() {
         { href: '/notifications', icon: Bell, label: 'Notificações', count: notificationCount },
         { href: '/messages', icon: Mail, label: 'Mensagens', count: messageCount },
         { href: '/saved', icon: Bookmark, label: 'Salvos', count: 0 },
-        { href: '/collections', icon: Library, label: 'Coleções', count: 0 },
-        { href: zisprUser ? `/profile/${zisprUser.uid}` : '#', icon: User, label: 'Perfil', count: 0 },
+        { href: '/profile/edit', icon: User, label: 'Perfil', count: 0 },
     ];
 
     useEffect(() => {
@@ -130,7 +129,7 @@ export default function DesktopSidebar() {
     
     const getIsActive = (href: string) => {
         if (href === '/home') return pathname === href;
-        if (zisprUser && href.startsWith(`/profile/${zisprUser.uid}`)) {
+        if (href === '/profile/edit' && zisprUser) {
             return pathname === `/profile/${zisprUser.uid}`;
         }
         return pathname.startsWith(href);
@@ -139,6 +138,13 @@ export default function DesktopSidebar() {
     const isZisprAccount = zisprUser?.handle === '@Zispr';
     const isUserVerified = zisprUser?.isVerified || zisprUser?.handle === '@Rulio';
     const badgeColor = zisprUser?.badgeTier ? badgeColors[zisprUser.badgeTier] : 'text-primary';
+
+    const getNavItemHref = (item: any) => {
+        if (item.label === 'Perfil' && zisprUser) {
+            return `/profile/${zisprUser.uid}`;
+        }
+        return item.href;
+    };
 
     return (
         <aside className="sticky top-0 h-screen w-64 hidden md:flex flex-col justify-between items-end p-2 border-r">
@@ -152,8 +158,8 @@ export default function DesktopSidebar() {
                         {navItems.map((item) => (
                              <li key={item.label} className="relative">
                                 <div className="relative">
-                                    <Link href={item.href} passHref>
-                                        <Button variant="ghost" className={`w-full justify-start text-xl p-6 ${getIsActive(item.href) ? 'font-bold' : ''}`}>
+                                    <Link href={getNavItemHref(item)} passHref>
+                                        <Button variant="ghost" className={`w-full justify-start text-xl p-6 ${getIsActive(getNavItemHref(item)) ? 'font-bold' : ''}`}>
                                             <item.icon className="h-7 w-7 mr-4" />
                                             <span>{item.label}</span>
                                         </Button>
