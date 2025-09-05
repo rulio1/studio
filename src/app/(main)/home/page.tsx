@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
@@ -510,12 +511,18 @@ useEffect(() => {
     }
   };
 
-  const handlePostClick = (postId: string) => {
+  const handlePostClick = async (postId: string) => {
     router.push(`/post/${postId}`);
   };
 
     const handleProfileClick = async (e: React.MouseEvent, postAuthorId: string) => {
         e.stopPropagation();
+        if (user?.uid !== postAuthorId) {
+            const postRef = doc(db, "posts", (e.currentTarget.closest('li')?.dataset.postId) as string);
+            await updateDoc(postRef, {
+                profileVisits: increment(1)
+            });
+        }
         router.push(`/profile/${postAuthorId}`);
     };
 
@@ -676,7 +683,7 @@ useEffect(() => {
 
 
     return (
-        <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => handlePostClick(post.id)}>
+        <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => handlePostClick(post.id)} data-post-id={post.id}>
              {post.repostedBy && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-6">
                     <Repeat className="h-4 w-4" />
@@ -844,10 +851,19 @@ useEffect(() => {
                         <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
                         <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
                     </button>
-                        <div className="flex items-center gap-1">
-                    <BarChart2 className="h-5 w-5" />
-                    <span>{post.views}</span>
-                    </div>
+                    <button
+                        className="flex items-center gap-1 hover:text-primary transition-colors disabled:cursor-not-allowed"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (user?.uid === post.authorId) {
+                                setAnalyticsPost(post);
+                            }
+                        }}
+                        disabled={user?.uid !== post.authorId}
+                    >
+                        <BarChart2 className="h-5 w-5" />
+                        <span>{post.views}</span>
+                    </button>
                 </div>
                 </div>
             </div>

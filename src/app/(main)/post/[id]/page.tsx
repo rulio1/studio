@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
@@ -1018,10 +1019,19 @@ export default function PostDetailPage() {
                              <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
                             <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
                         </button>
-                        <div className="flex items-center gap-2">
-                           <BarChart2 className="h-5 w-5" />
+                        <button
+                            className="flex items-center gap-2 hover:text-primary transition-colors disabled:cursor-not-allowed"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (user?.uid === post.authorId) {
+                                    setAnalyticsPost(post);
+                                }
+                            }}
+                            disabled={user?.uid !== post.authorId}
+                        >
+                            <BarChart2 className="h-5 w-5" />
                             <span>{post.views}</span>
-                        </div>
+                        </button>
                     </div>
                 </div>
                 
