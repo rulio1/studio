@@ -821,7 +821,7 @@ export default function PostDetailPage() {
     
     if (!post) {
          return (
-            <div className="flex flex-col h-screen bg-background">
+            <div className="flex flex-col bg-background">
                 <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                     <div className="flex items-center gap-4 px-4 py-2">
                         <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -847,7 +847,7 @@ export default function PostDetailPage() {
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
 
     return (
-        <div className="flex flex-col h-screen bg-background">
+        <div className="bg-background">
             <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
                 <div className="flex items-center gap-4 px-4 py-2">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -857,7 +857,7 @@ export default function PostDetailPage() {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto">
+            <main>
                 <div className="p-4 border-b">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
@@ -1054,7 +1054,7 @@ export default function PostDetailPage() {
                 </ul>
             </main>
             
-            <footer className="sticky bottom-0 z-10 bg-background border-t mt-auto md:static">
+            <footer className="sticky bottom-0 z-10 bg-background border-t">
                  <div className="p-4">
                     <div className="flex items-start gap-3">
                         <Avatar>
