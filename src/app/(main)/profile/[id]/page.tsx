@@ -46,6 +46,7 @@ import { motion } from 'framer-motion';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
+const PostAnalyticsModal = lazy(() => import('@/components/post-analytics-modal'));
 
 
 const EmptyState = ({ title, description, icon: Icon }: { title: string, description: string, icon?: React.ElementType }) => (
@@ -72,6 +73,7 @@ interface Post {
     retweets: string[];
     likes: string[];
     views: number;
+    profileVisits?: number;
     isLiked: boolean;
     isRetweeted: boolean;
     createdAt: any;
@@ -240,7 +242,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
 };
 
 
-const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, onPin, onVote, toast, onQuote, onImageClick }: { post: Post, user: FirebaseUser | null, zisprUser: ZisprUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, onVote: (postId: string, optionIndex: number) => Promise<void>, toast: any, onQuote: (post: Post) => void, onImageClick: (post: Post) => void }) => {
+const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, onPin, onVote, toast, onQuote, onImageClick, onAnalyticsClick }: { post: Post, user: FirebaseUser | null, zisprUser: ZisprUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, onVote: (postId: string, optionIndex: number) => Promise<void>, toast: any, onQuote: (post: Post) => void, onImageClick: (post: Post) => void, onAnalyticsClick: (post: Post) => void }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
     
@@ -321,6 +323,10 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
                             <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
                                 {user?.uid === post.authorId ? (
                                     <>
+                                        <DropdownMenuItem onClick={() => onAnalyticsClick(post)}>
+                                            <BarChart3 className="mr-2 h-4 w-4"/>
+                                            Ver interações
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => onDelete(post.id)} className="text-destructive">
                                             <Trash2 className="mr-2 h-4 w-4"/>
                                             Apagar
@@ -516,6 +522,7 @@ export default function ProfilePage() {
     const [postToView, setPostToView] = useState<Post | null>(null);
     const [activeTab, setActiveTab] = useState('posts');
     const [isBlockAlertOpen, setIsBlockAlertOpen] = useState(false);
+    const [analyticsPost, setAnalyticsPost] = useState<Post | null>(null);
 
 
     // Follow list dialog state
@@ -1112,6 +1119,7 @@ export default function ProfilePage() {
                         toast={toast}
                         onQuote={handleQuoteClick}
                         onImageClick={setPostToView}
+                        onAnalyticsClick={setAnalyticsPost}
                     />
                 )}
                 {displayPosts.map((post) => (
@@ -1129,6 +1137,7 @@ export default function ProfilePage() {
                         toast={toast}
                         onQuote={handleQuoteClick}
                         onImageClick={setPostToView}
+                        onAnalyticsClick={setAnalyticsPost}
                     />
                 ))}
             </ul>
@@ -1513,6 +1522,7 @@ export default function ProfilePage() {
                 />
             )}
             {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
+            {analyticsPost && <PostAnalyticsModal post={analyticsPost} onOpenChange={() => setAnalyticsPost(null)} />}
         </Suspense>
     </div>
   );

@@ -40,6 +40,7 @@ import SpotifyEmbed from '@/components/spotify-embed';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
+const PostAnalyticsModal = lazy(() => import('@/components/post-analytics-modal'));
 
 
 interface Post {
@@ -59,6 +60,7 @@ interface Post {
     retweets: string[];
     likes: string[];
     views: number;
+    profileVisits?: number;
     isLiked: boolean;
     isRetweeted: boolean;
     editedAt?: any;
@@ -356,6 +358,7 @@ export default function PostDetailPage() {
     const [editedContent, setEditedContent] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+    const [analyticsPost, setAnalyticsPost] = useState<Post | null>(null);
 
     // State for comment actions
     const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
@@ -886,6 +889,10 @@ export default function PostDetailPage() {
                             <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
                                 {user?.uid === post.authorId ? (
                                     <>
+                                        <DropdownMenuItem onClick={() => setAnalyticsPost(post)}>
+                                            <BarChart3 className="mr-2 h-4 w-4"/>
+                                            Ver interações
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => setIsDeleteAlertOpen(true)} className="text-destructive">
                                             <Trash2 className="mr-2 h-4 w-4"/>
                                             Apagar
@@ -1095,6 +1102,8 @@ export default function PostDetailPage() {
                         onOpenChange={setIsQuoteModalOpen}
                         quotedPost={post}
                     />}
+                     {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
+                     {analyticsPost && <PostAnalyticsModal post={analyticsPost} onOpenChange={() => setAnalyticsPost(null)} />}
                 </Suspense>
 
                 {/* Comment Modals */}

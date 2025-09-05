@@ -48,6 +48,7 @@ import { motion } from 'framer-motion';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
+const PostAnalyticsModal = lazy(() => import('@/components/post-analytics-modal'));
 
 
 interface Post {
@@ -66,6 +67,7 @@ interface Post {
     retweets: string[];
     likes: string[];
     views: number;
+    profileVisits?: number;
     isLiked: boolean;
     isRetweeted: boolean;
     createdAt: any;
@@ -133,6 +135,7 @@ export default function HomePage() {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [postToQuote, setPostToQuote] = useState<Post | null>(null);
   const [postToView, setPostToView] = useState<Post | null>(null);
+  const [analyticsPost, setAnalyticsPost] = useState<Post | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   
@@ -511,6 +514,11 @@ useEffect(() => {
     router.push(`/post/${postId}`);
   };
 
+    const handleProfileClick = async (e: React.MouseEvent, postAuthorId: string) => {
+        e.stopPropagation();
+        router.push(`/profile/${postAuthorId}`);
+    };
+
     const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => {
         const router = useRouter();
         const parts = content.split(/(#\w+|@\w+|https?:\/\/[^\s]+)/g);
@@ -688,7 +696,7 @@ useEffect(() => {
                 </div>
             )}
             <div className="flex gap-4">
-                 <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
+                 <Avatar className="cursor-pointer" onClick={(e) => handleProfileClick(e, post.authorId)}>
                     {isZisprAccount ? (
                         <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-full">
                             <Bird className="h-5 w-5 text-primary" />
@@ -720,6 +728,10 @@ useEffect(() => {
                         <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
                             {user?.uid === post.authorId ? (
                                 <>
+                                    <DropdownMenuItem onClick={() => setAnalyticsPost(post)}>
+                                        <BarChart3 className="mr-2 h-4 w-4"/>
+                                        Ver interações
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => setPostToDelete(post.id)} className="text-destructive">
                                         <Trash2 className="mr-2 h-4 w-4"/>
                                         Apagar
@@ -1060,6 +1072,7 @@ useEffect(() => {
                 quotedPost={postToQuote}
             />}
             {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
+            {analyticsPost && <PostAnalyticsModal post={analyticsPost} onOpenChange={() => setAnalyticsPost(null)} />}
         </Suspense>
     </>
   );
