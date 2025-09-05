@@ -7,11 +7,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, updateDoc, increment, setDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, updateDoc, increment, arrayUnion, arrayRemove, runTransaction } from 'firebase/firestore';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface ZisprUser {
@@ -28,6 +31,7 @@ interface Message {
     senderId: string;
     text: string;
     createdAt: any;
+    reactions?: Record<string, string[]>; // emoji: [userId1, userId2]
 }
 
 interface Conversation {
@@ -49,6 +53,7 @@ const badgeColors = {
 export default function ConversationPage() {
     const router = useRouter();
     const params = useParams();
+    const { toast } = useToast();
     const conversationId = params.id as string;
     
     const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -167,6 +172,7 @@ export default function ConversationPage() {
                 senderId: user.uid,
                 text: newMessage,
                 createdAt: serverTimestamp(),
+                reactions: {},
             });
 
             // Update last message and increment unread count for the other user
@@ -188,6 +194,48 @@ export default function ConversationPage() {
             console.error("Erro ao enviar mensagem:", error);
         } finally {
             setIsSending(false);
+        }
+    };
+    
+    const handleReaction = async (messageId: string, emoji: string) => {
+        if (!user) return;
+        const messageRef = doc(db, 'conversations', conversationId, 'messages', messageId);
+
+        try {
+            await runTransaction(db, async (transaction) => {
+                const messageDoc = await transaction.get(messageRef);
+                if (!messageDoc.exists()) {
+                    throw "Mensagem não encontrada!";
+                }
+
+                const currentReactions = messageDoc.data().reactions || {};
+                const reactionForEmoji = currentReactions[emoji] || [];
+                const userHasReactedWithEmoji = reactionForEmoji.includes(user.uid);
+
+                const newReactions = { ...currentReactions };
+                
+                // User is removing their reaction
+                if (userHasReactedWithEmoji) {
+                    newReactions[emoji] = reactionForEmoji.filter((uid: string) => uid !== user.uid);
+                    // If no one else has this reaction, remove the emoji key
+                    if (newReactions[emoji].length === 0) {
+                        delete newReactions[emoji];
+                    }
+                } 
+                // User is adding a new reaction
+                else {
+                    newReactions[emoji] = [...reactionForEmoji, user.uid];
+                }
+                
+                transaction.update(messageRef, { reactions: newReactions });
+            });
+        } catch (error) {
+            console.error("Erro ao reagir à mensagem:", error);
+            toast({
+                title: "Erro",
+                description: "Não foi possível adicionar sua reação.",
+                variant: "destructive"
+            });
         }
     };
 
@@ -278,26 +326,53 @@ export default function ConversationPage() {
                     const isMyMessage = message.senderId === user?.uid;
                     const isRead = isLastMessage && isMyMessage && !!conversation?.lastMessageReadBy?.includes(otherUser.uid);
 
+                    const reactionEntries = Object.entries(message.reactions || {}).filter(([, uids]) => uids.length > 0);
+
                     return (
                         <div key={message.id}>
-                            <div className={`flex items-end gap-2 ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
-                            {!isMyMessage && (
-                                <Avatar className="h-8 w-8">
-                                    {isZisprAccount ? (
-                                        <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
-                                            <Bird className="h-5 w-5 text-primary" />
+                             <div className={`group flex items-end gap-2 relative ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="ghost" size="icon" className={`absolute -top-4 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${isMyMessage ? 'left-0' : 'right-0'}`}>
+                                            <Smile className="h-5 w-5 text-muted-foreground" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0 border-none">
+                                        <EmojiPicker onEmojiClick={(emojiData: EmojiClickData) => handleReaction(message.id, emojiData.emoji)} />
+                                    </PopoverContent>
+                                </Popover>
+                                
+                                {!isMyMessage && (
+                                    <Avatar className="h-8 w-8">
+                                        {isZisprAccount ? (
+                                            <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+                                                <Bird className="h-5 w-5 text-primary" />
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <AvatarImage src={otherUser.avatar} alt={otherUser.displayName} />
+                                                <AvatarFallback>{otherUser.displayName[0]}</AvatarFallback>
+                                            </>
+                                        )}
+                                    </Avatar>
+                                )}
+                                <div className={`relative rounded-2xl px-4 py-2 max-w-[80%] md:max-w-[60%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
+                                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                                    {reactionEntries.length > 0 && (
+                                        <div className={`absolute -bottom-4 flex gap-1 ${isMyMessage ? 'right-0' : 'left-0'}`}>
+                                            {reactionEntries.map(([emoji, uids]) => (
+                                                <div 
+                                                    key={emoji}
+                                                    onClick={() => handleReaction(message.id, emoji)}
+                                                    className={`px-1.5 py-0.5 rounded-full text-xs flex items-center gap-1 cursor-pointer border ${uids.includes(user!.uid) ? 'bg-primary/20 border-primary' : 'bg-muted/80 border-border'}`}
+                                                >
+                                                    <span>{emoji}</span>
+                                                    <span className="font-semibold">{uids.length}</span>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ) : (
-                                        <>
-                                            <AvatarImage src={otherUser.avatar} alt={otherUser.displayName} />
-                                            <AvatarFallback>{otherUser.displayName[0]}</AvatarFallback>
-                                        </>
                                     )}
-                                </Avatar>
-                            )}
-                            <div className={`rounded-2xl px-4 py-2 max-w-[80%] md:max-w-[60%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
-                                <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                            </div>
+                                </div>
                             </div>
                             {isRead && (
                                 <div className="text-right text-xs text-muted-foreground mt-1 pr-2">
