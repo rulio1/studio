@@ -7,14 +7,25 @@ import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, updateDoc, increment, arrayUnion, arrayRemove, runTransaction } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, updateDoc, increment, arrayUnion, arrayRemove, runTransaction, writeBatch } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { useToast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 interface ZisprUser {
@@ -24,6 +35,8 @@ interface ZisprUser {
     avatar: string;
     isVerified?: boolean;
     badgeTier?: 'bronze' | 'silver' | 'gold';
+    blocked?: string[];
+    blockedBy?: string[];
 }
 
 interface Message {
@@ -57,12 +70,14 @@ export default function ConversationPage() {
     const conversationId = params.id as string;
     
     const [user, setUser] = useState<FirebaseUser | null>(null);
+    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [otherUser, setOtherUser] = useState<ZisprUser | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [newMessage, setNewMessage] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isSending, setIsSending] = useState(false);
+    const [isBlockAlertOpen, setIsBlockAlertOpen] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
 
@@ -79,11 +94,21 @@ export default function ConversationPage() {
                          return;
                     }
 
+                    const zisprUserDocRef = doc(db, 'users', currentUser.uid);
+                    onSnapshot(zisprUserDocRef, (doc) => {
+                        if (doc.exists()) {
+                            setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
+                        }
+                    });
+
                     const otherUserId = conversationId.replace(currentUser.uid, '').replace('_', '');
-                    const userDoc = await getDoc(doc(db, 'users', otherUserId));
-                    if (userDoc.exists()) {
-                        setOtherUser({ uid: userDoc.id, ...userDoc.data() } as ZisprUser);
-                    }
+                    const userDocRef = doc(db, 'users', otherUserId);
+                    onSnapshot(userDocRef, (doc) => {
+                        if (doc.exists()) {
+                            setOtherUser({ uid: doc.id, ...doc.data() } as ZisprUser);
+                        }
+                    });
+
                 } catch (error) {
                     console.error("Erro ao buscar dados do usuário:", error);
                 } finally {
@@ -239,6 +264,41 @@ export default function ConversationPage() {
         }
     };
 
+    const handleBlockUser = async () => {
+        if (!user || !otherUser) return;
+
+        const batch = writeBatch(db);
+        const currentUserRef = doc(db, 'users', user.uid);
+        const otherUserRef = doc(db, 'users', otherUser.uid);
+
+        // Remove follow relationships
+        batch.update(currentUserRef, { 
+            following: arrayRemove(otherUser.uid),
+            blocked: arrayUnion(otherUser.uid)
+        });
+        batch.update(otherUserRef, { 
+            followers: arrayRemove(user.uid),
+            blockedBy: arrayUnion(user.uid)
+        });
+
+        try {
+            await batch.commit();
+            toast({
+                title: `Bloqueado`,
+                description: `Você bloqueou ${otherUser.handle}.`,
+            });
+            setIsBlockAlertOpen(false);
+            router.push('/messages');
+        } catch(error) {
+            console.error("Error blocking user:", error);
+            toast({
+                title: "Erro",
+                description: `Não foi possível bloquear ${otherUser.handle}.`,
+                variant: "destructive"
+            });
+        }
+    }
+
 
     if (isLoading) {
         return (
@@ -282,8 +342,12 @@ export default function ConversationPage() {
     const isZisprAccount = otherUser.handle === '@Zispr';
     const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@Rulio';
     const badgeColor = otherUser.badgeTier ? badgeColors[otherUser.badgeTier] : 'text-primary';
+    const isBlockedByYou = zisprUser?.blocked?.includes(otherUser.uid);
+    const hasBlockedYou = zisprUser?.blockedBy?.includes(otherUser.uid);
+    const isConversationDisabled = isBlockedByYou || hasBlockedYou;
 
   return (
+    <>
     <div className="flex flex-col h-full bg-background">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2">
@@ -313,9 +377,19 @@ export default function ConversationPage() {
                     </div>
                 </div>
             </div>
-            <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-5 w-5" />
-            </Button>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-5 w-5" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => setIsBlockAlertOpen(true)} className="text-destructive">
+                        <UserX className="mr-2 h-4 w-4" />
+                        Bloquear {otherUser.handle}
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
         </div>
       </header>
       <div className="flex-1 flex flex-col overflow-y-auto">
@@ -387,19 +461,37 @@ export default function ConversationPage() {
         <footer className="p-4 pt-2 border-t bg-background">
            <div className="relative flex items-center rounded-2xl border bg-background p-2">
               <Input 
-                  placeholder="Inicie uma nova mensagem"
+                  placeholder={isConversationDisabled ? "Não é possível enviar mensagens" : "Inicie uma nova mensagem"}
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  disabled={isSending}
+                  disabled={isSending || isConversationDisabled}
                   className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
-              <Button onClick={handleSendMessage} disabled={!newMessage.trim() || isSending} size="icon" className="rounded-full">
+              <Button onClick={handleSendMessage} disabled={!newMessage.trim() || isSending || isConversationDisabled} size="icon" className="rounded-full">
                   {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
               </Button>
           </div>
       </footer>
       </div>
     </div>
+    
+     <AlertDialog open={isBlockAlertOpen} onOpenChange={setIsBlockAlertOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Bloquear {otherUser.handle}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Eles não poderão seguir ou enviar mensagens para você, e você não verá notificações deles. Eles não serão notificados que foram bloqueados.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleBlockUser} className="bg-destructive hover:bg-destructive/90">
+                    Bloquear
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

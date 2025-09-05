@@ -1,9 +1,10 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Info, Star, PenSquare, Lock, HandHeart } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Info, Star, PenSquare, Lock, HandHeart, UserX } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -138,6 +139,8 @@ interface ZisprUser {
     notificationPreferences?: {
         [key: string]: boolean;
     };
+    blocked?: string[];
+    blockedBy?: string[];
 }
 
 const badgeColors = {
@@ -512,6 +515,7 @@ export default function ProfilePage() {
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
     const [postToView, setPostToView] = useState<Post | null>(null);
     const [activeTab, setActiveTab] = useState('posts');
+    const [isBlockAlertOpen, setIsBlockAlertOpen] = useState(false);
 
 
     // Follow list dialog state
@@ -520,6 +524,8 @@ export default function ProfilePage() {
     const [isFollowListOpen, setIsFollowListOpen] = useState(false);
     
     const isOwnProfile = currentUser?.uid === profileId;
+    const isBlockedByYou = zisprUser?.blocked?.includes(profileId);
+    const hasBlockedYou = zisprUser?.blockedBy?.includes(profileId);
 
     useEffect(() => {
         if (searchParams.get('payment_success') === 'true') {
@@ -738,9 +744,21 @@ export default function ProfilePage() {
                     setIsFollowedBy(currentUserData.followers?.includes(profileId));
                 }
 
-                await fetchUserPosts(user, profileData);
-                await fetchUserReplies();
-                await fetchLikedPosts(user, profileData);
+                if (!profileData.blockedBy?.includes(user.uid)) {
+                    await fetchUserPosts(user, profileData);
+                    await fetchUserReplies();
+                    await fetchLikedPosts(user, profileData);
+                } else {
+                     setUserPosts([]);
+                    setUserReplies([]);
+                    setMediaPosts([]);
+                    setLikedPosts([]);
+                    setPinnedPost(null);
+                    setIsLoadingPosts(false);
+                    setIsLoadingReplies(false);
+                    setIsLoadingMedia(false);
+                    setIsLoadingLikes(false);
+                }
                 setIsLoading(false);
             }, (error) => {
                  console.error("Error fetching profile data:", error);
@@ -764,13 +782,16 @@ export default function ProfilePage() {
         if (isCurrentlyFollowing) {
             batch.update(currentUserRef, { following: arrayRemove(targetUser.uid) });
             batch.update(targetUserRef, { followers: arrayRemove(currentUser.uid) });
-            
-            // Note: We don't need to send 'unfollow' notifications per X/Twitter's behavior.
-            // If you want them, you can add notification creation logic here.
-
         } else {
-            batch.update(currentUserRef, { following: arrayUnion(targetUser.uid) });
-            batch.update(targetUserRef, { followers: arrayUnion(currentUser.uid) });
+            // Unblock if they were blocked
+            batch.update(currentUserRef, { 
+                following: arrayUnion(targetUser.uid),
+                blocked: arrayRemove(targetUser.uid) 
+            });
+            batch.update(targetUserRef, { 
+                followers: arrayUnion(currentUser.uid),
+                blockedBy: arrayRemove(currentUser.uid)
+            });
 
             const prefs = targetUser.notificationPreferences;
             const canSendNotification = !prefs || prefs['follow'] !== false;
@@ -1149,6 +1170,44 @@ export default function ProfilePage() {
         setIsFollowListOpen(true);
     }
 
+    const handleBlockUser = async () => {
+        if (!currentUser || !zisprUser || !profileUser) return;
+
+        const isCurrentlyBlocked = isBlockedByYou;
+
+        const batch = writeBatch(db);
+        const currentUserRef = doc(db, 'users', currentUser.uid);
+        const profileUserRef = doc(db, 'users', profileId);
+        
+        if (isCurrentlyBlocked) {
+            // Unblock
+            batch.update(currentUserRef, { blocked: arrayRemove(profileId) });
+            batch.update(profileUserRef, { blockedBy: arrayRemove(currentUser.uid) });
+            toast({ title: `Você desbloqueou ${profileUser.handle}.` });
+        } else {
+            // Block
+             batch.update(currentUserRef, { 
+                following: arrayRemove(profileId),
+                blocked: arrayUnion(profileId) 
+            });
+            batch.update(profileUserRef, { 
+                followers: arrayRemove(currentUser.uid),
+                blockedBy: arrayUnion(currentUser.uid)
+            });
+            toast({ title: `Você bloqueou ${profileUser.handle}.` });
+        }
+        
+        try {
+            await batch.commit();
+        } catch (error) {
+            console.error("Error blocking/unblocking user:", error);
+            toast({ title: "Erro", description: "Não foi possível completar a ação.", variant: "destructive" });
+        } finally {
+            setIsBlockAlertOpen(false);
+        }
+    };
+
+
     if (isLoading || !profileUser) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
@@ -1218,10 +1277,21 @@ export default function ProfilePage() {
                     </Button>
                 ) : (
                     <div className='flex items-center gap-2 mt-4'>
-                        <Button variant="ghost" size="icon" className="border rounded-full" onClick={handleStartConversation}><Mail /></Button>
-                        <Button variant="ghost" size="icon" className="border rounded-full"><Bell /></Button>
-                        <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={() => handleToggleFollow(profileUser, zisprUser!, isFollowing)}>
-                            {isFollowing ? 'Seguindo' : 'Seguir'}
+                        <DropdownMenu>
+                             <DropdownMenuTrigger asChild>
+                                 <Button variant="ghost" size="icon" className="border rounded-full"><MoreHorizontal /></Button>
+                             </DropdownMenuTrigger>
+                             <DropdownMenuContent>
+                                 <DropdownMenuItem onClick={() => setIsBlockAlertOpen(true)} className="text-destructive">
+                                     <UserX className="mr-2 h-4 w-4" />
+                                     {isBlockedByYou ? 'Desbloquear' : 'Bloquear'} {profileUser.handle}
+                                 </DropdownMenuItem>
+                             </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button variant="ghost" size="icon" className="border rounded-full" onClick={handleStartConversation} disabled={isBlockedByYou || hasBlockedYou}><Mail /></Button>
+                        <Button variant="ghost" size="icon" className="border rounded-full" disabled={isBlockedByYou || hasBlockedYou}><Bell /></Button>
+                        <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={() => handleToggleFollow(profileUser, zisprUser!, isFollowing)} disabled={isBlockedByYou || hasBlockedYou}>
+                            {isBlockedByYou ? 'Bloqueado' : isFollowing ? 'Seguindo' : 'Seguir'}
                         </Button>
                     </div>
                 )}
@@ -1237,7 +1307,14 @@ export default function ProfilePage() {
                   <p className="text-muted-foreground">{profileUser.handle}</p>
                   {isFollowedBy && !isOwnProfile && <Badge variant="secondary">Segue você</Badge>}
                 </div>
-                <p className="mt-2 whitespace-pre-wrap">{profileUser.bio}</p>
+                {hasBlockedYou ? (
+                     <div className="mt-2 text-muted-foreground italic flex items-center gap-2">
+                        <Lock className="h-4 w-4" />
+                        <span>Você foi bloqueado por este usuário.</span>
+                     </div>
+                ) : (
+                    <p className="mt-2 whitespace-pre-wrap">{profileUser.bio}</p>
+                )}
             </div>
              {isZisprAccount && (
                 <Card className="mt-4 border-primary/50">
@@ -1296,70 +1373,78 @@ export default function ProfilePage() {
                 <button onClick={showFollowers} className="hover:underline"><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> Seguidores</button>
             </div>
         </div>
+        
+        {hasBlockedYou ? (
+             <EmptyState 
+                title="@"+profileUser.handle + " está bloqueado"
+                description="Você não pode ver os posts ou seguir @"+profileUser.handle
+                icon={UserX}
+             />
+        ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <div className="w-full justify-center p-2 border-b">
+                    <TabsList className="relative grid w-full grid-cols-4 p-1 bg-muted/50 rounded-full h-11">
+                        <TabsTrigger value="posts" className="relative z-10 rounded-full text-base">Posts</TabsTrigger>
+                        <TabsTrigger value="replies" className="relative z-10 rounded-full text-base">Respostas</TabsTrigger>
+                        <TabsTrigger value="media" className="relative z-10 rounded-full text-base">Mídia</TabsTrigger>
+                        <TabsTrigger value="likes" className="relative z-10 rounded-full text-base">Curtidas</TabsTrigger>
+                        <motion.div
+                            layoutId="profile-tab-indicator"
+                            className="absolute inset-0 h-full p-1"
+                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                            style={{
+                                left: `${activeTab === 'posts' ? 0 : activeTab === 'replies' ? 25 : activeTab === 'media' ? 50 : 75}%`,
+                                width: '25%',
+                            }}
+                        >
+                            <div className="w-full h-full bg-background rounded-full shadow-md"></div>
+                        </motion.div>
+                    </TabsList>
+                </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="w-full justify-center p-2 border-b">
-                 <TabsList className="relative grid w-full grid-cols-4 p-1 bg-muted/50 rounded-full h-11">
-                    <TabsTrigger value="posts" className="relative z-10 rounded-full text-base">Posts</TabsTrigger>
-                    <TabsTrigger value="replies" className="relative z-10 rounded-full text-base">Respostas</TabsTrigger>
-                    <TabsTrigger value="media" className="relative z-10 rounded-full text-base">Mídia</TabsTrigger>
-                    <TabsTrigger value="likes" className="relative z-10 rounded-full text-base">Curtidas</TabsTrigger>
-                    <motion.div
-                        layoutId="profile-tab-indicator"
-                        className="absolute inset-0 h-full p-1"
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                        style={{
-                            left: `${activeTab === 'posts' ? 0 : activeTab === 'replies' ? 25 : activeTab === 'media' ? 50 : 75}%`,
-                            width: '25%',
-                        }}
-                    >
-                        <div className="w-full h-full bg-background rounded-full shadow-md"></div>
-                    </motion.div>
-                </TabsList>
-            </div>
-
-             <TabsContent value="posts" className="mt-0">
-                <PostList 
-                    posts={userPosts} 
-                    loading={isLoadingPosts} 
-                    emptyTitle="Nenhum post ainda" 
-                    emptyDescription="Quando este usuário postar, os posts aparecerão aqui."
-                    showPinnedPost={true}
-                />
-            </TabsContent>
-            <TabsContent value="replies" className="mt-0">
-                 <ReplyList 
-                    replies={userReplies} 
-                    loading={isLoadingReplies} 
-                    emptyTitle="Nenhuma resposta ainda" 
-                    emptyDescription="Quando este usuário responder a outros, suas respostas aparecerão aqui."
-                 />
-            </TabsContent>
-            <TabsContent value="media" className="mt-0">
-                 <PostList 
-                    posts={mediaPosts} 
-                    loading={isLoadingMedia}
-                    emptyTitle="Nenhuma mídia ainda" 
-                    emptyDescription="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui."
-                 />
-            </TabsContent>
-            <TabsContent value="likes" className="mt-0">
-                {canViewLikes ? (
+                <TabsContent value="posts" className="mt-0">
                     <PostList 
-                        posts={likedPosts} 
-                        loading={isLoadingLikes}
-                        emptyTitle="Nenhum post curtido" 
-                        emptyDescription="Quando este usuário curtir posts, eles aparecerão aqui."
+                        posts={userPosts} 
+                        loading={isLoadingPosts} 
+                        emptyTitle="Nenhum post ainda" 
+                        emptyDescription="Quando este usuário postar, os posts aparecerão aqui."
+                        showPinnedPost={true}
                     />
-                ) : (
-                     <EmptyState 
-                        title="As curtidas são privadas"
-                        description={`@${profileUser.handle} optou por manter suas curtidas privadas.`}
-                        icon={Lock}
-                     />
-                )}
-            </TabsContent>
-        </Tabs>
+                </TabsContent>
+                <TabsContent value="replies" className="mt-0">
+                    <ReplyList 
+                        replies={userReplies} 
+                        loading={isLoadingReplies} 
+                        emptyTitle="Nenhuma resposta ainda" 
+                        emptyDescription="Quando este usuário responder a outros, suas respostas aparecerão aqui."
+                    />
+                </TabsContent>
+                <TabsContent value="media" className="mt-0">
+                    <PostList 
+                        posts={mediaPosts} 
+                        loading={isLoadingMedia}
+                        emptyTitle="Nenhuma mídia ainda" 
+                        emptyDescription="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui."
+                    />
+                </TabsContent>
+                <TabsContent value="likes" className="mt-0">
+                    {canViewLikes ? (
+                        <PostList 
+                            posts={likedPosts} 
+                            loading={isLoadingLikes}
+                            emptyTitle="Nenhum post curtido" 
+                            emptyDescription="Quando este usuário curtir posts, eles aparecerão aqui."
+                        />
+                    ) : (
+                        <EmptyState 
+                            title="As curtidas são privadas"
+                            description={`@${profileUser.handle} optou por manter suas curtidas privadas.`}
+                            icon={Lock}
+                        />
+                    )}
+                </TabsContent>
+            </Tabs>
+        )}
       </main>
       <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
             <AlertDialogContent>
@@ -1393,6 +1478,24 @@ export default function ProfilePage() {
                 </Button>
             </DialogContent>
         </Dialog>
+         <AlertDialog open={isBlockAlertOpen} onOpenChange={setIsBlockAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{isBlockedByYou ? 'Desbloquear' : 'Bloquear'} {profileUser.handle}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {isBlockedByYou
+                            ? `Eles poderão seguir você e ver seus posts.`
+                            : `Eles não poderão seguir ou enviar mensagens para você, e você não verá notificações deles.`}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleBlockUser} className={isBlockedByYou ? '' : 'bg-destructive hover:bg-destructive/90'}>
+                        {isBlockedByYou ? 'Desbloquear' : 'Bloquear'}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
         <Suspense>
             {isQuoteModalOpen && <CreatePostModal 
                 open={isQuoteModalOpen}
