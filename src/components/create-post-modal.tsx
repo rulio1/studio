@@ -280,10 +280,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 4 * 1024 * 1024) { // 4MB limit
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
             toast({
                 title: 'Imagem muito grande',
-                description: 'Por favor, selecione uma imagem menor que 4MB.',
+                description: 'Por favor, selecione uma imagem menor que 10MB.',
                 variant: 'destructive',
             });
             return;
