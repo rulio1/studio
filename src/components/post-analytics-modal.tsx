@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { X, Heart, Repeat, MessageCircle, BarChart2, Users, Info } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -59,11 +59,6 @@ export default function PostAnalyticsModal({ post, onOpenChange }: PostAnalytics
       <DialogContent className="p-0 gap-0 rounded-2xl bg-background sm:max-w-lg flex flex-col max-h-[80svh]">
         <DialogHeader className="p-4 flex flex-row items-center justify-between border-b">
           <DialogTitle className="text-xl font-bold">Atividade do Post</DialogTitle>
-          <DialogClose asChild>
-            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
-              <X className="h-5 w-5" />
-            </Button>
-          </DialogClose>
         </DialogHeader>
 
         <main className="px-6 pt-6 pb-6 flex-1 flex flex-col gap-4 overflow-y-auto">
@@ -117,4 +112,3 @@ export default function PostAnalyticsModal({ post, onOpenChange }: PostAnalytics
     </Dialog>
   );
 }
-
