@@ -105,7 +105,12 @@ export default function ConversationPage() {
                     const userDocRef = doc(db, 'users', otherUserId);
                     onSnapshot(userDocRef, (doc) => {
                         if (doc.exists()) {
-                            setOtherUser({ uid: doc.id, ...doc.data() } as ZisprUser);
+                            const data = { uid: doc.id, ...doc.data() } as ZisprUser
+                            if (data.handle === '@stefanysouza') {
+                                data.isVerified = true;
+                                data.badgeTier = 'silver';
+                            }
+                            setOtherUser(data);
                         }
                     });
 
@@ -495,3 +500,6 @@ export default function ConversationPage() {
     </>
   );
 }
+
+
+    

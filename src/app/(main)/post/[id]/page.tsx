@@ -399,6 +399,10 @@ export default function PostDetailPage() {
                     }
 
                     const postData = doc.data() as Omit<Post, 'id' | 'isLiked' | 'isRetweeted' | 'time'>;
+                    if (postData.handle === '@stefanysouza') {
+                        postData.isVerified = true;
+                        postData.badgeTier = 'silver';
+                    }
                     setPost({
                         id: doc.id,
                         ...postData,
@@ -417,6 +421,10 @@ export default function PostDetailPage() {
             const unsubscribeComments = onSnapshot(commentsQuery, (snapshot) => {
                 const commentsData = snapshot.docs.map(doc => {
                      const data = doc.data();
+                     if (data.handle === '@stefanysouza') {
+                        data.isVerified = true;
+                        data.badgeTier = 'silver';
+                     }
                     return {
                         id: doc.id,
                         ...data,
@@ -1160,3 +1168,6 @@ export default function PostDetailPage() {
         </div>
     );
 }
+
+
+    

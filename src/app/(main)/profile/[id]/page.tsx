@@ -557,6 +557,10 @@ export default function ProfilePage() {
             const postDoc = await getDoc(doc(db, 'posts', profileData.pinnedPostId));
             if (postDoc.exists()) {
                 const data = postDoc.data();
+                if (data.handle === '@stefanysouza') {
+                    data.isVerified = true;
+                    data.badgeTier = 'silver';
+                }
                 setPinnedPost({
                     id: postDoc.id,
                     ...data,
@@ -611,11 +615,17 @@ export default function ProfilePage() {
             return timeB - timeA;
         });
         
-        const finalPosts = allPosts.map(post => ({
-            ...post,
-            isLiked: (Array.isArray(post.likes) ? post.likes : []).includes(userToFetch.uid || ''),
-            isRetweeted: (Array.isArray(post.retweets) ? post.retweets : []).includes(userToFetch.uid || ''),
-        }));
+        const finalPosts = allPosts.map(post => {
+            if (post.handle === '@stefanysouza') {
+                post.isVerified = true;
+                post.badgeTier = 'silver';
+            }
+            return {
+                ...post,
+                isLiked: (Array.isArray(post.likes) ? post.likes : []).includes(userToFetch.uid || ''),
+                isRetweeted: (Array.isArray(post.retweets) ? post.retweets : []).includes(userToFetch.uid || ''),
+            }
+        });
     
         setUserPosts(finalPosts);
         setIsLoadingPosts(false);
@@ -706,6 +716,10 @@ export default function ProfilePage() {
             const posts = postsSnapshots.flatMap(snapshot =>
                 snapshot.docs.map(doc => {
                     const data = doc.data();
+                    if (data.handle === '@stefanysouza') {
+                        data.isVerified = true;
+                        data.badgeTier = 'silver';
+                    }
                     return {
                         id: doc.id,
                         ...data,
@@ -1531,3 +1545,6 @@ export default function ProfilePage() {
         </div>
     );
 }
+
+
+    

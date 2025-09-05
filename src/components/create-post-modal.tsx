@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -405,6 +406,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     
     const QuotedPostPreview = ({ post }: { post: Post }) => {
         const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
+        const isVerified = post.isVerified || post.handle === '@Rulio';
         return (
             <div className="mt-2 border rounded-xl p-3">
                 <div className="flex items-center gap-2 text-sm">
@@ -414,7 +416,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     </Avatar>
                     <span className="font-bold flex items-center gap-1">
                         {post.author}
-                         {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}
+                         {isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}
                     </span>
                     <span className="text-muted-foreground">{post.handle}</span>
                 </div>
@@ -647,3 +649,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         </Dialog>
     );
 }
+
+
+    

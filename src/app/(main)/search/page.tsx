@@ -119,7 +119,14 @@ function SearchPageClient() {
     setIsLoading(true);
     const usersQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(10));
     const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
-        const usersData = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserSearchResult));
+        const usersData = snapshot.docs.map(doc => {
+            const data = { uid: doc.id, ...doc.data() } as UserSearchResult
+            if (data.handle === '@stefanysouza') {
+                data.isVerified = true;
+                data.badgeTier = 'silver';
+            }
+            return data;
+        });
         setNewUsers(usersData);
         setIsLoading(false);
     }, (error) => {
@@ -175,7 +182,16 @@ function SearchPageClient() {
                 // Merge and remove duplicates
                 const allUsers = [...nameUsers, ...handleUsers];
                 const uniqueUsers = Array.from(new Map(allUsers.map(user => [user.uid, user])).values());
-                setUsers(uniqueUsers);
+
+                const finalUsers = uniqueUsers.map(user => {
+                    if (user.handle === '@stefanysouza') {
+                        user.isVerified = true;
+                        user.badgeTier = 'silver';
+                    }
+                    return user;
+                });
+                
+                setUsers(finalUsers);
                 setPosts([]); // Clear posts when not searching for hashtags
             }
 
@@ -432,3 +448,6 @@ export default function SearchPage() {
         </Suspense>
     )
 }
+
+
+    

@@ -198,6 +198,10 @@ export default function NotificationsPage() {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const notifs = snapshot.docs.map(doc => {
                 const data = doc.data();
+                if (data.fromUser.handle === '@stefanysouza') {
+                    data.fromUser.isVerified = true;
+                    data.fromUser.badgeTier = 'silver';
+                }
                 return {
                     id: doc.id,
                     ...data,
@@ -319,3 +323,6 @@ export default function NotificationsPage() {
     </Tabs>
   );
 }
+
+
+    

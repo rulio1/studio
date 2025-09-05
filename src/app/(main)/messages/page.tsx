@@ -204,6 +204,10 @@ export default function MessagesPage() {
                 const userDoc = await getDoc(doc(db, "users", otherUserId));
                 if (!userDoc.exists()) return null;
                 const otherUserData = userDoc.data();
+                if (otherUserData.handle === '@stefanysouza') {
+                    otherUserData.isVerified = true;
+                    otherUserData.badgeTier = 'silver';
+                }
 
                 return {
                     id: docData.id,
@@ -345,3 +349,6 @@ export default function MessagesPage() {
     </>
   );
 }
+
+
+    

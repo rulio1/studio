@@ -181,6 +181,10 @@ export default function HomePage() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const postsData = snapshot.docs.map(doc => {
             const data = doc.data();
+            if (data.handle === '@stefanysouza') {
+                data.isVerified = true;
+                data.badgeTier = 'silver';
+            }
             return {
                 id: doc.id,
                 ...data,
@@ -224,6 +228,10 @@ useEffect(() => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const postsData = snapshot.docs.map(doc => {
             const data = doc.data();
+            if (data.handle === '@stefanysouza') {
+                data.isVerified = true;
+                data.badgeTier = 'silver';
+            }
             return {
                 id: doc.id,
                 ...data,
@@ -1089,5 +1097,7 @@ useEffect(() => {
     </>
   );
 }
+
+    
 
     
