@@ -997,7 +997,6 @@ useEffect(() => {
         { href: '/notifications', icon: Bell, label: 'Notificações' },
         { href: '/messages', icon: Mail, label: 'Mensagens' },
         { href: '/saved', icon: Bookmark, label: 'Salvos' },
-        { href: '/collections', icon: Library, label: 'Coleções' },
         { href: `/profile/${zisprUser.uid}`, icon: User, label: 'Perfil' },
     ];
 
