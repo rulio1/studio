@@ -448,7 +448,7 @@ export default function HomePage() {
   const [followingPosts, setFollowingPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(true);
-  const { user, zisprUser, isLoading: isUserLoading, setUser: setAuthUser, setZisprUser } = useUserStore();
+  const { user, zisprUser, isLoading: isUserLoading, setUser: setAuthUser } = useUserStore();
   const [activeTab, setActiveTab] = useState('for-you');
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
