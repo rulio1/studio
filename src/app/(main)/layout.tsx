@@ -12,7 +12,6 @@ import DesktopSidebar from '@/components/desktop-sidebar';
 import RightSidebar from '@/components/right-sidebar';
 import { collection, query, where, onSnapshot, getDoc, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import AdsenseAd from '@/components/adsense-ad';
 import { useUserStore } from '@/store/user-store';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -122,11 +121,6 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
             <RightSidebar />
             <div className="md:hidden">
                 {showFab && <CreatePostFAB />}
-                 {isMobile && (
-                    <div className="fixed bottom-[var(--bottom-nav-height)] w-full flex justify-center z-40 bg-background/80 backdrop-blur-sm">
-                        <AdsenseAd slot="2345678901" format="auto" />
-                    </div>
-                )}
                 <BottomNavBar />
             </div>
         </div>

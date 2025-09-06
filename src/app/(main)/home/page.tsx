@@ -46,7 +46,6 @@ import Poll from '@/components/poll';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import SpotifyEmbed from '@/components/spotify-embed';
 import { motion } from 'framer-motion';
-import AdsenseAd from '@/components/adsense-ad';
 import { useUserStore } from '@/store/user-store';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
@@ -129,7 +128,7 @@ const badgeColors = {
     gold: 'text-yellow-400'
 };
 
-const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => {
+const PostContent = React.memo(function PostContent({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) {
     const router = useRouter();
     const parts = content.split(/(#\w+|@\w+|https?:\/\/[^\s]+)/g);
     
@@ -188,7 +187,8 @@ const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: st
             })}
         </p>
     );
-};
+});
+PostContent.displayName = 'PostContent';
 
 const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePostAction, handleQuoteClick, handleDeleteClick, handleEditClick, handleTogglePinPost, onVote, onImageClick, onAnalyticsClick, onSaveClick }: { 
     post: Post; 
@@ -441,6 +441,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
         </li>
     );
 });
+PostItem.displayName = 'PostItem';
   
 export default function HomePage() {
   const [allPosts, setAllPosts] = useState<Post[]>([]);
@@ -898,16 +899,8 @@ useEffect(() => {
             </ul>
         );
     }
-    
-    const itemsWithAds: (Post | { isAd: true, id: number })[] = [];
-    posts.forEach((post, index) => {
-        itemsWithAds.push(post);
-        if ((index + 1) % 5 === 3) {
-            itemsWithAds.push({ isAd: true, id: index });
-        }
-    });
 
-    if (itemsWithAds.length === 0) {
+    if (posts.length === 0) {
         if (tab === 'following') {
             return (
                 <div className="p-8 text-center text-muted-foreground border-t">
@@ -927,16 +920,8 @@ useEffect(() => {
 
     return (
         <ul className="divide-y divide-border">
-            {itemsWithAds.map((item, postIndex) => {
-                if ('isAd' in item && item.isAd) {
-                    return (
-                        <li key={`ad-${item.id}-${postIndex}`} className="p-4 hover:bg-muted/20">
-                             <AdsenseAd slot="1234567890" format="fluid" layoutKey="-fb+5w+4w-eg+1" />
-                        </li>
-                    );
-                }
-                const post = item as Post;
-                return <PostItem 
+            {posts.map((post) => (
+                <PostItem 
                     key={`${post.id}-${post.repostedAt?.toMillis() || ''}`} 
                     post={post}
                     zisprUser={zisprUser}
@@ -950,8 +935,8 @@ useEffect(() => {
                     onImageClick={setPostToView}
                     onAnalyticsClick={setAnalyticsPost}
                     onSaveClick={setPostToSave}
-                 />;
-            })}
+                 />
+            ))}
         </ul>
     );
   };
