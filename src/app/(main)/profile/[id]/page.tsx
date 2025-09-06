@@ -50,7 +50,6 @@ const ImageViewer = lazy(() => import('@/components/image-viewer'));
 const PostAnalyticsModal = lazy(() => import('@/components/post-analytics-modal'));
 const SaveToCollectionModal = lazy(() => import('@/components/save-to-collection-modal'));
 
-
 const EmptyState = ({ title, description, icon: Icon }: { title: string, description: string, icon?: React.ElementType }) => (
     <div className="text-center p-8 mt-4">
         {Icon && <Icon className="mx-auto h-16 w-16 text-muted-foreground mb-4" />}

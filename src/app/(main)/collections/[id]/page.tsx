@@ -126,7 +126,7 @@ export default function CollectionPage() {
     
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
-    const [collection, setCollection] = useState<Collection | null>(null);
+    const [collectionData, setCollectionData] = useState<Collection | null>(null);
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -145,7 +145,7 @@ export default function CollectionPage() {
                 const userData = { uid: doc.id, ...doc.data() } as ZisprUser;
                 setZisprUser(userData);
                 const targetCollection = userData.collections?.find(c => c.id === collectionId);
-                setCollection(targetCollection || null);
+                setCollectionData(targetCollection || null);
             } else {
                 router.push('/login');
             }
@@ -154,14 +154,14 @@ export default function CollectionPage() {
     }, [user, collectionId, router]);
 
     useEffect(() => {
-        if (!user || !collection) {
+        if (!user || !collectionData) {
             setIsLoading(false);
             return;
         }
 
         const fetchPosts = async () => {
             setIsLoading(true);
-            const postIds = collection.postIds;
+            const postIds = collectionData.postIds;
             if (postIds.length === 0) {
                 setPosts([]);
                 setIsLoading(false);
@@ -193,7 +193,7 @@ export default function CollectionPage() {
         };
 
         fetchPosts();
-    }, [user, collection]);
+    }, [user, collectionData]);
 
     const PostItem = ({ post }: { post: Post }) => {
         const [time, setTime] = useState('');
@@ -232,7 +232,7 @@ export default function CollectionPage() {
                 <div className="flex items-center gap-4 px-4 py-2">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}><ArrowLeft className="h-5 w-5" /></Button>
                     <div>
-                        <h1 className="text-xl font-bold">{collection?.name || 'Coleção'}</h1>
+                        <h1 className="text-xl font-bold">{collectionData?.name || 'Coleção'}</h1>
                         <p className="text-sm text-muted-foreground">{zisprUser?.handle}</p>
                     </div>
                 </div>

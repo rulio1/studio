@@ -44,7 +44,6 @@ const ImageViewer = lazy(() => import('@/components/image-viewer'));
 const PostAnalyticsModal = lazy(() => import('@/components/post-analytics-modal'));
 const SaveToCollectionModal = lazy(() => import('@/components/save-to-collection-modal'));
 
-
 interface Post {
     id: string;
     authorId: string;

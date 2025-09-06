@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
@@ -51,7 +52,6 @@ const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
 const PostAnalyticsModal = lazy(() => import('@/components/post-analytics-modal'));
 const SaveToCollectionModal = lazy(() => import('@/components/save-to-collection-modal'));
-
 
 interface Post {
     id: string;
