@@ -38,6 +38,7 @@ import Poll from '@/components/poll';
 import { runTransaction } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import SpotifyEmbed from '@/components/spotify-embed';
+import { useUserStore } from '@/store/user-store';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
@@ -355,8 +356,7 @@ export default function PostDetailPage() {
     const [newComment, setNewComment] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isReplying, setIsReplying] = useState(false);
-    const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
+    const { user, zisprUser, isLoading: isUserLoading } = useUserStore();
     const [postToView, setPostToView] = useState<Post | null>(null);
     const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
     
@@ -374,25 +374,6 @@ export default function PostDetailPage() {
     const [editingComment, setEditingComment] = useState<Comment | null>(null);
     const [editedCommentContent, setEditedCommentContent] = useState('');
     const [isUpdatingComment, setIsUpdatingComment] = useState(false);
-
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            if (currentUser) {
-                setUser(currentUser);
-                const userDocRef = doc(db, 'users', currentUser.uid);
-                const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
-                    if (doc.exists()) {
-                        setZisprUser(doc.data() as ZisprUser);
-                    }
-                });
-                return () => unsubscribeUser();
-            } else {
-                router.push('/login');
-            }
-        });
-        return () => unsubscribe();
-    }, [router]);
 
     useEffect(() => {
         if (id && user) {
@@ -751,7 +732,7 @@ export default function PostDetailPage() {
     };
 
     const handleTogglePinPost = async () => {
-        if (!user || !post) return;
+        if (!user || !post || !zisprUser) return;
         const userRef = doc(db, 'users', user.uid);
         const isPinned = zisprUser?.pinnedPostId === post.id;
 
@@ -815,7 +796,7 @@ export default function PostDetailPage() {
         setNewComment(prev => `${handle} ${prev}`);
     };
 
-    if (isLoading) {
+    if (isLoading || isUserLoading) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
     
@@ -1055,7 +1036,7 @@ export default function PostDetailPage() {
                 </ul>
             </main>
             
-            <footer className="sticky bottom-0 z-10 bg-background border-t md:pb-0 pb-[var(--bottom-nav-height)]">
+            <footer className="sticky bottom-0 z-10 bg-background border-t pb-[env(safe-area-inset-bottom)]">
                  <div className="p-4">
                     <div className="flex items-start gap-3 relative rounded-2xl border bg-muted p-2">
                         <Avatar>

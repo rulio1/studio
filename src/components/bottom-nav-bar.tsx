@@ -11,6 +11,7 @@ import { auth, db } from '@/lib/firebase';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Skeleton } from './ui/skeleton';
+import { useUserStore } from '@/store/user-store';
 
 interface ZisprUser {
     uid: string;
@@ -21,11 +22,9 @@ interface ZisprUser {
 
 export default function BottomNavBar() {
     const pathname = usePathname();
-    const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
+    const { user, zisprUser, isLoading } = useUserStore();
     const [notificationCount, setNotificationCount] = useState(0);
     const [messageCount, setMessageCount] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
 
     const navItems = [
         { href: '/home', icon: Home, label: 'Início' },
@@ -36,33 +35,11 @@ export default function BottomNavBar() {
     ];
 
      useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
-            if (!currentUser) {
-                setIsLoading(false);
-            }
-        });
-        return () => unsubscribeAuth();
-    }, []);
-
-    useEffect(() => {
         if (!user) {
-            setZisprUser(null);
             setNotificationCount(0);
             setMessageCount(0);
-            setIsLoading(false);
-            return () => {};
+            return;
         }
-        
-        setIsLoading(true);
-
-        const userDocRef = doc(db, 'users', user.uid);
-        const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
-            if (doc.exists()) {
-                setZisprUser(doc.data() as ZisprUser);
-            }
-            setIsLoading(false);
-        });
 
         const notificationsQuery = query(
             collection(db, "notifications"),
@@ -90,7 +67,6 @@ export default function BottomNavBar() {
         });
 
         return () => {
-            unsubscribeUser();
             unsubscribeNotifications();
             unsubscribeMessages();
         };
@@ -111,7 +87,7 @@ export default function BottomNavBar() {
 
 
     return (
-        <nav className="fixed bottom-0 inset-x-0 z-50 h-[var(--bottom-nav-height)] bg-background border-t md:hidden flex justify-around items-center">
+        <nav className="fixed bottom-0 inset-x-0 z-50 h-[var(--bottom-nav-height)] bg-background border-t md:hidden flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
             {navItems.map((item) => {
                  const count = getCountForItem(item.label);
                  const isActive = getIsActive(item.href, item.label);
