@@ -12,6 +12,7 @@ import DesktopSidebar from '@/components/desktop-sidebar';
 import RightSidebar from '@/components/right-sidebar';
 import { collection, query, where, onSnapshot, getDoc, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import AdsenseAd from '@/components/adsense-ad';
 
 function MainLayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -118,13 +119,16 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
         <div className="flex h-screen justify-center">
             <DesktopSidebar />
             <main className="flex-1 min-w-0 max-w-2xl border-x flex flex-col">
-                 <div className="flex-1 overflow-y-auto pb-[var(--bottom-nav-height)] md:pb-0">
+                 <div className="flex-1 overflow-y-auto pb-[calc(var(--bottom-nav-height)+50px)] md:pb-0">
                     {children}
                 </div>
             </main>
             <RightSidebar />
             <div className="md:hidden">
                 {showFab && <CreatePostFAB />}
+                 <div className="fixed bottom-[var(--bottom-nav-height)] w-full flex justify-center z-40 bg-background/80 backdrop-blur-sm">
+                    <AdsenseAd slot="2345678901" format="auto" />
+                </div>
                 <BottomNavBar />
             </div>
         </div>

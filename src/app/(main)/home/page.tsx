@@ -45,6 +45,7 @@ import Poll from '@/components/poll';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import SpotifyEmbed from '@/components/spotify-embed';
 import { motion } from 'framer-motion';
+import AdsenseAd from '@/components/adsense-ad';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
@@ -939,7 +940,17 @@ useEffect(() => {
         );
     }
     
-    if (posts.length === 0) {
+    // Intersperse ads with posts
+    const itemsWithAds: (Post | { isAd: true, id: number })[] = [];
+    posts.forEach((post, index) => {
+        itemsWithAds.push(post);
+        // Insert an ad every 5 posts, starting after the 3rd post
+        if ((index + 1) % 5 === 3) {
+            itemsWithAds.push({ isAd: true, id: index });
+        }
+    });
+
+    if (itemsWithAds.length === 0) {
         if (tab === 'following') {
             return (
                 <div className="p-8 text-center text-muted-foreground border-t">
@@ -959,9 +970,17 @@ useEffect(() => {
 
     return (
         <ul className="divide-y divide-border">
-            {posts.map((post) => (
-                <PostItem key={`${post.id}-${post.repostedAt?.toMillis() || ''}`} post={post} />
-            ))}
+            {itemsWithAds.map((item) => {
+                if ('isAd' in item && item.isAd) {
+                    return (
+                        <li key={`ad-${item.id}`} className="p-4 hover:bg-muted/20">
+                             <AdsenseAd slot="1234567890" format="fluid" layoutKey="-fb+5w+4w-eg+1" />
+                        </li>
+                    );
+                }
+                const post = item as Post;
+                return <PostItem key={`${post.id}-${post.repostedAt?.toMillis() || ''}`} post={post} />;
+            })}
         </ul>
     );
   };
