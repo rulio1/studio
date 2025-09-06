@@ -7,13 +7,13 @@ import { Button } from '@/components/ui/button';
 import CreatePostModal from './create-post-modal';
 import { usePathname } from 'next/navigation';
 import NewMessageModal from './new-message-modal';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserStore } from '@/store/user-store';
 
 export default function CreatePostFAB() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
     const pathname = usePathname();
-    const { user } = useAuth();
+    const { user } = useUserStore();
 
     const openModal = () => {
         setIsModalOpen(true);

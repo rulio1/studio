@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
+import { signOut, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot, collection, query, where } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
@@ -22,15 +22,7 @@ import CreatePostModal from './create-post-modal';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { useToast } from '@/hooks/use-toast';
-
-interface ZisprUser {
-    uid: string;
-    displayName: string;
-    handle: string;
-    avatar: string;
-    isVerified?: boolean;
-    badgeTier?: 'bronze' | 'silver' | 'gold';
-}
+import { useUserStore } from '@/store/user-store';
 
 const badgeColors = {
     bronze: 'text-amber-600',
@@ -42,10 +34,8 @@ export default function DesktopSidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { toast } = useToast();
-    const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
+    const { user, zisprUser, isLoading } = useUserStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
     const [notificationCount, setNotificationCount] = useState(0);
     const [messageCount, setMessageCount] = useState(0);
 
@@ -58,33 +48,11 @@ export default function DesktopSidebar() {
     ];
 
     useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
-            if (!currentUser) {
-                setIsLoading(false);
-            }
-        });
-        return () => unsubscribeAuth();
-    }, []);
-
-    useEffect(() => {
         if (!user) {
-            setZisprUser(null);
             setNotificationCount(0);
             setMessageCount(0);
-            setIsLoading(false);
             return;
         }
-
-        setIsLoading(true);
-
-        const userDocRef = doc(db, "users", user.uid);
-        const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
-            if (doc.exists()) {
-                setZisprUser(doc.data() as ZisprUser);
-            }
-            setIsLoading(false);
-        });
 
         const notificationsQuery = query(
             collection(db, "notifications"),
@@ -112,7 +80,6 @@ export default function DesktopSidebar() {
         });
         
         return () => {
-            unsubscribeUser();
             unsubscribeNotifications();
             unsubscribeMessages();
         };

@@ -3,7 +3,7 @@
 
 import { useRouter } from 'next/navigation';
 import { User, Lock, ChevronRight, UserX, Trash2 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserStore } from '@/store/user-store';
 
 const SettingsItem = ({ icon, title, description, onClick, isDestructive = false, disabled = false }: { icon: React.ElementType, title: string, description: string, onClick?: () => void, isDestructive?: boolean, disabled?: boolean }) => {
     const Icon = icon;
@@ -21,7 +21,7 @@ const SettingsItem = ({ icon, title, description, onClick, isDestructive = false
 
 export default function AccountSettingsPage() {
     const router = useRouter();
-    const { user } = useAuth();
+    const { user } = useUserStore();
 
     return (
         <main className="flex-1 overflow-y-auto p-4 space-y-4">

@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import PostSkeleton from '@/components/post-skeleton';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
+import { signOut, User as FirebaseUser } from 'firebase/auth';
 import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch, deleteDoc, increment, documentId, Timestamp, runTransaction } from 'firebase/firestore';
 import { formatTimeAgo } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -47,6 +47,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import SpotifyEmbed from '@/components/spotify-embed';
 import { motion } from 'framer-motion';
 import AdsenseAd from '@/components/adsense-ad';
+import { useUserStore } from '@/store/user-store';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
@@ -446,8 +447,7 @@ export default function HomePage() {
   const [followingPosts, setFollowingPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingFollowing, setIsLoadingFollowing] = useState(true);
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
+  const { user, zisprUser, isLoading: isUserLoading, setUser: setAuthUser, setZisprUser } = useUserStore();
   const [activeTab, setActiveTab] = useState('for-you');
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
@@ -461,39 +461,6 @@ export default function HomePage() {
   const { toast } = useToast();
   const router = useRouter();
   
-  useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-        if (currentUser) {
-            setUser(currentUser);
-        } else {
-            setUser(null);
-            router.push('/login');
-        }
-    });
-
-    return () => unsubscribeAuth();
-  }, [router]);
-  
-  useEffect(() => {
-    if (!user) {
-        setZisprUser(null);
-        return;
-    }
-    const userDocRef = doc(db, "users", user.uid);
-    const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
-         if(doc.exists()){
-            setZisprUser({ uid: doc.id, ...doc.data() } as ZisprUser);
-        } else {
-            // This might happen if user document is deleted but auth record still exists
-            // We should log them out.
-             if (auth.currentUser) {
-                signOut(auth).then(() => router.push('/login'));
-            }
-        }
-    });
-    return () => unsubscribeUser();
-  }, [user, router]);
-
 
  const fetchAllPosts = useCallback((currentUser: FirebaseUser) => {
     setIsLoading(true);
@@ -842,6 +809,7 @@ useEffect(() => {
   const handleSignOut = async () => {
     try {
         await signOut(auth);
+        setAuthUser(null, null);
         window.location.href = '/login';
     } catch (error) {
         toast({ title: 'Erro ao sair', variant: 'destructive' });
@@ -989,7 +957,7 @@ useEffect(() => {
   };
 
 
-  if (isLoading || !user || !zisprUser) {
+  if (isUserLoading || !user || !zisprUser) {
       return (
         <div className="flex flex-col h-screen bg-background relative animate-fade-in">
              <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
@@ -1178,7 +1146,3 @@ useEffect(() => {
     </>
   );
 }
-
-    
-
-    

@@ -6,30 +6,24 @@ import CreatePostFAB from '@/components/create-post-fab';
 import HomeLoading from '@/app/(main)/home/loading';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useRef, Suspense } from 'react';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import DesktopSidebar from '@/components/desktop-sidebar';
 import RightSidebar from '@/components/right-sidebar';
 import { collection, query, where, onSnapshot, getDoc, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import AdsenseAd from '@/components/adsense-ad';
+import { useUserStore } from '@/store/user-store';
 
 function MainLayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const { toast } = useToast();
-    const [user, setUser] = useState<FirebaseUser | null>(auth.currentUser);
+    const { user, isLoading } = useUserStore();
     const initialLoadTime = useRef(new Date());
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
-        });
-        return () => unsubscribe();
-    }, [router]);
-    
-    useEffect(() => {
-        if (!user) return;
+        if (!user || isLoading) return;
     
         const notificationsQuery = query(
             collection(db, "notifications"), 
@@ -64,7 +58,7 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
         });
     
         return () => unsubscribe();
-    }, [user, router, toast]);
+    }, [user, isLoading, router, toast]);
 
     const fabBlacklist = [
         '/messages/',
@@ -137,49 +131,26 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
 
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-    const [isLoading, setIsLoading] = useState(true);
+    const { isLoading, user } = useUserStore();
     const router = useRouter();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                // Se não houver usuário após a verificação, redirecione para o login.
-                // Isso desmontará os componentes filhos e seus listeners antes do erro.
-                router.replace('/login');
-            } else {
-                // Se houver um usuário, pare de carregar e mostre o conteúdo.
-                setIsLoading(false);
-            }
-        });
+        // This effect will run once when the layout mounts, and whenever isLoading or user changes.
+        if (!isLoading && !user) {
+            router.replace('/login');
+        }
+    }, [isLoading, user, router]);
 
-        // Um fallback para o caso de a autenticação demorar a inicializar
-        const timer = setTimeout(() => {
-             // Se após 2 segundos ainda estivermos carregando, significa que não há usuário
-            if (isLoading) {
-                // Verificação final
-                if (auth.currentUser === null) {
-                    router.replace('/login');
-                } else {
-                    setIsLoading(false);
-                }
-            }
-        }, 2000); 
-
-        return () => {
-            unsubscribe();
-            clearTimeout(timer);
-        };
-    }, [router, isLoading]);
 
     if (isLoading) {
         return <HomeLoading />;
     }
-
-    return (
+    
+    // Render children only if user is present after loading. 
+    // The effect above will handle redirection.
+    return user ? (
         <Suspense fallback={<HomeLoading />}>
             <MainLayoutClient>{children}</MainLayoutClient>
         </Suspense>
-    );
+    ) : <HomeLoading />;
 }
-
-    

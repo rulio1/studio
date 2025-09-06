@@ -1,22 +1,11 @@
 
+// This hook is no longer needed as we are using a Zustand store for state management.
+// The file is kept to avoid breaking imports, but it should be considered deprecated.
 'use client';
 
-import { useState, useEffect } from 'react';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { useUserStore } from '@/store/user-store';
 
 export function useAuth() {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
+  const { user, isLoading } = useUserStore();
   return { user, isLoading };
 }

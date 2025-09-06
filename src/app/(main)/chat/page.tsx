@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Bot, Loader2, Send, MoreHorizontal, Trash2 } from 'lucide-react';
 import { chat, ChatHistory } from '@/ai/flows/chat-flow';
-import { useAuth } from '@/hooks/use-auth';
+import { useUserStore } from '@/store/user-store';
 import { doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, writeBatch, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,17 +29,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-
-interface ZisprUser {
-    displayName: string;
-    avatar: string;
-}
+import { ZisprUser } from '@/types/zispr';
 
 export default function ChatPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const { user: authUser } = useAuth();
-    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
+    const { user: authUser, zisprUser } = useUserStore();
     const [messages, setMessages] = useState<ChatHistory[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -50,13 +45,6 @@ export default function ChatPage() {
 
     useEffect(() => {
         if (authUser) {
-            const userDocRef = doc(db, 'users', authUser.uid);
-            getDoc(userDocRef).then(docSnap => {
-                if (docSnap.exists()) {
-                    setZisprUser(docSnap.data() as ZisprUser);
-                }
-            });
-
             const chatMessagesQuery = query(
                 collection(db, 'chats', authUser.uid, 'messages'),
                 orderBy('createdAt', 'asc')
