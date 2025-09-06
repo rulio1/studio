@@ -42,6 +42,7 @@ import SpotifyEmbed from '@/components/spotify-embed';
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
 const PostAnalyticsModal = lazy(() => import('@/components/post-analytics-modal'));
+const SaveToCollectionModal = lazy(() => import('@/components/save-to-collection-modal'));
 
 
 interface Post {
@@ -109,6 +110,7 @@ interface Collection {
 }
 
 interface ZisprUser {
+    uid: string;
     displayName: string;
     handle: string;
     avatar: string;
@@ -366,6 +368,7 @@ export default function PostDetailPage() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
     const [analyticsPost, setAnalyticsPost] = useState<Post | null>(null);
+    const [postToSave, setPostToSave] = useState<string | null>(null);
 
     // State for comment actions
     const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
@@ -378,10 +381,13 @@ export default function PostDetailPage() {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
                 setUser(currentUser);
-                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                if (userDoc.exists()) {
-                    setZisprUser(userDoc.data() as ZisprUser);
-                }
+                const userDocRef = doc(db, 'users', currentUser.uid);
+                const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
+                    if (doc.exists()) {
+                        setZisprUser(doc.data() as ZisprUser);
+                    }
+                });
+                return () => unsubscribeUser();
             } else {
                 router.push('/login');
             }
@@ -744,41 +750,6 @@ export default function PostDetailPage() {
             setIsUpdating(false);
         }
     };
-    
-    const handleSavePost = async (postId: string) => {
-        if (!user || !zisprUser) return;
-        const userRef = doc(db, 'users', user.uid);
-        const allSavedCollection = zisprUser.collections?.find(c => c.name === 'Todos os posts salvos');
-        const isSaved = allSavedCollection?.postIds.includes(postId) ?? false;
-
-        await runTransaction(db, async (transaction) => {
-            const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists()) {
-                throw "User does not exist!";
-            }
-
-            let currentCollections = userDoc.data().collections || [];
-            let allSavedCollection = currentCollections.find((c: Collection) => c.name === 'Todos os posts salvos');
-            
-            if (isSaved) {
-                // Remove from all relevant collections
-                currentCollections.forEach((collection: Collection) => {
-                    collection.postIds = collection.postIds.filter((id: string) => id !== postId);
-                });
-            } else {
-                if (allSavedCollection) {
-                    allSavedCollection.postIds.push(postId);
-                } else {
-                    const newCollection = { id: 'all_saved', name: 'Todos os posts salvos', postIds: [postId] };
-                    currentCollections.push(newCollection);
-                }
-            }
-
-            transaction.update(userRef, { collections: currentCollections });
-        });
-
-        toast({ title: isSaved ? 'Post removido dos salvos' : 'Post salvo!' });
-    };
 
     const handleTogglePinPost = async () => {
         if (!user || !post) return;
@@ -875,7 +846,7 @@ export default function PostDetailPage() {
     const isPostVerified = post.isVerified || post.handle === '@Rulio';
     const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
-    const isSaved = zisprUser?.collections?.find(c => c.name === 'Todos os posts salvos')?.postIds.includes(post.id) ?? false;
+    const isSaved = zisprUser?.collections?.some(c => c.postIds.includes(post.id)) ?? false;
 
     return (
         <div className="bg-background flex flex-col min-h-screen">
@@ -945,9 +916,9 @@ export default function PostDetailPage() {
                                     </>
                                 ) : (
                                     <>
-                                        <DropdownMenuItem onClick={() => handleSavePost(post.id)}>
+                                        <DropdownMenuItem onClick={() => setPostToSave(post.id)}>
                                             <Save className="mr-2 h-4 w-4"/>
-                                            {isSaved ? 'Remover dos Salvos' : 'Salvar'}
+                                            {isSaved ? 'Remover dos Salvos' : 'Salvar em Coleção'}
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
@@ -1151,6 +1122,14 @@ export default function PostDetailPage() {
                 />}
                  {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
                  {analyticsPost && <PostAnalyticsModal post={analyticsPost} onOpenChange={() => setAnalyticsPost(null)} />}
+                 {postToSave && user && (
+                    <SaveToCollectionModal
+                        open={!!postToSave}
+                        onOpenChange={(open) => !open && setPostToSave(null)}
+                        postId={postToSave}
+                        currentUser={user}
+                    />
+                )}
             </Suspense>
 
             {/* Comment Modals */}
@@ -1191,3 +1170,4 @@ export default function PostDetailPage() {
         </div>
     );
 }
+

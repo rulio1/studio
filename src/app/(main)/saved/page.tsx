@@ -5,11 +5,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, query, where, limit, orderBy, updateDoc, arrayUnion, arrayRemove, deleteDoc, onSnapshot, documentId } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, Bookmark, Library } from 'lucide-react';
-import PostSkeleton from '@/components/post-skeleton';
+import { ArrowLeft, Loader2, Bookmark, Library, PlusCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import CreateCollectionModal from '@/components/create-collection-modal';
 
 interface ZisprUser {
     handle?: string;
@@ -21,6 +21,7 @@ export default function SavedPage() {
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -41,7 +42,18 @@ export default function SavedPage() {
         const userDocRef = doc(db, 'users', user.uid);
         const unsubscribeUser = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
-                setZisprUser(doc.data() as ZisprUser);
+                const userData = doc.data() as ZisprUser;
+                // Ensure default collection exists
+                if (!userData.collections?.some(c => c.id === 'all_saved')) {
+                    userData.collections = [...(userData.collections || []), { id: 'all_saved', name: 'Todos os posts salvos', postIds: [] }];
+                }
+                 // Sort collections: "Todos os posts salvos" first, then alphabetically
+                userData.collections?.sort((a, b) => {
+                    if (a.id === 'all_saved') return -1;
+                    if (b.id === 'all_saved') return 1;
+                    return a.name.localeCompare(b.name);
+                });
+                setZisprUser(userData);
             } else {
                 router.push('/login');
             }
@@ -51,19 +63,23 @@ export default function SavedPage() {
     }, [user, router]);
 
 
-    const allSavedPostsCount = zisprUser?.collections?.find(c => c.name === 'Todos os posts salvos')?.postIds.length ?? 0;
-
     return (
+        <>
         <div className="flex flex-col h-screen bg-background">
             <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
-                <div className="flex items-center gap-4 px-4 py-2">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-bold">Salvos</h1>
-                        <p className="text-sm text-muted-foreground">{zisprUser?.handle}</p>
+                <div className="flex items-center justify-between px-4 py-2">
+                     <div className="flex items-center gap-4">
+                        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                        <div>
+                            <h1 className="text-xl font-bold">Salvos</h1>
+                            <p className="text-sm text-muted-foreground">{zisprUser?.handle}</p>
+                        </div>
                     </div>
+                     <Button variant="ghost" size="icon" onClick={() => setIsCreateModalOpen(true)}>
+                        <PlusCircle className="h-5 w-5" />
+                    </Button>
                 </div>
             </header>
 
@@ -72,35 +88,46 @@ export default function SavedPage() {
                      <div className="flex justify-center items-center h-full">
                         <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
+                ) : (zisprUser?.collections && zisprUser.collections.length > 0) ? (
+                    <div className='grid grid-cols-2 gap-4'>
+                        {zisprUser.collections.map(collection => (
+                             <Card 
+                                key={collection.id}
+                                className="hover:bg-muted/50 cursor-pointer group"
+                                onClick={() => router.push(`/collections/${collection.id}`)}
+                             >
+                                <CardContent className="p-0 aspect-square flex flex-col justify-between">
+                                    <div className="p-4">
+                                        <p className="font-bold text-lg line-clamp-3">{collection.name}</p>
+                                    </div>
+                                    <div className="p-4 text-sm text-muted-foreground">
+                                        {collection.postIds?.length || 0} posts
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
                 ) : (
-                    <div className='space-y-4'>
-                        <h2 className="text-lg font-bold">Minhas Coleções</h2>
-                         <Card 
-                            className="hover:bg-muted/50 cursor-pointer"
-                            onClick={() => router.push('/collections/all')}
-                         >
-                            <CardContent className="p-4 flex items-center justify-between">
-                                <div className='flex items-center gap-4'>
-                                    <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center">
-                                        <Bookmark className="h-8 w-8 text-primary-foreground" />
-                                    </div>
-                                    <div>
-                                        <p className="font-bold">Todos os posts salvos</p>
-                                        <p className="text-sm text-muted-foreground">{allSavedPostsCount} posts</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                          <Card className="border-dashed hover:bg-muted/50 cursor-pointer">
-                            <CardContent className="p-4 flex items-center justify-center gap-2 text-muted-foreground">
-                                <Library className="h-5 w-5" />
-                                <span>Criar nova coleção</span>
-                            </CardContent>
-                        </Card>
+                     <div className="text-center p-8 mt-16">
+                        <Bookmark className="mx-auto h-16 w-16 text-muted-foreground" />
+                        <h2 className="mt-4 text-2xl font-bold">Salve posts para depois</h2>
+                        <p className="mt-2 text-muted-foreground">Não perca os melhores posts. Salve-os em coleções para encontrar facilmente mais tarde.</p>
+                         <Button className="mt-4" onClick={() => setIsCreateModalOpen(true)}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Criar Coleção
+                        </Button>
                     </div>
                 )}
             </main>
         </div>
+        {user && (
+            <CreateCollectionModal 
+                open={isCreateModalOpen}
+                onOpenChange={setIsCreateModalOpen}
+                currentUser={user}
+            />
+        )}
+        </>
     );
 }
 

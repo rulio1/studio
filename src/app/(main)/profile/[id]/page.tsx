@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -48,6 +47,7 @@ import { motion } from 'framer-motion';
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
 const PostAnalyticsModal = lazy(() => import('@/components/post-analytics-modal'));
+const SaveToCollectionModal = lazy(() => import('@/components/save-to-collection-modal'));
 
 
 const EmptyState = ({ title, description, icon: Icon }: { title: string, description: string, icon?: React.ElementType }) => (
@@ -120,6 +120,12 @@ interface Reply {
     badgeTier?: 'bronze' | 'silver' | 'gold';
 }
 
+interface Collection {
+    id: string;
+    name: string;
+    postIds: string[];
+}
+
 interface ZisprUser {
     uid: string;
     displayName: string;
@@ -134,8 +140,7 @@ interface ZisprUser {
     createdAt: any;
     followers: string[];
     following: string[];
-    likedPosts?: string[];
-    savedPosts?: string[];
+    collections?: Collection[];
     pinnedPostId?: string;
     isVerified?: boolean;
     badgeTier?: 'bronze' | 'silver' | 'gold';
@@ -266,6 +271,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
     const isRetweeted = Array.isArray(post.retweets) && post.retweets.includes(user?.uid || '');
     const isLiked = Array.isArray(post.likes) && post.likes.includes(user?.uid || '');
+    const isSaved = zisprUser?.collections?.some(c => c.postIds.includes(post.id)) ?? false;
 
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
@@ -352,7 +358,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
                                     <>
                                         <DropdownMenuItem onClick={() => onSave(post.id)}>
                                             <Save className="mr-2 h-4 w-4"/>
-                                            {zisprUser?.savedPosts?.includes(post.id) ? 'Remover dos Salvos' : 'Salvar'}
+                                            {isSaved ? 'Remover dos Salvos' : 'Salvar em Coleção'}
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
@@ -531,6 +537,7 @@ export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState('posts');
     const [isBlockAlertOpen, setIsBlockAlertOpen] = useState(false);
     const [analyticsPost, setAnalyticsPost] = useState<Post | null>(null);
+    const [postToSave, setPostToSave] = useState<string | null>(null);
 
 
     // Follow list dialog state
@@ -711,7 +718,7 @@ export default function ProfilePage() {
 
         setIsLoadingLikes(true);
         try {
-            const likedPostIds = profileData.likedPosts || [];
+            const likedPostIds = profileData.likes || []; // LIKED POSTS ARE ON THE `likes` FIELD, NOT `likedPosts`
 
             if (likedPostIds.length === 0) {
                  setLikedPosts([]);
@@ -957,19 +964,6 @@ export default function ProfilePage() {
         }
     };
 
-    const handleSavePost = async (postId: string) => {
-        if (!currentUser) return;
-        const userRef = doc(db, 'users', currentUser.uid);
-        const isSaved = zisprUser?.savedPosts?.includes(postId);
-
-        if (isSaved) {
-            await updateDoc(userRef, { savedPosts: arrayRemove(postId) });
-        } else {
-            await updateDoc(userRef, { savedPosts: arrayUnion(postId) });
-        }
-        toast({ title: isSaved ? 'Post removido dos salvos' : 'Post salvo!' });
-    };
-
     const handlePostAction = async (postId: string, action: 'like' | 'retweet', authorId: string) => {
         if (!currentUser || !zisprUser) return;
     
@@ -988,7 +982,7 @@ export default function ProfilePage() {
             batch.update(postRef, { [field]: arrayRemove(currentUser.uid) });
 
             if (action === 'like') {
-                batch.update(userRef, { likedPosts: arrayRemove(postId) });
+                batch.update(userRef, { likes: arrayRemove(postId) });
             }
     
             if (action === 'retweet') {
@@ -1001,7 +995,7 @@ export default function ProfilePage() {
             batch.update(postRef, { [field]: arrayUnion(currentUser.uid) });
     
             if (action === 'like') {
-                batch.update(userRef, { likedPosts: arrayUnion(postId) });
+                batch.update(userRef, { likes: arrayUnion(postId) });
             }
 
             if (action === 'retweet') {
@@ -1143,7 +1137,7 @@ export default function ProfilePage() {
                         onAction={handlePostAction}
                         onDelete={setPostToDelete}
                         onEdit={handleEditClick}
-                        onSave={handleSavePost}
+                        onSave={() => setPostToSave(pinnedPost.id)}
                         onPin={() => handleTogglePinPost(pinnedPost)}
                         onVote={handleVote}
                         toast={toast}
@@ -1161,7 +1155,7 @@ export default function ProfilePage() {
                         onAction={handlePostAction}
                         onDelete={setPostToDelete}
                         onEdit={handleEditClick}
-                        onSave={handleSavePost}
+                        onSave={() => setPostToSave(post.id)}
                         onPin={() => handleTogglePinPost(post)}
                         onVote={handleVote}
                         toast={toast}
@@ -1553,6 +1547,14 @@ export default function ProfilePage() {
                 )}
                 {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
                 {analyticsPost && <PostAnalyticsModal post={analyticsPost} onOpenChange={() => setAnalyticsPost(null)} />}
+                {postToSave && currentUser && (
+                    <SaveToCollectionModal
+                        open={!!postToSave}
+                        onOpenChange={(open) => !open && setPostToSave(null)}
+                        postId={postToSave}
+                        currentUser={currentUser}
+                    />
+                )}
             </Suspense>
         </div>
     );

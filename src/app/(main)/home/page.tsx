@@ -50,6 +50,7 @@ import { motion } from 'framer-motion';
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
 const PostAnalyticsModal = lazy(() => import('@/components/post-analytics-modal'));
+const SaveToCollectionModal = lazy(() => import('@/components/save-to-collection-modal'));
 
 
 interface Post {
@@ -143,6 +144,7 @@ export default function HomePage() {
   const [postToQuote, setPostToQuote] = useState<Post | null>(null);
   const [postToView, setPostToView] = useState<Post | null>(null);
   const [analyticsPost, setAnalyticsPost] = useState<Post | null>(null);
+  const [postToSave, setPostToSave] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
   
@@ -541,49 +543,6 @@ useEffect(() => {
       }
   };
   
-  const handleSavePost = async (postId: string) => {
-    if (!user || !zisprUser) return;
-    
-    // For simplicity, we add to a default collection.
-    // A more advanced implementation would show a dialog to choose a collection.
-    const userRef = doc(db, 'users', user.uid);
-    
-    await runTransaction(db, async (transaction) => {
-        const userDoc = await transaction.get(userRef);
-        if (!userDoc.exists()) {
-            throw "User does not exist!";
-        }
-
-        const currentCollections = userDoc.data().collections || [];
-        let allSavedCollection = currentCollections.find((c: Collection) => c.name === 'Todos os posts salvos');
-        
-        let isSaved = false;
-        if (allSavedCollection) {
-            isSaved = allSavedCollection.postIds.includes(postId);
-        }
-
-        if (isSaved) {
-            // Remove from "All Saved Posts"
-            allSavedCollection.postIds = allSavedCollection.postIds.filter((id: string) => id !== postId);
-        } else {
-            if (allSavedCollection) {
-                // Add to existing "All Saved Posts"
-                allSavedCollection.postIds.push(postId);
-            } else {
-                // Create "All Saved Posts" collection
-                allSavedCollection = { id: uuidv4(), name: 'Todos os posts salvos', postIds: [postId] };
-                currentCollections.push(allSavedCollection);
-            }
-        }
-        
-        transaction.update(userRef, { collections: currentCollections });
-
-        toast({
-            title: isSaved ? 'Post removido dos salvos' : 'Post salvo!',
-        });
-    });
-  };
-  
   const handleTogglePinPost = async (postId: string) => {
     if (!user) return;
     const userRef = doc(db, 'users', user.uid);
@@ -779,7 +738,8 @@ useEffect(() => {
     const isVerified = post.isVerified || post.handle === '@Rulio';
     const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
-    const isSaved = zisprUser?.collections?.find(c => c.name === 'Todos os posts salvos')?.postIds.includes(post.id) ?? false;
+    
+    const isSaved = zisprUser?.collections?.some(c => c.postIds.includes(post.id)) ?? false;
 
 
     return (
@@ -859,9 +819,9 @@ useEffect(() => {
                                 </>
                             ) : (
                                 <>
-                                    <DropdownMenuItem onClick={() => handleSavePost(post.id)}>
+                                    <DropdownMenuItem onClick={() => setPostToSave(post.id)}>
                                         <Save className="mr-2 h-4 w-4"/>
-                                        {isSaved ? 'Remover dos Salvos' : 'Salvar'}
+                                        {isSaved ? 'Remover dos Salvos' : 'Salvar em Coleção'}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
@@ -1186,7 +1146,16 @@ useEffect(() => {
             />}
             {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
             {analyticsPost && <PostAnalyticsModal post={analyticsPost} onOpenChange={() => setAnalyticsPost(null)} />}
+             {postToSave && user && (
+                <SaveToCollectionModal
+                    open={!!postToSave}
+                    onOpenChange={(open) => !open && setPostToSave(null)}
+                    postId={postToSave}
+                    currentUser={user}
+                />
+            )}
         </Suspense>
     </>
   );
 }
+
