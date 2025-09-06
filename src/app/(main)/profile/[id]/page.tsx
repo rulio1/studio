@@ -43,6 +43,7 @@ import FollowListDialog from '@/components/follow-list-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import SpotifyEmbed from '@/components/spotify-embed';
 import { motion } from 'framer-motion';
+import React from 'react';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
@@ -250,7 +251,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
 };
 
 
-const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, onPin, onVote, toast, onQuote, onImageClick, onAnalyticsClick }: { post: Post, user: FirebaseUser | null, zisprUser: ZisprUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, onVote: (postId: string, optionIndex: number) => Promise<void>, toast: any, onQuote: (post: Post) => void, onImageClick: (post: Post) => void, onAnalyticsClick: (post: Post) => void }) => {
+const PostItem = React.memo(function PostItem({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, onPin, onVote, toast, onQuote, onImageClick, onAnalyticsClick }: { post: Post, user: FirebaseUser | null, zisprUser: ZisprUser | null, onAction: (id: string, action: 'like' | 'retweet', authorId: string) => void, onDelete: (id: string) => void, onEdit: (post: Post) => void, onSave: (id: string) => void, onPin: () => void, onVote: (postId: string, optionIndex: number) => Promise<void>, toast: any, onQuote: (post: Post) => void, onImageClick: (post: Post) => void, onAnalyticsClick: (post: Post) => void }) {
     const router = useRouter();
     const [time, setTime] = useState('');
     
@@ -449,7 +450,7 @@ const PostItem = ({ post, user, zisprUser, onAction, onDelete, onEdit, onSave, o
             </div>
         </li>
     )
-}
+});
 
 const ReplyItem = ({ reply }: { reply: Reply }) => {
     const router = useRouter();
