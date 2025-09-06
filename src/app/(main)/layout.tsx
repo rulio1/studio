@@ -14,6 +14,7 @@ import { collection, query, where, onSnapshot, getDoc, doc } from 'firebase/fire
 import { useToast } from '@/hooks/use-toast';
 import AdsenseAd from '@/components/adsense-ad';
 import { useUserStore } from '@/store/user-store';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 function MainLayoutClient({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -21,6 +22,7 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
     const { toast } = useToast();
     const { user, isLoading } = useUserStore();
     const initialLoadTime = useRef(new Date());
+    const isMobile = useIsMobile();
 
     useEffect(() => {
         if (!user || isLoading) return;
@@ -120,9 +122,11 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
             <RightSidebar />
             <div className="md:hidden">
                 {showFab && <CreatePostFAB />}
-                 <div className="fixed bottom-[var(--bottom-nav-height)] w-full flex justify-center z-40 bg-background/80 backdrop-blur-sm">
-                    <AdsenseAd slot="2345678901" format="auto" />
-                </div>
+                 {isMobile && (
+                    <div className="fixed bottom-[var(--bottom-nav-height)] w-full flex justify-center z-40 bg-background/80 backdrop-blur-sm">
+                        <AdsenseAd slot="2345678901" format="auto" />
+                    </div>
+                )}
                 <BottomNavBar />
             </div>
         </div>
