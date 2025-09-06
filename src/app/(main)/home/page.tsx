@@ -128,6 +128,67 @@ const badgeColors = {
     gold: 'text-yellow-400'
 };
 
+const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => {
+    const router = useRouter();
+    const parts = content.split(/(#\w+|@\w+|https?:\/\/[^\s]+)/g);
+    
+    const spotifyLinkIndex = parts.findIndex(part => part && part.includes('spotify.com'));
+
+    return (
+        <p>
+            {parts.map((part, index) => {
+                if (!part) return null;
+
+                if (part.startsWith('#')) {
+                    const hashtag = part.substring(1);
+                    return (
+                        <a 
+                            key={index} 
+                            className="text-primary hover:underline"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/search?q=%23${hashtag}`);
+                            }}
+                        >
+                            {part}
+                        </a>
+                    );
+                }
+                 if (part.startsWith('@')) {
+                    const handle = part.substring(1);
+                    return (
+                        <a 
+                            key={index} 
+                            className="text-primary hover:underline"
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                const usersRef = collection(db, "users");
+                                const q = query(usersRef, where("handle", "==", part));
+                                const querySnapshot = await getDocs(q);
+                                if (!querySnapshot.empty) {
+                                    const userDoc = querySnapshot.docs[0];
+                                    router.push(`/profile/${userDoc.id}`);
+                                }
+                            }}
+                        >
+                            {part}
+                        </a>
+                    );
+                }
+                if (part.includes('spotify.com')) {
+                    // Don't render the text link if the embed will be shown
+                    return spotifyUrl ? null : (
+                         <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                            {part}
+                        </a>
+                    );
+                }
+                return part;
+            })}
+        </p>
+    );
+};
+
 const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePostAction, handleQuoteClick, handleDeleteClick, handleEditClick, handleTogglePinPost, onVote, onImageClick, onAnalyticsClick, onSaveClick }: { 
     post: Post; 
     zisprUser: ZisprUser | null; 
@@ -166,6 +227,31 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
     const isSaved = zisprUser?.collections?.some(c => c.postIds.includes(post.id)) ?? false;
 
 
+    const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => {
+        const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
+        return (
+            <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
+                <div className="flex items-center gap-2 text-sm">
+                    <Avatar className="h-5 w-5">
+                        <AvatarImage src={post.avatar} />
+                        <AvatarFallback>{post.avatarFallback || post.author[0]}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-bold flex items-center gap-1">
+                        {post.author}
+                        {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}
+                    </span>
+                    <span className="text-muted-foreground">{post.handle}</span>
+                </div>
+                <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
+                {post.image && (
+                    <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
+                        <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+                    </div>
+                )}
+            </div>
+        )
+    };
+    
     return (
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)} data-post-id={post.id}>
              {post.repostedBy && (
@@ -761,66 +847,7 @@ useEffect(() => {
         toast({ title: 'Erro ao sair', variant: 'destructive' });
     }
   };
-    const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => {
-        const router = useRouter();
-        const parts = content.split(/(#\w+|@\w+|https?:\/\/[^\s]+)/g);
-        
-        const spotifyLinkIndex = parts.findIndex(part => part && part.includes('spotify.com'));
-
-        return (
-            <p>
-                {parts.map((part, index) => {
-                    if (!part) return null;
-
-                    if (part.startsWith('#')) {
-                        const hashtag = part.substring(1);
-                        return (
-                            <a 
-                                key={index} 
-                                className="text-primary hover:underline"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/search?q=%23${hashtag}`);
-                                }}
-                            >
-                                {part}
-                            </a>
-                        );
-                    }
-                     if (part.startsWith('@')) {
-                        const handle = part.substring(1);
-                        return (
-                            <a 
-                                key={index} 
-                                className="text-primary hover:underline"
-                                onClick={async (e) => {
-                                    e.stopPropagation();
-                                    const usersRef = collection(db, "users");
-                                    const q = query(usersRef, where("handle", "==", part));
-                                    const querySnapshot = await getDocs(q);
-                                    if (!querySnapshot.empty) {
-                                        const userDoc = querySnapshot.docs[0];
-                                        router.push(`/profile/${userDoc.id}`);
-                                    }
-                                }}
-                            >
-                                {part}
-                            </a>
-                        );
-                    }
-                    if (part.includes('spotify.com')) {
-                        // Don't render the text link if the embed will be shown
-                        return spotifyUrl ? null : (
-                             <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-                                {part}
-                            </a>
-                        );
-                    }
-                    return part;
-                })}
-            </p>
-        );
-    };
+    
 
     const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => {
         const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
@@ -1151,5 +1178,7 @@ useEffect(() => {
     </>
   );
 }
+
+    
 
     
