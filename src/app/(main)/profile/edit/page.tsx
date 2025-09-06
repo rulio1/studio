@@ -24,6 +24,7 @@ interface UserProfileData {
     handle: string;
     bio: string;
     location: string;
+    website: string;
     avatar: string;
     banner: string;
 }
@@ -40,6 +41,7 @@ export default function EditProfilePage() {
         handle: '',
         bio: '',
         location: '',
+        website: '',
         avatar: '',
         banner: '',
     });
@@ -65,6 +67,7 @@ export default function EditProfilePage() {
                             handle: userData.handle || '',
                             bio: userData.bio || '',
                             location: userData.location || '',
+                            website: userData.website || '',
                             avatar: userData.avatar || '',
                             banner: userData.banner || '',
                         };
@@ -130,6 +133,7 @@ export default function EditProfilePage() {
                 handle: handleWithAt,
                 bio: profileData.bio,
                 location: profileData.location,
+                website: profileData.website,
                 avatar: avatarUrl,
                 banner: bannerUrl,
             };
@@ -302,6 +306,17 @@ export default function EditProfilePage() {
                     onChange={handleFormChange}
                      className="text-lg"
                      disabled={isSaving}
+                />
+            </div>
+             <div className="grid gap-1.5">
+                <Label htmlFor="website">Site</Label>
+                <Input 
+                    id="website" 
+                    value={profileData.website}
+                    onChange={handleFormChange}
+                     className="text-lg"
+                     disabled={isSaving}
+                     placeholder='ex: seudominio.com'
                 />
             </div>
         </div>

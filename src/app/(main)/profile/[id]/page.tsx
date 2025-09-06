@@ -1,9 +1,10 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Info, Star, PenSquare, Lock, HandHeart, UserX } from 'lucide-react';
+import { ArrowLeft, Calendar, Gift, Loader2, Mail, MapPin, MoreHorizontal, Search, Repeat, Heart, MessageCircle, BarChart2, Bell, Trash2, Edit, Save, Bookmark, BadgeCheck, Bird, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Info, Star, PenSquare, Lock, HandHeart, UserX, Link as LinkIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -1390,6 +1391,12 @@ export default function ProfilePage() {
                 )}
                 <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-muted-foreground text-sm">
                     {profileUser.location && <div className="flex items-center gap-2"><MapPin className="h-4 w-4" /><span>{profileUser.location}</span></div>}
+                    {profileUser.website && (
+                        <a href={profileUser.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline">
+                            <LinkIcon className="h-4 w-4" />
+                            <span>{profileUser.website.replace(/^(https?:\/\/)?(www\.)?/, '')}</span>
+                        </a>
+                    )}
                     {profileUser.birthDate && (
                         <div className="flex items-center gap-2">
                             <Gift className="h-4 w-4" />
@@ -1559,4 +1566,3 @@ export default function ProfilePage() {
     );
 }
 
-    
