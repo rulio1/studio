@@ -9,17 +9,19 @@ import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch, addDoc, query, where, limit, getDocs } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird } from 'lucide-react';
+import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
 import React from 'react';
 import { fileToDataUri, extractSpotifyUrl } from '@/lib/utils';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from './ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from './ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import PollCreator, { PollData } from './poll-creator';
 import { useDebounce } from 'use-debounce';
+import { generatePost } from '@/ai/flows/post-generator-flow';
+import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 
 
 interface Post {
@@ -131,6 +133,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [suggestionType, setSuggestionType] = useState<'mention' | 'hashtag' | null>(null);
     const [debouncedSuggestionQuery] = useDebounce(suggestionQuery, 300);
+
+    const [isGenerating, setIsGenerating] = useState(false);
+
 
     const { toast } = useToast();
 
@@ -402,6 +407,55 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setShowPollCreator(!showPollCreator);
     };
     
+    const handleGenerateText = async () => {
+        const prompt = newPostContent.trim();
+        if (!prompt) {
+            toast({
+                title: "Tópico necessário",
+                description: "Por favor, digite um tópico ou ideia para a IA gerar o post.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const generatedText = await generatePost(prompt);
+            setNewPostContent(generatedText);
+        } catch (error) {
+            console.error("Error generating post text:", error);
+            toast({ title: "Erro de IA", description: "Não foi possível gerar o texto do post.", variant: "destructive" });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleGenerateImage = async () => {
+        const prompt = newPostContent.trim();
+        if (!prompt) {
+            toast({
+                title: "Tópico necessário",
+                description: "Por favor, digite uma descrição para a IA gerar uma imagem.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const imageDataUri = await generateImageFromPrompt(prompt);
+            setPostImageDataUri(imageDataUri);
+            setPostImagePreview(imageDataUri); // Show the generated image preview
+            setShowPollCreator(false);
+        } catch (error) {
+            console.error("Error generating image:", error);
+            toast({ title: "Erro de IA", description: "Não foi possível gerar a imagem.", variant: "destructive" });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+
     const isSubmitDisabled = (newPostContent.length === 0 && !postImageDataUri && !quotedPost && !pollData) || isPosting || newPostContent.length > MAX_CHARS;
     
     const QuotedPostPreview = ({ post }: { post: Post }) => {
@@ -578,6 +632,21 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     <div className="flex justify-between items-center w-full">
                         <div className="flex justify-start items-center -ml-2">
                             <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} disabled={showPollCreator} />
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" disabled={isPosting || isGenerating}>
+                                        {isGenerating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5 text-primary" />}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuItem onClick={handleGenerateText} disabled={isGenerating}>
+                                        Gerar Texto com IA
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={handleGenerateImage} disabled={isGenerating || showPollCreator}>
+                                        Gerar Imagem com IA
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting || showPollCreator}>
                                 <ImageIcon className="h-5 w-5 text-primary" />
                             </Button>
@@ -649,6 +718,3 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         </Dialog>
     );
 }
-
-
-    
