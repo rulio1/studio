@@ -500,6 +500,3 @@ export default function ConversationPage() {
     </>
   );
 }
-
-
-    
