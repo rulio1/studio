@@ -123,7 +123,7 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                     ) : results.length > 0 ? (
                         <ul className="divide-y divide-border">
                             {results.map(user => {
-                                const isZisprAccount = user.handle === '@Zispr';
+                                const isZisprAccount = user.handle === '@Zispr' || user.handle === '@ZisprUSA';
                                 const isVerified = user.isVerified || user.handle === '@Rulio';
                                 const badgeColor = user.badgeTier ? badgeColors[user.badgeTier] : 'text-primary';
                                 return (

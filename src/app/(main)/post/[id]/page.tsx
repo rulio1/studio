@@ -256,7 +256,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment, onReply }
         }
     };
     
-    const isZisprAccount = comment.handle === '@Zispr';
+    const isZisprAccount = comment.handle === '@Zispr' || comment.handle === '@ZisprUSA';
     const isVerified = comment.isVerified || comment.handle === '@Rulio';
     const badgeColor = comment.badgeTier ? badgeColors[comment.badgeTier] : 'text-primary';
 
@@ -822,7 +822,7 @@ export default function PostDetailPage() {
         );
     }
     
-    const isZisprAccount = post.handle === '@Zispr';
+    const isZisprAccount = post.handle === '@Zispr' || post.handle === '@ZisprUSA';
     const isPostVerified = post.isVerified || post.handle === '@Rulio';
     const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;

@@ -344,7 +344,7 @@ export default function ConversationPage() {
         );
     }
     
-    const isZisprAccount = otherUser.handle === '@Zispr';
+    const isZisprAccount = otherUser.handle === '@Zispr' || otherUser.handle === '@ZisprUSA';
     const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@Rulio';
     const badgeColor = otherUser.badgeTier ? badgeColors[otherUser.badgeTier] : 'text-primary';
     const isBlockedByYou = zisprUser?.blocked?.includes(otherUser.uid);

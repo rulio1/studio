@@ -51,7 +51,7 @@ const UserItem = ({ user, currentUser, onToggleFollow, onDialogClose }: { user: 
     const router = useRouter();
     const isFollowing = currentUser.following.includes(user.uid);
     const isCurrentUser = user.uid === currentUser.uid;
-    const isZisprAccount = user.handle === '@Zispr';
+    const isZisprAccount = user.handle === '@Zispr' || user.handle === '@ZisprUSA';
     const isVerified = user.isVerified || user.handle === '@Rulio';
     const badgeColor = user.badgeTier ? badgeColors[user.badgeTier] : 'text-primary';
 

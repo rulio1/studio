@@ -102,7 +102,7 @@ export default function DesktopSidebar() {
         return pathname.startsWith(href);
     };
 
-    const isZisprAccount = zisprUser?.handle === '@Zispr';
+    const isZisprAccount = zisprUser?.handle === '@Zispr' || zisprUser?.handle === '@ZisprUSA';
     const isUserVerified = zisprUser?.isVerified || zisprUser?.handle === '@Rulio';
     const badgeColor = zisprUser?.badgeTier ? badgeColors[zisprUser.badgeTier] : 'text-primary';
 

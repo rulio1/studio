@@ -92,7 +92,7 @@ const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notif
         setIsFollowing(true);
     };
 
-    const isZisprAccount = notification.fromUser.handle === '@Zispr';
+    const isZisprAccount = notification.fromUser.handle === '@Zispr' || notification.fromUser.handle === '@ZisprUSA';
     const isVerified = notification.fromUser.isVerified || notification.fromUser.handle === '@Rulio';
     const badgeColor = notification.fromUser.badgeTier ? badgeColors[notification.fromUser.badgeTier] : 'text-primary';
 

@@ -164,7 +164,7 @@ export default function RightSidebar() {
                             <ul className="space-y-4">
                                 {usersToFollow.map(user => {
                                     const isFollowing = user.followers?.includes(currentUser?.uid || '');
-                                    const isZisprAccount = user.handle === '@Zispr';
+                                    const isZisprAccount = user.handle === '@Zispr' || user.handle === '@ZisprUSA';
                                     const isVerified = user.isVerified || user.handle === '@Rulio';
                                     const badgeColor = user.badgeTier ? badgeColors[user.badgeTier] : 'text-primary';
 

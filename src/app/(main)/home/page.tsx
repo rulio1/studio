@@ -220,7 +220,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
       }
     }, [post.createdAt, post.repostedAt]);
     
-    const isZisprAccount = post.handle === '@Zispr';
+    const isZisprAccount = post.handle === '@Zispr' || post.handle === '@ZisprUSA';
     const isVerified = post.isVerified || post.handle === '@Rulio';
     const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
@@ -963,7 +963,7 @@ useEffect(() => {
       );
   }
   
-    const isZisprAccount = zisprUser.handle === '@Zispr';
+    const isZisprAccount = zisprUser.handle === '@Zispr' || zisprUser.handle === '@ZisprUSA';
     const isZisprUserVerified = zisprUser.isVerified || zisprUser.handle === '@Rulio';
     const zisprUserBadgeColor = zisprUser.badgeTier ? badgeColors[zisprUser.badgeTier] : 'text-primary';
 

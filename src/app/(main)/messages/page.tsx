@@ -69,7 +69,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
     const isMyMessage = convo.lastMessage.senderId === currentUserId;
     const isUnread = convo.unreadCount > 0;
     const messagePreview = `${isMyMessage ? 'Você: ' : ''}${convo.lastMessage.text}`;
-    const isZisprAccount = convo.otherUser.handle === '@Zispr';
+    const isZisprAccount = convo.otherUser.handle === '@Zispr' || convo.otherUser.handle === '@ZisprUSA';
     const isVerified = convo.otherUser.isVerified || convo.otherUser.handle === '@Rulio';
     const badgeColor = convo.otherUser.badgeTier ? badgeColors[convo.otherUser.badgeTier] : 'text-primary';
 

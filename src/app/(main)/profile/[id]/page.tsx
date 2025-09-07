@@ -265,7 +265,7 @@ const PostItem = React.memo(function PostItem({ post, user, zisprUser, onAction,
         }
     }, [post.createdAt, post.repostedAt]);
     
-    const isZisprAccount = post.handle === '@Zispr';
+    const isZisprAccount = post.handle === '@Zispr' || post.handle === '@ZisprUSA';
     const isVerified = post.isVerified || post.handle === '@Rulio';
     const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
@@ -465,7 +465,7 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
         }
     }, [reply.createdAt]);
     
-    const isZisprAccount = reply.handle === '@Zispr';
+    const isZisprAccount = reply.handle === '@Zispr' || reply.handle === '@ZisprUSA';
     const isVerified = reply.isVerified || reply.handle === '@Rulio';
     const badgeColor = reply.badgeTier ? badgeColors[reply.badgeTier] : 'text-primary';
 
@@ -1245,7 +1245,7 @@ export default function ProfilePage() {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
-    const isZisprAccount = profileUser.handle === '@Zispr';
+    const isZisprAccount = profileUser.handle === '@Zispr' || profileUser.handle === '@ZisprUSA';
     const isRulioAccount = profileUser.handle === '@Rulio';
     const isProfileVerified = profileUser.isVerified || profileUser.handle === '@Rulio';
     const badgeColor = profileUser.badgeTier ? badgeColors[profileUser.badgeTier] : 'text-primary';
@@ -1349,7 +1349,7 @@ export default function ProfilePage() {
                         <p className="mt-2 whitespace-pre-wrap">{profileUser.bio}</p>
                     )}
                 </div>
-                 {isZisprAccount && (
+                 {profileUser.handle === '@Zispr' && (
                     <Card className="mt-4 border-primary/50">
                         <CardHeader className="flex-row items-center gap-3 space-y-0 p-3">
                             <Info className="h-4 w-4 text-primary" />
@@ -1357,6 +1357,17 @@ export default function ProfilePage() {
                         </CardHeader>
                         <CardContent className="p-3 pt-0">
                             <p className="text-xs text-muted-foreground">Esta é a conta oficial do Zispr. Fique de olho para anúncios, dicas e atualizações importantes da plataforma.</p>
+                        </CardContent>
+                    </Card>
+                )}
+                 {profileUser.handle === '@ZisprUSA' && (
+                    <Card className="mt-4 border-primary/50">
+                        <CardHeader className="flex-row items-center gap-3 space-y-0 p-3">
+                            <Info className="h-4 w-4 text-primary" />
+                            <CardTitle className="text-sm">Official Account</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-0">
+                            <p className="text-xs text-muted-foreground">This is the official Zispr account for the United States. Keep an eye out for announcements, tips, and important platform updates.</p>
                         </CardContent>
                     </Card>
                 )}
