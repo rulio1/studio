@@ -1,10 +1,11 @@
 
 'use client';
 
-import { useState } from 'react';
 import { Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useUserStore } from '@/store/user-store';
+import { useTranslation } from '@/hooks/use-translation';
 
 const languages = [
     { code: 'pt', name: 'Português' },
@@ -22,16 +23,15 @@ const SettingsItem = ({ title, selected, onClick }: { title: string, selected: b
 );
 
 export default function LanguageSettingsPage() {
-    const [selectedLang, setSelectedLang] = useState('pt');
+    const { language, setLanguage } = useUserStore();
+    const { t } = useTranslation();
     const { toast } = useToast();
 
-    const handleSelectLanguage = (langCode: string) => {
-        setSelectedLang(langCode);
-        // Em uma implementação futura, isso salvaria a preferência do usuário
-        // e aplicaria a tradução em toda a interface.
+    const handleSelectLanguage = (langCode: 'pt' | 'en') => {
+        setLanguage(langCode);
         toast({
-            title: "Idioma selecionado",
-            description: "A funcionalidade completa de tradução será implementada em breve.",
+            title: t('languageSelectedToast.title'),
+            description: t('languageSelectedToast.description'),
         });
     };
 
@@ -39,8 +39,8 @@ export default function LanguageSettingsPage() {
         <main className="flex-1 overflow-y-auto p-4">
             <Card>
                 <CardHeader>
-                    <CardTitle>Selecione um Idioma</CardTitle>
-                    <CardDescription>O idioma selecionado será usado na interface do Zispr.</CardDescription>
+                    <CardTitle>{t('language.title')}</CardTitle>
+                    <CardDescription>{t('language.description')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="divide-y divide-border">
@@ -48,8 +48,8 @@ export default function LanguageSettingsPage() {
                             <SettingsItem 
                                 key={lang.code}
                                 title={lang.name}
-                                selected={selectedLang === lang.code}
-                                onClick={() => handleSelectLanguage(lang.code)}
+                                selected={language === lang.code}
+                                onClick={() => handleSelectLanguage(lang.code as 'pt' | 'en')}
                             />
                         ))}
                     </div>
