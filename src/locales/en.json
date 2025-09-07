@@ -1,0 +1,11 @@
+
+{
+  "language": {
+    "title": "Language",
+    "description": "Choose which language you want to use in Zispr."
+  },
+  "languageSelectedToast": {
+    "title": "Language updated!",
+    "description": "The interface has been changed to English."
+  }
+}

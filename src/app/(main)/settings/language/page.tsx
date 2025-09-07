@@ -29,9 +29,11 @@ export default function LanguageSettingsPage() {
 
     const handleSelectLanguage = (langCode: 'pt' | 'en') => {
         setLanguage(langCode);
+        const toastTitle = t('languageSelectedToast.title');
+        const toastDescription = t('languageSelectedToast.description');
         toast({
-            title: t('languageSelectedToast.title'),
-            description: t('languageSelectedToast.description'),
+            title: toastTitle,
+            description: toastDescription,
         });
     };
 
