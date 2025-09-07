@@ -47,6 +47,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import SpotifyEmbed from '@/components/spotify-embed';
 import { motion } from 'framer-motion';
 import { useUserStore } from '@/store/user-store';
+import { useTranslation } from '@/hooks/use-translation';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
@@ -206,6 +207,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
 }) {
     const router = useRouter();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const [time, setTime] = useState('');
     
     useEffect(() => {
@@ -461,6 +463,7 @@ export default function HomePage() {
   const [postToSave, setPostToSave] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const { t } = useTranslation();
   
 
  const fetchAllPosts = useCallback((currentUser: FirebaseUser) => {
@@ -1054,8 +1057,8 @@ useEffect(() => {
               </div>
               <div className="w-full flex justify-center p-2">
                   <TabsList className="relative grid w-full grid-cols-2 p-1 bg-muted/50 rounded-full h-11">
-                      <TabsTrigger value="for-you" className="relative z-10 rounded-full text-base">Para você</TabsTrigger>
-                      <TabsTrigger value="following" className="relative z-10 rounded-full text-base">Seguindo</TabsTrigger>
+                      <TabsTrigger value="for-you" className="relative z-10 rounded-full text-base">{t('home.tabs.forYou')}</TabsTrigger>
+                      <TabsTrigger value="following" className="relative z-10 rounded-full text-base">{t('home.tabs.following')}</TabsTrigger>
                       <motion.div
                           layoutId="active-tab-indicator"
                           className="absolute inset-0 h-full p-1"

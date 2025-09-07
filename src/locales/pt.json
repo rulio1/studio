@@ -37,5 +37,11 @@
               "language": "Idioma"
           }
       }
+  },
+  "home": {
+    "tabs": {
+        "forYou": "Para você",
+        "following": "Seguindo"
+    }
   }
 }
