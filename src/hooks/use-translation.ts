@@ -17,7 +17,7 @@ type TranslationKey = Path<typeof pt>;
 export const useTranslation = () => {
   const { language } = useUserStore();
   
-  const t = (key: TranslationKey) => {
+  const t = (key: TranslationKey, variables?: Record<string, string>) => {
     const keys = key.split('.');
     let result: any = translations[language];
     for (const k of keys) {
@@ -27,6 +27,13 @@ export const useTranslation = () => {
             return key;
         }
     }
+
+    if (typeof result === 'string' && variables) {
+      return Object.entries(variables).reduce((acc, [varKey, varValue]) => {
+        return acc.replace(`{${varKey}}`, varValue);
+      }, result);
+    }
+    
     return result;
   };
   
