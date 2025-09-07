@@ -97,15 +97,15 @@ export default function BottomNavBar() {
                     <Link key={item.href} href={item.href} className={`relative flex-1 flex justify-center items-center h-full transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                         {isProfile ? (
                             isLoading || !zisprUser ? (
-                                <Skeleton className="h-7 w-7 rounded-full" />
+                                <Skeleton className="h-8 w-8 rounded-full" />
                             ) : (
-                                <Avatar className={`h-7 w-7 border-2 ${isActive ? 'border-primary' : 'border-transparent'}`}>
+                                <Avatar className={`h-8 w-8 border-2 ${isActive ? 'border-primary' : 'border-transparent'}`}>
                                     <AvatarImage src={zisprUser.avatar} />
                                     <AvatarFallback>{zisprUser.displayName?.[0]}</AvatarFallback>
                                 </Avatar>
                             )
                         ) : (
-                             <item.icon className="h-7 w-7" />
+                             <item.icon className="h-8 w-8" />
                         )}
                         {count > 0 && (
                              <Badge className="absolute top-1.5 right-[calc(50%-2rem)] h-5 w-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground p-0 text-xs">
