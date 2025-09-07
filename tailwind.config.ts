@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -102,6 +103,9 @@ export default {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in': 'fade-in 0.5s ease-in-out',
         'slide-in-from-bottom': 'slide-in-from-bottom 0.5s ease-in-out',
+      },
+      spacing: {
+        'safe': 'env(safe-area-inset-bottom)',
       },
     },
   },
