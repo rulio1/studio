@@ -87,7 +87,7 @@ export default function BottomNavBar() {
 
 
     return (
-        <nav className="fixed bottom-0 inset-x-0 z-50 h-[var(--bottom-nav-height)] bg-background border-t md:hidden flex justify-around items-center pb-safe">
+        <nav className="fixed bottom-0 inset-x-0 z-50 h-[var(--bottom-nav-height)] bg-background border-t md:hidden flex justify-around items-center">
             {navItems.map((item) => {
                  const count = getCountForItem(item.label);
                  const isActive = getIsActive(item.href, item.label);
