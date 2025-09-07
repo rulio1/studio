@@ -6,6 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useUserStore } from '@/store/user-store';
 import { useTranslation } from '@/hooks/use-translation';
+import pt from '@/locales/pt.json';
+import en from '@/locales/en.json';
+
+const translations = { pt, en };
 
 const languages = [
     { code: 'pt', name: 'Português' },
@@ -29,8 +33,11 @@ export default function LanguageSettingsPage() {
 
     const handleSelectLanguage = (langCode: 'pt' | 'en') => {
         setLanguage(langCode);
-        const toastTitle = t('languageSelectedToast.title');
-        const toastDescription = t('languageSelectedToast.description');
+        
+        // Get the toast message directly from the correct translation file
+        const toastTitle = translations[langCode].languageSelectedToast.title;
+        const toastDescription = translations[langCode].languageSelectedToast.description;
+        
         toast({
             title: toastTitle,
             description: toastDescription,
