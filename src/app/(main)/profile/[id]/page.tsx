@@ -44,6 +44,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import SpotifyEmbed from '@/components/spotify-embed';
 import { motion } from 'framer-motion';
 import React from 'react';
+import { useUserStore } from '@/store/user-store';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
@@ -512,8 +513,7 @@ export default function ProfilePage() {
     const profileId = params.id as string;
     const { toast } = useToast();
 
-    const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-    const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
+    const { user: currentUser, zisprUser, setUser: setCurrentZisprUser } = useUserStore();
     const [profileUser, setProfileUser] = useState<ZisprUser | null>(null);
     const [pinnedPost, setPinnedPost] = useState<Post | null>(null);
     const [userPosts, setUserPosts] = useState<Post[]>([]);
@@ -758,102 +758,89 @@ export default function ProfilePage() {
     }, []);
 
     useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                router.push('/login');
+        const profileDocRef = doc(db, 'users', profileId);
+        const unsubscribeProfile = onSnapshot(profileDocRef, async (profileDoc) => {
+            if (!currentUser) return;
+            if (!profileDoc.exists()) {
+                setIsLoading(false);
+                setProfileUser(null);
                 return;
             }
-            setCurrentUser(user);
+            const profileData = { uid: profileDoc.id, ...profileDoc.data() } as ZisprUser;
 
-            const profileDocRef = doc(db, 'users', profileId);
-            const unsubscribeProfile = onSnapshot(profileDocRef, async (profileDoc) => {
-                if (!profileDoc.exists()) {
-                    setIsLoading(false);
-                    setProfileUser(null);
-                    return;
-                }
-                const profileData = { uid: profileDoc.id, ...profileDoc.data() } as ZisprUser;
+             if (profileData.handle === '@stefanysouza' || profileData.handle === '@ZisprUSA') {
+                profileData.isVerified = true;
+                profileData.badgeTier = 'silver';
+                profileData.supporterTier = 'Apoiador VIP';
+            }
+            
+            setProfileUser(profileData);
+            setIsFollowing(profileData.followers?.includes(currentUser.uid));
+            setIsFollowedBy(zisprUser?.followers?.includes(profileId) || false);
 
-                 if (profileData.handle === '@stefanysouza') {
-                    profileData.isVerified = true;
-                    profileData.badgeTier = 'silver';
-                    profileData.supporterTier = 'Apoiador VIP';
-                }
-                
-                setProfileUser(profileData);
-                
-                const userDocRef = doc(db, "users", user.uid);
-                const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists()) {
-                    const currentUserData = { uid: userDoc.id, ...userDoc.data() } as ZisprUser;
-                    setZisprUser(currentUserData);
-                    setIsFollowing(profileData.followers?.includes(user.uid));
-                    setIsFollowedBy(currentUserData.followers?.includes(profileId));
-                }
-
-                if (!profileData.blockedBy?.includes(user.uid)) {
-                    await fetchUserPosts(user, profileData);
-                    await fetchUserReplies();
-                    await fetchLikedPosts(user, profileData);
-                } else {
-                     setUserPosts([]);
-                    setUserReplies([]);
-                    setMediaPosts([]);
-                    setLikedPosts([]);
-                    setPinnedPost(null);
-                    setIsLoadingPosts(false);
-                    setIsLoadingReplies(false);
-                    setIsLoadingMedia(false);
-                    setIsLoadingLikes(false);
-                }
-                setIsLoading(false);
-            }, (error) => {
-                 console.error("Error fetching profile data:", error);
-                 toast({ title: "Error fetching profile", variant: "destructive" });
-                 setIsLoading(false);
-            });
-
-            return () => unsubscribeProfile();
+            if (!profileData.blockedBy?.includes(currentUser.uid)) {
+                await fetchUserPosts(currentUser, profileData);
+                await fetchUserReplies();
+                await fetchLikedPosts(currentUser, profileData);
+            } else {
+                 setUserPosts([]);
+                setUserReplies([]);
+                setMediaPosts([]);
+                setLikedPosts([]);
+                setPinnedPost(null);
+                setIsLoadingPosts(false);
+                setIsLoadingReplies(false);
+                setIsLoadingMedia(false);
+                setIsLoadingLikes(false);
+            }
+            setIsLoading(false);
+        }, (error) => {
+             console.error("Error fetching profile data:", error);
+             toast({ title: "Error fetching profile", variant: "destructive" });
+             setIsLoading(false);
         });
 
-        return () => unsubscribeAuth();
-    }, [profileId, router, fetchUserPosts, fetchUserReplies, fetchLikedPosts, toast]);
+        return () => unsubscribeProfile();
+    }, [profileId, currentUser, zisprUser, fetchUserPosts, fetchUserReplies, fetchLikedPosts, toast]);
     
-    const handleToggleFollow = async (targetUser: ZisprUser, currentZisprUser: ZisprUser, isCurrentlyFollowing: boolean) => {
-        if (!currentUser) return;
+    const handleToggleFollow = async () => {
+        if (!currentUser || !profileUser || !zisprUser) return;
     
+        const wasFollowing = isFollowing;
+        // Optimistic UI update
+        setIsFollowing(!wasFollowing);
+        
         const batch = writeBatch(db);
         const currentUserRef = doc(db, 'users', currentUser.uid);
-        const targetUserRef = doc(db, 'users', targetUser.uid);
+        const targetUserRef = doc(db, 'users', profileUser.uid);
     
-        if (isCurrentlyFollowing) {
-            batch.update(currentUserRef, { following: arrayRemove(targetUser.uid) });
+        if (wasFollowing) {
+            batch.update(currentUserRef, { following: arrayRemove(profileUser.uid) });
             batch.update(targetUserRef, { followers: arrayRemove(currentUser.uid) });
         } else {
-            // Unblock if they were blocked
             batch.update(currentUserRef, { 
-                following: arrayUnion(targetUser.uid),
-                blocked: arrayRemove(targetUser.uid) 
+                following: arrayUnion(profileUser.uid),
+                blocked: arrayRemove(profileUser.uid) 
             });
             batch.update(targetUserRef, { 
                 followers: arrayUnion(currentUser.uid),
                 blockedBy: arrayRemove(currentUser.uid)
             });
 
-            const prefs = targetUser.notificationPreferences;
+            const prefs = profileUser.notificationPreferences;
             const canSendNotification = !prefs || prefs['follow'] !== false;
 
             if (canSendNotification) {
                 const notificationRef = doc(collection(db, 'notifications'));
                 batch.set(notificationRef, {
-                    toUserId: targetUser.uid,
+                    toUserId: profileUser.uid,
                     fromUserId: currentUser.uid,
                     fromUser: {
-                        name: currentZisprUser.displayName,
-                        handle: currentZisprUser.handle,
-                        avatar: currentZisprUser.avatar,
-                        isVerified: currentZisprUser.isVerified || false,
-                        badgeTier: currentZisprUser.badgeTier || null
+                        name: zisprUser.displayName,
+                        handle: zisprUser.handle,
+                        avatar: zisprUser.avatar,
+                        isVerified: zisprUser.isVerified || false,
+                        badgeTier: zisprUser.badgeTier || null
                     },
                     type: 'follow',
                     text: 'seguiu você',
@@ -862,9 +849,15 @@ export default function ProfilePage() {
                 });
             }
         }
-    
-        await batch.commit();
         
+        try {
+            await batch.commit();
+        } catch (error) {
+            // Revert optimistic update on error
+            setIsFollowing(wasFollowing);
+            console.error("Error toggling follow:", error);
+            toast({ title: 'Erro ao seguir usuário.', variant: 'destructive' });
+        }
     };
 
     const handleStartConversation = async () => {
@@ -1323,7 +1316,7 @@ export default function ProfilePage() {
                             </DropdownMenu>
                             <Button variant="ghost" size="icon" className="border rounded-full" onClick={handleStartConversation} disabled={isBlockedByYou || hasBlockedYou}><Mail /></Button>
                             <Button variant="ghost" size="icon" className="border rounded-full" disabled={isBlockedByYou || hasBlockedYou}><Bell /></Button>
-                            <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={() => handleToggleFollow(profileUser, zisprUser!, isFollowing)} disabled={isBlockedByYou || hasBlockedYou}>
+                            <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={handleToggleFollow} disabled={isBlockedByYou || hasBlockedYou}>
                                 {isBlockedByYou ? 'Bloqueado' : isFollowing ? 'Seguindo' : 'Seguir'}
                             </Button>
                         </div>
@@ -1559,7 +1552,22 @@ export default function ProfilePage() {
                         title={followListTitle}
                         userIds={followListUserIds}
                         currentUser={zisprUser}
-                        onToggleFollow={handleToggleFollow}
+                        onToggleFollow={async (target, _, isFollowing) => {
+                            // A versão simplificada de `handleToggleFollow` para o diálogo.
+                            if (!currentUser || !zisprUser) return;
+                            const batch = writeBatch(db);
+                            const currentUserRef = doc(db, 'users', currentUser.uid);
+                            const targetUserRef = doc(db, 'users', target.uid);
+                            
+                            if (isFollowing) {
+                                batch.update(currentUserRef, { following: arrayRemove(target.uid) });
+                                batch.update(targetUserRef, { followers: arrayRemove(currentUser.uid) });
+                            } else {
+                                batch.update(currentUserRef, { following: arrayUnion(target.uid) });
+                                batch.update(targetUserRef, { followers: arrayUnion(currentUser.uid) });
+                            }
+                            await batch.commit();
+                        }}
                     />
                 )}
                 {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
@@ -1576,4 +1584,3 @@ export default function ProfilePage() {
         </div>
     );
 }
-

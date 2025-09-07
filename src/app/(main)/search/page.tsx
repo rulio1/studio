@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -13,6 +14,7 @@ import { useDebounce } from 'use-debounce';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import SearchLoading from './loading';
 import { motion } from 'framer-motion';
+import { useUserStore } from '@/store/user-store';
 
 
 interface Trend {
@@ -85,19 +87,12 @@ function SearchPageClient() {
   const [newUsers, setNewUsers] = useState<UserSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const { user: currentUser, zisprUser } = useUserStore();
   const [posts, setPosts] = useState<PostSearchResult[]>([]);
   const [activeTab, setActiveTab] = useState(tabFromUrl || 'trending');
 
 
   const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const fetchTrends = useCallback(() => {
     setIsLoading(true);
@@ -119,7 +114,7 @@ function SearchPageClient() {
     const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
         const usersData = snapshot.docs.map(doc => {
             const data = { uid: doc.id, ...doc.data() } as UserSearchResult
-            if (data.handle === '@stefanysouza') {
+            if (data.handle === '@stefanysouza' || data.handle === '@ZisprUSA') {
                 data.isVerified = true;
                 data.badgeTier = 'silver';
             }
@@ -182,7 +177,7 @@ function SearchPageClient() {
                 const uniqueUsers = Array.from(new Map(allUsers.map(user => [user.uid, user])).values());
 
                 const finalUsers = uniqueUsers.map(user => {
-                    if (user.handle === '@stefanysouza') {
+                    if (user.handle === '@stefanysouza' || user.handle === '@ZisprUSA') {
                         user.isVerified = true;
                         user.badgeTier = 'silver';
                     }
@@ -206,47 +201,52 @@ function SearchPageClient() {
       }
   }, [debouncedSearchTerm, router]);
 
-  const handleFollow = async (targetUserId: string, list: 'newUsers' | 'users') => {
-    if (!currentUser) return;
+    const handleFollow = async (targetUserId: string, listType: 'newUsers' | 'users') => {
+        if (!currentUser || !zisprUser) return;
 
-    const listToUpdate = list === 'newUsers' ? newUsers : users;
-    const setList = list === 'newUsers' ? setNewUsers : setUsers;
+        const listToUpdate = listType === 'newUsers' ? newUsers : users;
+        const setList = listType === 'newUsers' ? setNewUsers : setUsers;
 
-    const targetUser = listToUpdate.find(u => u.uid === targetUserId);
-    if (!targetUser) return;
-    const isFollowing = targetUser.followers?.includes(currentUser.uid);
+        const targetUser = listToUpdate.find(u => u.uid === targetUserId);
+        if (!targetUser) return;
 
-    const batch = writeBatch(db);
-    const currentUserRef = doc(db, 'users', currentUser.uid);
-    const targetUserRef = doc(db, 'users', targetUserId);
-    
-    if (isFollowing) {
-        batch.update(currentUserRef, { following: arrayRemove(targetUserId) });
-        batch.update(targetUserRef, { followers: arrayRemove(targetUserId) });
-    } else {
-        batch.update(currentUserRef, { following: arrayUnion(targetUserId) });
-        batch.update(targetUserRef, { followers: arrayUnion(targetUserId) });
-    }
-    
-    await batch.commit();
+        const isCurrentlyFollowing = zisprUser.following?.includes(targetUserId) || false;
 
-    // Optimistically update UI
-    setList(listToUpdate.map(u => 
-        u.uid === targetUserId 
-            ? { ...u, followers: isFollowing ? u.followers?.filter(id => id !== currentUser.uid) : [...(u.followers || []), currentUser.uid] }
-            : u
-    ));
-};
+        const updatedUsers = listToUpdate.map(u => {
+            if (u.uid === targetUserId) {
+                const newFollowers = isCurrentlyFollowing
+                    ? u.followers?.filter(id => id !== currentUser.uid) || []
+                    : [...(u.followers || []), currentUser.uid];
+                return { ...u, followers: newFollowers };
+            }
+            return u;
+        });
+        setList(updatedUsers);
 
-  const filteredTrends = useMemo(() => {
-    if (!searchTerm) return trends;
-    return trends.filter(trend => 
-      trend.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm, trends]);
+        const batch = writeBatch(db);
+        const currentUserRef = doc(db, 'users', currentUser.uid);
+        const targetUserRef = doc(db, 'users', targetUserId);
+
+        if (isCurrentlyFollowing) {
+            batch.update(currentUserRef, { following: arrayRemove(targetUserId) });
+            batch.update(targetUserRef, { followers: arrayRemove(currentUser.uid) });
+        } else {
+            batch.update(currentUserRef, { following: arrayUnion(targetUserId) });
+            batch.update(targetUserRef, { followers: arrayUnion(targetUserId) });
+        }
+
+        try {
+            await batch.commit();
+        } catch (error) {
+            console.error("Error following user:", error);
+            // Revert UI on error
+            setList(listToUpdate);
+        }
+    };
+
 
   const renderUser = (user: UserSearchResult, list: 'newUsers' | 'users') => {
-    const isFollowing = user.followers?.includes(currentUser?.uid || '');
+    const isFollowing = zisprUser?.following?.includes(user.uid);
     const isZisprAccount = user.handle === '@Zispr' || user.handle === '@ZisprUSA';
     const isVerified = user.isVerified || user.handle === '@Rulio';
     const badgeColor = user.badgeTier ? badgeColors[user.badgeTier] : 'text-primary';
@@ -387,7 +387,7 @@ function SearchPageClient() {
                     <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
                 ): (
                 <ul className="divide-y divide-border">
-                {filteredTrends.map((trend, index) => (
+                {trends.map((trend, index) => (
                     <li key={trend.name} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => setSearchTerm(`#${trend.name}`)}>
                         <div className="flex items-start justify-between">
                             <div>
@@ -446,5 +446,3 @@ export default function SearchPage() {
         </Suspense>
     )
 }
-
-    
