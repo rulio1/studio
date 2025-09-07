@@ -7,5 +7,35 @@
   "languageSelectedToast": {
     "title": "Idioma atualizado!",
     "description": "A interface foi alterada para Português."
+  },
+  "sidebar": {
+    "home": "Início",
+    "notifications": "Notificações",
+    "messages": "Mensagens",
+    "saved": "Salvos",
+    "profile": "Perfil",
+    "post": "Postar",
+    "zisprAi": "Zispr AI",
+    "settings": "Configurações",
+    "signOut": "Sair de {handle}"
+  },
+  "toasts": {
+      "signOutError": {
+          "title": "Erro ao sair"
+      }
+  },
+  "settings": {
+      "layout": {
+          "title": {
+              "settings": "Configurações",
+              "account": "Sua Conta",
+              "changePassword": "Alterar Senha",
+              "deactivate": "Desativar Conta",
+              "delete": "Excluir Conta",
+              "privacy": "Privacidade e Segurança",
+              "notifications": "Notificações",
+              "language": "Idioma"
+          }
+      }
   }
 }

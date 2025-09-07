@@ -7,5 +7,35 @@
   "languageSelectedToast": {
     "title": "Language updated!",
     "description": "The interface has been changed to English."
+  },
+  "sidebar": {
+    "home": "Home",
+    "notifications": "Notifications",
+    "messages": "Messages",
+    "saved": "Saved",
+    "profile": "Profile",
+    "post": "Post",
+    "zisprAi": "Zispr AI",
+    "settings": "Settings",
+    "signOut": "Log out of {handle}"
+  },
+  "toasts": {
+      "signOutError": {
+          "title": "Error signing out"
+      }
+  },
+  "settings": {
+      "layout": {
+          "title": {
+              "settings": "Settings",
+              "account": "Your Account",
+              "changePassword": "Change Password",
+              "deactivate": "Deactivate Account",
+              "delete": "Delete Account",
+              "privacy": "Privacy and Safety",
+              "notifications": "Notifications",
+              "language": "Language"
+          }
+      }
   }
 }

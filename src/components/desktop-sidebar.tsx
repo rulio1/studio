@@ -23,6 +23,7 @@ import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useUserStore } from '@/store/user-store';
+import { useTranslation } from '@/hooks/use-translation';
 
 const badgeColors = {
     bronze: 'text-amber-600',
@@ -35,16 +36,17 @@ export default function DesktopSidebar() {
     const router = useRouter();
     const { toast } = useToast();
     const { user, zisprUser, isLoading } = useUserStore();
+    const { t } = useTranslation();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [notificationCount, setNotificationCount] = useState(0);
     const [messageCount, setMessageCount] = useState(0);
 
     const navItems = [
-        { href: '/home', icon: Home, label: 'Início', count: 0 },
-        { href: '/notifications', icon: Bell, label: 'Notificações', count: notificationCount },
-        { href: '/messages', icon: Mail, label: 'Mensagens', count: messageCount },
-        { href: '/saved', icon: Bookmark, label: 'Salvos', count: 0 },
-        { href: '/profile/edit', icon: User, label: 'Perfil', count: 0 },
+        { href: '/home', icon: Home, label: t('sidebar.home'), count: 0 },
+        { href: '/notifications', icon: Bell, label: t('sidebar.notifications'), count: notificationCount },
+        { href: '/messages', icon: Mail, label: t('sidebar.messages'), count: messageCount },
+        { href: '/saved', icon: Bookmark, label: t('sidebar.saved'), count: 0 },
+        { href: '/profile/edit', icon: User, label: t('sidebar.profile'), count: 0 },
     ];
 
     useEffect(() => {
@@ -90,7 +92,7 @@ export default function DesktopSidebar() {
             await signOut(auth);
             window.location.href = '/login';
         } catch (error) {
-            toast({ title: 'Erro ao sair', variant: 'destructive' });
+            toast({ title: t('toasts.signOutError.title'), variant: 'destructive' });
         }
     };
     
@@ -107,7 +109,7 @@ export default function DesktopSidebar() {
     const badgeColor = zisprUser?.badgeTier ? badgeColors[zisprUser.badgeTier] : 'text-primary';
 
     const getNavItemHref = (item: any) => {
-        if (item.label === 'Perfil' && zisprUser) {
+        if (item.label === t('sidebar.profile') && zisprUser) {
             return `/profile/${zisprUser.uid}`;
         }
         return item.href;
@@ -144,13 +146,13 @@ export default function DesktopSidebar() {
 
                 <Button className="w-full rounded-full mt-4 p-6 text-lg" onClick={() => setIsModalOpen(true)}>
                     <Feather className="mr-2 h-5 w-5" />
-                    Postar
+                    {t('sidebar.post')}
                 </Button>
 
                 <Link href="/chat" className='w-full'>
                     <Button variant="ghost" className="w-full justify-start text-xl p-6 mt-2">
                         <Bot className="h-7 w-7 mr-4" />
-                        <span>Zispr AI</span>
+                        <span>{t('sidebar.zisprAi')}</span>
                     </Button>
                 </Link>
 
@@ -186,12 +188,12 @@ export default function DesktopSidebar() {
                         <DropdownMenuContent className="w-60 mb-2" side="top">
                             <DropdownMenuItem onClick={() => router.push('/settings')}>
                                 <Settings className="mr-2 h-4 w-4" />
-                                <span>Configurações</span>
+                                <span>{t('sidebar.settings')}</span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                                 <LogOut className="mr-2 h-4 w-4" />
-                                <span>Sair de {zisprUser.handle}</span>
+                                <span>{t('sidebar.signOut', { handle: zisprUser.handle })}</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

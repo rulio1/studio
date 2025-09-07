@@ -5,17 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-
-const titleMap: Record<string, string> = {
-    'settings': 'Configurações',
-    'account': 'Sua Conta',
-    'change-password': 'Alterar Senha',
-    'deactivate': 'Desativar Conta',
-    'delete': 'Excluir Conta',
-    'privacy': 'Privacidade e Segurança',
-    'notifications': 'Notificações',
-    'language': 'Idioma',
-};
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function SettingsLayout({
     children,
@@ -25,13 +15,25 @@ export default function SettingsLayout({
     const router = useRouter();
     const pathname = usePathname();
     const [pageTitle, setPageTitle] = useState('Configurações');
+    const { t } = useTranslation();
+    
+    const titleMap: Record<string, string> = {
+        'settings': t('settings.layout.title.settings'),
+        'account': t('settings.layout.title.account'),
+        'change-password': t('settings.layout.title.changePassword'),
+        'deactivate': t('settings.layout.title.deactivate'),
+        'delete': t('settings.layout.title.delete'),
+        'privacy': t('settings.layout.title.privacy'),
+        'notifications': t('settings.layout.title.notifications'),
+        'language': t('settings.layout.title.language'),
+    };
 
     useEffect(() => {
         const pathSegments = pathname.split('/');
         const lastSegment = pathSegments[pathSegments.length - 1];
-        const title = titleMap[lastSegment] || 'Configurações';
+        const title = titleMap[lastSegment] || t('settings.layout.title.settings');
         setPageTitle(title);
-    }, [pathname]);
+    }, [pathname, t, titleMap]);
     
     return (
         <div className="flex flex-col bg-background">
