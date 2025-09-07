@@ -8,12 +8,14 @@ import CreatePostModal from './create-post-modal';
 import { usePathname } from 'next/navigation';
 import NewMessageModal from './new-message-modal';
 import { useUserStore } from '@/store/user-store';
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function CreatePostFAB() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
     const pathname = usePathname();
     const { user } = useUserStore();
+    const { t } = useTranslation();
 
     const openModal = () => {
         setIsModalOpen(true);
@@ -29,7 +31,7 @@ export default function CreatePostFAB() {
                 <div className="fixed bottom-24 right-4 z-50">
                     <Button
                         onClick={handleNewMessage}
-                        aria-label="Nova Mensagem"
+                        aria-label={t('createPostFab.newMessage')}
                         className="h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 flex items-center justify-center text-primary-foreground"
                     >
                         <MailPlus className="h-8 w-8" />
@@ -52,7 +54,7 @@ export default function CreatePostFAB() {
                 <Button
                     onClick={openModal}
                     className="h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90"
-                    aria-label="Criar Post"
+                    aria-label={t('createPostFab.createPost')}
                 >
                    <Feather className="h-8 w-8" />
                 </Button>

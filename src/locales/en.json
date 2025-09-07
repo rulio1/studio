@@ -42,6 +42,87 @@
     "tabs": {
         "forYou": "For you",
         "following": "Following"
+    },
+    "postList": {
+        "emptyFollowing": {
+            "title": "Your timeline is a bit empty...",
+            "description": "Find people to follow and see their posts here!",
+            "button": "Find People"
+        },
+        "empty": {
+            "title": "Nothing to see here... yet",
+            "description": "When posts are made, they will appear here."
+        }
     }
+  },
+  "profile": {
+    "posts": "posts",
+    "editProfile": "Edit profile",
+    "follow": "Follow",
+    "following": "Following",
+    "followers": "Followers",
+    "joined": "Joined {date}",
+    "followsYou": "Follows you",
+    "blocked": "Blocked",
+    "tabs": {
+        "posts": "Posts",
+        "replies": "Replies",
+        "media": "Media",
+        "likes": "Likes"
+    },
+    "empty": {
+        "posts": {
+            "title": "No posts yet",
+            "description": "When this user posts, they will appear here."
+        },
+        "replies": {
+            "title": "No replies yet",
+            "description": "When this user replies to others, their replies will appear here."
+        },
+        "media": {
+            "title": "No media yet",
+            "description": "When this user posts photos or videos, they will appear here."
+        },
+        "likes": {
+            "title": "No liked posts",
+            "description": "When this user likes posts, they will appear here."
+        },
+        "likesPrivate": {
+            "title": "Likes are private",
+            "description": "@{handle} has chosen to keep their likes private."
+        }
+    }
+  },
+  "search": {
+      "search": "Search",
+      "noResults": "No results for \"{term}\"",
+      "tabs": {
+          "trending": "Trending",
+          "newUsers": "New Users",
+          "top": "Top",
+          "people": "People",
+          "posts": "Posts"
+      },
+      "peopleSectionTitle": "People",
+      "postsSectionTitle": "Posts"
+  },
+  "createPostModal": {
+      "title": "New Post",
+      "placeholder": "What is happening?!",
+      "replySettings": {
+          "everyone": "Anyone can reply",
+          "following": "Accounts you follow",
+          "mentioned": "Only accounts you mention"
+      },
+      "locationPlaceholder": "e.g., São Paulo, Brazil",
+      "addLocation": "Add Location",
+      "postButton": "Post",
+      "characterCount": {
+          "remaining": "{count} remaining"
+      }
+  },
+  "createPostFab": {
+      "newMessage": "New Message",
+      "createPost": "Create Post"
   }
 }

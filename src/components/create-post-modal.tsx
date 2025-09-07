@@ -22,6 +22,7 @@ import PollCreator, { PollData } from './poll-creator';
 import { useDebounce } from 'use-debounce';
 import { generatePost } from '@/ai/flows/post-generator-flow';
 import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 interface Post {
@@ -79,12 +80,6 @@ interface CreatePostModalProps {
 
 type ReplySetting = 'everyone' | 'following' | 'mentioned';
 
-const replyOptions: Record<ReplySetting, { icon: React.ElementType, text: string }> = {
-    everyone: { icon: Globe, text: 'Qualquer pessoa pode responder' },
-    following: { icon: Users, text: 'Contas que você segue' },
-    mentioned: { icon: AtSign, text: 'Apenas contas que você menciona' }
-};
-
 const badgeColors = {
     bronze: 'text-amber-600',
     silver: 'text-slate-400',
@@ -113,6 +108,7 @@ interface Suggestion {
 }
 
 export default function CreatePostModal({ open, onOpenChange, quotedPost }: CreatePostModalProps) {
+    const { t } = useTranslation();
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
     
@@ -135,6 +131,12 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const [debouncedSuggestionQuery] = useDebounce(suggestionQuery, 300);
 
     const [isGenerating, setIsGenerating] = useState(false);
+
+    const replyOptions: Record<ReplySetting, { icon: React.ElementType, text: string }> = {
+        everyone: { icon: Globe, text: t('createPostModal.replySettings.everyone') },
+        following: { icon: Users, text: t('createPostModal.replySettings.following') },
+        mentioned: { icon: AtSign, text: t('createPostModal.replySettings.mentioned') }
+    };
 
 
     const { toast } = useToast();
@@ -530,7 +532,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                             <X className="h-5 w-5" />
                         </Button>
                     </DialogClose>
-                    <DialogTitle className="sr-only">Novo post</DialogTitle>
+                    <DialogTitle className="sr-only">{t('createPostModal.title')}</DialogTitle>
                 </DialogHeader>
 
                 <main className="px-4 pt-4 pb-0 flex-1 flex flex-col gap-3 overflow-y-auto">
@@ -546,7 +548,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                             <div className="relative">
                                 <Textarea
                                     ref={textareaRef}
-                                    placeholder="O que está acontecendo?"
+                                    placeholder={t('createPostModal.placeholder')}
                                     className="bg-transparent border-none text-lg focus-visible:ring-0 focus-visible:ring-offset-0 p-0 resize-none min-h-[80px]"
                                     value={newPostContent}
                                     onChange={handleTextChange}
@@ -612,15 +614,15 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                             <DropdownMenuContent>
                                 <DropdownMenuItem onSelect={() => setReplySetting('everyone')}>
                                     <Globe className="mr-2 h-4 w-4"/>
-                                    <span>Qualquer pessoa</span>
+                                    <span>{t('createPostModal.replySettings.everyone')}</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onSelect={() => setReplySetting('following')}>
                                     <Users className="mr-2 h-4 w-4"/>
-                                    <span>Contas que você segue</span>
+                                    <span>{t('createPostModal.replySettings.following')}</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onSelect={() => setReplySetting('mentioned')}>
                                     <AtSign className="mr-2 h-4 w-4"/>
-                                    <span>Apenas contas que você menciona</span>
+                                    <span>{t('createPostModal.replySettings.mentioned')}</span>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -672,14 +674,14 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                 <PopoverContent>
                                     <div className="grid gap-4">
                                         <div className="space-y-2">
-                                            <h4 className="font-medium leading-none">Adicionar Localização</h4>
+                                            <h4 className="font-medium leading-none">{t('createPostModal.addLocation')}</h4>
                                             <p className="text-sm text-muted-foreground">
                                                 Digite sua cidade ou local.
                                             </p>
                                         </div>
                                         <Input 
                                             id="location" 
-                                            placeholder="Ex: São Paulo, Brasil"
+                                            placeholder={t('createPostModal.locationPlaceholder')}
                                             value={location}
                                             onChange={(e) => setLocation(e.target.value)}
                                         />
@@ -709,7 +711,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                 )}
                             </div>
                             <Button onClick={handleCreatePost} disabled={isSubmitDisabled} className="rounded-full font-bold px-5">
-                                {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Postar'}
+                                {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : t('createPostModal.postButton')}
                             </Button>
                         </div>
                     </div>
