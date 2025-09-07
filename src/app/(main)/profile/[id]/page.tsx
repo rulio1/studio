@@ -768,12 +768,16 @@ export default function ProfilePage() {
             }
             const profileData = { uid: profileDoc.id, ...profileDoc.data() } as ZisprUser;
 
-             if (profileData.handle === '@stefanysouza' || profileData.handle === '@ZisprUSA') {
+             if (profileData.handle === '@stefanysouza') {
                 profileData.isVerified = true;
                 profileData.badgeTier = 'silver';
-                profileData.supporterTier = 'Apoiador VIP';
             }
             
+            if (profileData.handle === '@ZisprUSA') {
+                profileData.isVerified = true;
+                profileData.badgeTier = 'silver';
+            }
+
             setProfileUser(profileData);
             setIsFollowing(profileData.followers?.includes(currentUser.uid));
             setIsFollowedBy(zisprUser?.followers?.includes(profileId) || false);
@@ -807,7 +811,6 @@ export default function ProfilePage() {
         if (!currentUser || !profileUser || !zisprUser) return;
     
         const wasFollowing = isFollowing;
-        // Optimistic UI update
         setIsFollowing(!wasFollowing);
         
         const batch = writeBatch(db);
@@ -853,7 +856,6 @@ export default function ProfilePage() {
         try {
             await batch.commit();
         } catch (error) {
-            // Revert optimistic update on error
             setIsFollowing(wasFollowing);
             console.error("Error toggling follow:", error);
             toast({ title: 'Erro ao seguir usuário.', variant: 'destructive' });

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MoreHorizontal, Search, Settings, MessageCircle, Loader2, ArrowLeft, BadgeCheck, Bird } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { collection, getDocs, query, where, limit, orderBy, doc, updateDoc, arrayUnion, arrayRemove, writeBatch, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, query, where, limit, orderBy, doc, updateDoc, arrayUnion, arrayRemove, writeBatch, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
@@ -31,6 +31,7 @@ interface UserSearchResult {
     followers?: string[];
     isVerified?: boolean;
     badgeTier?: 'bronze' | 'silver' | 'gold';
+    notificationPreferences?: { [key: string]: boolean };
 }
 
 interface PostSearchResult {
@@ -201,46 +202,68 @@ function SearchPageClient() {
       }
   }, [debouncedSearchTerm, router]);
 
-    const handleFollow = async (targetUserId: string, listType: 'newUsers' | 'users') => {
+    const handleFollow = async (targetUser: UserSearchResult, listType: 'newUsers' | 'users') => {
         if (!currentUser || !zisprUser) return;
-
-        const listToUpdate = listType === 'newUsers' ? newUsers : users;
+    
         const setList = listType === 'newUsers' ? setNewUsers : setUsers;
-
-        const targetUser = listToUpdate.find(u => u.uid === targetUserId);
-        if (!targetUser) return;
-
-        const isCurrentlyFollowing = zisprUser.following?.includes(targetUserId) || false;
-
-        const updatedUsers = listToUpdate.map(u => {
-            if (u.uid === targetUserId) {
+        const isCurrentlyFollowing = zisprUser.following?.includes(targetUser.uid) || false;
+    
+        // Optimistic UI update
+        setList(prevList => prevList.map(u => {
+            if (u.uid === targetUser.uid) {
                 const newFollowers = isCurrentlyFollowing
                     ? u.followers?.filter(id => id !== currentUser.uid) || []
                     : [...(u.followers || []), currentUser.uid];
                 return { ...u, followers: newFollowers };
             }
             return u;
-        });
-        setList(updatedUsers);
-
+        }));
+    
         const batch = writeBatch(db);
         const currentUserRef = doc(db, 'users', currentUser.uid);
-        const targetUserRef = doc(db, 'users', targetUserId);
-
+        const targetUserRef = doc(db, 'users', targetUser.uid);
+    
         if (isCurrentlyFollowing) {
-            batch.update(currentUserRef, { following: arrayRemove(targetUserId) });
+            batch.update(currentUserRef, { following: arrayRemove(targetUser.uid) });
             batch.update(targetUserRef, { followers: arrayRemove(currentUser.uid) });
         } else {
-            batch.update(currentUserRef, { following: arrayUnion(targetUserId) });
-            batch.update(targetUserRef, { followers: arrayUnion(targetUserId) });
-        }
+            batch.update(currentUserRef, { following: arrayUnion(targetUser.uid) });
+            batch.update(targetUserRef, { followers: arrayUnion(targetUser.uid) });
+    
+            const prefs = targetUser.notificationPreferences;
+            const canSendNotification = !prefs || prefs['follow'] !== false;
 
+            if (canSendNotification) {
+                const notificationRef = doc(collection(db, 'notifications'));
+                batch.set(notificationRef, {
+                    toUserId: targetUser.uid,
+                    fromUserId: currentUser.uid,
+                    fromUser: {
+                        name: zisprUser.displayName,
+                        handle: zisprUser.handle,
+                        avatar: zisprUser.avatar,
+                        isVerified: zisprUser.isVerified || false,
+                        badgeTier: zisprUser.badgeTier || null
+                    },
+                    type: 'follow',
+                    text: 'seguiu você',
+                    createdAt: serverTimestamp(),
+                    read: false,
+                });
+            }
+        }
+    
         try {
             await batch.commit();
         } catch (error) {
             console.error("Error following user:", error);
             // Revert UI on error
-            setList(listToUpdate);
+             setList(prevList => prevList.map(u => {
+                if (u.uid === targetUser.uid) {
+                    return targetUser;
+                }
+                return u;
+            }));
         }
     };
 
@@ -298,7 +321,7 @@ function SearchPageClient() {
                         <p className="text-sm mt-1">{user.bio}</p>
                     </div>
                 </div>
-                 <Button variant={isFollowing ? 'secondary' : 'default'} onClick={() => handleFollow(user.uid, list)}>
+                 <Button variant={isFollowing ? 'secondary' : 'default'} onClick={() => handleFollow(user, list)}>
                     {isFollowing ? 'Seguindo' : 'Seguir'}
                 </Button>
             </div>
