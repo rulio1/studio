@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, User, Bell, Lock, ChevronRight } from 'lucide-react';
+import { ArrowLeft, User, Bell, Lock, ChevronRight, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -68,6 +68,21 @@ export default function SettingsPage() {
                             title="Preferências" 
                             description="Gerencie suas preferências de notificação."
                             onClick={() => router.push('/settings/notifications')}
+                        />
+                    </CardContent>
+                </Card>
+
+                <Card className="mt-6">
+                    <CardHeader>
+                        <CardTitle>Acessibilidade, Exibição e Idiomas</CardTitle>
+                        <CardDescription>Gerencie como o conteúdo do Zispr é exibido para você.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                          <SettingsItem 
+                            icon={Languages} 
+                            title="Idioma" 
+                            description="Escolha qual idioma usar no Zispr."
+                            onClick={() => router.push('/settings/language')}
                         />
                     </CardContent>
                 </Card>

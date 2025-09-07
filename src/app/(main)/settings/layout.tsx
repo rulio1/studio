@@ -14,6 +14,7 @@ const titleMap: Record<string, string> = {
     'delete': 'Excluir Conta',
     'privacy': 'Privacidade e Segurança',
     'notifications': 'Notificações',
+    'language': 'Idioma',
 };
 
 export default function SettingsLayout({
