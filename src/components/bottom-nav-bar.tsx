@@ -29,7 +29,7 @@ export default function BottomNavBar() {
     const navItems = [
         { href: '/home', icon: Home, label: 'Início' },
         { href: '/search', icon: Search, label: 'Busca' },
-        { href: '/news', icon: Radio, label: 'Notícias' },
+        { href: '/notifications', icon: Bell, label: 'Notificações' },
         { href: '/messages', icon: Mail, label: 'Mensagens' },
         { href: zisprUser ? `/profile/${zisprUser.uid}` : '#', icon: User, label: 'Perfil' },
     ];
@@ -99,10 +99,7 @@ export default function BottomNavBar() {
                             isLoading || !zisprUser ? (
                                 <Skeleton className="h-8 w-8 rounded-full" />
                             ) : (
-                                <Avatar className={`h-8 w-8 border-2 ${isActive ? 'border-primary' : 'border-transparent'}`}>
-                                    <AvatarImage src={zisprUser.avatar} />
-                                    <AvatarFallback>{zisprUser.displayName?.[0]}</AvatarFallback>
-                                </Avatar>
+                                 <item.icon className={`h-8 w-8 ${isActive ? 'fill-current' : ''}`} />
                             )
                         ) : (
                              <item.icon className="h-8 w-8" />
