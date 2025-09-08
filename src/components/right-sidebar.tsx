@@ -126,8 +126,6 @@ export default function RightSidebar() {
                     />
                 </div>
 
-                <NewsCard />
-
                  <Card className="bg-primary/5 border-primary/20">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -144,6 +142,8 @@ export default function RightSidebar() {
                         </Button>
                     </CardContent>
                 </Card>
+
+                <NewsCard />
 
                 <Card>
                     <CardHeader>
