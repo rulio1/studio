@@ -986,7 +986,7 @@ useEffect(() => {
           <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
               <div className="flex items-center justify-between px-4 py-2">
                   <Sheet>
-                    <SheetTrigger asChild>
+                    <SheetTrigger asChild className="md:hidden">
                       <Avatar className="h-8 w-8 cursor-pointer">
                         <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
                         <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
@@ -1054,7 +1054,7 @@ useEffect(() => {
                   <div className="flex-1 flex justify-center">
                       <Bird className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="w-8"></div>
+                  <div className="w-8 md:hidden"></div>
               </div>
               <div className="w-full flex justify-center p-2">
                   <TabsList className="relative grid w-full grid-cols-2 p-1 bg-muted/50 rounded-full h-11">
