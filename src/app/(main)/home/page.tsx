@@ -1016,76 +1016,78 @@ useEffect(() => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
           <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
               <div className="flex items-center justify-between px-4 py-2">
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <Avatar className="h-8 w-8 cursor-pointer">
-                        <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
-                        <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
-                      </Avatar>
-                    </SheetTrigger>
-                    <SheetContent side="left" className="w-80 p-0 flex flex-col bg-background">
-                       <OtherDialogTitle className="sr-only">Menu Principal</OtherDialogTitle>
-                       <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-                          <X className="h-4 w-4" />
-                          <span className="sr-only">Close</span>
-                       </SheetClose>
-                       <div className="p-4 border-b">
-                          <div className="flex justify-between items-center mb-4">
-                               <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${zisprUser.uid}`)}>
-                                  <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
-                                  <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
-                              </Avatar>
-                          </div>
-                           <Link href={`/profile/${zisprUser.uid}`} className="cursor-pointer">
-                              <div className="flex items-center gap-1 font-bold text-lg">
-                                  {zisprUser.displayName}
-                                  {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className={`h-5 w-5 ${zisprUserBadgeColor}`} />)}
-                              </div>
-                              <p className="text-sm text-muted-foreground">{zisprUser.handle}</p>
-                          </Link>
-                          <div className="flex gap-4 mt-2 text-sm">
-                              <p><span className="font-bold">{zisprUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
-                              <p><span className="font-bold">{zisprUser.followers?.length || 0}</span> <span className="text-muted-foreground">Seguidores</span></p>
-                          </div>
-                      </div>
-                       <nav className="flex-1 flex flex-col gap-2 p-4">
-                          {navItems.map((item) => (
-                              <SheetClose asChild key={item.label}>
-                                  <Link href={item.href} className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                                      <item.icon className="h-6 w-6" /> {item.label}
-                                  </Link>
-                              </SheetClose>
-                          ))}
-                          <SheetClose asChild>
-                              <Link href="/supporter" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                                  <HandHeart className="h-6 w-6" /> Seja um Apoiador
-                              </Link>
-                          </SheetClose>
-                        </nav>
-                        <div className="p-4 border-t mt-auto flex flex-col gap-2">
-                          <SheetClose asChild>
-                            <Link href="/chat" className="flex items-center gap-4 py-2 font-semibold rounded-md">
-                              <Bot className="h-6 w-6" /> Zispr AI
+                  <div className="md:hidden">
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        <Avatar className="h-8 w-8 cursor-pointer">
+                          <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
+                          <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
+                        </Avatar>
+                      </SheetTrigger>
+                      <SheetContent side="left" className="w-80 p-0 flex flex-col bg-background">
+                         <OtherDialogTitle className="sr-only">Menu Principal</OtherDialogTitle>
+                         <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Close</span>
+                         </SheetClose>
+                         <div className="p-4 border-b">
+                            <div className="flex justify-between items-center mb-4">
+                                 <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${zisprUser.uid}`)}>
+                                    <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
+                                    <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
+                                </Avatar>
+                            </div>
+                             <Link href={`/profile/${zisprUser.uid}`} className="cursor-pointer">
+                                <div className="flex items-center gap-1 font-bold text-lg">
+                                    {zisprUser.displayName}
+                                    {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className={`h-5 w-5 ${zisprUserBadgeColor}`} />)}
+                                </div>
+                                <p className="text-sm text-muted-foreground">{zisprUser.handle}</p>
                             </Link>
-                          </SheetClose>
-                          <SheetClose asChild>
-                             <Link href="/settings" className="flex items-center gap-4 py-2 font-semibold rounded-md">
-                              <Settings className="h-6 w-6" /> Configurações e privacidade
-                            </Link>
-                          </SheetClose>
-                          <SheetClose asChild>
-                              <Button variant="destructive" className="self-center" onClick={handleSignOut}>
-                                  <LogOut className="h-6 w-6" />
-                                  Sair
-                              </Button>
-                          </SheetClose>
+                            <div className="flex gap-4 mt-2 text-sm">
+                                <p><span className="font-bold">{zisprUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
+                                <p><span className="font-bold">{zisprUser.followers?.length || 0}</span> <span className="text-muted-foreground">Seguidores</span></p>
+                            </div>
                         </div>
-                    </SheetContent>
-                  </Sheet>
-                  <div className="flex-1 flex justify-center">
+                         <nav className="flex-1 flex flex-col gap-2 p-4">
+                            {navItems.map((item) => (
+                                <SheetClose asChild key={item.label}>
+                                    <Link href={item.href} className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                                        <item.icon className="h-6 w-6" /> {item.label}
+                                    </Link>
+                                </SheetClose>
+                            ))}
+                            <SheetClose asChild>
+                                <Link href="/supporter" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
+                                    <HandHeart className="h-6 w-6" /> Seja um Apoiador
+                                </Link>
+                            </SheetClose>
+                          </nav>
+                          <div className="p-4 border-t mt-auto flex flex-col gap-2">
+                            <SheetClose asChild>
+                              <Link href="/chat" className="flex items-center gap-4 py-2 font-semibold rounded-md">
+                                <Bot className="h-6 w-6" /> Zispr AI
+                              </Link>
+                            </SheetClose>
+                            <SheetClose asChild>
+                               <Link href="/settings" className="flex items-center gap-4 py-2 font-semibold rounded-md">
+                                <Settings className="h-6 w-6" /> Configurações e privacidade
+                              </Link>
+                            </SheetClose>
+                            <SheetClose asChild>
+                                <Button variant="destructive" className="self-center" onClick={handleSignOut}>
+                                    <LogOut className="h-6 w-6" />
+                                    Sair
+                                </Button>
+                            </SheetClose>
+                          </div>
+                      </SheetContent>
+                    </Sheet>
+                  </div>
+                  <div className="flex-1 flex justify-center md:hidden">
                       <Bird className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="w-8"></div>
+                  <div className="w-8 md:hidden"></div>
               </div>
               <div className="w-full flex justify-center p-2">
                   <TabsList className="relative grid w-full grid-cols-2 p-1 bg-muted/50 rounded-full h-11">
