@@ -110,6 +110,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'www.rbsdirect.com.br',
+      },
+      {
+        protocol: 'https',
+        hostname: 'jpimg.com.br',
       }
     ],
     dangerouslyAllowSVG: true,
