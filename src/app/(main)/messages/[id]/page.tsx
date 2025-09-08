@@ -211,7 +211,8 @@ export default function ConversationPage() {
         setIsSending(true);
     
         try {
-            let imageUrl: string | null = null;
+            let imageUrl: string | undefined = undefined;
+            // 1. Upload image first if it exists
             if (imageFile) {
                 const storage = getStorage();
                 const filePath = `message_images/${conversationId}/${Date.now()}_${imageFile.name}`;
@@ -220,41 +221,45 @@ export default function ConversationPage() {
                 imageUrl = await getDownloadURL(imageStorageRef);
             }
     
+            // 2. Then, run the Firestore transaction
             const conversationRef = doc(db, 'conversations', conversationId);
             const messagesCollectionRef = collection(db, 'conversations', conversationId, 'messages');
             
             await runTransaction(db, async (transaction) => {
                 const conversationDoc = await transaction.get(conversationRef);
                 if (!conversationDoc.exists()) {
-                    throw "Conversation does not exist.";
+                    throw new Error("Conversation does not exist.");
                 }
     
                 const conversationData = conversationDoc.data();
                 const currentUnreadCount = conversationData?.unreadCounts?.[otherUser.uid] || 0;
                 
+                // Create the new message document
                 const newMessageDocRef = doc(messagesCollectionRef);
                 transaction.set(newMessageDocRef, {
                     senderId: user.uid,
-                    text: newMessage,
-                    imageUrl: imageUrl,
+                    text: newMessage.trim(),
+                    imageUrl: imageUrl, // Will be undefined if no image was uploaded
                     createdAt: serverTimestamp(),
                     reactions: {},
                 });
     
+                // Update the conversation document
                 const updateData: any = {
                     lastMessage: {
-                        text: imageUrl ? '📷 Imagem' : newMessage,
+                        text: newMessage.trim() || '📷 Imagem',
                         senderId: user.uid,
                         timestamp: serverTimestamp(),
                     },
                     lastMessageReadBy: [user.uid],
                     [`unreadCounts.${otherUser.uid}`]: currentUnreadCount + 1,
-                    deletedFor: [],
+                    deletedFor: arrayRemove(user.uid, otherUser.uid), // Mark as not deleted for either user
                 };
     
                 transaction.update(conversationRef, updateData);
             });
     
+            // 3. Clear inputs on success
             setNewMessage('');
             setImageFile(null);
             setImagePreview(null);
@@ -263,10 +268,11 @@ export default function ConversationPage() {
             console.error("Error sending message:", error);
             toast({
                 title: "Error",
-                description: "Could not send message.",
+                description: "Não foi possível enviar a mensagem.",
                 variant: "destructive"
             });
         } finally {
+            // 4. Always reset sending state
             setIsSending(false);
         }
     };
