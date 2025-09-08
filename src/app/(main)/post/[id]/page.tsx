@@ -56,6 +56,7 @@ interface Post {
     createdAt: any;
     content: string;
     image?: string;
+    gifUrl?: string;
     imageHint?: string;
     location?: string;
     comments: number;
@@ -933,6 +934,11 @@ export default function PostDetailPage() {
                     {post.image && (
                         <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); setPostToView(post); }}>
                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
+                        </div>
+                    )}
+                    {post.gifUrl && (
+                        <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border" onClick={(e) => e.stopPropagation()}>
+                            <Image src={post.gifUrl} alt="Post GIF" layout="fill" objectFit="contain" unoptimized />
                         </div>
                     )}
                      {post.poll && user && (
