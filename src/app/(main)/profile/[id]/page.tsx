@@ -1392,11 +1392,7 @@ export default function ProfilePage() {
                                 <HandHeart className="h-4 w-4 text-primary" />
                                 <CardTitle className="text-sm">{profileUser.supporterTier}</CardTitle>
                             </div>
-                            {!isOwnProfile && !zisprUser?.supporterTier && (
-                                 <Button size="sm" className="rounded-full" onClick={() => router.push('/supporter')}>
-                                    Torne-se um Apoiador
-                                </Button>
-                            )}
+                            
                         </CardHeader>
                         <CardContent className="p-3 pt-0">
                             <p className="text-xs text-muted-foreground">Este usuário apoia o Zispr e ajuda a manter a plataforma funcionando. Obrigado!</p>
