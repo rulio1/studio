@@ -26,6 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import WaveSurfer from 'wavesurfer.js';
 
 
 interface ZisprUser {
@@ -65,58 +66,55 @@ const badgeColors = {
     gold: 'text-yellow-400'
 };
 
-const AudioPlayer = ({ audioUrl }: { audioUrl: string }) => {
-    const audioRef = useRef<HTMLAudioElement>(null);
+const AudioPlayer = ({ audioUrl, audioDuration }: { audioUrl: string, audioDuration?: number }) => {
+    const waveformRef = useRef<HTMLDivElement>(null);
+    const wavesurferRef = useRef<WaveSurfer | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [duration, setDuration] = useState(0);
-    const [currentTime, setCurrentTime] = useState(0);
+
+    useEffect(() => {
+        if (!waveformRef.current) return;
+
+        wavesurferRef.current = WaveSurfer.create({
+            container: waveformRef.current,
+            waveColor: '#A1A1AA', // zinc-400
+            progressColor: '#3B82F6', // blue-500
+            url: audioUrl,
+            barWidth: 2,
+            barGap: 1,
+            height: 40,
+            cursorWidth: 0,
+        });
+
+        const ws = wavesurferRef.current;
+        ws.on('play', () => setIsPlaying(true));
+        ws.on('pause', () => setIsPlaying(false));
+        ws.on('finish', () => setIsPlaying(false));
+
+        return () => {
+            ws.destroy();
+        };
+    }, [audioUrl]);
 
     const togglePlayPause = () => {
-        if (audioRef.current) {
-            if (isPlaying) {
-                audioRef.current.pause();
-            } else {
-                audioRef.current.play();
-            }
-            setIsPlaying(!isPlaying);
+        if (wavesurferRef.current) {
+            wavesurferRef.current.playPause();
         }
     };
     
-    const handleTimeUpdate = () => {
-        if(audioRef.current) setCurrentTime(audioRef.current.currentTime);
-    }
-    
-    const handleLoadedMetadata = () => {
-        if(audioRef.current) setDuration(audioRef.current.duration);
-    }
-    
-    const formatTime = (time: number) => {
-        if (isNaN(time) || time < 0) return '0:00';
+    const formatTime = (time: number | undefined) => {
+        if (time === undefined || isNaN(time) || time < 0) return '0:00';
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
 
     return (
-        <div className="flex items-center gap-3 w-52 md:w-64">
-            <audio 
-                ref={audioRef} 
-                src={audioUrl} 
-                onTimeUpdate={handleTimeUpdate}
-                onLoadedMetadata={handleLoadedMetadata}
-                onEnded={() => setIsPlaying(false)}
-                preload="metadata"
-            />
+        <div className="flex items-center gap-2 w-52 md:w-64">
             <Button onClick={togglePlayPause} size="icon" className="h-10 w-10 rounded-full shrink-0">
                 {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
             </Button>
-            <div className="w-full h-1 bg-muted rounded-full">
-                <div 
-                    className="h-1 bg-primary rounded-full"
-                    style={{ width: `${(currentTime / duration) * 100}%`}}
-                ></div>
-            </div>
-            <span className="text-xs text-muted-foreground font-mono">{formatTime(duration)}</span>
+            <div ref={waveformRef} className="w-full h-10"></div>
+            <span className="text-xs text-muted-foreground font-mono">{formatTime(audioDuration)}</span>
         </div>
     );
 };
@@ -424,7 +422,7 @@ export default function ConversationPage() {
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorderRef.current = new MediaRecorder(stream);
+            mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
             audioChunksRef.current = [];
             
             mediaRecorderRef.current.ondataavailable = (event) => {
@@ -667,7 +665,7 @@ export default function ConversationPage() {
                                 )}
                                 <div className={`relative rounded-2xl px-4 py-2 max-w-[80%] md:max-w-[70%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
                                      {message.audioUrl ? (
-                                        <AudioPlayer audioUrl={message.audioUrl} />
+                                        <AudioPlayer audioUrl={message.audioUrl} audioDuration={message.audioDuration} />
                                     ) : (
                                         <p className="text-sm whitespace-pre-wrap">{message.text}</p>
                                     )}
