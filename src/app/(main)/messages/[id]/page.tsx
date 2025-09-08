@@ -207,12 +207,12 @@ export default function ConversationPage() {
 
     const handleSendMessage = async () => {
         if ((!newMessage.trim() && !imageFile) || !user || isSending || !otherUser) return;
-        
+    
         setIsSending(true);
+        let imageUrl: string | null = null;
+    
         try {
-            const conversationRef = doc(db, 'conversations', conversationId);
-            let imageUrl: string | null = null;
-            
+            // 1. Upload image if it exists
             if (imageFile) {
                 const storage = getStorage();
                 const filePath = `message_images/${conversationId}/${Date.now()}_${imageFile.name}`;
@@ -220,17 +220,28 @@ export default function ConversationPage() {
                 await uploadBytes(imageStorageRef, imageFile);
                 imageUrl = await getDownloadURL(imageStorageRef);
             }
-            
-            await addDoc(collection(conversationRef, 'messages'), {
+    
+            // 2. Prepare message data
+            const messageData = {
                 senderId: user.uid,
                 text: newMessage,
                 imageUrl: imageUrl,
                 createdAt: serverTimestamp(),
                 reactions: {},
-            });
-
+            };
+    
+            // 3. Use a write batch to perform atomic operations
+            const batch = writeBatch(db);
+    
+            // Add new message
+            const messagesCollectionRef = collection(db, 'conversations', conversationId, 'messages');
+            const messageRef = doc(messagesCollectionRef); // Create a new doc with a generated ID
+            batch.set(messageRef, messageData);
+    
+            // Update conversation details
+            const conversationRef = doc(db, 'conversations', conversationId);
             const unreadCountKey = `unreadCounts.${otherUser.uid}`;
-            await updateDoc(conversationRef, {
+            batch.update(conversationRef, {
                 lastMessage: {
                     text: imageUrl ? '📷 Imagem' : newMessage,
                     senderId: user.uid,
@@ -240,13 +251,22 @@ export default function ConversationPage() {
                 [unreadCountKey]: increment(1),
                 deletedFor: [],
             });
-
+    
+            // 4. Commit the batch
+            await batch.commit();
+    
+            // 5. Reset UI state
             setNewMessage('');
             setImageFile(null);
             setImagePreview(null);
-
+    
         } catch (error) {
             console.error("Erro ao enviar mensagem:", error);
+            toast({
+                title: "Erro",
+                description: "Não foi possível enviar a mensagem.",
+                variant: "destructive"
+            });
         } finally {
             setIsSending(false);
         }
