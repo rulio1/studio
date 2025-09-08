@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, updateDoc, increment, arrayUnion, arrayRemove, runTransaction, writeBatch } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { useToast } from '@/hooks/use-toast';
@@ -92,7 +92,7 @@ const AudioPlayer = ({ audioUrl, audioDuration }: { audioUrl: string, audioDurat
 
         ws.on('play', () => setIsPlaying(true));
         ws.on('pause', () => setIsPlaying(false));
-        ws.on('finish', () => setIsPlaying(false));
+        wson('finish', () => setIsPlaying(false));
         ws.on('audioprocess', (time) => setCurrentTime(time));
         ws.on('ready', () => {
              if (audioDuration === undefined) {
@@ -487,56 +487,57 @@ export default function ConversationPage() {
         }
     };
     
-    const sendAudioMessage = async () => {
-        if (!audioBlob || !user || !otherUser) return;
-        setIsSending(true);
+   const sendAudioMessage = async () => {
+    if (!audioBlob || !user || !otherUser) return;
+    setIsSending(true);
 
-        try {
-            const storage = getStorage();
-            const filePath = `audio_messages/${conversationId}/${Date.now()}.webm`;
-            const audioStorageRef = storageRef(storage, filePath);
+    try {
+        const storage = getStorage();
+        const filePath = `audio_messages/${conversationId}/${Date.now()}.webm`;
+        const audioStorageRef = storageRef(storage, filePath);
 
-            // Convert Blob to Data URL string for upload
-            const reader = new FileReader();
-            reader.readAsDataURL(audioBlob);
-            reader.onloadend = async () => {
-                const base64data = reader.result as string;
-                await uploadString(audioStorageRef, base64data, 'data_url');
-                const downloadURL = await getDownloadURL(audioStorageRef);
+        await uploadBytes(audioStorageRef, audioBlob);
+        const downloadURL = await getDownloadURL(audioStorageRef);
 
-                // Now add to Firestore
-                const conversationRef = doc(db, 'conversations', conversationId);
-                await addDoc(collection(conversationRef, 'messages'), {
-                    senderId: user.uid,
-                    audioUrl: downloadURL,
-                    audioDuration: recordingDuration,
-                    text: '',
-                    createdAt: serverTimestamp(),
-                    reactions: {},
-                });
+        const conversationRef = doc(db, 'conversations', conversationId);
+        const messagesCollectionRef = collection(conversationRef, 'messages');
+        const batch = writeBatch(db);
 
-                 await updateDoc(conversationRef, {
-                    lastMessage: {
-                        text: '🎤 Mensagem de voz',
-                        senderId: user.uid,
-                        timestamp: serverTimestamp()
-                    },
-                    lastMessageReadBy: [user.uid],
-                    [`unreadCounts.${otherUser.uid}`]: increment(1),
-                    deletedFor: [],
-                });
-                
-                setAudioBlob(null);
-                setRecordingDuration(0);
-                setIsSending(false);
-            };
+        // Add audio message to subcollection
+        const messageRef = doc(messagesCollectionRef);
+        batch.set(messageRef, {
+            senderId: user.uid,
+            audioUrl: downloadURL,
+            audioDuration: recordingDuration,
+            text: '',
+            createdAt: serverTimestamp(),
+            reactions: {},
+        });
+        
+        // Update last message in conversation
+        batch.update(conversationRef, {
+            lastMessage: {
+                text: '🎤 Mensagem de voz',
+                senderId: user.uid,
+                timestamp: serverTimestamp()
+            },
+            lastMessageReadBy: [user.uid],
+            [`unreadCounts.${otherUser.uid}`]: increment(1),
+            deletedFor: [],
+        });
+        
+        await batch.commit();
 
-        } catch (error) {
-            console.error("Error sending audio message:", error);
-            setIsSending(false);
-            toast({ title: "Erro", description: "Não foi possível enviar a mensagem de voz.", variant: "destructive" });
-        }
-    };
+        setAudioBlob(null);
+        setRecordingDuration(0);
+
+    } catch (error) {
+        console.error("Error sending audio message:", error);
+        toast({ title: "Erro", description: "Não foi possível enviar a mensagem de voz.", variant: "destructive" });
+    } finally {
+        setIsSending(false);
+    }
+};
     
     const handleDiscardAudio = () => {
         setAudioBlob(null);
