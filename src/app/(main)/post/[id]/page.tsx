@@ -189,7 +189,7 @@ const ContentRenderer = ({ content, spotifyUrl }: { content: string, spotifyUrl?
 };
 
 const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) => (
-    <p className="text-xl mb-4 whitespace-pre-wrap">
+    <p className="text-lg md:text-xl mb-4 whitespace-pre-wrap">
         <ContentRenderer content={content} spotifyUrl={spotifyUrl} />
     </p>
 );
@@ -829,9 +829,256 @@ export default function PostDetailPage() {
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
     const isSaved = zisprUser?.collections?.some(c => c.postIds.includes(post.id)) ?? false;
 
+    const hasMedia = post.image || post.gifUrl;
+
+    const MediaComponent = () => (
+        <div className="flex-1 flex items-center justify-center bg-black p-4">
+             {post.image && (
+                <div className="relative w-full h-full" onClick={(e) => { e.stopPropagation(); setPostToView(post); }}>
+                    <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="contain" data-ai-hint={post.imageHint} />
+                </div>
+            )}
+            {post.gifUrl && (
+                <div className="relative w-full h-full" onClick={(e) => e.stopPropagation()}>
+                    <Image src={post.gifUrl} alt="Post GIF" layout="fill" objectFit="contain" unoptimized />
+                </div>
+            )}
+        </div>
+    );
+    
+    const PostDetails = ({ inColumn }: { inColumn: boolean }) => (
+         <div className={`${inColumn ? 'flex-1 flex flex-col' : ''}`}>
+            <div className={`p-4 ${inColumn ? 'overflow-y-auto' : 'border-b'}`}>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
+                            <Avatar className="h-12 w-12">
+                            {isZisprAccount ? (
+                                <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+                                    <Bird className="h-6 w-6 text-primary" />
+                                </div>
+                            ) : (
+                                <>
+                                    <AvatarImage src={post.avatar} alt={post.handle} />
+                                    <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                                </>
+                            )}
+                        </Avatar>
+                        <div>
+                            <p className="font-bold flex items-center gap-1">
+                                {post.author} 
+                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
+                            </p>
+                            <p className="text-sm text-muted-foreground">{post.handle}</p>
+                        </div>
+                    </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+                            {user?.uid === post.authorId ? (
+                                <>
+                                    <DropdownMenuItem onClick={() => setAnalyticsPost(post)}>
+                                        <BarChart3 className="mr-2 h-4 w-4"/>
+                                        Ver interações
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setIsDeleteAlertOpen(true)} className="text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                        Apagar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setIsEditing(true)} disabled={!isEditable}>
+                                        <Edit className="mr-2 h-4 w-4"/>
+                                        Editar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={handleTogglePinPost}>
+                                        <Pin className="mr-2 h-4 w-4"/>
+                                        {zisprUser?.pinnedPostId === post.id ? 'Desafixar do perfil' : 'Fixar no seu perfil'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de adicionar posts aos destaques será adicionada em breve.'})}>
+                                        <Sparkles className="mr-2 h-4 w-4"/>
+                                        Adicionar aos Destaques
+                                    </DropdownMenuItem>
+                                </>
+                            ) : (
+                                <>
+                                    <DropdownMenuItem onClick={() => setPostToSave(post.id)}>
+                                        <Save className="mr-2 h-4 w-4"/>
+                                        {isSaved ? 'Remover dos Salvos' : 'Salvar em Coleção'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                        <Frown className="mr-2 h-4 w-4"/>
+                                        Não tenho interesse
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                        <Flag className="mr-2 h-4 w-4"/>
+                                        Denunciar post
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                        <BarChart3 className="mr-2 h-4 w-4"/>
+                                        Ver interações
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                        <Megaphone className="mr-2 h-4 w-4"/>
+                                        Nota da comunidade
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => router.push(`/profile/${post.authorId}`)}>
+                                        <UserRound className="mr-2 h-4 w-4"/>
+                                        Ir para perfil de {post.handle}
+                                    </DropdownMenuItem>
+                                </>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+                <PostContent content={post.content} spotifyUrl={post.spotifyUrl} />
+                {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
+                {post.spotifyUrl && <SpotifyEmbed url={post.spotifyUrl} />}
+                { !inColumn && post.image && (
+                    <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); setPostToView(post); }}>
+                        <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
+                    </div>
+                )}
+                { !inColumn && post.gifUrl && (
+                    <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border" onClick={(e) => e.stopPropagation()}>
+                        <Image src={post.gifUrl} alt="Post GIF" layout="fill" objectFit="contain" unoptimized />
+                    </div>
+                )}
+                {post.poll && user && (
+                    <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                        <Poll 
+                            postId={post.id}
+                            options={post.poll.options}
+                            votes={post.poll.votes}
+                            voters={post.poll.voters}
+                            currentUserId={user.uid}
+                            onVote={handleVote}
+                        />
+                    </div>
+                )}
+                {post.location && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
+                        <MapPin className="h-4 w-4" />
+                        <span>{post.location}</span>
+                    </div>
+                )}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4 flex-wrap">
+                    <p>{post.time}</p>
+                    {post.isUpdate && (
+                        <span className="flex items-center gap-1">
+                            <Bird className="h-4 w-4 text-primary" />
+                            <span>Atualização</span>
+                        </span>
+                    )}
+                    {post.editedAt && <p className="text-xs">(editado)</p>}
+                </div>
+                <Separator className="my-4" />
+                <div className="flex justify-around text-muted-foreground">
+                    <button className="flex items-center gap-2">
+                        <MessageCircle className="h-5 w-5" />
+                        <span>{post.comments}</span>
+                    </button>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-2 hover:text-green-500 transition-colors ${post.isRetweeted ? 'text-green-500' : ''}`}>
+                                <Repeat className="h-5 w-5" />
+                                <span>{Array.isArray(post.retweets) ? post.retweets.length : 0}</span>
+                            </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-2">
+                            <div className="grid gap-2">
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start"
+                                    onClick={(e) => { e.stopPropagation(); handlePostAction('retweet'); }}
+                                >
+                                    <Repeat className="mr-2 h-4 w-4" />
+                                    {post.isRetweeted ? 'Desfazer Repost' : 'Repostar'}
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start"
+                                    onClick={(e) => { e.stopPropagation(); setIsQuoteModalOpen(true); }}
+                                >
+                                    <PenSquare className="mr-2 h-4 w-4" />
+                                    Quotar Post
+                                </Button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    <button onClick={() => handlePostAction('like')} className={`flex items-center gap-2 ${post.isLiked ? 'text-red-500' : ''}`}>
+                            <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
+                        <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
+                    </button>
+                    <button
+                        className="flex items-center gap-2 hover:text-primary transition-colors disabled:cursor-not-allowed"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (user?.uid === post.authorId) {
+                                setAnalyticsPost(post);
+                            }
+                        }}
+                        disabled={user?.uid !== post.authorId}
+                    >
+                        <BarChart2 className="h-5 w-5" />
+                        <span>{post.views}</span>
+                    </button>
+                </div>
+                 <div className="p-4 border-b md:hidden">
+                    <p className="text-muted-foreground">Respondendo a <span className="text-primary">{post.handle}</span></p>
+                </div>
+                {inColumn && (
+                    <ul>
+                        {comments.map((comment, index) => (
+                            <CommentItem
+                                key={comment.id}
+                                comment={comment}
+                                user={user}
+                                onEdit={handleEditCommentClick}
+                                onDelete={setCommentToDelete}
+                                isLastComment={index === comments.length - 1}
+                                onReply={handleReplyToComment}
+                            />
+                        ))}
+                    </ul>
+                )}
+            </div>
+
+            {inColumn && (
+                 <footer className="sticky bottom-0 z-10 bg-background border-t pb-[env(safe-area-inset-bottom)] mt-auto">
+                    <div className="p-4">
+                        <div className="flex items-start gap-3 relative rounded-2xl border bg-muted p-2">
+                            <Avatar>
+                                <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
+                                <AvatarFallback>{zisprUser?.displayName?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <Textarea 
+                                ref={replyTextareaRef}
+                                placeholder="Poste sua resposta" 
+                                className="flex-1 bg-transparent text-base p-2 resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                rows={1}
+                                disabled={isReplying}
+                            />
+                            <Button onClick={handleReply} disabled={!newComment.trim() || isReplying} size="sm" className="rounded-full self-end">
+                                {isReplying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Responder
+                            </Button>
+                        </div>
+                    </div>
+                </footer>
+            )}
+         </div>
+    );
+
     return (
-        <div className="bg-background flex flex-col min-h-screen">
-            <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
+        <div className="bg-background flex flex-col h-screen">
+             <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b md:hidden">
                 <div className="flex items-center gap-4 px-4 py-2">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-5 w-5" />
@@ -839,210 +1086,44 @@ export default function PostDetailPage() {
                     <h1 className="text-xl font-bold">Post</h1>
                 </div>
             </header>
-
-            <main className="flex-1 overflow-y-auto">
-                <div className="p-4 border-b">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 mb-4 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
-                             <Avatar className="h-12 w-12">
-                                {isZisprAccount ? (
-                                    <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
-                                        <Bird className="h-6 w-6 text-primary" />
-                                    </div>
-                                ) : (
-                                    <>
-                                        <AvatarImage src={post.avatar} alt={post.handle} />
-                                        <AvatarFallback>{post.avatarFallback}</AvatarFallback>
-                                    </>
-                                )}
-                            </Avatar>
-                            <div>
-                                <p className="font-bold flex items-center gap-1">
-                                    {post.author} 
-                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
-                                </p>
-                                <p className="text-sm text-muted-foreground">{post.handle}</p>
-                            </div>
-                        </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                                    <MoreHorizontal className="h-4 w-4" />
+            
+            <main className="flex-1 flex flex-col md:flex-row md:overflow-hidden">
+                 {/* Desktop: Two-column layout */}
+                 <div className="hidden md:flex flex-1">
+                     {hasMedia && <MediaComponent />}
+                    <div className="flex-1 flex flex-col max-w-xl xl:max-w-2xl border-l">
+                         <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
+                            <div className="flex items-center gap-4 px-4 py-2">
+                                <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                                    <ArrowLeft className="h-5 w-5" />
                                 </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-                                {user?.uid === post.authorId ? (
-                                    <>
-                                        <DropdownMenuItem onClick={() => setAnalyticsPost(post)}>
-                                            <BarChart3 className="mr-2 h-4 w-4"/>
-                                            Ver interações
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => setIsDeleteAlertOpen(true)} className="text-destructive">
-                                            <Trash2 className="mr-2 h-4 w-4"/>
-                                            Apagar
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => setIsEditing(true)} disabled={!isEditable}>
-                                            <Edit className="mr-2 h-4 w-4"/>
-                                            Editar
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={handleTogglePinPost}>
-                                            <Pin className="mr-2 h-4 w-4"/>
-                                            {zisprUser?.pinnedPostId === post.id ? 'Desafixar do perfil' : 'Fixar no seu perfil'}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de adicionar posts aos destaques será adicionada em breve.'})}>
-                                            <Sparkles className="mr-2 h-4 w-4"/>
-                                            Adicionar aos Destaques
-                                        </DropdownMenuItem>
-                                    </>
-                                ) : (
-                                    <>
-                                        <DropdownMenuItem onClick={() => setPostToSave(post.id)}>
-                                            <Save className="mr-2 h-4 w-4"/>
-                                            {isSaved ? 'Remover dos Salvos' : 'Salvar em Coleção'}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
-                                            <Frown className="mr-2 h-4 w-4"/>
-                                            Não tenho interesse
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
-                                            <Flag className="mr-2 h-4 w-4"/>
-                                            Denunciar post
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
-                                            <BarChart3 className="mr-2 h-4 w-4"/>
-                                            Ver interações
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
-                                            <Megaphone className="mr-2 h-4 w-4"/>
-                                            Nota da comunidade
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => router.push(`/profile/${post.authorId}`)}>
-                                            <UserRound className="mr-2 h-4 w-4"/>
-                                            Ir para perfil de {post.handle}
-                                        </DropdownMenuItem>
-                                    </>
-                                )}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                <h1 className="text-xl font-bold">Post</h1>
+                            </div>
+                        </header>
+                        <PostDetails inColumn={true} />
                     </div>
-                    <PostContent content={post.content} spotifyUrl={post.spotifyUrl} />
-                    {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
-                    {post.spotifyUrl && <SpotifyEmbed url={post.spotifyUrl} />}
-                    {post.image && (
-                        <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); setPostToView(post); }}>
-                           <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
-                        </div>
-                    )}
-                    {post.gifUrl && (
-                        <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border" onClick={(e) => e.stopPropagation()}>
-                            <Image src={post.gifUrl} alt="Post GIF" layout="fill" objectFit="contain" unoptimized />
-                        </div>
-                    )}
-                     {post.poll && user && (
-                        <div className="mt-2" onClick={(e) => e.stopPropagation()}>
-                            <Poll 
-                                postId={post.id}
-                                options={post.poll.options}
-                                votes={post.poll.votes}
-                                voters={post.poll.voters}
-                                currentUserId={user.uid}
-                                onVote={handleVote}
+                </div>
+
+                {/* Mobile: Single-column layout */}
+                <div className="md:hidden flex-1 overflow-y-auto">
+                    <PostDetails inColumn={false} />
+                    <ul>
+                        {comments.map((comment, index) => (
+                            <CommentItem
+                                key={comment.id}
+                                comment={comment}
+                                user={user}
+                                onEdit={handleEditCommentClick}
+                                onDelete={setCommentToDelete}
+                                isLastComment={index === comments.length - 1}
+                                onReply={handleReplyToComment}
                             />
-                        </div>
-                    )}
-                    {post.location && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
-                            <MapPin className="h-4 w-4" />
-                            <span>{post.location}</span>
-                        </div>
-                    )}
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4 flex-wrap">
-                        <p>{post.time}</p>
-                        {post.isUpdate && (
-                            <span className="flex items-center gap-1">
-                                <Bird className="h-4 w-4 text-primary" />
-                                <span>Atualização</span>
-                            </span>
-                        )}
-                        {post.editedAt && <p className="text-xs">(editado)</p>}
-                    </div>
-                    <Separator className="my-4" />
-                    <div className="flex justify-around text-muted-foreground">
-                        <button className="flex items-center gap-2">
-                            <MessageCircle className="h-5 w-5" />
-                            <span>{post.comments}</span>
-                        </button>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-2 hover:text-green-500 transition-colors ${post.isRetweeted ? 'text-green-500' : ''}`}>
-                                    <Repeat className="h-5 w-5" />
-                                    <span>{Array.isArray(post.retweets) ? post.retweets.length : 0}</span>
-                                </button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-48 p-2">
-                                <div className="grid gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        className="w-full justify-start"
-                                        onClick={(e) => { e.stopPropagation(); handlePostAction('retweet'); }}
-                                    >
-                                        <Repeat className="mr-2 h-4 w-4" />
-                                        {post.isRetweeted ? 'Desfazer Repost' : 'Repostar'}
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        className="w-full justify-start"
-                                        onClick={(e) => { e.stopPropagation(); setIsQuoteModalOpen(true); }}
-                                    >
-                                        <PenSquare className="mr-2 h-4 w-4" />
-                                        Quotar Post
-                                    </Button>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                        <button onClick={() => handlePostAction('like')} className={`flex items-center gap-2 ${post.isLiked ? 'text-red-500' : ''}`}>
-                             <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
-                            <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
-                        </button>
-                        <button
-                            className="flex items-center gap-2 hover:text-primary transition-colors disabled:cursor-not-allowed"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (user?.uid === post.authorId) {
-                                    setAnalyticsPost(post);
-                                }
-                            }}
-                            disabled={user?.uid !== post.authorId}
-                        >
-                            <BarChart2 className="h-5 w-5" />
-                            <span>{post.views}</span>
-                        </button>
-                    </div>
+                        ))}
+                    </ul>
                 </div>
-                
-                <div className="p-4 border-b md:hidden">
-                    <p className="text-muted-foreground">Respondendo a <span className="text-primary">{post.handle}</span></p>
-                </div>
-                
-                <ul>
-                    {comments.map((comment, index) => (
-                        <CommentItem
-                            key={comment.id}
-                            comment={comment}
-                            user={user}
-                            onEdit={handleEditCommentClick}
-                            onDelete={setCommentToDelete}
-                            isLastComment={index === comments.length - 1}
-                            onReply={handleReplyToComment}
-                        />
-                    ))}
-                </ul>
             </main>
             
-            <footer className="sticky bottom-0 z-10 bg-background border-t pb-[env(safe-area-inset-bottom)]">
+            <footer className="sticky bottom-0 z-10 bg-background border-t pb-[env(safe-area-inset-bottom)] md:hidden">
                  <div className="p-4">
                     <div className="flex items-start gap-3 relative rounded-2xl border bg-muted p-2">
                         <Avatar>
