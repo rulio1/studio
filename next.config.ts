@@ -73,6 +73,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'f.i.uol.com.br',
+      },
+      {
+        protocol: 'https',
         hostname: 'classic.exame.com',
       },
        {
