@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert, Film, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -25,6 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import GifPicker from '@/components/gif-picker';
+import Image from 'next/image';
 
 
 interface ZisprUser {
@@ -45,6 +47,7 @@ interface Message {
     createdAt: any;
     reactions?: Record<string, string[]>;
     imageUrl?: string;
+    gifUrl?: string;
 }
 
 interface PostForViewer {
@@ -59,7 +62,10 @@ interface PostForViewer {
 interface Conversation {
     participants: string[];
     lastMessage?: {
+        text?: string;
+        gifUrl?: string;
         senderId: string;
+        timestamp: any;
     };
     lastMessageReadBy?: string[];
     unreadCounts?: Record<string, number>;
@@ -84,6 +90,7 @@ export default function ConversationPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [newMessage, setNewMessage] = useState('');
+    const [selectedGif, setSelectedGif] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSending, setIsSending] = useState(false);
     const [isBlockAlertOpen, setIsBlockAlertOpen] = useState(false);
@@ -197,49 +204,57 @@ export default function ConversationPage() {
     }, [messages]);
     
     const handleSendMessage = async () => {
-        if (!newMessage.trim() || !user || isSending || !otherUser) return;
-
+        if ((!newMessage.trim() && !selectedGif) || !user || isSending || !otherUser) return;
+    
         setIsSending(true);
         const conversationRef = doc(db, 'conversations', conversationId);
         const messagesCollectionRef = collection(db, 'conversations', conversationId, 'messages');
-        
+    
         try {
             await runTransaction(db, async (transaction) => {
                 const conversationDoc = await transaction.get(conversationRef);
                 if (!conversationDoc.exists()) {
                     throw new Error("Conversation does not exist.");
                 }
-
+    
                 const conversationData = conversationDoc.data();
                 const otherUserId = conversationData.participants.find(p => p !== user.uid);
                 if (!otherUserId) throw new Error("Other user not found in conversation.");
-                
+    
                 const currentUnreadCount = conversationData?.unreadCounts?.[otherUserId] || 0;
-                
-                // Create the new message document
+    
                 const newMessageDocRef = doc(messagesCollectionRef);
-                transaction.set(newMessageDocRef, {
+                const messagePayload: Partial<Message> = {
                     senderId: user.uid,
-                    text: newMessage.trim(),
                     createdAt: serverTimestamp(),
                     reactions: {},
-                });
-
-                // Update the conversation document
+                };
+    
+                if (newMessage.trim()) messagePayload.text = newMessage.trim();
+                if (selectedGif) messagePayload.gifUrl = selectedGif;
+    
+                transaction.set(newMessageDocRef, messagePayload);
+    
+                let lastMessageText = newMessage.trim();
+                if (!lastMessageText && selectedGif) {
+                    lastMessageText = 'GIF';
+                }
+    
                 const updateData: any = {
                     lastMessage: {
-                        text: newMessage.trim(),
+                        text: lastMessageText,
                         senderId: user.uid,
                         timestamp: serverTimestamp(),
                     },
                     lastMessageReadBy: [user.uid],
                     [`unreadCounts.${otherUserId}`]: currentUnreadCount + 1,
-                    deletedFor: arrayRemove(user.uid, otherUserId), // Mark as not deleted for either user
+                    deletedFor: arrayRemove(user.uid, otherUserId),
                 };
-
+    
                 transaction.update(conversationRef, updateData);
             });
             setNewMessage('');
+            setSelectedGif(null);
         } catch (error) {
             console.error("Error sending message:", error);
             toast({
@@ -454,6 +469,18 @@ export default function ConversationPage() {
                                     </Avatar>
                                 )}
                                 <div className={`relative rounded-2xl px-3 py-2 max-w-[80%] md:max-w-[70%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
+                                    {message.gifUrl && (
+                                        <div className="w-48 h-auto aspect-video relative">
+                                            <Image 
+                                                src={message.gifUrl} 
+                                                alt="GIF" 
+                                                layout="fill" 
+                                                objectFit="cover" 
+                                                className="rounded-lg" 
+                                                unoptimized
+                                            />
+                                        </div>
+                                    )}
                                      {message.imageUrl && (
                                         <p className="text-sm italic text-muted-foreground">[Imagem não pode ser exibida]</p>
                                      )}
@@ -487,7 +514,30 @@ export default function ConversationPage() {
             </div>
         </ScrollArea>
         <footer className="p-4 pt-2 border-t bg-background space-y-2">
+             {selectedGif && (
+                <div className="relative w-32 h-auto mb-2">
+                    <Image src={selectedGif} alt="GIF selecionado" width={128} height={128} unoptimized className="rounded-lg" />
+                    <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                        onClick={() => setSelectedGif(null)}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
              <div className="relative flex items-center rounded-2xl border bg-background p-2">
+                 <Popover>
+                    <PopoverTrigger asChild>
+                         <Button variant="ghost" size="icon" disabled={isSending || isConversationDisabled}>
+                            <Film className="h-5 w-5" />
+                         </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 md:w-96 p-0 border-0 mb-2">
+                        <GifPicker onSelect={(gifUrl) => setSelectedGif(gifUrl)} />
+                    </PopoverContent>
+                </Popover>
                  <Input 
                      placeholder={isConversationDisabled ? "Não é possível enviar mensagens" : "Inicie uma nova mensagem"}
                      value={newMessage}
@@ -497,7 +547,7 @@ export default function ConversationPage() {
                      className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                  />
 
-                 {newMessage.trim() && (
+                 {(newMessage.trim() || selectedGif) && (
                     <Button onClick={handleSendMessage} disabled={isSending} size="icon" className="rounded-full">
                        {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                     </Button>
