@@ -55,10 +55,10 @@ const requestNotificationPermission = async (userId: string) => {
         const permission = await Notification.requestPermission();
         
         if (permission === 'granted') {
-            // You would typically get this from your Firebase project settings
-            const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY; 
-            if (!VAPID_KEY) {
-                console.error('VAPID key is not configured in environment variables.');
+            // This is a placeholder and should be managed via environment variables
+            const VAPID_KEY = "YOUR_VAPID_KEY_HERE"; 
+            if (!VAPID_KEY || VAPID_KEY === "YOUR_VAPID_KEY_HERE") {
+                console.error('VAPID key is not configured.');
                 return { success: false, message: 'Configuração de notificação incompleta.' };
             }
             const token = await getToken(messaging, { vapidKey: VAPID_KEY });
