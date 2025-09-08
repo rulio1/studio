@@ -1084,9 +1084,13 @@ useEffect(() => {
                       </SheetContent>
                     </Sheet>
                   </div>
-                  <div className="flex-1 flex justify-center md:hidden">
+                  <div className="hidden md:flex flex-1 justify-start">
+                    <h1 className="text-xl font-bold">Início</h1>
+                  </div>
+                  <div className="flex-1 flex justify-center">
                       <Bird className="h-6 w-6 text-primary" />
                   </div>
+                   <div className="hidden md:flex flex-1 justify-end"></div>
                   <div className="w-8 md:hidden"></div>
               </div>
               <div className="w-full flex justify-center p-2">
