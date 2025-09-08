@@ -1,11 +1,10 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe/server';
-import { initializeFirebaseAdmin } from '@/lib/firebase-admin';
 import { doc, updateDoc, serverTimestamp, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
-
-const { db } = initializeFirebaseAdmin();
+import { db } from '@/lib/firebase';
 
 type TierName = "Apoiador Básico" | "Apoiador VIP" | "Apoiador Patrocinador";
 
