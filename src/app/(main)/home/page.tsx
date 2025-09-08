@@ -48,7 +48,6 @@ import SpotifyEmbed from '@/components/spotify-embed';
 import { motion } from 'framer-motion';
 import { useUserStore } from '@/store/user-store';
 import { useTranslation } from '@/hooks/use-translation';
-import { translateText } from '@/ai/flows/translation-flow';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
@@ -210,8 +209,6 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
     const { toast } = useToast();
     const { t, language } = useTranslation();
     const [time, setTime] = useState('');
-    const [translatedText, setTranslatedText] = useState<string | null>(null);
-    const [isTranslating, setIsTranslating] = useState(false);
     
     useEffect(() => {
       const timestamp = post.repostedAt || post.createdAt;
@@ -224,26 +221,6 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
         }
       }
     }, [post.createdAt, post.repostedAt]);
-
-    const handleTranslate = async () => {
-        if (translatedText) {
-            setTranslatedText(null);
-            return;
-        }
-
-        if (!post.content) return;
-        setIsTranslating(true);
-        try {
-            const targetLanguage = language === 'pt' ? 'English' : 'Portuguese';
-            const translation = await translateText(post.content, targetLanguage);
-            setTranslatedText(translation);
-        } catch (error) {
-            console.error("Error translating post:", error);
-            toast({ title: "Erro de Tradução", description: "Não foi possível traduzir o post.", variant: "destructive" });
-        } finally {
-            setIsTranslating(false);
-        }
-    };
     
     const isZisprAccount = post.handle === '@Zispr' || post.handle === '@ZisprUSA';
     const isVerified = post.isVerified || post.handle === '@Rulio';
@@ -389,11 +366,6 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                 <div className="mb-2 whitespace-pre-wrap">
                     <PostContent content={post.content} spotifyUrl={post.spotifyUrl} />
                 </div>
-                 {translatedText && (
-                    <div className="p-3 border rounded-xl my-2 bg-muted/50">
-                        <p className="text-sm italic">{translatedText}</p>
-                    </div>
-                )}
                 {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
                 {post.spotifyUrl && <SpotifyEmbed url={post.spotifyUrl} />}
                 {post.poll && user && (
@@ -411,14 +383,6 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                 {post.image && (
                     <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); onImageClick(post); }}>
                         <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
-                    </div>
-                )}
-                 {post.content && (
-                    <div className="flex justify-start" onClick={(e) => e.stopPropagation()}>
-                        <Button variant="link" size="sm" onClick={handleTranslate} disabled={isTranslating} className="text-muted-foreground px-0">
-                            {isTranslating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Languages className="mr-2 h-4 w-4" />}
-                            {translatedText ? 'Ocultar tradução' : 'Traduzir'}
-                        </Button>
                     </div>
                 )}
                 <div className="mt-2 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
