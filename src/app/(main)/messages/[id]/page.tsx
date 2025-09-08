@@ -92,7 +92,7 @@ const AudioPlayer = ({ audioUrl, audioDuration }: { audioUrl: string, audioDurat
 
         ws.on('play', () => setIsPlaying(true));
         ws.on('pause', () => setIsPlaying(false));
-        wson('finish', () => setIsPlaying(false));
+        ws.on('finish', () => setIsPlaying(false));
         ws.on('audioprocess', (time) => setCurrentTime(time));
         ws.on('ready', () => {
              if (audioDuration === undefined) {
