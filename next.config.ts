@@ -55,6 +55,30 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 's.w-x.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'admin.cnnbrasil.com.br',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.cnnbrasil.com.br',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.band.uol.com.br',
+      },
+      {
+        protocol: 'https',
+        hostname: 'conteudo.imguol.com.br',
+      },
+      {
+        protocol: 'https',
+        hostname: 'classic.exame.com',
+      },
+       {
+        protocol: 'https',
+        hostname: 'www.otempo.com.br',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
