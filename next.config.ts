@@ -82,6 +82,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'static.poder360.com.br',
+      },
+      {
+        protocol: 'https',
+        hostname: 's2-oglobo.glbimg.com',
       }
     ],
     dangerouslyAllowSVG: true,
