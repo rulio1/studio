@@ -148,6 +148,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'fotos.jornaldacidadeonline.com.br',
+      },
+      {
+        protocol: 'https',
         hostname: 'media.giphy.com',
       },
       {
