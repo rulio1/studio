@@ -111,16 +111,15 @@ const AudioPlayer = ({ audioUrl, audioDuration }: { audioUrl: string, audioDurat
     };
 
     const formatTime = (seconds: number) => {
+        if (isNaN(seconds) || seconds < 0) return '0:00';
         const date = new Date(0);
-        date.setSeconds(seconds || 0);
+        date.setSeconds(seconds);
         return date.toISOString().substr(14, 5);
     };
 
-    const displayTime = hasNaN(audioDuration) ? formatTime(currentTime) : formatTime(audioDuration as number - currentTime);
-    
-    function hasNaN(value: any) {
-        return typeof value === 'number' && isNaN(value);
-    }
+    const displayTime = audioDuration !== undefined && !isNaN(audioDuration)
+        ? formatTime(audioDuration - currentTime)
+        : formatTime(currentTime);
 
     return (
         <div className="flex items-center gap-3 w-64">
@@ -500,11 +499,10 @@ export default function ConversationPage() {
         const downloadURL = await getDownloadURL(audioStorageRef);
 
         const conversationRef = doc(db, 'conversations', conversationId);
-        const messagesCollectionRef = collection(conversationRef, 'messages');
         const batch = writeBatch(db);
 
         // Add audio message to subcollection
-        const messageRef = doc(messagesCollectionRef);
+        const messageRef = doc(collection(conversationRef, 'messages'));
         batch.set(messageRef, {
             senderId: user.uid,
             audioUrl: downloadURL,
