@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert, Clapperboard, X } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -77,6 +77,15 @@ const badgeColors = {
     silver: 'text-slate-400',
     gold: 'text-yellow-400'
 };
+
+const GifIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+        <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2"/>
+        <path d="M7 15V9H9.5V11.5H11.5V15H7Z" fill="currentColor"/>
+        <path d="M13 15V9H15V15H13Z" fill="currentColor"/>
+        <path d="M17 15V9H19L19 12H17.5V13H19V15H17Z" fill="currentColor"/>
+    </svg>
+);
 
 export default function ConversationPage() {
     const router = useRouter();
@@ -531,7 +540,7 @@ export default function ConversationPage() {
                  <Popover>
                     <PopoverTrigger asChild>
                          <Button variant="ghost" size="icon" disabled={isSending || isConversationDisabled}>
-                            <Clapperboard className="h-5 w-5" />
+                            <GifIcon className="h-5 w-5" />
                          </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-80 md:w-96 p-0 border-0 mb-2">

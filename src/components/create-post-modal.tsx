@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch, addDoc, query, where, limit, getDocs } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird, Sparkles, Clapperboard } from 'lucide-react';
+import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
@@ -108,6 +108,16 @@ interface Suggestion {
     type: 'mention' | 'hashtag';
     data: any;
 }
+
+const GifIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+        <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2"/>
+        <path d="M7 15V9H9.5V11.5H11.5V15H7Z" fill="currentColor"/>
+        <path d="M13 15V9H15V15H13Z" fill="currentColor"/>
+        <path d="M17 15V9H19L19 12H17.5V13H19V15H17Z" fill="currentColor"/>
+    </svg>
+);
+
 
 export default function CreatePostModal({ open, onOpenChange, quotedPost }: CreatePostModalProps) {
     const { t } = useTranslation();
@@ -690,7 +700,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                              <Popover>
                                 <PopoverTrigger asChild>
                                     <Button variant="ghost" size="icon" disabled={isPosting || showPollCreator || !!postImageDataUri}>
-                                        <Clapperboard className="h-5 w-5 text-primary" />
+                                        <GifIcon className="h-5 w-5 text-primary" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-80 md:w-96 p-0 border-0">
