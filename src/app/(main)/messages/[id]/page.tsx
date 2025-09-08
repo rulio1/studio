@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -27,7 +26,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import WaveSurfer from 'wavesurfer.js';
 
 
 interface ZisprUser {
@@ -67,109 +65,97 @@ const badgeColors = {
     gold: 'text-yellow-400'
 };
 
-const AudioPlayer = ({ audioUrl, audioDuration }: { audioUrl: string, audioDuration?: number }) => {
-    const waveformRef = useRef<HTMLDivElement>(null);
-    const wavesurferRef = useRef<WaveSurfer | null>(null);
+const AudioPlayer = ({ audioUrl }: { audioUrl: string }) => {
+    const audioRef = useRef<HTMLAudioElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [duration, setDuration] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
 
-    useEffect(() => {
-        if (!waveformRef.current) return;
-
-        const ws = WaveSurfer.create({
-            container: waveformRef.current,
-            waveColor: 'rgb(203 213 225)',
-            progressColor: 'rgb(59 130 246)',
-            url: audioUrl,
-            height: 40,
-            barWidth: 2,
-            barGap: 2,
-            barRadius: 2,
-            cursorWidth: 0,
-        });
-
-        wavesurferRef.current = ws;
-
-        ws.on('play', () => setIsPlaying(true));
-        ws.on('pause', () => setIsPlaying(false));
-        ws.on('finish', () => setIsPlaying(false));
-        ws.on('audioprocess', (time) => setCurrentTime(time));
-        ws.on('ready', () => {
-             if (audioDuration === undefined) {
-                 setCurrentTime(ws.getDuration());
+    const togglePlayPause = () => {
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause();
+            } else {
+                audioRef.current.play();
             }
-        });
-
-
-        return () => {
-            ws.destroy();
-        };
-    }, [audioUrl, audioDuration]);
-
-    const togglePlay = () => {
-        wavesurferRef.current?.playPause();
+            setIsPlaying(!isPlaying);
+        }
     };
-
-    const formatTime = (seconds: number) => {
-        if (isNaN(seconds) || seconds < 0) return '0:00';
-        const date = new Date(0);
-        date.setSeconds(seconds);
-        return date.toISOString().substr(14, 5);
-    };
-
-    const displayTime = audioDuration !== undefined && !isNaN(audioDuration)
-        ? formatTime(audioDuration - currentTime)
-        : formatTime(currentTime);
+    
+    const handleTimeUpdate = () => {
+        if(audioRef.current) setCurrentTime(audioRef.current.currentTime);
+    }
+    
+    const handleLoadedMetadata = () => {
+        if(audioRef.current) setDuration(audioRef.current.duration);
+    }
+    
+    const formatTime = (time: number) => {
+        if (isNaN(time) || time < 0) return '0:00';
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
 
     return (
-        <div className="flex items-center gap-3 w-64">
-            <Button onClick={togglePlay} size="icon" className="h-10 w-10 rounded-full shrink-0">
+        <div className="flex items-center gap-3 w-52 md:w-64">
+            <audio 
+                ref={audioRef} 
+                src={audioUrl} 
+                onTimeUpdate={handleTimeUpdate}
+                onLoadedMetadata={handleLoadedMetadata}
+                onEnded={() => setIsPlaying(false)}
+                preload="metadata"
+            />
+            <Button onClick={togglePlayPause} size="icon" className="h-10 w-10 rounded-full shrink-0">
                 {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
             </Button>
-            <div ref={waveformRef} className="w-full h-10" />
-            <span className="text-xs text-muted-foreground font-mono">{displayTime}</span>
+            <div className="w-full h-1 bg-muted rounded-full">
+                <div 
+                    className="h-1 bg-primary rounded-full"
+                    style={{ width: `${(currentTime / duration) * 100}%`}}
+                ></div>
+            </div>
+            <span className="text-xs text-muted-foreground font-mono">{formatTime(duration)}</span>
         </div>
     );
 };
 
+
 const AudioPreview = ({ audioBlob, onDiscard }: { audioBlob: Blob, onDiscard: () => void }) => {
-    const waveformRef = useRef<HTMLDivElement>(null);
-    const wavesurferRef = useRef<WaveSurfer | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [duration, setDuration] = useState(0);
 
-    useEffect(() => {
-        if (!waveformRef.current || !audioBlob) return;
+     useEffect(() => {
+        if (audioBlob) {
+            const url = URL.createObjectURL(audioBlob);
+            const audio = new Audio(url);
+            audio.onloadedmetadata = () => {
+                setDuration(audio.duration);
+            };
+            audioRef.current = audio;
 
-        const blobUrl = URL.createObjectURL(audioBlob);
+            const handleEnded = () => setIsPlaying(false);
+            audio.addEventListener('ended', handleEnded);
 
-        const ws = WaveSurfer.create({
-            container: waveformRef.current,
-            waveColor: 'rgb(100 116 139)',
-            progressColor: 'rgb(30 41 59)',
-            url: blobUrl,
-            height: 32,
-            barWidth: 2,
-            barGap: 2,
-            barRadius: 2,
-            cursorWidth: 0,
-        });
-
-        wavesurferRef.current = ws;
-
-        ws.on('play', () => setIsPlaying(true));
-        ws.on('pause', () => setIsPlaying(false));
-        ws.on('finish', () => setIsPlaying(false));
-        ws.on('ready', (d) => setDuration(d));
-
-        return () => {
-            ws.destroy();
-            URL.revokeObjectURL(blobUrl);
-        };
+            return () => {
+                URL.revokeObjectURL(url);
+                if (audio) {
+                    audio.removeEventListener('ended', handleEnded);
+                }
+            };
+        }
     }, [audioBlob]);
 
     const togglePlay = () => {
-        wavesurferRef.current?.playPause();
+        if (!audioRef.current) return;
+        if (isPlaying) {
+            audioRef.current.pause();
+        } else {
+            audioRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
     };
     
     return (
@@ -180,8 +166,7 @@ const AudioPreview = ({ audioBlob, onDiscard }: { audioBlob: Blob, onDiscard: ()
             <Button onClick={togglePlay} size="icon" className="h-8 w-8 rounded-full shrink-0">
                 {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
-            <div ref={waveformRef} className="w-full h-8" />
-             <span className="text-xs text-muted-foreground font-mono">{duration.toFixed(1)}s</span>
+             <span className="text-sm text-muted-foreground font-mono">{duration.toFixed(1)}s</span>
         </div>
     )
 };
@@ -682,7 +667,7 @@ export default function ConversationPage() {
                                 )}
                                 <div className={`relative rounded-2xl px-4 py-2 max-w-[80%] md:max-w-[70%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
                                      {message.audioUrl ? (
-                                        <AudioPlayer audioUrl={message.audioUrl} audioDuration={message.audioDuration} />
+                                        <AudioPlayer audioUrl={message.audioUrl} />
                                     ) : (
                                         <p className="text-sm whitespace-pre-wrap">{message.text}</p>
                                     )}
