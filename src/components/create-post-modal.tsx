@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch, addDoc, query, where, limit, getDocs } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird, Sparkles, Film } from 'lucide-react';
+import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird, Sparkles, Clapperboard } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
@@ -690,7 +690,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                              <Popover>
                                 <PopoverTrigger asChild>
                                     <Button variant="ghost" size="icon" disabled={isPosting || showPollCreator || !!postImageDataUri}>
-                                        <Film className="h-5 w-5 text-primary" />
+                                        <Clapperboard className="h-5 w-5 text-primary" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-80 md:w-96 p-0 border-0">

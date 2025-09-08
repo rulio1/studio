@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert, Film, X } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert, Clapperboard, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -531,7 +531,7 @@ export default function ConversationPage() {
                  <Popover>
                     <PopoverTrigger asChild>
                          <Button variant="ghost" size="icon" disabled={isSending || isConversationDisabled}>
-                            <Film className="h-5 w-5" />
+                            <Clapperboard className="h-5 w-5" />
                          </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-80 md:w-96 p-0 border-0 mb-2">
