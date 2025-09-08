@@ -204,15 +204,15 @@ export default function ConversationPage() {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
-
+    
     const handleSendMessage = async () => {
         if ((!newMessage.trim() && !imageFile) || !user || isSending || !otherUser) return;
     
         setIsSending(true);
-        let imageUrl: string | null = null;
     
         try {
-            // 1. Upload image if it exists
+            // Upload image first if it exists, to get the URL
+            let imageUrl: string | null = null;
             if (imageFile) {
                 const storage = getStorage();
                 const filePath = `message_images/${conversationId}/${Date.now()}_${imageFile.name}`;
@@ -221,41 +221,40 @@ export default function ConversationPage() {
                 imageUrl = await getDownloadURL(imageStorageRef);
             }
     
-            // 2. Prepare message data
-            const messageData = {
-                senderId: user.uid,
-                text: newMessage,
-                imageUrl: imageUrl,
-                createdAt: serverTimestamp(),
-                reactions: {},
-            };
-    
-            // 3. Use a write batch to perform atomic operations
-            const batch = writeBatch(db);
-    
-            // Add new message
-            const messagesCollectionRef = collection(db, 'conversations', conversationId, 'messages');
-            const messageRef = doc(messagesCollectionRef); // Create a new doc with a generated ID
-            batch.set(messageRef, messageData);
-    
-            // Update conversation details
+            // Now, run a transaction to create the message and update the conversation
             const conversationRef = doc(db, 'conversations', conversationId);
-            const unreadCountKey = `unreadCounts.${otherUser.uid}`;
-            batch.update(conversationRef, {
-                lastMessage: {
-                    text: imageUrl ? '📷 Imagem' : newMessage,
+            await runTransaction(db, async (transaction) => {
+                // Get the current unread count for the other user
+                const conversationDoc = await transaction.get(conversationRef);
+                const conversationData = conversationDoc.data();
+                const currentUnreadCount = conversationData?.unreadCounts?.[otherUser.uid] || 0;
+    
+                // 1. Create the new message document
+                const messagesCollectionRef = collection(db, 'conversations', conversationId, 'messages');
+                const newMessageRef = doc(messagesCollectionRef);
+                transaction.set(newMessageRef, {
                     senderId: user.uid,
-                    timestamp: serverTimestamp()
-                },
-                lastMessageReadBy: [user.uid],
-                [unreadCountKey]: increment(1),
-                deletedFor: [],
+                    text: newMessage,
+                    imageUrl: imageUrl, // Use the URL obtained before the transaction
+                    createdAt: serverTimestamp(),
+                    reactions: {},
+                });
+    
+                // 2. Update the conversation document
+                const unreadCountKey = `unreadCounts.${otherUser.uid}`;
+                transaction.update(conversationRef, {
+                    lastMessage: {
+                        text: imageUrl ? '📷 Imagem' : newMessage,
+                        senderId: user.uid,
+                        timestamp: serverTimestamp(),
+                    },
+                    lastMessageReadBy: [user.uid],
+                    [unreadCountKey]: currentUnreadCount + 1,
+                    deletedFor: [],
+                });
             });
     
-            // 4. Commit the batch
-            await batch.commit();
-    
-            // 5. Reset UI state
+            // Reset UI state on success
             setNewMessage('');
             setImageFile(null);
             setImagePreview(null);
@@ -271,7 +270,7 @@ export default function ConversationPage() {
             setIsSending(false);
         }
     };
-    
+
     const handleReaction = async (messageId: string, emoji: string) => {
         if (!user) return;
         const messageRef = doc(db, 'conversations', conversationId, 'messages', messageId);
