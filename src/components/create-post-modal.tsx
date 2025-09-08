@@ -109,16 +109,6 @@ interface Suggestion {
     data: any;
 }
 
-const GifIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-        <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2"/>
-        <path d="M7 15V9H9.5V11.5H11.5V15H7Z" fill="currentColor"/>
-        <path d="M13 15V9H15V15H13Z" fill="currentColor"/>
-        <path d="M17 15V9H19L19 12H17.5V13H19V15H17Z" fill="currentColor"/>
-    </svg>
-);
-
-
 export default function CreatePostModal({ open, onOpenChange, quotedPost }: CreatePostModalProps) {
     const { t } = useTranslation();
     const [newPostContent, setNewPostContent] = useState('');
@@ -700,7 +690,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                              <Popover>
                                 <PopoverTrigger asChild>
                                     <Button variant="ghost" size="icon" disabled={isPosting || showPollCreator || !!postImageDataUri}>
-                                        <GifIcon className="h-5 w-5 text-primary" />
+                                        <div className="text-primary border-primary border-2 rounded-md h-5 w-5 flex items-center justify-center font-bold text-xs">
+                                          GIF
+                                        </div>
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-80 md:w-96 p-0 border-0">
