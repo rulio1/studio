@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -174,8 +173,16 @@ export default function RightSidebar() {
                                     return (
                                         <li key={user.uid} className="flex items-center gap-2">
                                             <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
-                                                <AvatarImage src={user.avatar} alt={user.displayName} />
-                                                <AvatarFallback>{user.displayName[0]}</AvatarFallback>
+                                                {isZisprAccount ? (
+                                                    <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+                                                        <Bird className="h-5 w-5 text-primary" />
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <AvatarImage src={user.avatar} alt={user.displayName} />
+                                                        <AvatarFallback>{user.displayName[0]}</AvatarFallback>
+                                                    </>
+                                                )}
                                             </Avatar>
                                             <div className="flex-1 min-w-0 cursor-pointer" onClick={() => router.push(`/profile/${user.uid}`)}>
                                                 <p className="font-bold flex items-center gap-1 hover:underline truncate">
