@@ -79,6 +79,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'www.otempo.com.br',
       },
+      {
+        protocol: 'https',
+        hostname: 'static.poder360.com.br',
+      }
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
