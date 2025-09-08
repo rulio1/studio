@@ -119,6 +119,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'midias.correiobraziliense.com.br',
       },
+      {
+        protocol: 'https',
+        hostname: '**.gruposinos.com.br',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
