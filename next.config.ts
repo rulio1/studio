@@ -86,6 +86,18 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 's2-oglobo.glbimg.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn-7.motorsport.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.lance.com.br',
+      },
+      {
+        protocol: 'https',
+        hostname: 'uploads.metropoles.com',
       }
     ],
     dangerouslyAllowSVG: true,
