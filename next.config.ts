@@ -138,6 +138,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '**.gruposinos.com.br',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.ome.lt',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
