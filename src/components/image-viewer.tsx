@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Dialog, DialogContent, DialogOverlay, DialogPortal, DialogTitle, DialogHeader } from '@/components/ui/dialog';
@@ -9,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface PostForViewer {
     id: string;
     image?: string;
+    gifUrl?: string;
     comments: number;
     retweets: string[];
     likes: string[];
@@ -22,7 +24,7 @@ interface ImageViewerProps {
 
 export default function ImageViewer({ post, onOpenChange }: ImageViewerProps) {
   const handleClose = () => onOpenChange(false);
-  const src = post?.image;
+  const src = post?.image || post?.gifUrl;
 
   return (
     <AnimatePresence>
@@ -98,6 +100,7 @@ export default function ImageViewer({ post, onOpenChange }: ImageViewerProps) {
                     height={1024}
                     className="object-contain w-full h-auto max-h-[80vh] rounded-lg"
                     draggable={false}
+                    unoptimized={!!post.gifUrl}
                   />
                 </motion.div>
               </motion.div>

@@ -45,7 +45,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'httpshttps',
         hostname: 'images.unsplash.com',
         port: '',
         pathname: '/**',
@@ -145,6 +145,30 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'www.cartacapital.com.br',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media.giphy.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media0.giphy.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media1.giphy.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media2.giphy.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media3.giphy.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media4.giphy.com',
       }
     ],
     dangerouslyAllowSVG: true,

@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch, addDoc, query, where, limit, getDocs } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird, Sparkles } from 'lucide-react';
+import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird, Sparkles, Film } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Image from 'next/image';
@@ -23,6 +23,7 @@ import { useDebounce } from 'use-debounce';
 import { generatePost } from '@/ai/flows/post-generator-flow';
 import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 import { useTranslation } from '@/hooks/use-translation';
+import GifPicker from './gif-picker';
 
 
 interface Post {
@@ -35,6 +36,7 @@ interface Post {
     time: string;
     content: string;
     image?: string;
+    gifUrl?: string;
     imageHint?: string;
     location?: string;
     comments: number;
@@ -114,6 +116,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     
     const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
     const [postImageDataUri, setPostImageDataUri] = useState<string | null>(null);
+    const [gifUrl, setGifUrl] = useState<string | null>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     
@@ -253,6 +256,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setNewPostContent('');
         setPostImageDataUri(null);
         setPostImagePreview(null);
+        setGifUrl(null);
         setReplySetting('everyone');
         setLocation('');
         setShowPollCreator(false);
@@ -298,13 +302,21 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
 
         setShowPollCreator(false);
+        setGifUrl(null);
         const dataUri = await fileToDataUri(file);
         setPostImagePreview(URL.createObjectURL(file));
         setPostImageDataUri(dataUri);
     };
 
+    const handleGifSelect = (gifUrl: string) => {
+        setGifUrl(gifUrl);
+        setPostImageDataUri(null);
+        setPostImagePreview(null);
+        setShowPollCreator(false);
+    }
+
     const handleCreatePost = async () => {
-        if ((!newPostContent.trim() && !postImageDataUri && !quotedPost) && !pollData) {
+        if ((!newPostContent.trim() && !postImageDataUri && !quotedPost && !pollData && !gifUrl)) {
             toast({ title: "Não é possível criar um post vazio.", variant: "destructive" });
             return;
         }
@@ -352,6 +364,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 poll: pollData ? { options: pollData.options.map(o => o.text), votes: pollData.options.map(() => 0), voters: {} } : null,
                 replySettings: replySetting,
                 image: imageUrl,
+                gifUrl: gifUrl,
                 hashtags,
                 mentions: mentionedHandles,
                 spotifyUrl,
@@ -405,6 +418,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         if (!showPollCreator) {
             setPostImageDataUri(null);
             setPostImagePreview(null);
+            setGifUrl(null);
         }
         setShowPollCreator(!showPollCreator);
     };
@@ -449,6 +463,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
             setPostImageDataUri(imageDataUri);
             setPostImagePreview(imageDataUri); // Show the generated image preview
             setShowPollCreator(false);
+            setGifUrl(null);
         } catch (error) {
             console.error("Error generating image:", error);
             toast({ title: "Erro de IA", description: "Não foi possível gerar a imagem.", variant: "destructive" });
@@ -458,7 +473,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     };
 
 
-    const isSubmitDisabled = (newPostContent.length === 0 && !postImageDataUri && !quotedPost && !pollData) || isPosting || newPostContent.length > MAX_CHARS;
+    const isSubmitDisabled = (newPostContent.length === 0 && !postImageDataUri && !gifUrl && !quotedPost && !pollData) || isPosting || newPostContent.length > MAX_CHARS;
     
     const QuotedPostPreview = ({ post }: { post: Post }) => {
         const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
@@ -542,7 +557,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                 <AvatarImage src={zisprUser?.avatar} alt={zisprUser?.handle} />
                                 <AvatarFallback>{zisprUser?.displayName?.[0]}</AvatarFallback>
                             </Avatar>
-                            { (newPostContent || postImagePreview || quotedPost) && <div className="w-0.5 flex-1 bg-border my-2"></div> }
+                            { (newPostContent || postImagePreview || quotedPost || gifUrl) && <div className="w-0.5 flex-1 bg-border my-2"></div> }
                         </div>
                         <div className="w-full">
                             <div className="relative">
@@ -578,6 +593,26 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                             setPostImagePreview(null);
                                             setPostImageDataUri(null);
                                         }}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
+                             {gifUrl && (
+                                <div className="mt-4 relative w-fit">
+                                    <Image
+                                        src={gifUrl}
+                                        alt="GIF preview"
+                                        width={250}
+                                        height={200}
+                                        unoptimized
+                                        className="rounded-lg object-cover w-full h-auto max-h-60"
+                                    />
+                                    <Button
+                                        variant="secondary"
+                                        size="icon"
+                                        className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/50 hover:bg-black/70 text-white"
+                                        onClick={() => setGifUrl(null)}
                                     >
                                         <X className="h-4 w-4" />
                                     </Button>
@@ -633,7 +668,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 <DialogFooter className="p-2 border-t mt-auto">
                     <div className="flex justify-between items-center w-full">
                         <div className="flex justify-start items-center -ml-2">
-                            <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} disabled={showPollCreator} />
+                            <Input type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/gif" onChange={handleImageChange} disabled={isPosting || showPollCreator || !!gifUrl} />
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon" disabled={isPosting || isGenerating}>
@@ -644,15 +679,25 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                                     <DropdownMenuItem onClick={handleGenerateText} disabled={isGenerating}>
                                         Gerar Texto com IA
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleGenerateImage} disabled={isGenerating || showPollCreator}>
+                                    <DropdownMenuItem onClick={handleGenerateImage} disabled={isGenerating || showPollCreator || !!gifUrl}>
                                         Gerar Imagem com IA
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting || showPollCreator}>
+                            <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isPosting || showPollCreator || !!gifUrl}>
                                 <ImageIcon className="h-5 w-5 text-primary" />
                             </Button>
-                             <Button variant="ghost" size="icon" disabled={isPosting} onClick={handlePollClick}>
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" disabled={isPosting || showPollCreator || !!postImageDataUri}>
+                                        <Film className="h-5 w-5 text-primary" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80 md:w-96 p-0 border-0">
+                                    <GifPicker onSelect={handleGifSelect} />
+                                </PopoverContent>
+                            </Popover>
+                             <Button variant="ghost" size="icon" disabled={isPosting || !!gifUrl} onClick={handlePollClick}>
                                 <ListOrdered className="h-5 w-5 text-primary" />
                             </Button>
                              <Popover>

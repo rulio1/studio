@@ -6,27 +6,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
-import { Bell, Home, Mail, MessageCircle, Settings, User, Repeat, Heart, BarChart2, Bird, X, Users, Bookmark, Briefcase, List, Radio, Banknote, Bot, MoreHorizontal, Sun, Moon, Plus, Loader2, Trash2, Edit, Save, BadgeCheck, LogOut, Pin, Sparkles, Frown, BarChart3, Flag, Megaphone, UserRound, Star, PenSquare, HandHeart, Library, Languages } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { Bell, Home, Mail, Settings, User, Bird, X, Users, Bookmark, Bot, MoreHorizontal, LogOut, Loader2, HandHeart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import PostSkeleton from '@/components/post-skeleton';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { signOut, User as FirebaseUser } from 'firebase/auth';
-import { collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch, deleteDoc, increment, documentId, Timestamp, runTransaction } from 'firebase/firestore';
-import { formatTimeAgo } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
-import { generatePost } from '@/ai/flows/post-generator-flow';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, where, getDocs, limit, serverTimestamp, writeBatch, deleteDoc, increment, documentId, runTransaction } from 'firebase/firestore';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,14 +26,12 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle as EditDialogTitle, DialogTitle as OtherDialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import React from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { dataURItoFile } from '@/lib/utils';
-import Poll from '@/components/poll';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import SpotifyEmbed from '@/components/spotify-embed';
 import { motion } from 'framer-motion';
 import { useUserStore } from '@/store/user-store';
 import { useTranslation } from '@/hooks/use-translation';
+import PostItem from '@/components/post-item';
+import Link from 'next/link';
+import { BadgeCheck } from 'lucide-react';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
@@ -64,6 +48,7 @@ interface Post {
     time: string;
     content: string;
     image?: string;
+    gifUrl?: string;
     imageHint?: string;
     location?: string;
     comments: number;
@@ -95,12 +80,6 @@ interface Post {
     spotifyUrl?: string;
 }
 
-interface Collection {
-    id: string;
-    name: string;
-    postIds: string[];
-}
-
 interface ZisprUser {
     uid: string;
     displayName: string;
@@ -114,7 +93,7 @@ interface ZisprUser {
     birthDate: Date | null;
     followers: string[];
     following: string[];
-    collections?: Collection[];
+    collections?: { id: string; name: string; postIds: string[]; }[];
     pinnedPostId?: string;
     isVerified?: boolean;
     badgeTier?: 'bronze' | 'silver' | 'gold';
@@ -128,322 +107,6 @@ const badgeColors = {
     silver: 'text-slate-400',
     gold: 'text-yellow-400'
 };
-
-const PostContent = React.memo(function PostContent({ content, spotifyUrl }: { content: string, spotifyUrl?: string }) {
-    const router = useRouter();
-    const parts = content.split(/(#\w+|@\w+|https?:\/\/[^\s]+)/g);
-    
-    const spotifyLinkIndex = parts.findIndex(part => part && part.includes('spotify.com'));
-
-    return (
-        <p>
-            {parts.map((part, index) => {
-                if (!part) return null;
-
-                if (part.startsWith('#')) {
-                    const hashtag = part.substring(1);
-                    return (
-                        <a 
-                            key={index} 
-                            className="text-primary hover:underline"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(`/search?q=%23${hashtag}`);
-                            }}
-                        >
-                            {part}
-                        </a>
-                    );
-                }
-                 if (part.startsWith('@')) {
-                    const handle = part.substring(1);
-                    return (
-                        <a 
-                            key={index} 
-                            className="text-primary hover:underline"
-                            onClick={async (e) => {
-                                e.stopPropagation();
-                                const usersRef = collection(db, "users");
-                                const q = query(usersRef, where("handle", "==", part));
-                                const querySnapshot = await getDocs(q);
-                                if (!querySnapshot.empty) {
-                                    const userDoc = querySnapshot.docs[0];
-                                    router.push(`/profile/${userDoc.id}`);
-                                }
-                            }}
-                        >
-                            {part}
-                        </a>
-                    );
-                }
-                if (part.includes('spotify.com')) {
-                    // Don't render the text link if the embed will be shown
-                    return spotifyUrl ? null : (
-                         <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-                            {part}
-                        </a>
-                    );
-                }
-                return part;
-            })}
-        </p>
-    );
-});
-PostContent.displayName = 'PostContent';
-
-const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePostAction, handleQuoteClick, handleDeleteClick, handleEditClick, handleTogglePinPost, onVote, onImageClick, onAnalyticsClick, onSaveClick }: { 
-    post: Post; 
-    zisprUser: ZisprUser | null; 
-    user: FirebaseUser | null;
-    handlePostAction: (postId: string, action: 'like' | 'retweet', authorId: string) => void;
-    handleQuoteClick: (post: Post) => void;
-    handleDeleteClick: (postId: string) => void;
-    handleEditClick: (post: Post) => void;
-    handleTogglePinPost: (postId: string) => void;
-    onVote: (postId: string, optionIndex: number) => void;
-    onImageClick: (post: Post) => void;
-    onAnalyticsClick: (post: Post) => void;
-    onSaveClick: (postId: string) => void;
-}) {
-    const router = useRouter();
-    const { toast } = useToast();
-    const { t, language } = useTranslation();
-    const [time, setTime] = useState('');
-    
-    useEffect(() => {
-      const timestamp = post.repostedAt || post.createdAt;
-      if (timestamp) {
-        try {
-            const date = timestamp.toDate();
-            setTime(formatTimeAgo(date));
-        } catch(e) {
-            setTime('agora');
-        }
-      }
-    }, [post.createdAt, post.repostedAt]);
-    
-    const isZisprAccount = post.handle === '@Zispr' || post.handle === '@ZisprUSA';
-    const isVerified = post.isVerified || post.handle === '@Rulio';
-    const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
-    const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
-    
-    const isSaved = zisprUser?.collections?.some(c => c.postIds.includes(post.id)) ?? false;
-
-
-    const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => {
-        const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
-        return (
-            <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
-                <div className="flex items-center gap-2 text-sm">
-                    <Avatar className="h-5 w-5">
-                        <AvatarImage src={post.avatar} />
-                        <AvatarFallback>{post.avatarFallback || post.author[0]}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-bold flex items-center gap-1">
-                        {post.author}
-                        {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}
-                    </span>
-                    <span className="text-muted-foreground">{post.handle}</span>
-                </div>
-                <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
-                {post.image && (
-                    <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
-                        <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
-                    </div>
-                )}
-            </div>
-        )
-    };
-    
-    return (
-        <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)} data-post-id={post.id}>
-             {post.repostedBy && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-6">
-                    <Repeat className="h-4 w-4" />
-                    <span>{post.repostedBy.handle === zisprUser?.handle ? 'Você' : post.repostedBy.name} repostou</span>
-                </div>
-            )}
-            {post.isFirstPost && (
-                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-12">
-                    <Star className="h-4 w-4" />
-                    <span>Primeiro post</span>
-                </div>
-            )}
-             {post.isUpdate && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-12">
-                    <Bird className="h-4 w-4 text-primary" />
-                    <span>Atualização</span>
-                </div>
-            )}
-            <div className="flex gap-4">
-                 <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
-                    {isZisprAccount ? (
-                        <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-full">
-                            <Bird className="h-5 w-5 text-primary" />
-                        </div>
-                    ) : (
-                        <>
-                            <AvatarImage src={post.avatar} alt={post.handle} />
-                            <AvatarFallback>{post.avatarFallback}</AvatarFallback>
-                        </>
-                    )}
-                </Avatar>
-                <div className='w-full'>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm flex-wrap">
-                        <p className="font-bold text-base flex items-center gap-1">
-                            {post.author} 
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
-                        </p>
-                        <p className="text-muted-foreground">{post.handle} · {time}</p>
-                        
-                        {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
-                    </div>
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-                            {user?.uid === post.authorId ? (
-                                <>
-                                    <DropdownMenuItem onClick={() => onAnalyticsClick(post)}>
-                                        <BarChart3 className="mr-2 h-4 w-4"/>
-                                        Ver interações
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleDeleteClick(post.id)} className="text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4"/>
-                                        Apagar
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleEditClick(post)} disabled={!isEditable}>
-                                        <Edit className="mr-2 h-4 w-4"/>
-                                        Editar
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => handleTogglePinPost(post.id)}>
-                                        <Pin className="mr-2 h-4 w-4"/>
-                                        {zisprUser?.pinnedPostId === post.id ? 'Desafixar do perfil' : 'Fixar no seu perfil'}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de adicionar posts aos destaques será adicionada em breve.'})}>
-                                        <Sparkles className="mr-2 h-4 w-4"/>
-                                        Adicionar aos Destaques
-                                    </DropdownMenuItem>
-                                </>
-                            ) : (
-                                <>
-                                    <DropdownMenuItem onClick={() => onSaveClick(post.id)}>
-                                        <Save className="mr-2 h-4 w-4"/>
-                                        {isSaved ? 'Remover dos Salvos' : 'Salvar em Coleção'}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
-                                        <Frown className="mr-2 h-4 w-4"/>
-                                        Não tenho interesse
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
-                                        <Flag className="mr-2 h-4 w-4"/>
-                                        Denunciar post
-                                    </DropdownMenuItem>
-                                     <DropdownMenuItem onClick={() => onAnalyticsClick(post)}>
-                                        <BarChart3 className="mr-2 h-4 w-4"/>
-                                        Ver interações
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
-                                        <Megaphone className="mr-2 h-4 w-4"/>
-                                        Nota da comunidade
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => router.push(`/profile/${post.authorId}`)}>
-                                        <UserRound className="mr-2 h-4 w-4"/>
-                                        Ir para perfil de {post.handle}
-                                    </DropdownMenuItem>
-                                </>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-                <div className="mb-2 whitespace-pre-wrap">
-                    <PostContent content={post.content} spotifyUrl={post.spotifyUrl} />
-                </div>
-                {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
-                {post.spotifyUrl && <SpotifyEmbed url={post.spotifyUrl} />}
-                {post.poll && user && (
-                    <div className="mt-2" onClick={(e) => e.stopPropagation()}>
-                        <Poll 
-                            postId={post.id}
-                            options={post.poll.options}
-                            votes={post.poll.votes}
-                            voters={post.poll.voters}
-                            currentUserId={user.uid}
-                            onVote={onVote}
-                        />
-                    </div>
-                )}
-                {post.image && (
-                    <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); onImageClick(post); }}>
-                        <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
-                    </div>
-                )}
-                <div className="mt-2 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={(e) => { e.stopPropagation(); router.push(`/post/${post.id}`)}} className="flex items-center gap-1 hover:text-primary transition-colors">
-                        <MessageCircle className="h-5 w-5" />
-                        <span>{post.comments}</span>
-                    </button>
-                    
-                    <Popover>
-                        <PopoverTrigger asChild>
-                             <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1 hover:text-green-500 transition-colors ${post.isRetweeted ? 'text-green-500' : ''}`}>
-                                <Repeat className="h-5 w-5" />
-                                <span>{Array.isArray(post.retweets) ? post.retweets.length : 0}</span>
-                            </button>
-                        </PopoverTrigger>
-                         <PopoverContent className="w-48 p-2">
-                            <div className="grid gap-2">
-                                <Button
-                                    variant="ghost"
-                                    className="w-full justify-start"
-                                    onClick={(e) => { e.stopPropagation(); handlePostAction(post.id, 'retweet', post.authorId); }}
-                                >
-                                    <Repeat className="mr-2 h-4 w-4" />
-                                    {Array.isArray(post.retweets) && post.retweets.includes(user?.uid || '') ? 'Desfazer Repost' : 'Repostar'}
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    className="w-full justify-start"
-                                    onClick={(e) => { e.stopPropagation(); handleQuoteClick(post); }}
-                                >
-                                    <PenSquare className="mr-2 h-4 w-4" />
-                                    Quotar Post
-                                </Button>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-
-                    <button onClick={(e) => {e.stopPropagation(); handlePostAction(post.id, 'like', post.authorId)}} className={`flex items-center gap-1 ${post.isLiked ? 'text-red-500' : ''}`}>
-                        <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
-                        <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
-                    </button>
-                    <button
-                        className="flex items-center gap-1 hover:text-primary transition-colors disabled:cursor-not-allowed"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (user?.uid === post.authorId) {
-                                onAnalyticsClick(post);
-                            }
-                        }}
-                        disabled={user?.uid !== post.authorId}
-                    >
-                        <BarChart2 className="h-5 w-5" />
-                        <span>{post.views}</span>
-                    </button>
-                </div>
-                </div>
-            </div>
-        </li>
-    );
-});
-PostItem.displayName = 'PostItem';
   
 export default function HomePage() {
   const [allPosts, setAllPosts] = useState<Post[]>([]);
@@ -821,31 +484,6 @@ useEffect(() => {
   };
     
 
-    const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => {
-        const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
-        return (
-            <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
-                <div className="flex items-center gap-2 text-sm">
-                    <Avatar className="h-5 w-5">
-                        <AvatarImage src={post.avatar} />
-                        <AvatarFallback>{post.avatarFallback || post.author[0]}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-bold flex items-center gap-1">
-                        {post.author}
-                        {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}
-                    </span>
-                    <span className="text-muted-foreground">{post.handle}</span>
-                </div>
-                <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
-                {post.image && (
-                    <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
-                        <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
-                    </div>
-                )}
-            </div>
-        )
-    };
-    
     const handleVote = useCallback(async (postId: string, optionIndex: number) => {
         if (!user) return;
         const postRef = doc(db, 'posts', postId);
@@ -974,7 +612,6 @@ useEffect(() => {
         { href: '/home', icon: Home, label: 'Início' },
         { href: '/notifications', icon: Bell, label: 'Notificações' },
         { href: '/messages', icon: Mail, label: 'Mensagens' },
-        { href: '/news', icon: Radio, label: 'Notícias' },
         { href: '/saved', icon: Bookmark, label: 'Salvos' },
         { href: `/profile/${zisprUser.uid}`, icon: User, label: 'Perfil' },
     ];
@@ -1135,5 +772,3 @@ useEffect(() => {
     </>
   );
 }
-
-    
