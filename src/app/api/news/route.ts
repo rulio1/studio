@@ -2,18 +2,15 @@
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-    const apiKey = process.env.NEWS_API_KEY;
-
-    // A verificação é removida para permitir que a plataforma injete a variável de ambiente em produção.
-    // Se a chave não estiver configurada no ambiente de produção, a chamada fetch falhará, o que é um comportamento esperado.
+    // FIX: For development purposes, the API key is hardcoded here.
+    // In a production environment, this should be a secret environment variable.
+    const apiKey = '8a2c60b477d69f565fc7a37b90c330b3';
 
     try {
-        // Fetch top headlines from Brazil
         const url = `https://newsapi.org/v2/top-headlines?country=br&pageSize=5&apiKey=${apiKey}`;
         
         const newsResponse = await fetch(url, {
-             // Revalidate every hour
-            next: { revalidate: 3600 }
+            next: { revalidate: 3600 } // Revalidate every hour
         });
 
         if (!newsResponse.ok) {
