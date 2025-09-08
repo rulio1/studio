@@ -124,5 +124,8 @@
   "createPostFab": {
       "newMessage": "Nova Mensagem",
       "createPost": "Criar Post"
+  },
+  "newsCard": {
+      "title": "Notícias do Dia"
   }
 }

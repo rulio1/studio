@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Search, Loader2, MoreHorizontal, BadgeCheck, Bird, HandHeart } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
+import NewsCard from './news-card';
 
 interface UserToFollow {
     uid: string;
@@ -124,6 +125,8 @@ export default function RightSidebar() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+
+                <NewsCard />
 
                  <Card className="bg-primary/5 border-primary/20">
                     <CardHeader>
