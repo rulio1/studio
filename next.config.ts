@@ -89,7 +89,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 's2-oglobo.glbimg.com',
+        hostname: '**.glbimg.com',
       },
       {
         protocol: 'https',
