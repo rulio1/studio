@@ -226,6 +226,11 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
     }, [post.createdAt, post.repostedAt]);
 
     const handleTranslate = async () => {
+        if (translatedText) {
+            setTranslatedText(null);
+            return;
+        }
+
         if (!post.content) return;
         setIsTranslating(true);
         try {
@@ -1168,3 +1173,5 @@ useEffect(() => {
     </>
   );
 }
+
+    
