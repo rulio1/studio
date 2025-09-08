@@ -52,7 +52,7 @@ interface PostForViewer {
 
 interface ImageViewerProps {
   post: PostForViewer | null;
-  comments: Comment[];
+  comments?: Comment[];
   onOpenChange: (open: boolean) => void;
 }
 
@@ -212,7 +212,7 @@ export default function ImageViewer({ post, comments, onOpenChange }: ImageViewe
                             <Separator />
                         </div>
                         <div className="space-y-1">
-                            {comments.map(comment => <CommentItem key={comment.id} comment={comment} />)}
+                            {comments?.map(comment => <CommentItem key={comment.id} comment={comment} />)}
                         </div>
                     </main>
                     <footer className="p-2 border-t">
