@@ -114,7 +114,11 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'jpimg.com.br',
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: 'midias.correiobraziliense.com.br',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
