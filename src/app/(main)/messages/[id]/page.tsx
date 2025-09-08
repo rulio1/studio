@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert, Mic, Trash, Play, Pause, Square } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert, Image as ImageIcon, Trash, Play, Pause, Square } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -26,7 +26,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import WaveSurfer from 'wavesurfer.js';
+import Image from 'next/image';
+import { fileToDataUri } from '@/lib/utils';
+import ImageViewer from '@/components/image-viewer';
 
 
 interface ZisprUser {
@@ -45,9 +47,17 @@ interface Message {
     senderId: string;
     text: string;
     createdAt: any;
-    reactions?: Record<string, string[]>; // emoji: [userId1, userId2]
-    audioUrl?: string;
-    audioDuration?: number;
+    reactions?: Record<string, string[]>;
+    imageUrl?: string;
+}
+
+interface PostForViewer {
+    id: string;
+    image?: string;
+    comments: number;
+    retweets: string[];
+    likes: string[];
+    views: number;
 }
 
 interface Conversation {
@@ -66,110 +76,6 @@ const badgeColors = {
     gold: 'text-yellow-400'
 };
 
-const AudioPlayer = ({ audioUrl, audioDuration }: { audioUrl: string, audioDuration?: number }) => {
-    const waveformRef = useRef<HTMLDivElement>(null);
-    const wavesurferRef = useRef<WaveSurfer | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-
-    useEffect(() => {
-        if (!waveformRef.current) return;
-
-        wavesurferRef.current = WaveSurfer.create({
-            container: waveformRef.current,
-            waveColor: '#A1A1AA', // zinc-400
-            progressColor: '#3B82F6', // blue-500
-            url: audioUrl,
-            barWidth: 2,
-            barGap: 1,
-            height: 40,
-            cursorWidth: 0,
-        });
-
-        const ws = wavesurferRef.current;
-        ws.on('play', () => setIsPlaying(true));
-        ws.on('pause', () => setIsPlaying(false));
-        ws.on('finish', () => setIsPlaying(false));
-
-        return () => {
-            ws.destroy();
-        };
-    }, [audioUrl]);
-
-    const togglePlayPause = () => {
-        if (wavesurferRef.current) {
-            wavesurferRef.current.playPause();
-        }
-    };
-    
-    const formatTime = (time: number | undefined) => {
-        if (time === undefined || isNaN(time) || time < 0) return '0:00';
-        const minutes = Math.floor(time / 60);
-        const seconds = Math.floor(time % 60);
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    }
-
-    return (
-        <div className="flex items-center gap-2 w-52 md:w-64">
-            <Button onClick={togglePlayPause} size="icon" className="h-10 w-10 rounded-full shrink-0">
-                {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-            </Button>
-            <div ref={waveformRef} className="w-full h-10"></div>
-            <span className="text-xs text-muted-foreground font-mono">{formatTime(audioDuration)}</span>
-        </div>
-    );
-};
-
-
-const AudioPreview = ({ audioBlob, onDiscard }: { audioBlob: Blob, onDiscard: () => void }) => {
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [duration, setDuration] = useState(0);
-
-     useEffect(() => {
-        if (audioBlob) {
-            const url = URL.createObjectURL(audioBlob);
-            const audio = new Audio(url);
-            audio.onloadedmetadata = () => {
-                setDuration(audio.duration);
-            };
-            audioRef.current = audio;
-
-            const handleEnded = () => setIsPlaying(false);
-            audio.addEventListener('ended', handleEnded);
-
-            return () => {
-                URL.revokeObjectURL(url);
-                if (audio) {
-                    audio.removeEventListener('ended', handleEnded);
-                }
-            };
-        }
-    }, [audioBlob]);
-
-    const togglePlay = () => {
-        if (!audioRef.current) return;
-        if (isPlaying) {
-            audioRef.current.pause();
-        } else {
-            audioRef.current.play();
-        }
-        setIsPlaying(!isPlaying);
-    };
-    
-    return (
-         <div className="flex items-center gap-2">
-             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={onDiscard}>
-                 <Trash className="h-4 w-4 text-destructive" />
-             </Button>
-            <Button onClick={togglePlay} size="icon" className="h-8 w-8 rounded-full shrink-0">
-                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </Button>
-             <span className="text-sm text-muted-foreground font-mono">{duration.toFixed(1)}s</span>
-        </div>
-    )
-};
-
-
 export default function ConversationPage() {
     const router = useRouter();
     const params = useParams();
@@ -186,15 +92,11 @@ export default function ConversationPage() {
     const [isSending, setIsSending] = useState(false);
     const [isBlockAlertOpen, setIsBlockAlertOpen] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
-    // Audio recording state
-    const [isRecording, setIsRecording] = useState(false);
-    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const audioChunksRef = useRef<Blob[]>([]);
-    const recordingStartTimeRef = useRef<number | null>(null);
-    const [recordingDuration, setRecordingDuration] = useState(0);
-    const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [postToView, setPostToView] = useState<PostForViewer | null>(null);
 
      useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -247,7 +149,6 @@ export default function ConversationPage() {
 
         const conversationRef = doc(db, 'conversations', conversationId);
 
-        // Mark last message as read by current user
         if (conversation.lastMessage?.senderId !== user.uid) {
             if (conversation.lastMessageReadBy && !conversation.lastMessageReadBy.includes(user.uid)) {
                 updateDoc(conversationRef, {
@@ -256,7 +157,6 @@ export default function ConversationPage() {
             }
         }
         
-        // Reset unread count for the current user
         const unreadCountKey = `unreadCounts.${user.uid}`;
         if (conversation.unreadCounts && conversation.unreadCounts.hasOwnProperty(user.uid) && conversation.unreadCounts[user.uid] > 0) {
             updateDoc(conversationRef, { [unreadCountKey]: 0 });
@@ -306,34 +206,44 @@ export default function ConversationPage() {
     }, [messages]);
 
     const handleSendMessage = async () => {
-        if (!newMessage.trim() || !user || isSending || !otherUser) return;
+        if ((!newMessage.trim() && !imageFile) || !user || isSending || !otherUser) return;
         
         setIsSending(true);
         try {
             const conversationRef = doc(db, 'conversations', conversationId);
+            let imageUrl: string | null = null;
             
-            // Add message to subcollection
+            if (imageFile) {
+                const storage = getStorage();
+                const filePath = `message_images/${conversationId}/${Date.now()}_${imageFile.name}`;
+                const imageStorageRef = storageRef(storage, filePath);
+                await uploadBytes(imageStorageRef, imageFile);
+                imageUrl = await getDownloadURL(imageStorageRef);
+            }
+            
             await addDoc(collection(conversationRef, 'messages'), {
                 senderId: user.uid,
                 text: newMessage,
+                imageUrl: imageUrl,
                 createdAt: serverTimestamp(),
                 reactions: {},
             });
 
-            // Update last message and increment unread count for the other user
             const unreadCountKey = `unreadCounts.${otherUser.uid}`;
             await updateDoc(conversationRef, {
                 lastMessage: {
-                    text: newMessage,
+                    text: imageUrl ? '📷 Imagem' : newMessage,
                     senderId: user.uid,
                     timestamp: serverTimestamp()
                 },
-                lastMessageReadBy: [user.uid], // Reset read status, only sender has read it
+                lastMessageReadBy: [user.uid],
                 [unreadCountKey]: increment(1),
-                deletedFor: [], // If a user deleted it before, bring it back on new message
+                deletedFor: [],
             });
 
             setNewMessage('');
+            setImageFile(null);
+            setImagePreview(null);
 
         } catch (error) {
             console.error("Erro ao enviar mensagem:", error);
@@ -359,15 +269,12 @@ export default function ConversationPage() {
 
                 const newReactions = { ...currentReactions };
                 
-                // User is removing their reaction
                 if (userHasReactedWithEmoji) {
                     newReactions[emoji] = reactionForEmoji.filter((uid: string) => uid !== user.uid);
-                    // If no one else has this reaction, remove the emoji key
                     if (newReactions[emoji].length === 0) {
                         delete newReactions[emoji];
                     }
                 } 
-                // User is adding a new reaction
                 else {
                     newReactions[emoji] = [...reactionForEmoji, user.uid];
                 }
@@ -391,7 +298,6 @@ export default function ConversationPage() {
         const currentUserRef = doc(db, 'users', user.uid);
         const otherUserRef = doc(db, 'users', otherUser.uid);
 
-        // Remove follow relationships
         batch.update(currentUserRef, { 
             following: arrayRemove(otherUser.uid),
             blocked: arrayUnion(otherUser.uid)
@@ -419,118 +325,23 @@ export default function ConversationPage() {
         }
     }
 
-    const startRecording = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-            audioChunksRef.current = [];
-            
-            mediaRecorderRef.current.ondataavailable = (event) => {
-                audioChunksRef.current.push(event.data);
-            };
-
-            mediaRecorderRef.current.onstop = () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                setAudioBlob(audioBlob);
-                stream.getTracks().forEach(track => track.stop()); // Stop microphone access
-                if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
-            };
-
-            mediaRecorderRef.current.start();
-            setIsRecording(true);
-            recordingStartTimeRef.current = Date.now();
-            setRecordingDuration(0);
-
-            recordingIntervalRef.current = setInterval(() => {
-                if (recordingStartTimeRef.current) {
-                    setRecordingDuration((Date.now() - recordingStartTimeRef.current) / 1000);
-                }
-            }, 100);
-
-        } catch (error) {
-            console.error("Error starting recording:", error);
-            toast({ title: "Erro de Gravação", description: "Não foi possível acessar o microfone.", variant: "destructive" });
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setImageFile(file);
+            const dataUri = await fileToDataUri(file);
+            setImagePreview(dataUri);
         }
     };
 
-    const stopRecording = () => {
-        if (mediaRecorderRef.current && isRecording) {
-            mediaRecorderRef.current.stop();
-            setIsRecording(false);
-            if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+    const removeImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+        if (imageInputRef.current) {
+            imageInputRef.current.value = '';
         }
-    };
-
-    const toggleRecording = () => {
-        if (isRecording) {
-            stopRecording();
-        } else {
-            startRecording();
-        }
-    };
-    
-   const sendAudioMessage = async () => {
-    if (!audioBlob || !user || !otherUser) return;
-    setIsSending(true);
-
-    try {
-        const storage = getStorage();
-        const filePath = `audio_messages/${conversationId}/${Date.now()}.webm`;
-        const audioStorageRef = storageRef(storage, filePath);
-
-        await uploadBytes(audioStorageRef, audioBlob);
-        const downloadURL = await getDownloadURL(audioStorageRef);
-
-        const conversationRef = doc(db, 'conversations', conversationId);
-        const batch = writeBatch(db);
-
-        // Add audio message to subcollection
-        const messageRef = doc(collection(conversationRef, 'messages'));
-        batch.set(messageRef, {
-            senderId: user.uid,
-            audioUrl: downloadURL,
-            audioDuration: recordingDuration,
-            text: '',
-            createdAt: serverTimestamp(),
-            reactions: {},
-        });
-        
-        // Update last message in conversation
-        batch.update(conversationRef, {
-            lastMessage: {
-                text: '🎤 Mensagem de voz',
-                senderId: user.uid,
-                timestamp: serverTimestamp()
-            },
-            lastMessageReadBy: [user.uid],
-            [`unreadCounts.${otherUser.uid}`]: increment(1),
-            deletedFor: [],
-        });
-        
-        await batch.commit();
-
-        setAudioBlob(null);
-        setRecordingDuration(0);
-
-    } catch (error) {
-        console.error("Error sending audio message:", error);
-        toast({ title: "Erro", description: "Não foi possível enviar a mensagem de voz.", variant: "destructive" });
-    } finally {
-        setIsSending(false);
-    }
-};
-    
-    const handleDiscardAudio = () => {
-        setAudioBlob(null);
-        setRecordingDuration(0);
     }
     
-    const formatRecordingTime = (seconds: number) => {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    };
-
     if (isLoading) {
         return (
              <div className="flex flex-col h-full bg-background">
@@ -573,12 +384,11 @@ export default function ConversationPage() {
     const isZisprAccount = otherUser.handle === '@Zispr' || otherUser.handle === '@ZisprUSA';
     const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@Rulio';
     const badgeColor = otherUser.badgeTier ? badgeColors[otherUser.badgeTier] : 'text-primary';
-    const isBlockedByYou = zisprUser?.blocked?.includes(otherUser.uid);
-    const hasBlockedYou = zisprUser?.blockedBy?.includes(otherUser.uid);
-    const isConversationDisabled = isBlockedByYou || hasBlockedYou;
+    const isConversationDisabled = zisprUser?.blocked?.includes(otherUser.uid) || zisprUser?.blockedBy?.includes(otherUser.uid);
 
   return (
     <>
+    {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
     <div className="flex flex-col h-full bg-background">
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-4 py-2">
@@ -636,18 +446,16 @@ export default function ConversationPage() {
                     return (
                         <div key={message.id}>
                              <div className={`group flex items-end gap-2 relative ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
-                                {!message.audioUrl && (
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="ghost" size="icon" className={`absolute -top-4 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${isMyMessage ? 'left-0' : 'right-0'}`}>
-                                                <Smile className="h-5 w-5 text-muted-foreground" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0 border-none">
-                                            <EmojiPicker onEmojiClick={(emojiData: EmojiClickData) => handleReaction(message.id, emojiData.emoji)} />
-                                        </PopoverContent>
-                                    </Popover>
-                                )}
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="ghost" size="icon" className={`absolute -top-4 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${isMyMessage ? 'left-0' : 'right-0'}`}>
+                                            <Smile className="h-5 w-5 text-muted-foreground" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0 border-none">
+                                        <EmojiPicker onEmojiClick={(emojiData: EmojiClickData) => handleReaction(message.id, emojiData.emoji)} />
+                                    </PopoverContent>
+                                </Popover>
                                 
                                 {!isMyMessage && (
                                     <Avatar className="h-8 w-8">
@@ -663,13 +471,21 @@ export default function ConversationPage() {
                                         )}
                                     </Avatar>
                                 )}
-                                <div className={`relative rounded-2xl px-4 py-2 max-w-[80%] md:max-w-[70%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
-                                     {message.audioUrl ? (
-                                        <AudioPlayer audioUrl={message.audioUrl} audioDuration={message.audioDuration} />
-                                    ) : (
+                                <div className={`relative rounded-2xl px-3 py-2 max-w-[80%] md:max-w-[70%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
+                                     {message.imageUrl && (
+                                        <Image 
+                                            src={message.imageUrl}
+                                            alt="Imagem da mensagem"
+                                            width={300}
+                                            height={300}
+                                            className="rounded-lg object-cover w-full h-auto max-h-80 cursor-pointer"
+                                            onClick={() => setPostToView({id: message.id, image: message.imageUrl, comments: 0, retweets:[], likes:[], views: 0})}
+                                        />
+                                     )}
+                                     {message.text && (
                                         <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                                    )}
-                                    {reactionEntries.length > 0 && !message.audioUrl && (
+                                     )}
+                                    {reactionEntries.length > 0 && (
                                         <div className={`absolute -bottom-4 flex gap-1 ${isMyMessage ? 'right-0' : 'left-0'}`}>
                                             {reactionEntries.map(([emoji, uids]) => (
                                                 <div 
@@ -695,49 +511,35 @@ export default function ConversationPage() {
                 })}
             </div>
         </ScrollArea>
-        <footer className="p-4 pt-2 border-t bg-background">
-            {audioBlob && !isSending ? (
-                 <div className="relative flex items-center justify-between rounded-2xl border bg-background p-2 gap-2">
-                     <AudioPreview audioBlob={audioBlob} onDiscard={handleDiscardAudio} />
-                     <Button onClick={sendAudioMessage} size="icon" className="rounded-full shrink-0">
-                         <Send className="h-5 w-5" />
-                     </Button>
-                 </div>
-            ) : (
-                 <div className="relative flex items-center rounded-2xl border bg-background p-2">
-                     {isRecording ? (
-                         <div className="w-full flex items-center px-2">
-                             <div className="h-2.5 w-2.5 bg-destructive rounded-full animate-pulse mr-2"></div>
-                             <span className="text-sm text-muted-foreground font-mono animate-pulse">{formatRecordingTime(recordingDuration)}</span>
-                         </div>
-                     ) : (
-                         <Input 
-                             placeholder={isConversationDisabled ? "Não é possível enviar mensagens" : "Inicie uma nova mensagem"}
-                             value={newMessage}
-                             onChange={(e) => setNewMessage(e.target.value)}
-                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                             disabled={isSending || isConversationDisabled}
-                             className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                         />
-                     )}
-
-                     {newMessage.trim() ? (
-                        <Button onClick={handleSendMessage} disabled={isSending} size="icon" className="rounded-full">
-                           {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-                        </Button>
-                     ) : (
-                        <Button 
-                            onClick={toggleRecording}
-                            disabled={isSending || isConversationDisabled}
-                            size="icon" 
-                            variant="ghost"
-                            className="rounded-full"
-                        >
-                            {isRecording ? <Square className="h-5 w-5 text-destructive" /> : <Mic className="h-5 w-5" />}
-                        </Button>
-                     )}
-                 </div>
+        <footer className="p-4 pt-2 border-t bg-background space-y-2">
+            {imagePreview && (
+                <div className="relative w-24 h-24">
+                    <Image src={imagePreview} alt="Prévia da imagem" layout="fill" className="rounded-lg object-cover" />
+                    <Button variant="secondary" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={removeImage}>
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
             )}
+             <div className="relative flex items-center rounded-2xl border bg-background p-2">
+                <Input type="file" ref={imageInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
+                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => imageInputRef.current?.click()}>
+                    <ImageIcon className="h-5 w-5" />
+                </Button>
+                 <Input 
+                     placeholder={isConversationDisabled ? "Não é possível enviar mensagens" : "Inicie uma nova mensagem"}
+                     value={newMessage}
+                     onChange={(e) => setNewMessage(e.target.value)}
+                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                     disabled={isSending || isConversationDisabled}
+                     className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                 />
+
+                 {(newMessage.trim() || imageFile) && (
+                    <Button onClick={handleSendMessage} disabled={isSending} size="icon" className="rounded-full">
+                       {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                    </Button>
+                 )}
+             </div>
         </footer>
       </div>
     </div>
