@@ -173,8 +173,16 @@ export default function DesktopSidebar() {
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="w-full justify-start items-center p-2 h-auto">
                                 <Avatar className="h-10 w-10">
-                                    <AvatarImage src={zisprUser.avatar} alt={zisprUser.displayName} />
-                                    <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
+                                    {isZisprAccount ? (
+                                        <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+                                            <Bird className="h-6 w-6 text-primary" />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <AvatarImage src={zisprUser.avatar} alt={zisprUser.displayName} />
+                                            <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
+                                        </>
+                                    )}
                                 </Avatar>
                                 <div className="ml-3 text-left overflow-hidden">
                                     <p className="font-bold truncate flex items-center gap-1">

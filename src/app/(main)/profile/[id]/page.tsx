@@ -474,8 +474,16 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
         <li className="p-4 hover:bg-muted/20 transition-colors duration-200 cursor-pointer" onClick={() => router.push(`/post/${reply.postId}`)}>
             <div className="flex gap-4">
                 <Avatar>
-                    <AvatarImage src={reply.avatar} alt={reply.handle} />
-                    <AvatarFallback>{reply.avatarFallback}</AvatarFallback>
+                    {isZisprAccount ? (
+                        <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+                            <Bird className="h-5 w-5 text-primary" />
+                        </div>
+                    ) : (
+                        <>
+                            <AvatarImage src={reply.avatar} alt={reply.handle} />
+                            <AvatarFallback>{reply.avatarFallback}</AvatarFallback>
+                        </>
+                    )}
                 </Avatar>
                 <div className='w-full'>
                     <div className="flex items-center justify-between">
