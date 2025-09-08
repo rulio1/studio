@@ -98,6 +98,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'uploads.metropoles.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.nsctotal.com.br',
       }
     ],
     dangerouslyAllowSVG: true,
