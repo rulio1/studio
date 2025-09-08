@@ -142,6 +142,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'cdn.ome.lt',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.cartacapital.com.br',
+      }
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
