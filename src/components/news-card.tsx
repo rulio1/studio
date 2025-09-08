@@ -14,28 +14,30 @@ interface NewsArticle {
     title: string;
     description: string;
     url: string;
-    urlToImage: string | null;
+    image: string | null;
     publishedAt: string;
     source: {
         name: string;
     };
 }
 
-const NewsItem = ({ title, url, source, urlToImage, publishedAt }: NewsArticle) => {
+const NewsItem = ({ title, url, source, image, publishedAt }: NewsArticle) => {
     const timeAgo = (dateString: string) => {
         const date = new Date(dateString);
         const now = new Date();
         const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
         let interval = seconds / 31536000;
-        if (interval > 1) return `${Math.floor(interval)}y`;
+        if (interval > 1) return `${Math.floor(interval)}a`;
         interval = seconds / 2592000;
-        if (interval > 1) return `${Math.floor(interval)}mo`;
+        if (interval > 1) return `${Math.floor(interval)}m`;
+        interval = seconds / 604800;
+        if (interval > 1) return `${Math.floor(interval)}sem`;
         interval = seconds / 86400;
         if (interval > 1) return `${Math.floor(interval)}d`;
         interval = seconds / 3600;
         if (interval > 1) return `${Math.floor(interval)}h`;
         interval = seconds / 60;
-        if (interval > 1) return `${Math.floor(interval)}m`;
+        if (interval > 1) return `${Math.floor(interval)}min`;
         return `${Math.floor(seconds)}s`;
     };
 
@@ -46,9 +48,9 @@ const NewsItem = ({ title, url, source, urlToImage, publishedAt }: NewsArticle) 
                     <p className="text-xs text-muted-foreground">{source.name} · {timeAgo(publishedAt)}</p>
                     <h3 className="font-bold leading-tight text-sm">{title}</h3>
                 </div>
-                {urlToImage && (
+                {image && (
                     <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0">
-                         <Image src={urlToImage} alt={title} layout="fill" objectFit="cover" />
+                         <Image src={image} alt={title} layout="fill" objectFit="cover" />
                     </div>
                 )}
             </div>
@@ -113,7 +115,7 @@ export default function NewsCard() {
                         <NewsItemSkeleton />
                     </>
                 ) : (
-                    news.map((item, index) => (
+                    news.slice(0, 5).map((item, index) => (
                         <NewsItem key={index} {...item} />
                     ))
                 )}

@@ -7,7 +7,8 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ExternalLink, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { formatTimeAgo } from '@/lib/utils';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface NewsArticle {
@@ -42,7 +43,7 @@ const NewsArticleCard = ({ article }: { article: NewsArticle }) => (
             <p className="text-muted-foreground line-clamp-3">{article.description}</p>
         </CardContent>
         <CardFooter className="flex justify-between items-center text-sm text-muted-foreground">
-            <span>{article.source.name} · {formatTimeAgo(new Date(article.publishedAt))}</span>
+            <span>{article.source.name} · {format(new Date(article.publishedAt), "d MMM, yyyy", { locale: ptBR })}</span>
              <Button variant="ghost" size="sm" asChild>
                 <a href={article.url} target="_blank" rel="noopener noreferrer">
                     Ler mais <ExternalLink className="ml-2 h-4 w-4" />
