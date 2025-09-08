@@ -133,6 +133,60 @@ const AudioPlayer = ({ audioUrl, audioDuration }: { audioUrl: string, audioDurat
     );
 };
 
+const AudioPreview = ({ audioBlob, onDiscard }: { audioBlob: Blob, onDiscard: () => void }) => {
+    const waveformRef = useRef<HTMLDivElement>(null);
+    const wavesurferRef = useRef<WaveSurfer | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [duration, setDuration] = useState(0);
+
+    useEffect(() => {
+        if (!waveformRef.current || !audioBlob) return;
+
+        const blobUrl = URL.createObjectURL(audioBlob);
+
+        const ws = WaveSurfer.create({
+            container: waveformRef.current,
+            waveColor: 'rgb(100 116 139)',
+            progressColor: 'rgb(30 41 59)',
+            url: blobUrl,
+            height: 32,
+            barWidth: 2,
+            barGap: 2,
+            barRadius: 2,
+            cursorWidth: 0,
+        });
+
+        wavesurferRef.current = ws;
+
+        ws.on('play', () => setIsPlaying(true));
+        ws.on('pause', () => setIsPlaying(false));
+        ws.on('finish', () => setIsPlaying(false));
+        ws.on('ready', (d) => setDuration(d));
+
+        return () => {
+            ws.destroy();
+            URL.revokeObjectURL(blobUrl);
+        };
+    }, [audioBlob]);
+
+    const togglePlay = () => {
+        wavesurferRef.current?.playPause();
+    };
+    
+    return (
+         <div className="flex items-center gap-2">
+             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={onDiscard}>
+                 <Trash className="h-4 w-4 text-destructive" />
+             </Button>
+            <Button onClick={togglePlay} size="icon" className="h-8 w-8 rounded-full shrink-0">
+                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </Button>
+            <div ref={waveformRef} className="w-full h-8" />
+             <span className="text-xs text-muted-foreground font-mono">{duration.toFixed(1)}s</span>
+        </div>
+    )
+};
+
 
 export default function ConversationPage() {
     const router = useRouter();
@@ -468,6 +522,11 @@ export default function ConversationPage() {
             toast({ title: "Erro", description: "Não foi possível enviar a mensagem de voz.", variant: "destructive" });
         }
     };
+    
+    const handleDiscardAudio = () => {
+        setAudioBlob(null);
+        setRecordingDuration(0);
+    }
 
     if (isLoading) {
         return (
@@ -634,54 +693,51 @@ export default function ConversationPage() {
             </div>
         </ScrollArea>
         <footer className="p-4 pt-2 border-t bg-background">
-           {audioBlob && !isSending ? (
-                <div className="relative flex items-center justify-between rounded-2xl border bg-background p-2">
-                    <Button variant="ghost" size="icon" onClick={() => setAudioBlob(null)}>
-                        <Trash className="h-5 w-5 text-destructive" />
-                    </Button>
-                    <div className="text-sm text-muted-foreground">Áudio gravado ({recordingDuration.toFixed(1)}s)</div>
-                    <Button onClick={sendAudioMessage} size="icon" className="rounded-full">
-                        <Send className="h-5 w-5" />
-                    </Button>
-                </div>
+            {audioBlob && !isSending ? (
+                 <div className="relative flex items-center justify-between rounded-2xl border bg-background p-2 gap-2">
+                     <AudioPreview audioBlob={audioBlob} onDiscard={handleDiscardAudio} />
+                     <Button onClick={sendAudioMessage} size="icon" className="rounded-full shrink-0">
+                         <Send className="h-5 w-5" />
+                     </Button>
+                 </div>
             ) : (
-                <div className="relative flex items-center rounded-2xl border bg-background p-2">
-                {isRecording ? (
-                    <div className="w-full flex items-center justify-center text-destructive animate-pulse">
-                         <Mic className="h-5 w-5 mr-2" /> Gravando...
-                    </div>
-                ) : (
-                    <Input 
-                        placeholder={isConversationDisabled ? "Não é possível enviar mensagens" : "Inicie uma nova mensagem"}
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                        disabled={isSending || isConversationDisabled}
-                        className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
-                )}
-                 <Button 
-                    onMouseDown={startRecording}
-                    onMouseUp={stopRecording}
-                    onTouchStart={startRecording}
-                    onTouchEnd={stopRecording}
-                    disabled={isSending || isConversationDisabled || isRecording} 
-                    size="icon" 
-                    className="rounded-full"
-                    variant={newMessage.trim() ? "default" : "ghost"}
-                    onClick={newMessage.trim() ? handleSendMessage : undefined}
-                >
-                    {isSending ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : newMessage.trim() ? (
-                        <Send className="h-5 w-5" />
-                    ) : (
-                        <Mic className="h-5 w-5" />
-                    )}
-                </Button>
-              </div>
-           )}
-      </footer>
+                 <div className="relative flex items-center rounded-2xl border bg-background p-2">
+                     {isRecording ? (
+                         <div className="w-full flex items-center justify-center text-destructive animate-pulse">
+                             <Mic className="h-5 w-5 mr-2" /> Gravando...
+                         </div>
+                     ) : (
+                         <Input 
+                             placeholder={isConversationDisabled ? "Não é possível enviar mensagens" : "Inicie uma nova mensagem"}
+                             value={newMessage}
+                             onChange={(e) => setNewMessage(e.target.value)}
+                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                             disabled={isSending || isConversationDisabled}
+                             className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                         />
+                     )}
+                     <Button 
+                         onMouseDown={startRecording}
+                         onMouseUp={stopRecording}
+                         onTouchStart={startRecording}
+                         onTouchEnd={stopRecording}
+                         disabled={isSending || isConversationDisabled || isRecording} 
+                         size="icon" 
+                         className="rounded-full"
+                         variant={newMessage.trim() ? "default" : "ghost"}
+                         onClick={newMessage.trim() ? handleSendMessage : undefined}
+                     >
+                         {isSending ? (
+                             <Loader2 className="h-5 w-5 animate-spin" />
+                         ) : newMessage.trim() ? (
+                             <Send className="h-5 w-5" />
+                         ) : (
+                             <Mic className="h-5 w-5" />
+                         )}
+                     </Button>
+                 </div>
+            )}
+        </footer>
       </div>
     </div>
     
@@ -704,4 +760,3 @@ export default function ConversationPage() {
     </>
   );
 }
-
