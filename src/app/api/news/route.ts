@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     const apiKey = '8a2c60b477d69f565fc7a37b90c330b3';
 
     try {
-        const url = `https://gnews.io/api/v4/top-headlines?country=br&max=5&token=${apiKey}`;
+        const url = `https://gnews.io/api/v4/top-headlines?country=br&max=20&token=${apiKey}`;
         
         const newsResponse = await fetch(url, {
             next: { revalidate: 3600 } // Revalidate every hour
