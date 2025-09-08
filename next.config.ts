@@ -34,7 +34,27 @@ const nextConfig: NextConfig = {
         hostname: 'images.unsplash.com',
         port: '',
         pathname: '/**',
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: 's.yimg.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media.zenfs.com',
+      },
+       {
+        protocol: 'https',
+        hostname: 'www.reuters.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.rfi.fr',
+      },
+      {
+        protocol: 'https',
+        hostname: 's.w-x.co',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",

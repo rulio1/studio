@@ -3,67 +3,98 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from './ui/button';
-import { X } from 'lucide-react';
-import { useState } from 'react';
+import { X, Globe } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useTranslation } from '@/hooks/use-translation';
+import { Skeleton } from './ui/skeleton';
+import Image from 'next/image';
 
-const newsItems = [
-    {
-        title: "Brazil's Independence Day: Lula's Unity Parade Faces Bolsonaro Protests",
-        time: "5 hours ago",
-        category: "News",
-        posts: "7,031 posts",
-        avatars: [
-            'https://i.ibb.co/2SKdC0F/avatar-1.png',
-            'https://i.ibb.co/3s0p4tC/avatar-2.png',
-            'https://i.ibb.co/kX3bVfK/avatar-3.png',
-        ]
-    },
-    {
-        title: "Hornet's Fierce Debut: Hollow Knight: Silksong Conquers Fans After Six-Year Wait",
-        time: "1 day ago",
-        category: "Entertainment",
-        posts: "45.2K posts",
-        avatars: [
-            'https://i.ibb.co/2SKdC0F/avatar-1.png',
-            'https://i.ibb.co/3s0p4tC/avatar-2.png',
-            'https://i.ibb.co/kX3bVfK/avatar-3.png',
-        ]
-    },
-    {
-        title: "Greg Cipes Alleges Warner Bros. Firing Over Parkinson's Diagnosis",
-        time: "4 hours ago",
-        category: "Entertainment",
-        posts: "16K posts",
-        avatars: [
-            'https://i.ibb.co/2SKdC0F/avatar-1.png',
-            'https://i.ibb.co/3s0p4tC/avatar-2.png',
-            'https://i.ibb.co/kX3bVfK/avatar-3.png',
-        ]
-    }
-]
+interface NewsArticle {
+    title: string;
+    description: string;
+    url: string;
+    urlToImage: string | null;
+    publishedAt: string;
+    source: {
+        name: string;
+    };
+}
 
-const NewsItem = ({ title, time, category, posts, avatars }: typeof newsItems[0]) => (
-    <div className="hover:bg-muted/50 p-3 rounded-lg cursor-pointer">
-        <h3 className="font-bold leading-tight">{title}</h3>
-        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-            <div className="flex -space-x-2 overflow-hidden">
-                {avatars.map((src, i) => (
-                    <Avatar key={i} className="h-4 w-4 border-2 border-background">
-                        <AvatarImage src={src} />
-                        <AvatarFallback>Z</AvatarFallback>
-                    </Avatar>
-                ))}
+const NewsItem = ({ title, url, source, urlToImage, publishedAt }: NewsArticle) => {
+    const timeAgo = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return `${Math.floor(interval)}y`;
+        interval = seconds / 2592000;
+        if (interval > 1) return `${Math.floor(interval)}mo`;
+        interval = seconds / 86400;
+        if (interval > 1) return `${Math.floor(interval)}d`;
+        interval = seconds / 3600;
+        if (interval > 1) return `${Math.floor(interval)}h`;
+        interval = seconds / 60;
+        if (interval > 1) return `${Math.floor(interval)}m`;
+        return `${Math.floor(seconds)}s`;
+    };
+
+    return (
+        <a href={url} target="_blank" rel="noopener noreferrer" className="block hover:bg-muted/50 p-3 rounded-lg cursor-pointer">
+            <div className="flex justify-between gap-4">
+                <div>
+                    <p className="text-xs text-muted-foreground">{source.name} · {timeAgo(publishedAt)}</p>
+                    <h3 className="font-bold leading-tight text-sm">{title}</h3>
+                </div>
+                {urlToImage && (
+                    <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0">
+                         <Image src={urlToImage} alt={title} layout="fill" objectFit="cover" />
+                    </div>
+                )}
             </div>
-            <span>{time} &middot; {category} &middot; {posts}</span>
+        </a>
+    )
+};
+
+
+const NewsItemSkeleton = () => (
+    <div className="p-3">
+        <div className="flex justify-between gap-4">
+            <div className="flex-1 space-y-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+            </div>
+            <Skeleton className="w-16 h-16 rounded-lg shrink-0" />
         </div>
     </div>
 )
 
 export default function NewsCard() {
     const [isVisible, setIsVisible] = useState(true);
+    const [news, setNews] = useState<NewsArticle[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const { t } = useTranslation();
+
+    useEffect(() => {
+        const fetchNews = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch('/api/news');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch news');
+                }
+                const data = await response.json();
+                setNews(data.articles);
+            } catch (error) {
+                console.error("Error fetching news:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchNews();
+    }, []);
 
     if (!isVisible) {
         return null;
@@ -73,14 +104,19 @@ export default function NewsCard() {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>{t('newsCard.title')}</CardTitle>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsVisible(false)}>
-                    <X className="h-4 w-4" />
-                </Button>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
-                {newsItems.map((item) => (
-                    <NewsItem key={item.title} {...item} />
-                ))}
+                {isLoading ? (
+                    <>
+                        <NewsItemSkeleton />
+                        <NewsItemSkeleton />
+                        <NewsItemSkeleton />
+                    </>
+                ) : (
+                    news.map((item, index) => (
+                        <NewsItem key={index} {...item} />
+                    ))
+                )}
             </CardContent>
         </Card>
     );
