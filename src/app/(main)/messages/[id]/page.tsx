@@ -2,16 +2,17 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert, Mic, Trash, Play, Pause } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, serverTimestamp, query, onSnapshot, orderBy, updateDoc, increment, arrayUnion, arrayRemove, runTransaction, writeBatch } from 'firebase/firestore';
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import WaveSurfer from 'wavesurfer.js';
 
 
 interface ZisprUser {
@@ -45,6 +47,8 @@ interface Message {
     text: string;
     createdAt: any;
     reactions?: Record<string, string[]>; // emoji: [userId1, userId2]
+    audioUrl?: string;
+    audioDuration?: number;
 }
 
 interface Conversation {
@@ -63,6 +67,73 @@ const badgeColors = {
     gold: 'text-yellow-400'
 };
 
+const AudioPlayer = ({ audioUrl, audioDuration }: { audioUrl: string, audioDuration?: number }) => {
+    const waveformRef = useRef<HTMLDivElement>(null);
+    const wavesurferRef = useRef<WaveSurfer | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+
+    useEffect(() => {
+        if (!waveformRef.current) return;
+
+        const ws = WaveSurfer.create({
+            container: waveformRef.current,
+            waveColor: 'rgb(203 213 225)',
+            progressColor: 'rgb(59 130 246)',
+            url: audioUrl,
+            height: 40,
+            barWidth: 2,
+            barGap: 2,
+            barRadius: 2,
+            cursorWidth: 0,
+        });
+
+        wavesurferRef.current = ws;
+
+        ws.on('play', () => setIsPlaying(true));
+        ws.on('pause', () => setIsPlaying(false));
+        ws.on('finish', () => setIsPlaying(false));
+        ws.on('audioprocess', (time) => setCurrentTime(time));
+        ws.on('ready', () => {
+             if (audioDuration === undefined) {
+                 setCurrentTime(ws.getDuration());
+            }
+        });
+
+
+        return () => {
+            ws.destroy();
+        };
+    }, [audioUrl, audioDuration]);
+
+    const togglePlay = () => {
+        wavesurferRef.current?.playPause();
+    };
+
+    const formatTime = (seconds: number) => {
+        const date = new Date(0);
+        date.setSeconds(seconds || 0);
+        return date.toISOString().substr(14, 5);
+    };
+
+    const displayTime = hasNaN(audioDuration) ? formatTime(currentTime) : formatTime(audioDuration as number - currentTime);
+    
+    function hasNaN(value: any) {
+        return typeof value === 'number' && isNaN(value);
+    }
+
+    return (
+        <div className="flex items-center gap-3 w-64">
+            <Button onClick={togglePlay} size="icon" className="h-10 w-10 rounded-full shrink-0">
+                {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+            </Button>
+            <div ref={waveformRef} className="w-full h-10" />
+            <span className="text-xs text-muted-foreground font-mono">{displayTime}</span>
+        </div>
+    );
+};
+
+
 export default function ConversationPage() {
     const router = useRouter();
     const params = useParams();
@@ -80,6 +151,13 @@ export default function ConversationPage() {
     const [isBlockAlertOpen, setIsBlockAlertOpen] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+    // Audio recording state
+    const [isRecording, setIsRecording] = useState(false);
+    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const recordingStartTimeRef = useRef<number | null>(null);
+    const [recordingDuration, setRecordingDuration] = useState(0);
 
      useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -304,6 +382,92 @@ export default function ConversationPage() {
         }
     }
 
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorderRef.current = new MediaRecorder(stream);
+            audioChunksRef.current = [];
+            
+            mediaRecorderRef.current.ondataavailable = (event) => {
+                audioChunksRef.current.push(event.data);
+            };
+
+            mediaRecorderRef.current.onstop = () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                setAudioBlob(audioBlob);
+                stream.getTracks().forEach(track => track.stop()); // Stop microphone access
+            };
+
+            mediaRecorderRef.current.start();
+            setIsRecording(true);
+            recordingStartTimeRef.current = Date.now();
+        } catch (error) {
+            console.error("Error starting recording:", error);
+            toast({ title: "Erro de Gravação", description: "Não foi possível acessar o microfone.", variant: "destructive" });
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            const endTime = Date.now();
+            if (recordingStartTimeRef.current) {
+                setRecordingDuration((endTime - recordingStartTimeRef.current) / 1000);
+            }
+        }
+    };
+    
+    const sendAudioMessage = async () => {
+        if (!audioBlob || !user || !otherUser) return;
+        setIsSending(true);
+
+        try {
+            const storage = getStorage();
+            const filePath = `audio_messages/${conversationId}/${Date.now()}.webm`;
+            const audioStorageRef = storageRef(storage, filePath);
+
+            // Convert Blob to Data URL string for upload
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = async () => {
+                const base64data = reader.result as string;
+                await uploadString(audioStorageRef, base64data, 'data_url');
+                const downloadURL = await getDownloadURL(audioStorageRef);
+
+                // Now add to Firestore
+                const conversationRef = doc(db, 'conversations', conversationId);
+                await addDoc(collection(conversationRef, 'messages'), {
+                    senderId: user.uid,
+                    audioUrl: downloadURL,
+                    audioDuration: recordingDuration,
+                    text: '',
+                    createdAt: serverTimestamp(),
+                    reactions: {},
+                });
+
+                 await updateDoc(conversationRef, {
+                    lastMessage: {
+                        text: '🎤 Mensagem de voz',
+                        senderId: user.uid,
+                        timestamp: serverTimestamp()
+                    },
+                    lastMessageReadBy: [user.uid],
+                    [`unreadCounts.${otherUser.uid}`]: increment(1),
+                    deletedFor: [],
+                });
+                
+                setAudioBlob(null);
+                setRecordingDuration(0);
+                setIsSending(false);
+            };
+
+        } catch (error) {
+            console.error("Error sending audio message:", error);
+            setIsSending(false);
+            toast({ title: "Erro", description: "Não foi possível enviar a mensagem de voz.", variant: "destructive" });
+        }
+    };
 
     if (isLoading) {
         return (
@@ -410,16 +574,18 @@ export default function ConversationPage() {
                     return (
                         <div key={message.id}>
                              <div className={`group flex items-end gap-2 relative ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="ghost" size="icon" className={`absolute -top-4 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${isMyMessage ? 'left-0' : 'right-0'}`}>
-                                            <Smile className="h-5 w-5 text-muted-foreground" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0 border-none">
-                                        <EmojiPicker onEmojiClick={(emojiData: EmojiClickData) => handleReaction(message.id, emojiData.emoji)} />
-                                    </PopoverContent>
-                                </Popover>
+                                {!message.audioUrl && (
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="ghost" size="icon" className={`absolute -top-4 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${isMyMessage ? 'left-0' : 'right-0'}`}>
+                                                <Smile className="h-5 w-5 text-muted-foreground" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0 border-none">
+                                            <EmojiPicker onEmojiClick={(emojiData: EmojiClickData) => handleReaction(message.id, emojiData.emoji)} />
+                                        </PopoverContent>
+                                    </Popover>
+                                )}
                                 
                                 {!isMyMessage && (
                                     <Avatar className="h-8 w-8">
@@ -435,9 +601,13 @@ export default function ConversationPage() {
                                         )}
                                     </Avatar>
                                 )}
-                                <div className={`relative rounded-2xl px-4 py-2 max-w-[80%] md:max-w-[60%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
-                                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                                    {reactionEntries.length > 0 && (
+                                <div className={`relative rounded-2xl px-4 py-2 max-w-[80%] md:max-w-[70%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
+                                     {message.audioUrl ? (
+                                        <AudioPlayer audioUrl={message.audioUrl} audioDuration={message.audioDuration} />
+                                    ) : (
+                                        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                                    )}
+                                    {reactionEntries.length > 0 && !message.audioUrl && (
                                         <div className={`absolute -bottom-4 flex gap-1 ${isMyMessage ? 'right-0' : 'left-0'}`}>
                                             {reactionEntries.map(([emoji, uids]) => (
                                                 <div 
@@ -464,19 +634,53 @@ export default function ConversationPage() {
             </div>
         </ScrollArea>
         <footer className="p-4 pt-2 border-t bg-background">
-           <div className="relative flex items-center rounded-2xl border bg-background p-2">
-              <Input 
-                  placeholder={isConversationDisabled ? "Não é possível enviar mensagens" : "Inicie uma nova mensagem"}
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  disabled={isSending || isConversationDisabled}
-                  className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-              <Button onClick={handleSendMessage} disabled={!newMessage.trim() || isSending || isConversationDisabled} size="icon" className="rounded-full">
-                  {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-              </Button>
-          </div>
+           {audioBlob && !isSending ? (
+                <div className="relative flex items-center justify-between rounded-2xl border bg-background p-2">
+                    <Button variant="ghost" size="icon" onClick={() => setAudioBlob(null)}>
+                        <Trash className="h-5 w-5 text-destructive" />
+                    </Button>
+                    <div className="text-sm text-muted-foreground">Áudio gravado ({recordingDuration.toFixed(1)}s)</div>
+                    <Button onClick={sendAudioMessage} size="icon" className="rounded-full">
+                        <Send className="h-5 w-5" />
+                    </Button>
+                </div>
+            ) : (
+                <div className="relative flex items-center rounded-2xl border bg-background p-2">
+                {isRecording ? (
+                    <div className="w-full flex items-center justify-center text-destructive animate-pulse">
+                         <Mic className="h-5 w-5 mr-2" /> Gravando...
+                    </div>
+                ) : (
+                    <Input 
+                        placeholder={isConversationDisabled ? "Não é possível enviar mensagens" : "Inicie uma nova mensagem"}
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                        disabled={isSending || isConversationDisabled}
+                        className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                )}
+                 <Button 
+                    onMouseDown={startRecording}
+                    onMouseUp={stopRecording}
+                    onTouchStart={startRecording}
+                    onTouchEnd={stopRecording}
+                    disabled={isSending || isConversationDisabled || isRecording} 
+                    size="icon" 
+                    className="rounded-full"
+                    variant={newMessage.trim() ? "default" : "ghost"}
+                    onClick={newMessage.trim() ? handleSendMessage : undefined}
+                >
+                    {isSending ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : newMessage.trim() ? (
+                        <Send className="h-5 w-5" />
+                    ) : (
+                        <Mic className="h-5 w-5" />
+                    )}
+                </Button>
+              </div>
+           )}
       </footer>
       </div>
     </div>
@@ -500,3 +704,4 @@ export default function ConversationPage() {
     </>
   );
 }
+
