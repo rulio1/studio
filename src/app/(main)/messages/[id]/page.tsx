@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert, Mic, Trash, Play, Pause } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert, Mic, Trash, Play, Pause, Square } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -212,6 +212,7 @@ export default function ConversationPage() {
     const audioChunksRef = useRef<Blob[]>([]);
     const recordingStartTimeRef = useRef<number | null>(null);
     const [recordingDuration, setRecordingDuration] = useState(0);
+    const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
      useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -450,11 +451,20 @@ export default function ConversationPage() {
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
                 setAudioBlob(audioBlob);
                 stream.getTracks().forEach(track => track.stop()); // Stop microphone access
+                if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
             };
 
             mediaRecorderRef.current.start();
             setIsRecording(true);
             recordingStartTimeRef.current = Date.now();
+            setRecordingDuration(0);
+
+            recordingIntervalRef.current = setInterval(() => {
+                if (recordingStartTimeRef.current) {
+                    setRecordingDuration((Date.now() - recordingStartTimeRef.current) / 1000);
+                }
+            }, 100);
+
         } catch (error) {
             console.error("Error starting recording:", error);
             toast({ title: "Erro de Gravação", description: "Não foi possível acessar o microfone.", variant: "destructive" });
@@ -465,10 +475,15 @@ export default function ConversationPage() {
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
-            const endTime = Date.now();
-            if (recordingStartTimeRef.current) {
-                setRecordingDuration((endTime - recordingStartTimeRef.current) / 1000);
-            }
+            if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+        }
+    };
+
+    const toggleRecording = () => {
+        if (isRecording) {
+            stopRecording();
+        } else {
+            startRecording();
         }
     };
     
@@ -527,6 +542,12 @@ export default function ConversationPage() {
         setAudioBlob(null);
         setRecordingDuration(0);
     }
+    
+    const formatRecordingTime = (seconds: number) => {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    };
 
     if (isLoading) {
         return (
@@ -703,8 +724,9 @@ export default function ConversationPage() {
             ) : (
                  <div className="relative flex items-center rounded-2xl border bg-background p-2">
                      {isRecording ? (
-                         <div className="w-full flex items-center justify-center text-destructive animate-pulse">
-                             <Mic className="h-5 w-5 mr-2" /> Gravando...
+                         <div className="w-full flex items-center px-2">
+                             <div className="h-2.5 w-2.5 bg-destructive rounded-full animate-pulse mr-2"></div>
+                             <span className="text-sm text-muted-foreground font-mono animate-pulse">{formatRecordingTime(recordingDuration)}</span>
                          </div>
                      ) : (
                          <Input 
@@ -716,25 +738,22 @@ export default function ConversationPage() {
                              className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                          />
                      )}
-                     <Button 
-                         onMouseDown={startRecording}
-                         onMouseUp={stopRecording}
-                         onTouchStart={startRecording}
-                         onTouchEnd={stopRecording}
-                         disabled={isSending || isConversationDisabled || isRecording} 
-                         size="icon" 
-                         className="rounded-full"
-                         variant={newMessage.trim() ? "default" : "ghost"}
-                         onClick={newMessage.trim() ? handleSendMessage : undefined}
-                     >
-                         {isSending ? (
-                             <Loader2 className="h-5 w-5 animate-spin" />
-                         ) : newMessage.trim() ? (
-                             <Send className="h-5 w-5" />
-                         ) : (
-                             <Mic className="h-5 w-5" />
-                         )}
-                     </Button>
+
+                     {newMessage.trim() ? (
+                        <Button onClick={handleSendMessage} disabled={isSending} size="icon" className="rounded-full">
+                           {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                        </Button>
+                     ) : (
+                        <Button 
+                            onClick={toggleRecording}
+                            disabled={isSending || isConversationDisabled}
+                            size="icon" 
+                            variant="ghost"
+                            className="rounded-full"
+                        >
+                            {isRecording ? <Square className="h-5 w-5 text-destructive" /> : <Mic className="h-5 w-5" />}
+                        </Button>
+                     )}
                  </div>
             )}
         </footer>
