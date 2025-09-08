@@ -15,14 +15,31 @@ const firebaseConfig = {
 };
 
 let app: FirebaseApp;
+let db: Firestore;
+
 if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
+    db = initializeFirestore(app, {
+        localCache: memoryLocalCache(), // Fallback for environments without IndexedDB support
+    });
 } else {
     app = getApp();
+    db = getFirestore(app);
 }
 
+// Enable offline persistence
+try {
+    enableIndexedDbPersistence(db);
+} catch (err: any) {
+    if (err.code === 'failed-precondition') {
+        console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+    } else if (err.code === 'unimplemented') {
+        console.warn('The current browser does not support all of the features required to enable persistence.');
+    }
+}
+
+
 const auth: Auth = getAuth(app);
-const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
 
 // Push Notifications (Client-side)
