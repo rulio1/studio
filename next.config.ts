@@ -108,6 +108,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'ogcss.infoglobo.com.br',
+      },
+      {
+        protocol: 'https',
         hostname: 'cdn-7.motorsport.com',
       },
       {
