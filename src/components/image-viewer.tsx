@@ -150,6 +150,9 @@ export default function ImageViewer({ post, comments, onOpenChange }: ImageViewe
               className="bg-transparent border-0 p-0 h-screen w-screen max-w-full flex flex-col md:flex-row items-center justify-center outline-none"
               hideCloseButton={true}
             >
+              <DialogHeader className="sr-only">
+                  <DialogTitle>Visualizador de Mídia</DialogTitle>
+              </DialogHeader>
                 {/* Media Column */}
                 <div className="relative flex-1 w-full h-full flex items-center justify-center p-4 md:p-8" onClick={handleClose}>
                     <motion.div
@@ -219,7 +222,7 @@ export default function ImageViewer({ post, comments, onOpenChange }: ImageViewe
                         <div className="flex items-center gap-2 relative rounded-lg border bg-muted p-1">
                             <Avatar className="h-8 w-8">
                                 <AvatarImage src={zisprUser?.avatar} />
-                                <AvatarFallback>{zisprUser?.displayName[0]}</AvatarFallback>
+                                <AvatarFallback>{zisprUser?.displayName?.[0]}</AvatarFallback>
                             </Avatar>
                             <Textarea 
                                 placeholder="Poste sua resposta" 
