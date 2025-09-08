@@ -211,7 +211,6 @@ export default function ConversationPage() {
         setIsSending(true);
     
         try {
-            // Upload image first if it exists, to get the URL
             let imageUrl: string | null = null;
             if (imageFile) {
                 const storage = getStorage();
@@ -221,49 +220,50 @@ export default function ConversationPage() {
                 imageUrl = await getDownloadURL(imageStorageRef);
             }
     
-            // Now, run a transaction to create the message and update the conversation
             const conversationRef = doc(db, 'conversations', conversationId);
+            const messagesCollectionRef = collection(db, 'conversations', conversationId, 'messages');
+            
             await runTransaction(db, async (transaction) => {
-                // Get the current unread count for the other user
                 const conversationDoc = await transaction.get(conversationRef);
+                if (!conversationDoc.exists()) {
+                    throw "Conversation does not exist.";
+                }
+    
                 const conversationData = conversationDoc.data();
                 const currentUnreadCount = conversationData?.unreadCounts?.[otherUser.uid] || 0;
-    
-                // 1. Create the new message document
-                const messagesCollectionRef = collection(db, 'conversations', conversationId, 'messages');
-                const newMessageRef = doc(messagesCollectionRef);
-                transaction.set(newMessageRef, {
+                
+                const newMessageDocRef = doc(messagesCollectionRef);
+                transaction.set(newMessageDocRef, {
                     senderId: user.uid,
                     text: newMessage,
-                    imageUrl: imageUrl, // Use the URL obtained before the transaction
+                    imageUrl: imageUrl,
                     createdAt: serverTimestamp(),
                     reactions: {},
                 });
     
-                // 2. Update the conversation document
-                const unreadCountKey = `unreadCounts.${otherUser.uid}`;
-                transaction.update(conversationRef, {
+                const updateData: any = {
                     lastMessage: {
                         text: imageUrl ? '📷 Imagem' : newMessage,
                         senderId: user.uid,
                         timestamp: serverTimestamp(),
                     },
                     lastMessageReadBy: [user.uid],
-                    [unreadCountKey]: currentUnreadCount + 1,
+                    [`unreadCounts.${otherUser.uid}`]: currentUnreadCount + 1,
                     deletedFor: [],
-                });
+                };
+    
+                transaction.update(conversationRef, updateData);
             });
     
-            // Reset UI state on success
             setNewMessage('');
             setImageFile(null);
             setImagePreview(null);
     
         } catch (error) {
-            console.error("Erro ao enviar mensagem:", error);
+            console.error("Error sending message:", error);
             toast({
-                title: "Erro",
-                description: "Não foi possível enviar a mensagem.",
+                title: "Error",
+                description: "Could not send message.",
                 variant: "destructive"
             });
         } finally {
@@ -582,5 +582,3 @@ export default function ConversationPage() {
     </>
   );
 }
-
-    
