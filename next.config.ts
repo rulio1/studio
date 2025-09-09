@@ -215,6 +215,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'p2.trrsf.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'i0.statig.com.br',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
