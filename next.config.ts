@@ -10,9 +10,10 @@ const withPWA = withPWAInit({
   // aggressiveFrontEndNavCaching: true,
   // reloadOnOnline: true,
   // swcMinify: true,
-  // workboxOptions: {
-  //   disableDevLogs: true,
-  // },
+  workboxOptions: {
+    // Importa o script do service worker do Firebase
+    importScripts: ["/firebase-messaging-sw.js"],
+  },
 });
 
 
