@@ -29,7 +29,7 @@ export default function BottomNavBar() {
     const navItems = [
         { href: '/home', icon: Home, label: 'Início' },
         { href: '/search', icon: Search, label: 'Busca' },
-        { href: '/news', icon: Radio, label: 'Notícias' },
+        { href: '/notifications', icon: Bell, label: 'Notificações' },
         { href: '/messages', icon: Mail, label: 'Mensagens' },
         { href: zisprUser ? `/profile/${zisprUser.uid}` : '#', icon: Avatar, label: 'Perfil' },
     ];

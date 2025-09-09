@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { Bell, Home, Mail, Settings, User, Bird, X, Users, Bookmark, Bot, MoreHorizontal, LogOut, Loader2, HandHeart } from 'lucide-react';
+import { Bell, Home, Mail, Settings, User, Bird, X, Users, Bookmark, Bot, MoreHorizontal, LogOut, Loader2, HandHeart, Radio } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import PostSkeleton from '@/components/post-skeleton';
 import { useRouter } from 'next/navigation';
@@ -612,6 +612,7 @@ useEffect(() => {
         { href: '/home', icon: Home, label: 'Início' },
         { href: '/notifications', icon: Bell, label: 'Notificações' },
         { href: '/messages', icon: Mail, label: 'Mensagens' },
+        { href: '/news', icon: Radio, label: 'Notícias' },
         { href: '/saved', icon: Bookmark, label: 'Salvos' },
         { href: `/profile/${zisprUser.uid}`, icon: User, label: 'Perfil' },
     ];
