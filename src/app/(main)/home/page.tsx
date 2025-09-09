@@ -309,34 +309,7 @@ useEffect(() => {
                     });
                 }
     
-                if (user.uid !== authorId) {
-                    const authorDoc = await getDoc(doc(db, 'users', authorId));
-                    if (authorDoc.exists()) {
-                        const authorData = authorDoc.data();
-                        const prefs = authorData.notificationPreferences;
-                        const canSendNotification = !prefs || prefs[action] !== false;
-    
-                        if (canSendNotification) {
-                            const notificationRef = doc(collection(db, 'notifications'));
-                            batch.set(notificationRef, {
-                                toUserId: authorId,
-                                fromUserId: user.uid,
-                                fromUser: {
-                                    name: zisprUser.displayName,
-                                    handle: zisprUser.handle,
-                                    avatar: zisprUser.avatar,
-                                    isVerified: zisprUser.isVerified || false,
-                                },
-                                type: action,
-                                text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
-                                postContent: post.content.substring(0, 50),
-                                postId: post.id,
-                                createdAt: serverTimestamp(),
-                                read: false,
-                            });
-                        }
-                    }
-                }
+                // A lógica de notificação foi removida daqui e será centralizada em uma API
             }
             await batch.commit();
         } catch (error) {
