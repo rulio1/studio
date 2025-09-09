@@ -55,19 +55,20 @@ const requestNotificationPermission = async (userId: string) => {
         const permission = await Notification.requestPermission();
         
         if (permission === 'granted') {
-            // This is a placeholder and should be managed via environment variables
-            const VAPID_KEY = "YOUR_VAPID_KEY_HERE"; 
-            if (!VAPID_KEY || VAPID_KEY === "YOUR_VAPID_KEY_HERE") {
-                console.error('VAPID key is not configured.');
+            const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY; 
+            if (!VAPID_KEY) {
+                console.error('VAPID key is not configured. Please add NEXT_PUBLIC_FIREBASE_VAPID_KEY to your environment variables.');
                 return { success: false, message: 'Configuração de notificação incompleta.' };
             }
             const token = await getToken(messaging, { vapidKey: VAPID_KEY });
 
             if (token) {
-                console.log('FCM Token:', token);
-                const { doc, updateDoc } = await import('firebase/firestore');
+                const { doc, updateDoc, getDoc } = await import('firebase/firestore');
                 const userDocRef = doc(db, 'users', userId);
-                await updateDoc(userDocRef, { fcmToken: token });
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists() && userDoc.data().fcmToken !== token) {
+                    await updateDoc(userDocRef, { fcmToken: token });
+                }
                 return { success: true, message: 'Permissão concedida.' };
             } else {
                 return { success: false, message: 'Não foi possível obter o token de notificação.' };

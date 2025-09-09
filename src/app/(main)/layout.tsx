@@ -7,7 +7,7 @@ import HomeLoading from '@/app/(main)/home/loading';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, requestNotificationPermission } from '@/lib/firebase';
 import DesktopSidebar from '@/components/desktop-sidebar';
 import RightSidebar from '@/components/right-sidebar';
 import { collection, query, where, onSnapshot, getDoc, doc } from 'firebase/firestore';
@@ -25,6 +25,9 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (!user || isLoading) return;
+
+        // Request notification permission on load
+        requestNotificationPermission(user.uid);
     
         const notificationsQuery = query(
             collection(db, "notifications"), 
