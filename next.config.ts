@@ -206,6 +206,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'media.gazetadopovo.com.br',
       },
+      {
+        protocol: 'https',
+        hostname: 'ds-images.bolavip.com',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
