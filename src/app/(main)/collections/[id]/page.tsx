@@ -213,7 +213,7 @@ export default function CollectionPage() {
                     <div className="w-full">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-sm">
-                                <p className="font-bold flex items-center gap-1">{post.author} {isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />}</p>
+                                <p className="font-bold flex items-center gap-1">{post.author} {isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />}</p>
                                 <p className="text-muted-foreground">{post.handle} · {time}</p>
                             </div>
                         </div>

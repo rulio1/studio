@@ -97,7 +97,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
                     <div className="flex items-baseline gap-2">
                         <p className="font-bold truncate flex items-center gap-1">
                             {convo.otherUser.name}
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">{convo.otherUser.handle}</p>
                     </div>

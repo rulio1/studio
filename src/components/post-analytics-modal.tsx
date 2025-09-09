@@ -82,7 +82,7 @@ export default function PostAnalyticsModal({ post, onOpenChange }: PostAnalytics
                 <div>
                     <p className="font-bold flex items-center gap-1">
                         {post.author}
-                        {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />)}
+                        {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
                     </p>
                     <p className="text-sm text-muted-foreground">{post.handle}</p>
                 </div>

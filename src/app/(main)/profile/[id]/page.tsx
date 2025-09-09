@@ -237,7 +237,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
                 </Avatar>
                 <span className="font-bold flex items-center gap-1">
                     {post.author}
-                    {(post.isVerified || isRulio) && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />}
+                    {(post.isVerified || isRulio) && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />}
                 </span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>
@@ -320,7 +320,7 @@ const PostItem = React.memo(function PostItem({ post, user, zisprUser, onAction,
                         <div className="flex items-center gap-2 text-sm flex-wrap">
                             <p className="font-bold text-base flex items-center gap-1">
                                 {post.author} 
-                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />)}
+                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
                             </p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
                             
@@ -493,7 +493,7 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
                         <div className="flex items-center gap-2 text-sm">
                             <p className="font-bold text-base flex items-center gap-1">
                                 {reply.author}
-                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />)}
+                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
                             </p>
                             <p className="text-muted-foreground">{reply.handle} · {time}</p>
                         </div>
@@ -1273,7 +1273,7 @@ export default function ProfilePage() {
                 <div>
                     <h1 className="text-xl font-bold flex items-center gap-1">
                         {profileUser.displayName}
-                        {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-5 w-5 ${isRulioAccount ? 'text-primary fill-primary' : badgeColor}`} />)}
+                        {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-5 w-5 ${isRulioAccount ? 'text-white fill-primary' : badgeColor}`} />)}
                     </h1>
                     <p className="text-sm text-muted-foreground">{userPosts.length + (pinnedPost ? 1 : 0)} posts</p>
                 </div>
@@ -1339,7 +1339,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-2">
                         <h1 className="text-2xl font-bold flex items-center gap-1">
                             {profileUser.displayName}
-                            {isZisprAccount ? <Bird className="h-6 w-6 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-6 w-6 ${isRulioAccount ? 'text-primary fill-primary' : badgeColor}`} />)}
+                            {isZisprAccount ? <Bird className="h-6 w-6 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-6 w-6 ${isRulioAccount ? 'text-white fill-primary' : badgeColor}`} />)}
                         </h1>
                     </div>
                     <div className="flex items-center gap-2">

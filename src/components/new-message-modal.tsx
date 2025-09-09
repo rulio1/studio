@@ -124,7 +124,8 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                         <ul className="divide-y divide-border">
                             {results.map(user => {
                                 const isZisprAccount = user.handle === '@Zispr' || user.handle === '@ZisprUSA';
-                                const isVerified = user.isVerified || user.handle === '@Rulio';
+                                const isRulio = user.handle === '@Rulio';
+                                const isVerified = user.isVerified || isRulio;
                                 const badgeColor = user.badgeTier ? badgeColors[user.badgeTier] : 'text-primary';
                                 return (
                                     <li key={user.uid}>
@@ -140,7 +141,7 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                                             <div>
                                                 <p className="font-semibold flex items-center gap-1">
                                                     {user.displayName}
-                                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
+                                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
                                                 </p>
                                                 <p className="text-sm text-muted-foreground">{user.handle}</p>
                                             </div>

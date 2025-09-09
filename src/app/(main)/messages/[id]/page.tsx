@@ -410,7 +410,7 @@ export default function ConversationPage() {
                     <div>
                         <h1 className="text-lg font-bold flex items-center gap-1">
                             {otherUser.displayName}
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isOtherUserVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isOtherUserVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
                         </h1>
                         <p className="text-xs text-muted-foreground">{otherUser.handle}</p>
                     </div>
