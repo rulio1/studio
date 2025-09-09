@@ -30,12 +30,25 @@ export async function GET(request: Request) {
             } catch (e) {
                 console.error("Error parsing image JSON from IBGE API", e);
             }
+
+            // Converte a data do formato "DD/MM/YYYY HH:mm:ss" para o formato ISO 8601
+            const dateParts = item.data_publicacao.split(' ')[0].split('/');
+            const timeParts = item.data_publicacao.split(' ')[1].split(':');
+            const isoDate = new Date(
+                Number(dateParts[2]), 
+                Number(dateParts[1]) - 1, 
+                Number(dateParts[0]), 
+                Number(timeParts[0]), 
+                Number(timeParts[1]), 
+                Number(timeParts[2])
+            ).toISOString();
+
             return {
                 title: item.titulo,
                 description: item.introducao,
                 url: item.link,
                 image: imageUrl,
-                publishedAt: item.data_publicacao,
+                publishedAt: isoDate,
                 source: {
                     name: 'IBGE Agência de Notícias',
                     url: 'https://agenciadenoticias.ibge.gov.br/'
