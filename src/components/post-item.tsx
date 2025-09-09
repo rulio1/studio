@@ -206,7 +206,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                     </Avatar>
                     <span className="font-bold flex items-center gap-1">
                         {post.author}
-                        {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className={'h-4 w-4 ${badgeColor}'} />}
+                        {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}
                     </span>
                     <span className="text-muted-foreground">{post.handle}</span>
                 </div>
@@ -266,7 +266,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                     <div className="flex items-center gap-2 text-sm flex-wrap">
                         <p className="font-bold text-base flex items-center gap-1">
                             {post.author} 
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={'h-4 w-4 ${badgeColor}'} />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
                         </p>
                         <p className="text-muted-foreground">{post.handle} · {time}</p>
                         
@@ -371,7 +371,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                     
                     <Popover>
                         <PopoverTrigger asChild>
-                             <button onClick={(e) => e.stopPropagation()} className={'flex items-center gap-1 hover:text-green-500 transition-colors ${post.isRetweeted ? "text-green-500" : ""}'}>
+                             <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1 hover:text-green-500 transition-colors ${post.isRetweeted ? "text-green-500" : ""}`}>
                                 <Repeat className="h-5 w-5" />
                                 <span>{Array.isArray(post.retweets) ? post.retweets.length : 0}</span>
                             </button>
@@ -398,8 +398,8 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                         </PopoverContent>
                     </Popover>
 
-                    <button onClick={(e) => {e.stopPropagation(); handlePostAction(post.id, 'like', post.authorId)}} className={'flex items-center gap-1 ${post.isLiked ? "text-red-500" : ""}'}>
-                        <Heart className={'h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? "fill-current" : ""}'} />
+                    <button onClick={(e) => {e.stopPropagation(); handlePostAction(post.id, 'like', post.authorId)}} className={`flex items-center gap-1 ${post.isLiked ? "text-red-500" : ""}`}>
+                        <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? "fill-current" : ""}`} />
                         <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
                     </button>
                     <button
