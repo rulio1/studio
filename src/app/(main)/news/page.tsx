@@ -15,7 +15,7 @@ interface NewsArticle {
     title: string;
     description: string;
     url: string;
-    image: string;
+    image: string | null;
     publishedAt: string;
     source: {
         name: string;
@@ -43,7 +43,7 @@ const NewsArticleCard = ({ article }: { article: NewsArticle }) => (
             <p className="text-muted-foreground line-clamp-3">{article.description}</p>
         </CardContent>
         <CardFooter className="flex justify-between items-center text-sm text-muted-foreground">
-            <span>{article.source.name} · {format(new Date(article.publishedAt), "d MMM, yyyy", { locale: ptBR })}</span>
+            <span>{article.source.name} · {format(new Date(article.publishedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
              <Button variant="ghost" size="sm" asChild>
                 <a href={article.url} target="_blank" rel="noopener noreferrer">
                     Ler mais <ExternalLink className="ml-2 h-4 w-4" />

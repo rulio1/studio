@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useTranslation } from '@/hooks/use-translation';
 import { Skeleton } from './ui/skeleton';
 import Image from 'next/image';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface NewsArticle {
     title: string;
@@ -23,22 +25,28 @@ interface NewsArticle {
 
 const NewsItem = ({ title, url, source, image, publishedAt }: NewsArticle) => {
     const timeAgo = (dateString: string) => {
-        const date = new Date(dateString);
-        const now = new Date();
-        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-        let interval = seconds / 31536000;
-        if (interval > 1) return `${Math.floor(interval)}a`;
-        interval = seconds / 2592000;
-        if (interval > 1) return `${Math.floor(interval)}m`;
-        interval = seconds / 604800;
-        if (interval > 1) return `${Math.floor(interval)}sem`;
-        interval = seconds / 86400;
-        if (interval > 1) return `${Math.floor(interval)}d`;
-        interval = seconds / 3600;
-        if (interval > 1) return `${Math.floor(interval)}h`;
-        interval = seconds / 60;
-        if (interval > 1) return `${Math.floor(interval)}min`;
-        return `${Math.floor(seconds)}s`;
+        try {
+            const date = new Date(dateString.replace(' ', 'T') + 'Z'); // Adjust for IBGE format
+            const now = new Date();
+            const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+            if (seconds < 0) return 'agora'; // Handle future dates if any mismatch
+
+            let interval = seconds / 31536000;
+            if (interval > 1) return `${Math.floor(interval)}a`;
+            interval = seconds / 2592000;
+            if (interval > 1) return `${Math.floor(interval)}m`;
+            interval = seconds / 604800;
+            if (interval > 1) return `${Math.floor(interval)}sem`;
+            interval = seconds / 86400;
+            if (interval > 1) return `${Math.floor(interval)}d`;
+            interval = seconds / 3600;
+            if (interval > 1) return `${Math.floor(interval)}h`;
+            interval = seconds / 60;
+            if (interval > 1) return `${Math.floor(interval)}min`;
+            return `${Math.floor(seconds)}s`;
+        } catch (e) {
+            return '';
+        }
     };
 
     return (

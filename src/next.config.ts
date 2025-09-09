@@ -29,23 +29,47 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**.com',
+        hostname: 'placehold.co',
       },
       {
         protocol: 'https',
-        hostname: '**.com.br',
+        hostname: 'firebasestorage.googleapis.com',
       },
       {
         protocol: 'https',
-        hostname: '**.net',
+        hostname: 'i.ibb.co',
       },
       {
         protocol: 'https',
-        hostname: '**.org',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'agenciadenoticias.ibge.gov.br',
       },
        {
         protocol: 'https',
-        hostname: '**.co',
+        hostname: 'media.giphy.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media0.giphy.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media1.giphy.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media2.giphy.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media3.giphy.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media4.giphy.com',
       },
     ],
     dangerouslyAllowSVG: true,
