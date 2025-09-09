@@ -84,8 +84,16 @@ export const resolvers = {
     Post: {
         author: async (post: Post) => {
             if (!post.authorId) return null;
-            const userDoc = await getDoc(doc(db, 'users', post.authorId));
-            return userDoc.exists() ? { id: userDoc.id, ...userDoc.data() } : null;
+            try {
+                const userDoc = await getDoc(doc(db, 'users', post.authorId));
+                if (userDoc.exists()) {
+                     return { id: userDoc.id, ...userDoc.data() };
+                }
+                return null;
+            } catch (error) {
+                console.error(`Error fetching author for post ${post.id}:`, error);
+                return null;
+            }
         }
     }
 };

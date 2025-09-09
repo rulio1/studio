@@ -11,7 +11,7 @@ import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
@@ -120,9 +120,6 @@ export default function EditProfilePage() {
         setIsSaving(true);
     
         try {
-            // NOTE: Image upload to ImgBB has been removed to isolate auth issues.
-            // We use the local data URI from the cropper directly.
-            // This is not a persistent solution for images, but helps debug.
             let avatarUrl = newAvatarDataUri || profileData.avatar;
             let bannerUrl = newBannerDataUri || profileData.banner;
             
@@ -138,38 +135,8 @@ export default function EditProfilePage() {
                 banner: bannerUrl,
             };
             
-            const batch = writeBatch(db);
-
-            // 1. Update user document
             const userRef = doc(db, 'users', user.uid);
-            batch.update(userRef, firestoreUpdateData);
-
-            // 2. Update all user's posts
-            const postsQuery = query(collection(db, 'posts'), where('authorId', '==', user.uid));
-            const postsSnapshot = await getDocs(postsQuery);
-            postsSnapshot.forEach((postDoc) => {
-                const postRef = doc(db, 'posts', postDoc.id);
-                batch.update(postRef, {
-                    author: profileData.displayName,
-                    handle: handleWithAt,
-                    avatar: avatarUrl
-                });
-            });
-
-            // 3. Update all user's comments
-            const commentsQuery = query(collection(db, 'comments'), where('authorId', '==', user.uid));
-            const commentsSnapshot = await getDocs(commentsQuery);
-            commentsSnapshot.forEach((commentDoc) => {
-                const commentRef = doc(db, 'comments', commentDoc.id);
-                batch.update(commentRef, {
-                    author: profileData.displayName,
-                    handle: handleWithAt,
-                    avatar: avatarUrl
-                });
-            });
-
-            // Commit all changes at once
-            await batch.commit();
+            await updateDoc(userRef, firestoreUpdateData);
     
             toast({
                 title: 'Perfil Salvo!',
