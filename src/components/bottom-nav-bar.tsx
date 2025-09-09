@@ -94,18 +94,18 @@ export default function BottomNavBar() {
                  const isProfile = item.label === 'Perfil';
 
                 return (
-                    <Link key={item.href} href={item.href} className={`relative flex-1 flex flex-col items-center justify-center h-full transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
+                    <Link key={item.href} href={item.href} className={`relative flex-1 flex flex-col items-center justify-start pt-1.5 h-full transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                         {isProfile ? (
                             isLoading || !zisprUser ? (
-                                <Skeleton className="h-8 w-8 rounded-full" />
+                                <Skeleton className="h-6 w-6 rounded-full" />
                             ) : (
-                                <Avatar className={`h-8 w-8 border-2 ${isActive ? 'border-primary' : 'border-transparent'}`}>
+                                <Avatar className={`h-6 w-6 border-2 ${isActive ? 'border-primary' : 'border-transparent'}`}>
                                     <AvatarImage src={zisprUser.avatar} />
                                     <AvatarFallback>{zisprUser.displayName?.[0]}</AvatarFallback>
                                 </Avatar>
                             )
                         ) : (
-                             <item.icon className="h-8 w-8" />
+                             <item.icon className="h-6 w-6" />
                         )}
                         {count > 0 && (
                              <Badge className="absolute top-0 right-[calc(50%-2rem)] h-5 w-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground p-0 text-xs">
