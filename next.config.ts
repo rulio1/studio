@@ -219,6 +219,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'i0.statig.com.br',
       },
+      {
+        protocol: 'https',
+        hostname: 'newr7-r7-prod.web.arc-cdn.net',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
