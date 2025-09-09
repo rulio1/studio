@@ -16,8 +16,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
-import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck, Bot, Library, Radio } from 'lucide-react';
+import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck, Bot, Library, Radio, Languages, Check } from 'lucide-react';
 import CreatePostModal from './create-post-modal';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
@@ -35,7 +39,7 @@ export default function DesktopSidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { toast } = useToast();
-    const { user, zisprUser, isLoading } = useUserStore();
+    const { user, zisprUser, isLoading, language, setLanguage } = useUserStore();
     const { t } = useTranslation();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [notificationCount, setNotificationCount] = useState(0);
@@ -114,6 +118,10 @@ export default function DesktopSidebar() {
             return `/profile/${zisprUser.uid}`;
         }
         return item.href;
+    };
+    
+    const handleLanguageChange = (lang: 'pt' | 'en') => {
+        setLanguage(lang);
     };
 
     return (
@@ -195,6 +203,24 @@ export default function DesktopSidebar() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-60 mb-2" side="top">
+                             <DropdownMenuSub>
+                                <DropdownMenuSubTrigger>
+                                    <Languages className="mr-2 h-4 w-4" />
+                                    <span>Idioma</span>
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuPortal>
+                                <DropdownMenuSubContent>
+                                    <DropdownMenuItem onClick={() => handleLanguageChange('pt')}>
+                                        {language === 'pt' && <Check className="mr-2 h-4 w-4" />}
+                                        Português
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
+                                        {language === 'en' && <Check className="mr-2 h-4 w-4" />}
+                                        English
+                                    </DropdownMenuItem>
+                                </DropdownMenuSubContent>
+                                </DropdownMenuPortal>
+                            </DropdownMenuSub>
                             <DropdownMenuItem onClick={() => router.push('/settings')}>
                                 <Settings className="mr-2 h-4 w-4" />
                                 <span>{t('sidebar.settings')}</span>
