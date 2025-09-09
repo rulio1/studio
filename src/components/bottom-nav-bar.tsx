@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, Bell, Mail } from 'lucide-react';
+import { Home, Search, Bell, Mail, Radio } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
@@ -29,9 +29,9 @@ export default function BottomNavBar() {
     const navItems = [
         { href: '/home', icon: Home, label: 'Início' },
         { href: '/search', icon: Search, label: 'Busca' },
-        { href: zisprUser ? `/profile/${zisprUser.uid}` : '#', icon: Avatar, label: 'Perfil' },
-        { href: '/notifications', icon: Bell, label: 'Notificações' },
+        { href: '/news', icon: Radio, label: 'Notícias' },
         { href: '/messages', icon: Mail, label: 'Mensagens' },
+        { href: zisprUser ? `/profile/${zisprUser.uid}` : '#', icon: Avatar, label: 'Perfil' },
     ];
 
      useEffect(() => {
