@@ -181,6 +181,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'a2.espncdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.infomoney.com.br',
       }
     ],
     dangerouslyAllowSVG: true,
