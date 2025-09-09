@@ -50,16 +50,17 @@ const requestNotificationPermission = async (userId: string) => {
         return { success: false, message: 'Notificações não são suportadas neste navegador.' };
     }
     
+    const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY; 
+    if (!VAPID_KEY) {
+        console.error('VAPID key is not configured. Please add NEXT_PUBLIC_FIREBASE_VAPID_KEY to your environment variables.');
+        return { success: false, message: 'Configuração de notificação incompleta.' };
+    }
+
     try {
         const messaging = getMessaging(app);
         const permission = await Notification.requestPermission();
         
         if (permission === 'granted') {
-            const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY; 
-            if (!VAPID_KEY) {
-                console.error('VAPID key is not configured. Please add NEXT_PUBLIC_FIREBASE_VAPID_KEY to your environment variables.');
-                return { success: false, message: 'Configuração de notificação incompleta.' };
-            }
             const token = await getToken(messaging, { vapidKey: VAPID_KEY });
 
             if (token) {
