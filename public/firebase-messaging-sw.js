@@ -1,36 +1,31 @@
+// Importa e inicializa o Firebase.
+// Este arquivo é executado em segundo plano e não tem acesso à janela do navegador.
+import { initializeApp } from "firebase/app";
+import { getMessaging, onBackgroundMessage } from "firebase/messaging/sw";
 
-// Check if window is defined (so this code doesn't run on the server)
-if (typeof window !== 'undefined') {
-    // Scripts for firebase and firebase messaging
-    importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js");
-    importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js");
+const firebaseConfig = {
+  "projectId": "chirp-3wj1h",
+  "appId": "1:489188047340:web:050295c19b3300567d68c9",
+  "storageBucket": "chirp-3wj1h.appspot.com",
+  "apiKey": "AIzaSyCqN-RJbMNqftSqqtuY3lxFzgRXmT2n9SU",
+  "authDomain": "chirp-3wj1h.firebaseapp.com",
+  "messagingSenderId": "489188047340"
+};
 
-    // Your web app's Firebase configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyCqN-RJbMNqftSqqtuY3lxFzgRXmT2n9SU",
-        authDomain: "chirp-3wj1h.firebaseapp.com",
-        projectId: "chirp-3wj1h",
-        storageBucket: "chirp-3wj1h.appspot.com",
-        messagingSenderId: "489188047340",
-        appId: "1:489188047340:web:050295c19b3300567d68c9"
-    };
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
+// Adiciona um manipulador para notificações recebidas em segundo plano.
+onBackgroundMessage(messaging, (payload) => {
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  
+  // Extrai o título e o corpo da notificação.
+  const notificationTitle = payload.notification?.title || 'Zispr';
+  const notificationOptions = {
+    body: payload.notification?.body || 'Você tem uma nova notificação.',
+    icon: '/icons/icon-192x192.png' // Ícone padrão para a notificação
+  };
 
-    // Retrieve an instance of Firebase Messaging so that it can handle background
-    // messages.
-    const messaging = firebase.messaging();
-
-    messaging.onBackgroundMessage((payload) => {
-        console.log('[firebase-messaging-sw.js] Received background message ', payload);
-        
-        const notificationTitle = payload.notification.title;
-        const notificationOptions = {
-            body: payload.notification.body,
-            icon: payload.notification.icon || '/icon.svg',
-        };
-
-        self.registration.showNotification(notificationTitle, notificationOptions);
-    });
-}
+  // Exibe a notificação para o usuário.
+  self.registration.showNotification(notificationTitle, notificationOptions);
+});
