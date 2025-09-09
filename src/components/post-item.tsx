@@ -241,18 +241,26 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                 </div>
             )}
             <div className="flex gap-4">
-                 <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
-                    {isZisprAccount ? (
-                        <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-full">
-                            <Bird className="h-5 w-5 text-primary" />
-                        </div>
-                    ) : (
-                        <>
-                            <AvatarImage src={post.avatar} alt={post.handle} />
-                            <AvatarFallback>{post.avatarFallback}</AvatarFallback>
-                        </>
-                    )}
-                </Avatar>
+                <div className="flex flex-col items-center flex-shrink-0">
+                    {post.repostedBy ? (
+                        <Avatar className="h-6 w-6 mb-1 z-10 cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.repostedBy!.handle.replace('@', '')}`)}}>
+                            <AvatarImage src={post.repostedBy.avatar} />
+                            <AvatarFallback>{post.repostedBy.name[0]}</AvatarFallback>
+                        </Avatar>
+                    ) : null}
+                    <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
+                        {isZisprAccount ? (
+                            <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-full">
+                                <Bird className="h-5 w-5 text-primary" />
+                            </div>
+                        ) : (
+                            <>
+                                <AvatarImage src={post.avatar} alt={post.handle} />
+                                <AvatarFallback>{post.avatarFallback}</AvatarFallback>
+                            </>
+                        )}
+                    </Avatar>
+                </div>
                 <div className='w-full'>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm flex-wrap">

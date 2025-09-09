@@ -182,23 +182,28 @@ useEffect(() => {
     const postsQuery = query(collection(db, "posts"), where("authorId", "in", feedUserIds));
     const repostsQuery = query(collection(db, "reposts"), where("userId", "in", followingIds));
 
-    const unsubPosts = onSnapshot(postsQuery, () => {
-        // We run the main logic inside the reposts snapshot listener
-        // to ensure we have both sets of data.
+    const unsubPosts = onSnapshot(postsQuery, async () => {
+        // This is a bit inefficient, ideally we'd combine snapshots, but for simplicity...
+        const postSnap = await getDocs(postsQuery);
+        const repostSnap = await getDocs(repostsQuery);
+        combinePostsAndReposts(postSnap, repostSnap);
     });
 
-    const unsubReposts = onSnapshot(repostsQuery, async (repostsSnapshot) => {
-        // Fetch original posts
-        const originalPostsSnapshot = await getDocs(postsQuery);
-        const originalPosts = originalPostsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
+    const unsubReposts = onSnapshot(repostsQuery, async () => {
+         const postSnap = await getDocs(postsQuery);
+         const repostSnap = await getDocs(repostsQuery);
+         combinePostsAndReposts(postSnap, repostSnap);
+    });
 
-        // Fetch reposts
-        const repostsData = repostsSnapshot.docs.map(doc => doc.data());
-        const repostedPostIds = repostsData.map(repost => repost.postId);
+    const combinePostsAndReposts = async (originalPostsSnapshot: any, repostsSnapshot: any) => {
+        const originalPosts = originalPostsSnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Post));
+
+        const repostsData = repostsSnapshot.docs.map((doc: any) => doc.data());
+        const repostedPostIds = [...new Set(repostsData.map((repost: any) => repost.postId))];
 
         let repostedPosts: Post[] = [];
         if (repostedPostIds.length > 0) {
-            const chunks = [];
+            const chunks: string[][] = [];
             for (let i = 0; i < repostedPostIds.length; i += 30) {
                 chunks.push(repostedPostIds.slice(i, i + 30));
             }
@@ -212,7 +217,7 @@ useEffect(() => {
                 snapshot.docs.forEach(doc => postsMap.set(doc.id, { id: doc.id, ...doc.data() } as Post));
             });
             
-            repostedPosts = repostsData.map(repost => {
+            repostedPosts = repostsData.map((repost: any) => {
                 const postData = postsMap.get(repost.postId);
                 const reposterData = followingUsersMap.get(repost.userId);
                 if (!postData || !reposterData) return null;
@@ -225,7 +230,7 @@ useEffect(() => {
                         avatar: reposterData.avatar,
                     },
                 };
-            }).filter(p => p !== null) as Post[];
+            }).filter((p: any): p is Post => p !== null);
         }
 
         const allPosts = [...originalPosts, ...repostedPosts];
@@ -249,10 +254,8 @@ useEffect(() => {
 
         setFollowingPosts(finalPosts);
         setIsLoadingFollowing(false);
-    }, (error) => {
-        console.error("Error fetching following posts:", error);
-        setIsLoadingFollowing(false);
-    });
+    }
+
 
     return () => {
         unsubPosts();
