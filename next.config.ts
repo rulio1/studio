@@ -111,8 +111,7 @@ const nextConfig: NextConfig = {
         hostname: 'ogcss.infoglobo.com.br',
       },
       {
-        protocol: 'https'
-        ,
+        protocol: 'https',
         hostname: 'cdn-7.motorsport.com',
       },
       {
@@ -198,6 +197,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'www.infomoney.com.br',
+      },
+      {
+        protocol: 'https',
+        hostname: 'static1.purepeople.com.br',
       },
     ],
     dangerouslyAllowSVG: true,
