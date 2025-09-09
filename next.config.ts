@@ -30,132 +30,24 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
-        port: '',
-        pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'i.ibb.co',
-        port: '',
-        pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
-        port: '',
-        pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: 's.yimg.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'media.zenfs.com',
+        hostname: 'agenciadenoticias.ibge.gov.br',
       },
        {
-        protocol: 'https',
-        hostname: 'www.reuters.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'www.rfi.fr',
-      },
-      {
-        protocol: 'https',
-        hostname: 's.w-x.co',
-      },
-      {
-        protocol: 'https',
-        hostname: 'admin.cnnbrasil.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'www.cnnbrasil.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'www.band.uol.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'conteudo.imguol.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'f.i.uol.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'classic.exame.com',
-      },
-       {
-        protocol: 'https',
-        hostname: 'www.otempo.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'static.poder360.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.glbimg.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'ogcss.infoglobo.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn-7.motorsport.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'www.lance.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'uploads.metropoles.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'img.nsctotal.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'www.rbsdirect.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'jpimg.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'midias.correiobraziliense.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.gruposinos.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.ome.lt',
-      },
-      {
-        protocol: 'https',
-        hostname: 'www.cartacapital.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'fotos.jornaldacidadeonline.com.br',
-      },
-      {
         protocol: 'https',
         hostname: 'media.giphy.com',
       },
@@ -178,50 +70,6 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'media4.giphy.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'a2.espncdn.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'imagens.ebc.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'www.bahianoticias.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'neofeed.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'www.infomoney.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'static1.purepeople.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'media.gazetadopovo.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'ds-images.bolavip.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'p2.trrsf.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'i0.statig.com.br',
-      },
-      {
-        protocol: 'https',
-        hostname: 'newr7-r7-prod.web.arc-cdn.net',
       },
     ],
     dangerouslyAllowSVG: true,
