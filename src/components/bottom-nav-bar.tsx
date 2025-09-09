@@ -87,14 +87,14 @@ export default function BottomNavBar() {
 
 
     return (
-        <nav className="fixed bottom-0 inset-x-0 z-50 h-[var(--bottom-nav-height)] bg-background border-t md:hidden flex justify-around items-center pb-2">
+        <nav className="fixed bottom-0 inset-x-0 z-50 h-[var(--bottom-nav-height)] bg-background border-t md:hidden flex justify-around items-start pt-2 pb-safe">
             {navItems.map((item) => {
                  const count = getCountForItem(item.label);
                  const isActive = getIsActive(item.href, item.label);
                  const isProfile = item.label === 'Perfil';
 
                 return (
-                    <Link key={item.href} href={item.href} className={`relative flex-1 flex justify-center items-center h-full transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
+                    <Link key={item.href} href={item.href} className={`relative flex-1 flex flex-col items-center justify-center h-full transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                         {isProfile ? (
                             isLoading || !zisprUser ? (
                                 <Skeleton className="h-8 w-8 rounded-full" />
@@ -108,10 +108,11 @@ export default function BottomNavBar() {
                              <item.icon className="h-8 w-8" />
                         )}
                         {count > 0 && (
-                             <Badge className="absolute top-1.5 right-[calc(50%-2rem)] h-5 w-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground p-0 text-xs">
+                             <Badge className="absolute top-0 right-[calc(50%-2rem)] h-5 w-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground p-0 text-xs">
                                 {count}
                             </Badge>
                         )}
+                        <span className="text-xs mt-1">{item.label}</span>
                     </Link>
                 )
             })}
