@@ -194,6 +194,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'neofeed.com.br',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.infomoney.com.br',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
