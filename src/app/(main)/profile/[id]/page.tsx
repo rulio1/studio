@@ -1495,7 +1495,7 @@ export default function ProfilePage() {
                 </Tabs>
             )}
           </main>
-          <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
+            <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                     <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
@@ -1545,7 +1545,7 @@ export default function ProfilePage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            <Suspense>
+            <Suspense fallback={<div />}>
                 {isQuoteModalOpen && <CreatePostModal 
                     open={isQuoteModalOpen}
                     onOpenChange={setIsQuoteModalOpen}
