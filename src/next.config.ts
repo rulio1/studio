@@ -10,9 +10,10 @@ const withPWA = withPWAInit({
   // aggressiveFrontEndNavCaching: true,
   // reloadOnOnline: true,
   // swcMinify: true,
-  // workboxOptions: {
-  //   disableDevLogs: true,
-  // },
+  workboxOptions: {
+    // Importa o script do service worker do Firebase
+    importScripts: ["/firebase-messaging-sw.js"],
+  },
 });
 
 
@@ -209,6 +210,14 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'ds-images.bolavip.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'p2.trrsf.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i0.statig.com.br',
       },
     ],
     dangerouslyAllowSVG: true,
