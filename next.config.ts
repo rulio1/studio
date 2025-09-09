@@ -202,6 +202,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'static1.purepeople.com.br',
       },
+      {
+        protocol: 'https',
+        hostname: 'media.gazetadopovo.com.br',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
