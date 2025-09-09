@@ -87,32 +87,31 @@ export default function BottomNavBar() {
 
 
     return (
-        <nav className="fixed bottom-0 inset-x-0 z-50 h-[var(--bottom-nav-height)] bg-background border-t md:hidden flex justify-around items-start pt-2 pb-safe">
-            {navItems.map((item) => {
+        <nav className="fixed bottom-0 inset-x-0 z-50 h-[var(--bottom-nav-height)] bg-background border-t md:hidden flex justify-around items-center pb-safe">
+            {navItems.map((item, index) => {
                  const count = getCountForItem(item.label);
                  const isActive = getIsActive(item.href, item.label);
                  const isProfile = item.label === 'Perfil';
 
                 return (
-                    <Link key={item.href} href={item.href} className={`relative flex-1 flex flex-col items-center justify-start pt-1.5 h-full transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
+                    <Link key={item.href} href={item.href} className={`relative flex-1 flex flex-col items-center justify-center h-full transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                         {isProfile ? (
                             isLoading || !zisprUser ? (
-                                <Skeleton className="h-6 w-6 rounded-full" />
+                                <Skeleton className="h-7 w-7 rounded-full" />
                             ) : (
-                                <Avatar className={`h-6 w-6 border-2 ${isActive ? 'border-primary' : 'border-transparent'}`}>
+                                <Avatar className={`h-7 w-7 border-2 ${isActive ? 'border-primary' : 'border-transparent'}`}>
                                     <AvatarImage src={zisprUser.avatar} />
                                     <AvatarFallback>{zisprUser.displayName?.[0]}</AvatarFallback>
                                 </Avatar>
                             )
                         ) : (
-                             <item.icon className="h-6 w-6" />
+                             <item.icon className="h-7 w-7" />
                         )}
                         {count > 0 && (
-                             <Badge className="absolute top-0 right-[calc(50%-2rem)] h-5 w-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground p-0 text-xs">
+                             <Badge className="absolute top-1 right-[calc(50%-1.75rem)] h-5 w-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground p-0 text-xs">
                                 {count}
                             </Badge>
                         )}
-                        <span className="text-xs mt-1">{item.label}</span>
                     </Link>
                 )
             })}
