@@ -190,6 +190,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'www.bahianoticias.com.br',
       },
+      {
+        protocol: 'https',
+        hostname: 'neofeed.com.br',
+      },
     ],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
