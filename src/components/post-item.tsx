@@ -268,7 +268,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                     <div className="flex items-center gap-2 text-sm flex-wrap">
                         <p className="font-bold text-base flex items-center gap-1">
                             {post.author} 
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-6 w-6 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
                         </p>
                         <p className="text-muted-foreground">{post.handle} · {time}</p>
                         

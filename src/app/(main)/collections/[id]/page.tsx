@@ -110,7 +110,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
         <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
             <div className="flex items-center gap-2 text-sm">
                 <Avatar className="h-5 w-5"><AvatarImage src={post.avatar} /><AvatarFallback>{post.avatarFallback || post.author[0]}</AvatarFallback></Avatar>
-                <span className="font-bold flex items-center gap-1">{post.author} {(post.isVerified || isRulio) && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />}</span>
+                <span className="font-bold flex items-center gap-1">{post.author} {(post.isVerified || isRulio) && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />}</span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>
             <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
