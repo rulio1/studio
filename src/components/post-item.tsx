@@ -188,7 +188,8 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
     }, [post.createdAt, post.repostedAt]);
     
     const isZisprAccount = post.handle === '@Zispr' || post.handle === '@ZisprUSA';
-    const isVerified = post.isVerified || post.handle === '@Rulio';
+    const isRulio = post.handle === '@Rulio';
+    const isVerified = post.isVerified || isRulio;
     const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
     
@@ -196,6 +197,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
 
 
     const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => {
+        const isRulio = post.handle === '@Rulio';
         const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
         return (
             <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
@@ -206,7 +208,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                     </Avatar>
                     <span className="font-bold flex items-center gap-1">
                         {post.author}
-                        {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}
+                        {(post.isVerified || isRulio) && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />}
                     </span>
                     <span className="text-muted-foreground">{post.handle}</span>
                 </div>
@@ -266,7 +268,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                     <div className="flex items-center gap-2 text-sm flex-wrap">
                         <p className="font-bold text-base flex items-center gap-1">
                             {post.author} 
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />)}
                         </p>
                         <p className="text-muted-foreground">{post.handle} · {time}</p>
                         

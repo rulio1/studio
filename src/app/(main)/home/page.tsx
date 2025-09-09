@@ -582,6 +582,7 @@ useEffect(() => {
   
     const isZisprAccount = zisprUser.handle === '@Zispr' || zisprUser.handle === '@ZisprUSA';
     const isZisprUserVerified = zisprUser.isVerified || zisprUser.handle === '@Rulio';
+    const isRulioAccount = zisprUser.handle === '@Rulio';
     const zisprUserBadgeColor = zisprUser.badgeTier ? badgeColors[zisprUser.badgeTier] : 'text-primary';
 
     const navItems = [
@@ -622,7 +623,7 @@ useEffect(() => {
                            <Link href={`/profile/${zisprUser.uid}`} className="cursor-pointer">
                               <div className="flex items-center gap-1 font-bold text-lg">
                                   {zisprUser.displayName}
-                                  {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className={`h-5 w-5 ${zisprUserBadgeColor}`} />)}
+                                  {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className={`h-5 w-5 ${isRulioAccount ? 'text-primary fill-primary' : zisprUserBadgeColor}`} />)}
                               </div>
                               <p className="text-sm text-muted-foreground">{zisprUser.handle}</p>
                           </Link>

@@ -110,7 +110,8 @@ export default function DesktopSidebar() {
     };
 
     const isZisprAccount = zisprUser?.handle === '@Zispr' || zisprUser?.handle === '@ZisprUSA';
-    const isUserVerified = zisprUser?.isVerified || zisprUser?.handle === '@Rulio';
+    const isRulioAccount = zisprUser?.handle === '@Rulio';
+    const isUserVerified = zisprUser?.isVerified || isRulioAccount;
     const badgeColor = zisprUser?.badgeTier ? badgeColors[zisprUser.badgeTier] : 'text-primary';
 
     const getNavItemHref = (item: any) => {
@@ -195,7 +196,7 @@ export default function DesktopSidebar() {
                                 <div className="ml-3 text-left overflow-hidden">
                                     <p className="font-bold truncate flex items-center gap-1">
                                         {zisprUser.displayName}
-                                        {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isUserVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
+                                        {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isUserVerified && <BadgeCheck className={`h-4 w-4 ${isRulioAccount ? 'text-primary fill-primary' : badgeColor}`} />)}
                                     </p>
                                     <p className="text-sm text-muted-foreground truncate">{zisprUser.handle}</p>
                                 </div>

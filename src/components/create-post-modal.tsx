@@ -476,8 +476,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
     const isSubmitDisabled = (newPostContent.length === 0 && !postImageDataUri && !gifUrl && !quotedPost && !pollData) || isPosting || newPostContent.length > MAX_CHARS;
     
     const QuotedPostPreview = ({ post }: { post: Post }) => {
+        const isRulio = post.handle === '@Rulio';
         const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
-        const isVerified = post.isVerified || post.handle === '@Rulio';
+        const isVerified = post.isVerified || isRulio;
         return (
             <div className="mt-2 border rounded-xl p-3">
                 <div className="flex items-center gap-2 text-sm">
@@ -487,7 +488,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     </Avatar>
                     <span className="font-bold flex items-center gap-1">
                         {post.author}
-                         {isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}
+                         {isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />}
                     </span>
                     <span className="text-muted-foreground">{post.handle}</span>
                 </div>

@@ -380,7 +380,8 @@ export default function ConversationPage() {
     }
     
     const isZisprAccount = otherUser.handle === '@Zispr' || otherUser.handle === '@ZisprUSA';
-    const isOtherUserVerified = otherUser.isVerified || otherUser.handle === '@Rulio';
+    const isRulio = otherUser.handle === '@Rulio';
+    const isOtherUserVerified = otherUser.isVerified || isRulio;
     const badgeColor = otherUser.badgeTier ? badgeColors[otherUser.badgeTier] : 'text-primary';
     const isConversationDisabled = zisprUser?.blocked?.includes(otherUser.uid) || zisprUser?.blockedBy?.includes(otherUser.uid);
 
@@ -409,7 +410,7 @@ export default function ConversationPage() {
                     <div>
                         <h1 className="text-lg font-bold flex items-center gap-1">
                             {otherUser.displayName}
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isOtherUserVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isOtherUserVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />)}
                         </h1>
                         <p className="text-xs text-muted-foreground">{otherUser.handle}</p>
                     </div>

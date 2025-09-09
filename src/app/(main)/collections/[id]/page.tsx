@@ -105,11 +105,12 @@ const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: st
 const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => {
     const router = useRouter();
     const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
+    const isRulio = post.handle === '@Rulio';
     return (
         <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
             <div className="flex items-center gap-2 text-sm">
                 <Avatar className="h-5 w-5"><AvatarImage src={post.avatar} /><AvatarFallback>{post.avatarFallback || post.author[0]}</AvatarFallback></Avatar>
-                <span className="font-bold flex items-center gap-1">{post.author} {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}</span>
+                <span className="font-bold flex items-center gap-1">{post.author} {(post.isVerified || isRulio) && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />}</span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>
             <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
@@ -201,7 +202,8 @@ export default function CollectionPage() {
             if (post.createdAt) setTime(formatTimeAgo(post.createdAt.toDate()));
         }, [post.createdAt]);
         
-        const isVerified = post.isVerified || post.handle === '@Rulio';
+        const isRulio = post.handle === '@Rulio';
+        const isVerified = post.isVerified || isRulio;
         const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
 
         return (
@@ -211,7 +213,7 @@ export default function CollectionPage() {
                     <div className="w-full">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-sm">
-                                <p className="font-bold flex items-center gap-1">{post.author} {isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}</p>
+                                <p className="font-bold flex items-center gap-1">{post.author} {isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />}</p>
                                 <p className="text-muted-foreground">{post.handle} · {time}</p>
                             </div>
                         </div>

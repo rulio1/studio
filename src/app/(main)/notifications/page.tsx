@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -93,7 +94,8 @@ const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notif
     };
 
     const isZisprAccount = notification.fromUser.handle === '@Zispr' || notification.fromUser.handle === '@ZisprUSA';
-    const isVerified = notification.fromUser.isVerified || notification.fromUser.handle === '@Rulio';
+    const isRulio = notification.fromUser.handle === '@Rulio';
+    const isVerified = notification.fromUser.isVerified || isRulio;
     const badgeColor = notification.fromUser.badgeTier ? badgeColors[notification.fromUser.badgeTier] : 'text-primary';
 
 
@@ -111,7 +113,7 @@ const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notif
                 </div>
                 <p>
                     <span className="font-bold">{notification.fromUser.name}</span>
-                    {isZisprAccount ? <Bird className="inline-block h-4 w-4 text-primary ml-1" /> : (isVerified && <BadgeCheck className={`inline-block h-4 w-4 ${badgeColor} ml-1`} />)}
+                    {isZisprAccount ? <Bird className="inline-block h-4 w-4 text-primary ml-1" /> : (isVerified && <BadgeCheck className={`inline-block h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor} ml-1`} />)}
                     <span className="font-normal text-muted-foreground"> {notification.text}</span>
                 </p>
                 {notification.postContent && <p className="text-muted-foreground mt-1">{notification.postContent}</p>}

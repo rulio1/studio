@@ -71,7 +71,8 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
     const isUnread = convo.unreadCount > 0;
     const messagePreview = `${isMyMessage ? 'Você: ' : ''}${convo.lastMessage.gifUrl ? 'GIF' : convo.lastMessage.text}`;
     const isZisprAccount = convo.otherUser.handle === '@Zispr' || convo.otherUser.handle === '@ZisprUSA';
-    const isVerified = convo.otherUser.isVerified || convo.otherUser.handle === '@Rulio';
+    const isRulio = convo.otherUser.handle === '@Rulio';
+    const isVerified = convo.otherUser.isVerified || isRulio;
     const badgeColor = convo.otherUser.badgeTier ? badgeColors[convo.otherUser.badgeTier] : 'text-primary';
 
     return (
@@ -96,7 +97,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
                     <div className="flex items-baseline gap-2">
                         <p className="font-bold truncate flex items-center gap-1">
                             {convo.otherUser.name}
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />)}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">{convo.otherUser.handle}</p>
                     </div>

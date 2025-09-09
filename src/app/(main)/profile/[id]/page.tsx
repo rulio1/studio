@@ -226,6 +226,7 @@ const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: st
 
 const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPostId'> }) => {
     const router = useRouter();
+    const isRulio = post.handle === '@Rulio';
     const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     return (
         <div className="mt-2 border rounded-xl p-3 cursor-pointer hover:bg-muted/50" onClick={(e) => {e.stopPropagation(); router.push(`/post/${post.id}`)}}>
@@ -236,7 +237,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
                 </Avatar>
                 <span className="font-bold flex items-center gap-1">
                     {post.author}
-                    {(post.isVerified || post.handle === '@Rulio') && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />}
+                    {(post.isVerified || isRulio) && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />}
                 </span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>
@@ -267,7 +268,8 @@ const PostItem = React.memo(function PostItem({ post, user, zisprUser, onAction,
     }, [post.createdAt, post.repostedAt]);
     
     const isZisprAccount = post.handle === '@Zispr' || post.handle === '@ZisprUSA';
-    const isVerified = post.isVerified || post.handle === '@Rulio';
+    const isRulio = post.handle === '@Rulio';
+    const isVerified = post.isVerified || isRulio;
     const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
     const isEditable = post.createdAt && (new Date().getTime() - post.createdAt.toDate().getTime()) < 5 * 60 * 1000;
     const isRetweeted = Array.isArray(post.retweets) && post.retweets.includes(user?.uid || '');
@@ -318,7 +320,7 @@ const PostItem = React.memo(function PostItem({ post, user, zisprUser, onAction,
                         <div className="flex items-center gap-2 text-sm flex-wrap">
                             <p className="font-bold text-base flex items-center gap-1">
                                 {post.author} 
-                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
+                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />)}
                             </p>
                             <p className="text-muted-foreground">{post.handle} · {time}</p>
                             
@@ -467,7 +469,8 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
     }, [reply.createdAt]);
     
     const isZisprAccount = reply.handle === '@Zispr' || reply.handle === '@ZisprUSA';
-    const isVerified = reply.isVerified || reply.handle === '@Rulio';
+    const isRulio = reply.handle === '@Rulio';
+    const isVerified = reply.isVerified || isRulio;
     const badgeColor = reply.badgeTier ? badgeColors[reply.badgeTier] : 'text-primary';
 
     return (
@@ -490,7 +493,7 @@ const ReplyItem = ({ reply }: { reply: Reply }) => {
                         <div className="flex items-center gap-2 text-sm">
                             <p className="font-bold text-base flex items-center gap-1">
                                 {reply.author}
-                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
+                                {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />)}
                             </p>
                             <p className="text-muted-foreground">{reply.handle} · {time}</p>
                         </div>
@@ -1250,7 +1253,7 @@ export default function ProfilePage() {
 
     const isZisprAccount = profileUser.handle === '@Zispr' || profileUser.handle === '@ZisprUSA';
     const isRulioAccount = profileUser.handle === '@Rulio';
-    const isProfileVerified = profileUser.isVerified || profileUser.handle === '@Rulio';
+    const isProfileVerified = profileUser.isVerified || isRulioAccount;
     const badgeColor = profileUser.badgeTier ? badgeColors[profileUser.badgeTier] : 'text-primary';
     const supporterCardBorderColor = profileUser.badgeTier ? badgeBorderColors[profileUser.badgeTier] : 'border-primary/50';
     const canViewLikes = isOwnProfile || !profileUser.likesArePrivate;
@@ -1270,7 +1273,7 @@ export default function ProfilePage() {
                 <div>
                     <h1 className="text-xl font-bold flex items-center gap-1">
                         {profileUser.displayName}
-                        {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-5 w-5 ${badgeColor}`} />)}
+                        {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-5 w-5 ${isRulioAccount ? 'text-primary fill-primary' : badgeColor}`} />)}
                     </h1>
                     <p className="text-sm text-muted-foreground">{userPosts.length + (pinnedPost ? 1 : 0)} posts</p>
                 </div>
@@ -1336,7 +1339,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-2">
                         <h1 className="text-2xl font-bold flex items-center gap-1">
                             {profileUser.displayName}
-                            {isZisprAccount ? <Bird className="h-6 w-6 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-6 w-6 ${badgeColor}`} />)}
+                            {isZisprAccount ? <Bird className="h-6 w-6 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-6 w-6 ${isRulioAccount ? 'text-primary fill-primary' : badgeColor}`} />)}
                         </h1>
                     </div>
                     <div className="flex items-center gap-2">

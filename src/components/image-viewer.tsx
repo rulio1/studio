@@ -100,7 +100,8 @@ export default function ImageViewer({ post, comments, onOpenChange }: ImageViewe
   const [isReplying, setIsReplying] = useState(false);
 
   const isZisprAccount = post?.handle === '@Zispr';
-  const isPostVerified = post?.isVerified || post?.handle === '@Rulio';
+  const isRulio = post?.handle === '@Rulio';
+  const isPostVerified = post?.isVerified || isRulio;
   const badgeColor = post?.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
 
   const timeFormatted = useMemo(() => {
@@ -189,7 +190,7 @@ export default function ImageViewer({ post, comments, onOpenChange }: ImageViewe
                             <div>
                                 <p className="font-bold flex items-center gap-1">
                                     {post.author}
-                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={`h-4 w-4 ${badgeColor}`} />)}
+                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />)}
                                 </p>
                                 <p className="text-sm text-muted-foreground">{post.handle}</p>
                             </div>
