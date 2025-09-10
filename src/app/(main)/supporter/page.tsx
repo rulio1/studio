@@ -7,43 +7,43 @@ import { HandHeart, ArrowLeft, BadgeCheck, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/hooks/use-translation";
 
-const tiers = [
-  {
-    name: "Apoiador Básico",
-    price: "Em breve",
-    description: "Para quem quer dar o primeiro passo e ajudar a plataforma a crescer.",
-    features: [
-      { text: "Selo de verificação Bronze", icon: <BadgeCheck className="h-5 w-5 text-amber-600 mr-2 shrink-0 mt-0.5" /> },
-    ],
-    variant: "secondary",
-  },
-  {
-    name: "Apoiador VIP",
-    price: "Em breve",
-    description: "Para os entusiastas que desejam uma experiência aprimorada e acesso antecipado.",
-    features: [
-      { text: "Selo de verificação Prata", icon: <BadgeCheck className="h-5 w-5 text-slate-400 mr-2 shrink-0 mt-0.5" /> },
-      { text: "Opções avançadas de tema", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
-      { text: "Acesso a novas features em primeira mão", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
-    ],
-    variant: "default",
-  },
-  {
-    name: "Apoiador Patrocinador",
-    price: "Em breve",
-    description: "Para visionários que acreditam no potencial máximo do Zispr.",
-    features: [
-      { text: "Selo de verificação Ouro", icon: <BadgeCheck className="h-5 w-5 text-yellow-400 mr-2 shrink-0 mt-0.5" /> },
-      { text: "Experiência sem anúncios", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
-      { text: "Acesso ao Clube de Patrocinadores", icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
-    ],
-    variant: "secondary",
-  }
-];
-
 export default function SupporterPage() {
   const router = useRouter();
   const { t } = useTranslation();
+
+  const tiers = [
+    {
+      name: t('supporter.tiers.basic.name'),
+      price: t('supporter.tiers.priceSoon'),
+      description: t('supporter.tiers.basic.description'),
+      features: [
+        { text: t('supporter.tiers.basic.features.0'), icon: <BadgeCheck className="h-5 w-5 text-amber-600 mr-2 shrink-0 mt-0.5" /> },
+      ],
+      variant: "secondary",
+    },
+    {
+      name: t('supporter.tiers.vip.name'),
+      price: t('supporter.tiers.priceSoon'),
+      description: t('supporter.tiers.vip.description'),
+      features: [
+        { text: t('supporter.tiers.vip.features.0'), icon: <BadgeCheck className="h-5 w-5 text-slate-400 mr-2 shrink-0 mt-0.5" /> },
+        { text: t('supporter.tiers.vip.features.1'), icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
+        { text: t('supporter.tiers.vip.features.2'), icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
+      ],
+      variant: "default",
+    },
+    {
+      name: t('supporter.tiers.patron.name'),
+      price: t('supporter.tiers.priceSoon'),
+      description: t('supporter.tiers.patron.description'),
+      features: [
+        { text: t('supporter.tiers.patron.features.0'), icon: <BadgeCheck className="h-5 w-5 text-yellow-400 mr-2 shrink-0 mt-0.5" /> },
+        { text: t('supporter.tiers.patron.features.1'), icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
+        { text: t('supporter.tiers.patron.features.2'), icon: <CheckCircle className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" /> },
+      ],
+      variant: "secondary",
+    }
+  ];
   
   return (
     <>
@@ -93,5 +93,3 @@ export default function SupporterPage() {
     </>
   );
 }
-
-    

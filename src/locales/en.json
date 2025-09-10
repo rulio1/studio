@@ -135,8 +135,34 @@
     "description": "Support Zispr to get exclusive benefits and help the platform grow!",
     "button": "View Plans",
     "pageTitle": "Supporter Plans Coming Soon",
-    "pageDescription": "We are finalizing the details for you to support Zispr! Your contribution will be fundamental to keep the platform running and growing."
+    "pageDescription": "We are finalizing the details for you to support Zispr! Your contribution will be fundamental to keep the platform running and growing.",
+    "tiers": {
+      "priceSoon": "Coming soon",
+      "basic": {
+        "name": "Basic Supporter",
+        "description": "For those who want to take the first step and help the platform grow.",
+        "features": {
+          "0": "Bronze verification badge"
+        }
+      },
+      "vip": {
+        "name": "VIP Supporter",
+        "description": "For enthusiasts who want an enhanced experience and early access.",
+        "features": {
+          "0": "Silver verification badge",
+          "1": "Advanced theme options",
+          "2": "Early access to new features"
+        }
+      },
+      "patron": {
+        "name": "Patron Supporter",
+        "description": "For visionaries who believe in Zispr's full potential.",
+        "features": {
+          "0": "Gold verification badge",
+          "1": "Ad-free experience",
+          "2": "Access to the Patron's Club"
+        }
+      }
+    }
   }
 }
-
-    

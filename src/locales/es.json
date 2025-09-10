@@ -135,8 +135,34 @@
     "description": "¡Apoya a Zispr para obtener beneficios exclusivos y ayudar a la plataforma a crecer!",
     "button": "Ver Planes",
     "pageTitle": "Planes de Patrocinador Próximamente",
-    "pageDescription": "¡Estamos finalizando los detalles para que puedas apoyar a Zispr! Tu contribución será fundamental para mantener la plataforma funcionando y creciendo."
+    "pageDescription": "¡Estamos finalizando los detalles para que puedas apoyar a Zispr! Tu contribución será fundamental para mantener la plataforma funcionando y creciendo.",
+    "tiers": {
+      "priceSoon": "Próximamente",
+      "basic": {
+        "name": "Patrocinador Básico",
+        "description": "Para quienes quieren dar el primer paso y ayudar a la plataforma a crecer.",
+        "features": {
+          "0": "Insignia de verificación Bronce"
+        }
+      },
+      "vip": {
+        "name": "Patrocinador VIP",
+        "description": "Para los entusiastas que desean una experiencia mejorada y acceso anticipado.",
+        "features": {
+          "0": "Insignia de verificación Plata",
+          "1": "Opciones de tema avanzadas",
+          "2": "Acceso anticipado a nuevas funciones"
+        }
+      },
+      "patron": {
+        "name": "Patrocinador Mecenas",
+        "description": "Para visionarios que creen en el máximo potencial de Zispr.",
+        "features": {
+          "0": "Insignia de verificación Oro",
+          "1": "Experiencia sin anuncios",
+          "2": "Acceso al Club de Mecenas"
+        }
+      }
+    }
   }
 }
-
-    

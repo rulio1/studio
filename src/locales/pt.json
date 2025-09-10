@@ -135,8 +135,34 @@
     "description": "Apoie o Zispr para obter benefícios exclusivos e ajudar a plataforma a crescer!",
     "button": "Ver Planos",
     "pageTitle": "Planos de Apoio em Breve",
-    "pageDescription": "Estamos finalizando os detalhes para que você possa apoiar o Zispr! Sua contribuição será fundamental para manter a plataforma funcionando e crescendo."
+    "pageDescription": "Estamos finalizando os detalhes para que você possa apoiar o Zispr! Sua contribuição será fundamental para manter a plataforma funcionando e crescendo.",
+    "tiers": {
+      "priceSoon": "Em breve",
+      "basic": {
+        "name": "Apoiador Básico",
+        "description": "Para quem quer dar o primeiro passo e ajudar a plataforma a crescer.",
+        "features": {
+          "0": "Selo de verificação Bronze"
+        }
+      },
+      "vip": {
+        "name": "Apoiador VIP",
+        "description": "Para os entusiastas que desejam uma experiência aprimorada e acesso antecipado.",
+        "features": {
+          "0": "Selo de verificação Prata",
+          "1": "Opções avançadas de tema",
+          "2": "Acesso a novas features em primeira mão"
+        }
+      },
+      "patron": {
+        "name": "Apoiador Patrocinador",
+        "description": "Para visionários que acreditam no potencial máximo do Zispr.",
+        "features": {
+          "0": "Selo de verificação Ouro",
+          "1": "Experiência sem anúncios",
+          "2": "Acesso ao Clube de Patrocinadores"
+        }
+      }
+    }
   }
 }
-
-    

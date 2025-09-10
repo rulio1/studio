@@ -135,8 +135,34 @@
     "description": "Unterstütze Zispr, um exklusive Vorteile zu erhalten und der Plattform beim Wachsen zu helfen!",
     "button": "Pläne anzeigen",
     "pageTitle": "Unterstützerpläne folgen in Kürze",
-    "pageDescription": "Wir arbeiten an den letzten Details, damit du Zispr unterstützen kannst! Dein Beitrag wird entscheidend sein, um die Plattform am Laufen zu halten und wachsen zu lassen."
+    "pageDescription": "Wir arbeiten an den letzten Details, damit du Zispr unterstützen kannst! Dein Beitrag wird entscheidend sein, um die Plattform am Laufen zu halten und wachsen zu lassen.",
+    "tiers": {
+      "priceSoon": "In Kürze",
+      "basic": {
+        "name": "Basis-Unterstützer",
+        "description": "Für diejenigen, die den ersten Schritt machen und der Plattform beim Wachsen helfen möchten.",
+        "features": {
+          "0": "Bronze-Verifizierungsabzeichen"
+        }
+      },
+      "vip": {
+        "name": "VIP-Unterstützer",
+        "description": "Für Enthusiasten, die ein verbessertes Erlebnis und frühen Zugang wünschen.",
+        "features": {
+          "0": "Silber-Verifizierungsabzeichen",
+          "1": "Erweiterte Themenoptionen",
+          "2": "Früher Zugang zu neuen Funktionen"
+        }
+      },
+      "patron": {
+        "name": "Mäzen-Unterstützer",
+        "description": "Für Visionäre, die an das volle Potenzial von Zispr glauben.",
+        "features": {
+          "0": "Gold-Verifizierungsabzeichen",
+          "1": "Werbefreies Erlebnis",
+          "2": "Zugang zum Mäzen-Club"
+        }
+      }
+    }
   }
 }
-
-    
