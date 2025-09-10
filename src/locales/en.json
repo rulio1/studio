@@ -6,7 +6,7 @@
   },
   "languageSelectedToast": {
     "title": "Language updated!",
-    "description": "The interface has been changed to English."
+    "description": "The interface has been changed to {language}."
   },
   "sidebar": {
     "home": "Home",
@@ -35,7 +35,9 @@
               "delete": "Delete Account",
               "privacy": "Privacy and Safety",
               "notifications": "Notifications",
-              "language": "Language"
+              "language": "Language",
+              "collections": "Manage Collections",
+              "blocked": "Blocked Accounts"
           }
       },
       "sections": {
@@ -93,5 +95,24 @@
             "description": "When posts are made, they will appear here."
         }
     }
+  },
+  "createPostFab": {
+    "createPost": "Create post",
+    "newMessage": "New message"
+  },
+  "createPostModal": {
+    "title": "Create Post",
+    "placeholder": "What's happening?",
+    "postButton": "Post",
+    "replySettings": {
+      "everyone": "Everyone can reply",
+      "following": "People you follow",
+      "mentioned": "Only people you mention"
+    },
+    "addLocation": "Add location",
+    "locationPlaceholder": "e.g., London"
+  },
+  "newsCard": {
+    "title": "What's happening"
   }
 }

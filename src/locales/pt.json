@@ -6,7 +6,7 @@
   },
   "languageSelectedToast": {
     "title": "Idioma atualizado!",
-    "description": "A interface foi alterada para Português."
+    "description": "A interface foi alterada para {language}."
   },
   "sidebar": {
     "home": "Início",
@@ -21,77 +21,98 @@
     "signOut": "Sair de {handle}"
   },
   "toasts": {
-      "signOutError": {
-          "title": "Erro ao sair"
-      }
+    "signOutError": {
+      "title": "Erro ao sair"
+    }
   },
   "settings": {
-      "layout": {
-          "title": {
-              "settings": "Configurações",
-              "account": "Sua Conta",
-              "changePassword": "Alterar Senha",
-              "deactivate": "Desativar Conta",
-              "delete": "Excluir Conta",
-              "privacy": "Privacidade e Segurança",
-              "notifications": "Notificações",
-              "language": "Idioma"
-          }
+    "layout": {
+      "title": {
+        "settings": "Configurações",
+        "account": "Sua Conta",
+        "changePassword": "Alterar Senha",
+        "deactivate": "Desativar Conta",
+        "delete": "Excluir Conta",
+        "privacy": "Privacidade e Segurança",
+        "notifications": "Notificações",
+        "language": "Idioma",
+        "collections": "Gerenciar Coleções",
+        "blocked": "Contas Bloqueadas"
+      }
+    },
+    "sections": {
+      "yourAccount": {
+        "title": "Sua Conta",
+        "description": "Gerencie as informações da sua conta, como senha e informações de perfil.",
+        "item": {
+          "title": "Sua Conta",
+          "description": "Veja as informações da sua conta e gerencie suas configurações."
+        }
       },
-      "sections": {
-        "yourAccount": {
-            "title": "Sua Conta",
-            "description": "Gerencie as informações da sua conta, como senha e informações de perfil.",
-            "item": {
-                "title": "Sua Conta",
-                "description": "Veja as informações da sua conta e gerencie suas configurações."
-            }
+      "privacyAndSafety": {
+        "title": "Privacidade e Segurança",
+        "description": "Controle como o Zispr usa suas informações e quem pode ver seu conteúdo.",
+        "item": {
+          "title": "Privacidade e segurança",
+          "description": "Gerencie suas configurações de privacidade e segurança."
+        }
+      },
+      "notifications": {
+        "title": "Notificações",
+        "description": "Selecione os tipos de notificações que você recebe sobre suas atividades, interesses e recomendações.",
+        "item": {
+          "title": "Preferências",
+          "description": "Gerencie suas preferências de notificação."
+        }
+      },
+      "contentAndDisplay": {
+        "title": "Conteúdo e Exibição",
+        "description": "Gerencie suas coleções, acessibilidade, exibição e idiomas.",
+        "collections": {
+          "title": "Coleções",
+          "description": "Gerencie suas coleções de posts salvos."
         },
-        "privacyAndSafety": {
-            "title": "Privacidade e Segurança",
-            "description": "Controle como o Zispr usa suas informações e quem pode ver seu conteúdo.",
-            "item": {
-                "title": "Privacidade e segurança",
-                "description": "Gerencie suas configurações de privacidade e segurança."
-            }
-        },
-        "notifications": {
-            "title": "Notificações",
-            "description": "Selecione os tipos de notificações que você recebe sobre suas atividades, interesses e recomendações.",
-            "item": {
-                "title": "Preferências",
-                "description": "Gerencie suas preferências de notificação."
-            }
-        },
-        "contentAndDisplay": {
-            "title": "Conteúdo e Exibição",
-            "description": "Gerencie suas coleções, acessibilidade, exibição e idiomas.",
-            "collections": {
-                "title": "Coleções",
-                "description": "Gerencie suas coleções de posts salvos."
-            },
-            "language": {
-                "title": "Idioma",
-                "description": "Escolha qual idioma usar no Zispr."
-            }
+        "language": {
+          "title": "Idioma",
+          "description": "Escolha qual idioma usar no Zispr."
         }
       }
+    }
   },
   "home": {
     "tabs": {
-        "forYou": "Para você",
-        "following": "Seguindo"
+      "forYou": "Para você",
+      "following": "Seguindo"
     },
     "postList": {
-        "emptyFollowing": {
-            "title": "Sua timeline está um pouco vazia...",
-            "description": "Encontre pessoas para seguir e veja os posts delas aqui!",
-            "button": "Encontrar Pessoas"
-        },
-        "empty": {
-            "title": "Nada para ver aqui... ainda",
-            "description": "Quando posts forem feitos, eles aparecerão aqui."
-        }
+      "emptyFollowing": {
+        "title": "Sua timeline está um pouco vazia...",
+        "description": "Encontre pessoas para seguir e veja os posts delas aqui!",
+        "button": "Encontrar Pessoas"
+      },
+      "empty": {
+        "title": "Nada para ver aqui... ainda",
+        "description": "Quando posts forem feitos, eles aparecerão aqui."
+      }
     }
+  },
+  "createPostFab": {
+    "createPost": "Criar post",
+    "newMessage": "Nova mensagem"
+  },
+  "createPostModal": {
+    "title": "Criar Post",
+    "placeholder": "O que está acontecendo?",
+    "postButton": "Postar",
+    "replySettings": {
+      "everyone": "Todos podem responder",
+      "following": "Pessoas que você segue",
+      "mentioned": "Apenas quem você menciona"
+    },
+    "addLocation": "Adicionar localização",
+    "locationPlaceholder": "ex: São Paulo"
+  },
+  "newsCard": {
+    "title": "O que está acontecendo"
   }
 }

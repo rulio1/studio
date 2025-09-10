@@ -1,0 +1,118 @@
+
+{
+  "language": {
+    "title": "Idioma",
+    "description": "Elige el idioma que quieres usar en Zispr."
+  },
+  "languageSelectedToast": {
+    "title": "¡Idioma actualizado!",
+    "description": "La interfaz se ha cambiado a {language}."
+  },
+  "sidebar": {
+    "home": "Inicio",
+    "notifications": "Notificaciones",
+    "messages": "Mensajes",
+    "news": "Noticias",
+    "saved": "Guardados",
+    "profile": "Perfil",
+    "post": "Publicar",
+    "zisprAi": "Zispr AI",
+    "settings": "Configuración",
+    "signOut": "Cerrar sesión de {handle}"
+  },
+  "toasts": {
+    "signOutError": {
+      "title": "Error al cerrar sesión"
+    }
+  },
+  "settings": {
+    "layout": {
+      "title": {
+        "settings": "Configuración",
+        "account": "Tu cuenta",
+        "changePassword": "Cambiar contraseña",
+        "deactivate": "Desactivar cuenta",
+        "delete": "Eliminar cuenta",
+        "privacy": "Privacidad y seguridad",
+        "notifications": "Notificaciones",
+        "language": "Idioma",
+        "collections": "Gestionar colecciones",
+        "blocked": "Cuentas bloqueadas"
+      }
+    },
+    "sections": {
+      "yourAccount": {
+        "title": "Tu cuenta",
+        "description": "Gestiona la información de tu cuenta, como la contraseña y los detalles del perfil.",
+        "item": {
+          "title": "Tu cuenta",
+          "description": "Consulta la información de tu cuenta y gestiona tu configuración."
+        }
+      },
+      "privacyAndSafety": {
+        "title": "Privacidad y seguridad",
+        "description": "Controla cómo Zispr utiliza tu información y quién puede ver tu contenido.",
+        "item": {
+          "title": "Privacidad y seguridad",
+          "description": "Gestiona tu configuración de privacidad y seguridad."
+        }
+      },
+      "notifications": {
+        "title": "Notificaciones",
+        "description": "Selecciona los tipos de notificaciones que recibes sobre tus actividades, intereses y recomendaciones.",
+        "item": {
+          "title": "Preferencias",
+          "description": "Gestiona tus preferencias de notificación."
+        }
+      },
+      "contentAndDisplay": {
+        "title": "Contenido y visualización",
+        "description": "Gestiona tus colecciones, accesibilidad, visualización e idiomas.",
+        "collections": {
+          "title": "Colecciones",
+          "description": "Gestiona tus colecciones de publicaciones guardadas."
+        },
+        "language": {
+          "title": "Idioma",
+          "description": "Elige qué idioma usar en Zispr."
+        }
+      }
+    }
+  },
+  "home": {
+    "tabs": {
+      "forYou": "Para ti",
+      "following": "Siguiendo"
+    },
+    "postList": {
+      "emptyFollowing": {
+        "title": "Tu cronología está un poco vacía...",
+        "description": "¡Encuentra gente a la que seguir y mira sus publicaciones aquí!",
+        "button": "Encontrar gente"
+      },
+      "empty": {
+        "title": "Nada que ver aquí... todavía",
+        "description": "Cuando se hagan publicaciones, aparecerán aquí."
+      }
+    }
+  },
+  "createPostFab": {
+    "createPost": "Crear publicación",
+    "newMessage": "Nuevo mensaje"
+  },
+  "createPostModal": {
+    "title": "Crear publicación",
+    "placeholder": "¿Qué está pasando?",
+    "postButton": "Publicar",
+    "replySettings": {
+      "everyone": "Todos pueden responder",
+      "following": "Gente que sigues",
+      "mentioned": "Solo gente mencionada"
+    },
+    "addLocation": "Añadir ubicación",
+    "locationPlaceholder": "p. ej., Madrid"
+  },
+  "newsCard": {
+    "title": "Qué está pasando"
+  }
+}

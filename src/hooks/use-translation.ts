@@ -4,8 +4,10 @@
 import { useUserStore } from '@/store/user-store';
 import pt from '@/locales/pt.json';
 import en from '@/locales/en.json';
+import es from '@/locales/es.json';
+import de from '@/locales/de.json';
 
-const translations = { pt, en };
+const translations = { pt, en, es, de };
 
 // Helper type to get all dot-notation keys from an object
 type Path<T> = T extends object ? { [K in keyof T]:

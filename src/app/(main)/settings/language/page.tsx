@@ -8,12 +8,16 @@ import { useUserStore } from '@/store/user-store';
 import { useTranslation } from '@/hooks/use-translation';
 import pt from '@/locales/pt.json';
 import en from '@/locales/en.json';
+import es from '@/locales/es.json';
+import de from '@/locales/de.json';
 
-const translations = { pt, en };
+const translations = { pt, en, es, de };
 
 const languages = [
     { code: 'pt', name: 'Português' },
     { code: 'en', name: 'English' },
+    { code: 'es', name: 'Español' },
+    { code: 'de', name: 'Deutsch' },
 ];
 
 const SettingsItem = ({ title, selected, onClick }: { title: string, selected: boolean, onClick: () => void }) => (
@@ -31,12 +35,12 @@ export default function LanguageSettingsPage() {
     const { t } = useTranslation();
     const { toast } = useToast();
 
-    const handleSelectLanguage = (langCode: 'pt' | 'en') => {
+    const handleSelectLanguage = (langCode: 'pt' | 'en' | 'es' | 'de') => {
         setLanguage(langCode);
         
-        // Get the toast message directly from the correct translation file
+        const languageName = languages.find(l => l.code === langCode)?.name || 'o idioma selecionado';
         const toastTitle = translations[langCode].languageSelectedToast.title;
-        const toastDescription = translations[langCode].languageSelectedToast.description;
+        const toastDescription = translations[langCode].languageSelectedToast.description.replace('{language}', languageName);
         
         toast({
             title: toastTitle,
@@ -58,7 +62,7 @@ export default function LanguageSettingsPage() {
                                 key={lang.code}
                                 title={lang.name}
                                 selected={language === lang.code}
-                                onClick={() => handleSelectLanguage(lang.code as 'pt' | 'en')}
+                                onClick={() => handleSelectLanguage(lang.code as 'pt' | 'en' | 'es' | 'de')}
                             />
                         ))}
                     </div>

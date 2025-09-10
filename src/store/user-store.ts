@@ -8,7 +8,7 @@ import { auth, db } from '@/lib/firebase';
 import { ZisprUser } from '@/types/zispr';
 import { persist } from 'zustand/middleware';
 
-type Language = 'pt' | 'en';
+type Language = 'pt' | 'en' | 'es' | 'de';
 
 interface UserState {
     user: FirebaseUser | null;

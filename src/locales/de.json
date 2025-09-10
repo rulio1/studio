@@ -1,0 +1,118 @@
+
+{
+  "language": {
+    "title": "Sprache",
+    "description": "Wählen Sie die Sprache, die Sie in Zispr verwenden möchten."
+  },
+  "languageSelectedToast": {
+    "title": "Sprache aktualisiert!",
+    "description": "Die Benutzeroberfläche wurde auf {language} umgestellt."
+  },
+  "sidebar": {
+    "home": "Startseite",
+    "notifications": "Benachrichtigungen",
+    "messages": "Nachrichten",
+    "news": "Nachrichten",
+    "saved": "Gemerkt",
+    "profile": "Profil",
+    "post": "Posten",
+    "zisprAi": "Zispr AI",
+    "settings": "Einstellungen",
+    "signOut": "Von {handle} abmelden"
+  },
+  "toasts": {
+    "signOutError": {
+      "title": "Fehler beim Abmelden"
+    }
+  },
+  "settings": {
+    "layout": {
+      "title": {
+        "settings": "Einstellungen",
+        "account": "Ihr Konto",
+        "changePassword": "Passwort ändern",
+        "deactivate": "Konto deaktivieren",
+        "delete": "Konto löschen",
+        "privacy": "Datenschutz und Sicherheit",
+        "notifications": "Benachrichtigungen",
+        "language": "Sprache",
+        "collections": "Sammlungen verwalten",
+        "blocked": "Blockierte Konten"
+      }
+    },
+    "sections": {
+      "yourAccount": {
+        "title": "Ihr Konto",
+        "description": "Verwalten Sie Ihre Kontoinformationen, wie Passwort und Profildetails.",
+        "item": {
+          "title": "Ihr Konto",
+          "description": "Sehen Sie sich Ihre Kontoinformationen an und verwalten Sie Ihre Einstellungen."
+        }
+      },
+      "privacyAndSafety": {
+        "title": "Datenschutz und Sicherheit",
+        "description": "Kontrollieren Sie, wie Zispr Ihre Informationen verwendet und wer Ihre Inhalte sehen kann.",
+        "item": {
+          "title": "Datenschutz und Sicherheit",
+          "description": "Verwalten Sie Ihre Datenschutz- und Sicherheitseinstellungen."
+        }
+      },
+      "notifications": {
+        "title": "Benachrichtigungen",
+        "description": "Wählen Sie aus, welche Arten von Benachrichtigungen Sie über Ihre Aktivitäten, Interessen und Empfehlungen erhalten.",
+        "item": {
+          "title": "Einstellungen",
+          "description": "Verwalten Sie Ihre Benachrichtigungseinstellungen."
+        }
+      },
+      "contentAndDisplay": {
+        "title": "Inhalt und Anzeige",
+        "description": "Verwalten Sie Ihre Sammlungen, Barrierefreiheit, Anzeige und Sprachen.",
+        "collections": {
+          "title": "Sammlungen",
+          "description": "Verwalten Sie Ihre Sammlungen von gespeicherten Beiträgen."
+        },
+        "language": {
+          "title": "Sprache",
+          "description": "Wählen Sie die in Zispr zu verwendende Sprache."
+        }
+      }
+    }
+  },
+  "home": {
+    "tabs": {
+      "forYou": "Für dich",
+      "following": "Folge ich"
+    },
+    "postList": {
+      "emptyFollowing": {
+        "title": "Deine Timeline ist etwas leer...",
+        "description": "Finde Leute, denen du folgen kannst, und sieh dir ihre Beiträge hier an!",
+        "button": "Leute finden"
+      },
+      "empty": {
+        "title": "Hier gibt es noch nichts zu sehen",
+        "description": "Wenn Beiträge verfasst werden, erscheinen sie hier."
+      }
+    }
+  },
+  "createPostFab": {
+    "createPost": "Beitrag erstellen",
+    "newMessage": "Neue Nachricht"
+  },
+  "createPostModal": {
+    "title": "Beitrag erstellen",
+    "placeholder": "Was gibt's Neues?",
+    "postButton": "Posten",
+    "replySettings": {
+      "everyone": "Jeder kann antworten",
+      "following": "Leute, denen du folgst",
+      "mentioned": "Nur erwähnte Personen"
+    },
+    "addLocation": "Standort hinzufügen",
+    "locationPlaceholder": "z. B. Berlin"
+  },
+  "newsCard": {
+    "title": "Was passiert"
+  }
+}
