@@ -32,6 +32,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import PostItem from '@/components/post-item';
 import Link from 'next/link';
 import { BadgeCheck } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
@@ -696,7 +697,9 @@ useEffect(() => {
                   <div className="flex-1 flex justify-center">
                       <Bird className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="w-8 md:hidden"></div>
+                  <div className="w-8 md:w-auto">
+                    <ThemeToggle />
+                  </div>
               </div>
               <div className="w-full flex justify-center p-2">
                   <TabsList className="relative grid w-full grid-cols-2 p-1 bg-muted/50 rounded-full h-11">
