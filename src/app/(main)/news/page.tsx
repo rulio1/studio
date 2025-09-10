@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface NewsArticle {
     title: string;
@@ -76,6 +77,7 @@ const NewsPageSkeleton = () => (
 
 export default function NewsPage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [articles, setArticles] = useState<NewsArticle[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -106,7 +108,7 @@ export default function NewsPage() {
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <h1 className="text-xl font-bold">Notícias</h1>
+                    <h1 className="text-xl font-bold">{t('sidebar.news')}</h1>
                 </div>
             </header>
             <main className="flex-1 overflow-y-auto">

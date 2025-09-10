@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface ZisprUser {
     likesArePrivate?: boolean;
@@ -34,6 +35,7 @@ const SettingsItem = ({ icon, title, description, onClick, isDestructive = false
 export default function PrivacySettingsPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -71,14 +73,14 @@ export default function PrivacySettingsPage() {
                 likesArePrivate: isPrivate
             });
             toast({
-                title: "Configuração salva",
-                description: `Sua aba de curtidas agora está ${isPrivate ? 'privada' : 'pública'}.`
+                title: t('privacy.toasts.saveSuccess.title'),
+                description: isPrivate ? t('privacy.toasts.saveSuccess.likesPrivate') : t('privacy.toasts.saveSuccess.likesPublic')
             });
         } catch (error) {
             console.error("Erro ao atualizar a privacidade das curtidas:", error);
             toast({
-                title: "Erro",
-                description: "Não foi possível salvar sua configuração.",
+                title: t('privacy.toasts.saveError.title'),
+                description: t('privacy.toasts.saveError.description'),
                 variant: "destructive"
             });
         } finally {
@@ -113,8 +115,8 @@ export default function PrivacySettingsPage() {
         <main className="flex-1 overflow-y-auto p-4 space-y-4">
              <Card>
                 <CardHeader>
-                    <CardTitle>Visibilidade do Conteúdo</CardTitle>
-                    <CardDescription>Escolha quem pode ver suas diferentes partes do seu perfil.</CardDescription>
+                    <CardTitle>{t('privacy.visibility.title')}</CardTitle>
+                    <CardDescription>{t('privacy.visibility.description')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-center justify-between p-4 hover:bg-muted/50 rounded-lg">
@@ -122,10 +124,10 @@ export default function PrivacySettingsPage() {
                              <Heart className="h-6 w-6 text-muted-foreground mt-1" />
                             <div>
                                 <Label htmlFor="likes-privacy" className="font-semibold text-base">
-                                    Ocultar a aba Curtidas
+                                    {t('privacy.visibility.hideLikes.label')}
                                 </Label>
                                 <p className="text-sm text-muted-foreground">
-                                    Quando ativado, apenas você poderá ver os posts que curtiu.
+                                    {t('privacy.visibility.hideLikes.description')}
                                 </p>
                             </div>
                         </div>
@@ -144,14 +146,14 @@ export default function PrivacySettingsPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Gerenciamento</CardTitle>
-                    <CardDescription>Gerencie as contas que você bloqueou.</CardDescription>
+                    <CardTitle>{t('privacy.management.title')}</CardTitle>
+                    <CardDescription>{t('privacy.management.description')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                      <SettingsItem 
                         icon={UserX} 
-                        title="Contas bloqueadas" 
-                        description="Gerencie a lista de contas que você bloqueou."
+                        title={t('privacy.management.blocked.title')}
+                        description={t('privacy.management.blocked.description')}
                         onClick={() => router.push('/settings/privacy/blocked')}
                     />
                 </CardContent>

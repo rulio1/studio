@@ -15,6 +15,7 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import SearchLoading from './loading';
 import { motion } from 'framer-motion';
 import { useUserStore } from '@/store/user-store';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 interface Trend {
@@ -78,6 +79,7 @@ const PostContent = ({ content }: { content: string }) => {
 
 function SearchPageClient() {
   const router = useRouter();
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const queryFromUrl = searchParams.get('q') || '';
   const tabFromUrl = searchParams.get('tab');
@@ -290,7 +292,7 @@ function SearchPageClient() {
                             <p className="text-sm mt-1">{user.bio}</p>
                         </div>
                     </div>
-                    <span className="text-sm font-semibold text-muted-foreground">Você</span>
+                    <span className="text-sm font-semibold text-muted-foreground">{t('post.you')}</span>
                 </div>
             </li>
         )
@@ -322,7 +324,7 @@ function SearchPageClient() {
                     </div>
                 </div>
                  <Button variant={isFollowing ? 'secondary' : 'default'} onClick={() => handleFollow(user, list)}>
-                    {isFollowing ? 'Seguindo' : 'Seguir'}
+                    {isFollowing ? t('profile.buttons.following') : t('profile.buttons.follow')}
                 </Button>
             </div>
         </li>
@@ -336,22 +338,22 @@ function SearchPageClient() {
         }
 
         if (users.length === 0 && posts.length === 0) {
-            return <div className="text-center p-8 text-muted-foreground">Nenhum resultado para &quot;{debouncedSearchTerm}&quot;</div>
+            return <div className="text-center p-8 text-muted-foreground">{t('search.noResults', { term: debouncedSearchTerm })}</div>
         }
 
         return (
             <Tabs defaultValue="top" className="w-full">
                 <div className="w-full justify-around rounded-none bg-transparent border-b sticky top-16 bg-background/80 backdrop-blur-sm z-10 p-2">
                     <TabsList className="relative grid w-full grid-cols-3 p-1 bg-muted/50 rounded-full h-11">
-                        <TabsTrigger value="top" className="relative z-10 rounded-full text-base">Principais</TabsTrigger>
-                        <TabsTrigger value="people" className="relative z-10 rounded-full text-base">Pessoas</TabsTrigger>
-                        <TabsTrigger value="posts" className="relative z-10 rounded-full text-base">Posts</TabsTrigger>
+                        <TabsTrigger value="top" className="relative z-10 rounded-full text-base">{t('search.tabs.top')}</TabsTrigger>
+                        <TabsTrigger value="people" className="relative z-10 rounded-full text-base">{t('search.tabs.people')}</TabsTrigger>
+                        <TabsTrigger value="posts" className="relative z-10 rounded-full text-base">{t('search.tabs.posts')}</TabsTrigger>
                     </TabsList>
                 </div>
                 <TabsContent value="top">
                     {users.length > 0 && (
                         <div className="border-b">
-                            <h3 className="font-bold text-xl p-4">Pessoas</h3>
+                            <h3 className="font-bold text-xl p-4">{t('search.tabs.people')}</h3>
                             <ul>
                             {users.map((user) => renderUser(user, 'users'))}
                             </ul>
@@ -359,11 +361,11 @@ function SearchPageClient() {
                     )}
                     {posts.length > 0 && (
                         <div>
-                            <h3 className="font-bold text-xl p-4">Posts</h3>
+                            <h3 className="font-bold text-xl p-4">{t('search.tabs.posts')}</h3>
                             <ul className="divide-y divide-border">
                             {posts.map((post) => (
                                 <li key={post.id} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground"><MessageCircle className="h-4 w-4" /> Post de {post.handle}</div>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground"><MessageCircle className="h-4 w-4" /> {t('search.postBy')} {post.handle}</div>
                                     <PostContent content={post.content} />
                                 </li>
                             ))}
@@ -377,7 +379,7 @@ function SearchPageClient() {
                 <TabsContent value="posts">
                         <ul className="divide-y divide-border">{posts.map((post) => (
                             <li key={post.id} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/post/${post.id}`)}>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground"><MessageCircle className="h-4 w-4" /> Post de {post.handle}</div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground"><MessageCircle className="h-4 w-4" /> {t('search.postBy')} {post.handle}</div>
                                 <PostContent content={post.content} />
                             </li>
                         ))}</ul>
@@ -390,8 +392,8 @@ function SearchPageClient() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="w-full justify-around rounded-none bg-transparent border-b sticky top-16 bg-background/80 backdrop-blur-sm z-10 p-2">
               <TabsList className="relative grid w-full grid-cols-2 p-1 bg-muted/50 rounded-full h-11">
-                  <TabsTrigger value="trending" className="relative z-10 rounded-full text-base">Tópicos do momento</TabsTrigger>
-                  <TabsTrigger value="new-users" className="relative z-10 rounded-full text-base">Novos Usuários</TabsTrigger>
+                  <TabsTrigger value="trending" className="relative z-10 rounded-full text-base">{t('search.tabs.trending')}</TabsTrigger>
+                  <TabsTrigger value="new-users" className="relative z-10 rounded-full text-base">{t('search.tabs.newUsers')}</TabsTrigger>
                   <motion.div
                         layoutId="search-tab-indicator"
                         className="absolute inset-0 h-full p-1"
@@ -414,9 +416,9 @@ function SearchPageClient() {
                     <li key={trend.name} className="p-4 hover:bg-muted/50 cursor-pointer" onClick={() => setSearchTerm(`#${trend.name}`)}>
                         <div className="flex items-start justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground">{index + 1} · Tópicos do momento</p>
+                                <p className="text-sm text-muted-foreground">{index + 1} · {t('search.trendingTopic')}</p>
                                 <p className="font-bold">#{trend.name}</p>
-                                <p className="text-sm text-muted-foreground">{trend.count.toLocaleString()} posts</p>
+                                <p className="text-sm text-muted-foreground">{trend.count.toLocaleString()} {t('profile.header.posts')}</p>
                             </div>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
@@ -448,7 +450,7 @@ function SearchPageClient() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input 
-              placeholder="Buscar" 
+              placeholder={t('search.placeholder')}
               className="w-full rounded-full bg-muted pl-10" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -469,3 +471,5 @@ export default function SearchPage() {
         </Suspense>
     )
 }
+
+    

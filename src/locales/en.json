@@ -1,4 +1,3 @@
-
 {
   "language": {
     "title": "Language",
@@ -19,6 +18,13 @@
     "zisprAi": "Zispr AI",
     "settings": "Settings",
     "signOut": "Log out of {handle}"
+  },
+  "rightSidebar": {
+    "searchPlaceholder": "Search Zispr",
+    "whoToFollow": {
+      "title": "Who to follow",
+      "showMore": "Show more"
+    }
   },
   "toasts": {
       "signOutError": {
@@ -441,5 +447,162 @@
     "retweet": "reposted your post",
     "mention": "mentioned you in a post",
     "reply": "replied to your post"
+  },
+  "search": {
+    "placeholder": "Search Zispr",
+    "noResults": "No results for {term}",
+    "postBy": "Post by",
+    "trendingTopic": "Trending topic",
+    "tabs": {
+      "top": "Top",
+      "people": "People",
+      "posts": "Posts",
+      "trending": "Trending",
+      "newUsers": "New Users"
+    }
+  },
+  "collections": {
+    "allSaved": "All saved posts",
+    "postsCount": "posts",
+    "emptyState": {
+      "title": "No collections yet",
+      "description": "Create collections to organize the posts you save.",
+      "button": "Create Collection"
+    },
+    "createModal": {
+      "title": "Create new collection",
+      "placeholder": "Collection name",
+      "createButton": "Create",
+      "validation": {
+        "emptyName": "Collection name cannot be empty.",
+        "duplicateName": "A collection with this name already exists."
+      },
+      "success": {
+        "title": "Collection created!",
+        "description": "'{name}' was created successfully."
+      }
+    },
+    "saveModal": {
+      "title": "Save to...",
+      "newCollectionButton": "Create new collection"
+    },
+    "createAndSaveModal": {
+      "title": "Create and save to new collection",
+      "placeholder": "Collection name",
+      "saveButton": "Create and Save"
+    },
+    "title": "Manage Collections",
+    "description": "Edit or delete your collections of saved posts.",
+    "empty": {
+      "title": "No collections to manage",
+      "description": "Create your first collection from the saved posts page."
+    },
+    "actions": {
+      "rename": "Rename",
+      "delete": "Delete"
+    },
+    "toasts": {
+      "deleteDefaultError": "Cannot delete the default collection.",
+      "deleteSuccess": "Collection deleted successfully.",
+      "deleteError": "Error deleting collection.",
+      "renameSuccess": "Collection renamed successfully.",
+      "renameError": "Error renaming collection.",
+      "saveSuccess": {
+        "title": "Post Saved!",
+        "added": "The post has been added to your collection.",
+        "removed": "The post has been removed from your collection."
+      },
+      "saveError": {
+        "title": "Error Saving",
+        "description": "Could not save the post. Please try again."
+      }
+    },
+    "deleteDialog": {
+      "title": "Delete '{name}'?",
+      "description": "This action cannot be undone. The collection will be permanently deleted, but the posts within it will not be affected."
+    },
+    "renameDialog": {
+      "title": "Rename Collection",
+      "placeholder": "New collection name"
+    }
+  },
+  "blocked": {
+    "title": "Blocked Accounts",
+    "description": "View and manage the accounts you have blocked.",
+    "empty": {
+      "title": "No blocked accounts",
+      "description": "When you block someone, the account will appear here."
+    },
+    "unblockButton": "Unblock",
+    "toasts": {
+      "fetchError": "Error loading blocked accounts.",
+      "unblockSuccess": "{handle} unblocked.",
+      "unblockError": "Error unblocking user."
+    }
+  },
+  "privacy": {
+    "visibility": {
+      "title": "Visibility",
+      "description": "Control who can see your activities.",
+      "hideLikes": {
+        "label": "Hide Likes tab",
+        "description": "Your Likes tab on your profile will only be visible to you."
+      }
+    },
+    "management": {
+      "title": "Management",
+      "description": "Manage the accounts you have blocked.",
+      "blocked": {
+        "title": "Blocked accounts",
+        "description": "View the accounts you have blocked."
+      }
+    },
+    "toasts": {
+      "saveSuccess": {
+        "title": "Setting saved",
+        "likesPrivate": "Your likes tab is now private.",
+        "likesPublic": "Your likes tab is now public."
+      },
+      "saveError": {
+        "title": "Error saving",
+        "description": "Could not save your setting."
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "description": "Sign in to continue to Zispr.",
+      "forgotPassword": "Forgot password?",
+      "button": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up"
+    },
+    "register": {
+      "title": "Create an Account",
+      "description": "Enter your details below to get started.",
+      "nameLabel": "Name",
+      "birthDateLabel": "Date of Birth",
+      "birthDatePlaceholder": "DD/MM/YYYY",
+      "button": "Create Account",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in"
+    },
+    "forgotPassword": {
+      "title": "Forgot Password?",
+      "description": "Enter your email to get a reset link.",
+      "button": "Send Reset Email",
+      "backToLogin": "Back to Login"
+    },
+    "privacyPolicy": {
+      "prefix": "By continuing, you agree to our",
+      "terms": "Terms of Service",
+      "policy": "Privacy Policy"
+    }
+  },
+  "footer": {
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "copyright": "© 2025 Zispr, Inc."
   }
 }

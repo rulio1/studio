@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, Bookmark, Library, PlusCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import CreateCollectionModal from '@/components/create-collection-modal';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface ZisprUser {
     handle?: string;
@@ -18,6 +19,7 @@ interface ZisprUser {
 
 export default function SavedPage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +47,7 @@ export default function SavedPage() {
                 const userData = doc.data() as ZisprUser;
                 // Ensure default collection exists
                 if (!userData.collections?.some(c => c.id === 'all_saved')) {
-                    userData.collections = [...(userData.collections || []), { id: 'all_saved', name: 'Todos os posts salvos', postIds: [] }];
+                    userData.collections = [...(userData.collections || []), { id: 'all_saved', name: t('collections.allSaved'), postIds: [] }];
                 }
                  // Sort collections: "Todos os posts salvos" first, then alphabetically
                 userData.collections?.sort((a, b) => {
@@ -60,7 +62,7 @@ export default function SavedPage() {
             setIsLoading(false);
         });
         return () => unsubscribeUser();
-    }, [user, router]);
+    }, [user, router, t]);
 
 
     return (
@@ -73,7 +75,7 @@ export default function SavedPage() {
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                         <div>
-                            <h1 className="text-xl font-bold">Salvos</h1>
+                            <h1 className="text-xl font-bold">{t('sidebar.saved')}</h1>
                             <p className="text-sm text-muted-foreground">{zisprUser?.handle}</p>
                         </div>
                     </div>
@@ -90,31 +92,34 @@ export default function SavedPage() {
                     </div>
                 ) : (zisprUser?.collections && zisprUser.collections.length > 0) ? (
                     <div className='grid grid-cols-2 gap-4'>
-                        {zisprUser.collections.map(collection => (
-                             <Card 
-                                key={collection.id}
-                                className="hover:bg-muted/50 cursor-pointer group"
-                                onClick={() => router.push(`/collections/${collection.id}`)}
-                             >
-                                <CardContent className="p-0 aspect-square flex flex-col justify-between">
-                                    <div className="p-4">
-                                        <p className="font-bold text-lg line-clamp-3">{collection.name}</p>
-                                    </div>
-                                    <div className="p-4 text-sm text-muted-foreground">
-                                        {collection.postIds?.length || 0} posts
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
+                        {zisprUser.collections.map(collection => {
+                             const collectionName = collection.id === 'all_saved' ? t('collections.allSaved') : collection.name;
+                             return (
+                                 <Card 
+                                    key={collection.id}
+                                    className="hover:bg-muted/50 cursor-pointer group"
+                                    onClick={() => router.push(`/collections/${collection.id}`)}
+                                 >
+                                    <CardContent className="p-0 aspect-square flex flex-col justify-between">
+                                        <div className="p-4">
+                                            <p className="font-bold text-lg line-clamp-3">{collectionName}</p>
+                                        </div>
+                                        <div className="p-4 text-sm text-muted-foreground">
+                                            {collection.postIds?.length || 0} {t('collections.postsCount')}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )
+                        })}
                     </div>
                 ) : (
                      <div className="text-center p-8 mt-16">
                         <Bookmark className="mx-auto h-16 w-16 text-muted-foreground" />
-                        <h2 className="mt-4 text-2xl font-bold">Salve posts para depois</h2>
-                        <p className="mt-2 text-muted-foreground">Não perca os melhores posts. Salve-os em coleções para encontrar facilmente mais tarde.</p>
+                        <h2 className="mt-4 text-2xl font-bold">{t('collections.emptyState.title')}</h2>
+                        <p className="mt-2 text-muted-foreground">{t('collections.emptyState.description')}</p>
                          <Button className="mt-4" onClick={() => setIsCreateModalOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            Criar Coleção
+                            {t('collections.emptyState.button')}
                         </Button>
                     </div>
                 )}

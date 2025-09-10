@@ -1,4 +1,3 @@
-
 {
   "language": {
     "title": "Sprache",
@@ -19,6 +18,13 @@
     "zisprAi": "Zispr AI",
     "settings": "Einstellungen",
     "signOut": "Von {handle} abmelden"
+  },
+  "rightSidebar": {
+    "searchPlaceholder": "In Zispr suchen",
+    "whoToFollow": {
+      "title": "Wem folgen",
+      "showMore": "Mehr anzeigen"
+    }
   },
   "toasts": {
     "signOutError": {
@@ -441,5 +447,162 @@
     "retweet": "hat deinen Beitrag retweetet",
     "mention": "hat dich in einem Beitrag erwähnt",
     "reply": "hat auf deinen Beitrag geantwortet"
+  },
+  "search": {
+    "placeholder": "In Zispr suchen",
+    "noResults": "Keine Ergebnisse für {term}",
+    "postBy": "Beitrag von",
+    "trendingTopic": "Trendthema",
+    "tabs": {
+      "top": "Top",
+      "people": "Personen",
+      "posts": "Beiträge",
+      "trending": "Trends",
+      "newUsers": "Neue Benutzer"
+    }
+  },
+  "collections": {
+    "allSaved": "Alle gespeicherten Beiträge",
+    "postsCount": "Beiträge",
+    "emptyState": {
+      "title": "Noch keine Sammlungen",
+      "description": "Erstellen Sie Sammlungen, um die von Ihnen gespeicherten Beiträge zu organisieren.",
+      "button": "Sammlung erstellen"
+    },
+    "createModal": {
+      "title": "Neue Sammlung erstellen",
+      "placeholder": "Name der Sammlung",
+      "createButton": "Erstellen",
+      "validation": {
+        "emptyName": "Der Name der Sammlung darf nicht leer sein.",
+        "duplicateName": "Eine Sammlung mit diesem Namen existiert bereits."
+      },
+      "success": {
+        "title": "Sammlung erstellt!",
+        "description": "'{name}' wurde erfolgreich erstellt."
+      }
+    },
+    "saveModal": {
+      "title": "Speichern in...",
+      "newCollectionButton": "Neue Sammlung erstellen"
+    },
+    "createAndSaveModal": {
+      "title": "Erstellen und in neuer Sammlung speichern",
+      "placeholder": "Name der Sammlung",
+      "saveButton": "Erstellen und Speichern"
+    },
+    "title": "Sammlungen verwalten",
+    "description": "Bearbeiten oder löschen Sie Ihre Sammlungen von gespeicherten Beiträgen.",
+    "empty": {
+      "title": "Keine Sammlungen zum Verwalten",
+      "description": "Erstellen Sie Ihre erste Sammlung auf der Seite für gespeicherte Beiträge."
+    },
+    "actions": {
+      "rename": "Umbenennen",
+      "delete": "Löschen"
+    },
+    "toasts": {
+      "deleteDefaultError": "Die Standardsammlung kann nicht gelöscht werden.",
+      "deleteSuccess": "Sammlung erfolgreich gelöscht.",
+      "deleteError": "Fehler beim Löschen der Sammlung.",
+      "renameSuccess": "Sammlung erfolgreich umbenannt.",
+      "renameError": "Fehler beim Umbenennen der Sammlung.",
+      "saveSuccess": {
+        "title": "Beitrag gespeichert!",
+        "added": "Der Beitrag wurde Ihrer Sammlung hinzugefügt.",
+        "removed": "Der Beitrag wurde aus Ihrer Sammlung entfernt."
+      },
+      "saveError": {
+        "title": "Fehler beim Speichern",
+        "description": "Der Beitrag konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
+      }
+    },
+    "deleteDialog": {
+      "title": "'{name}' löschen?",
+      "description": "Diese Aktion kann nicht rückgängig gemacht werden. Die Sammlung wird dauerhaft gelöscht, die darin enthaltenen Beiträge bleiben jedoch unberührt."
+    },
+    "renameDialog": {
+      "title": "Sammlung umbenennen",
+      "placeholder": "Neuer Sammlungsname"
+    }
+  },
+  "blocked": {
+    "title": "Blockierte Konten",
+    "description": "Sehen und verwalten Sie die von Ihnen blockierten Konten.",
+    "empty": {
+      "title": "Keine blockierten Konten",
+      "description": "Wenn Sie jemanden blockieren, wird das Konto hier angezeigt."
+    },
+    "unblockButton": "Entblocken",
+    "toasts": {
+      "fetchError": "Fehler beim Laden der blockierten Konten.",
+      "unblockSuccess": "{handle} entblockt.",
+      "unblockError": "Fehler beim Entblocken des Benutzers."
+    }
+  },
+  "privacy": {
+    "visibility": {
+      "title": "Sichtbarkeit",
+      "description": "Kontrollieren Sie, wer Ihre Aktivitäten sehen kann.",
+      "hideLikes": {
+        "label": "Registerkarte „Gefällt mir“ ausblenden",
+        "description": "Ihre Registerkarte „Gefällt mir“ in Ihrem Profil ist nur für Sie sichtbar."
+      }
+    },
+    "management": {
+      "title": "Verwaltung",
+      "description": "Verwalten Sie die von Ihnen blockierten Konten.",
+      "blocked": {
+        "title": "Blockierte Konten",
+        "description": "Sehen Sie sich die von Ihnen blockierten Konten an."
+      }
+    },
+    "toasts": {
+      "saveSuccess": {
+        "title": "Einstellung gespeichert",
+        "likesPrivate": "Ihre Registerkarte „Gefällt mir“ ist jetzt privat.",
+        "likesPublic": "Ihre Registerkarte „Gefällt mir“ ist jetzt öffentlich."
+      },
+      "saveError": {
+        "title": "Fehler beim Speichern",
+        "description": "Ihre Einstellung konnte nicht gespeichert werden."
+      }
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Willkommen zurück",
+      "description": "Melden Sie sich an, um bei Zispr fortzufahren.",
+      "forgotPassword": "Passwort vergessen?",
+      "button": "Anmelden",
+      "noAccount": "Haben Sie kein Konto?",
+      "signUp": "Registrieren"
+    },
+    "register": {
+      "title": "Konto erstellen",
+      "description": "Geben Sie Ihre Daten unten ein, um zu beginnen.",
+      "nameLabel": "Name",
+      "birthDateLabel": "Geburtsdatum",
+      "birthDatePlaceholder": "TT/MM/JJJJ",
+      "button": "Konto erstellen",
+      "hasAccount": "Haben Sie bereits ein Konto?",
+      "signIn": "Anmelden"
+    },
+    "forgotPassword": {
+      "title": "Passwort vergessen?",
+      "description": "Geben Sie Ihre E-Mail-Adresse ein, um einen Link zum Zurücksetzen zu erhalten.",
+      "button": "E-Mail zum Zurücksetzen senden",
+      "backToLogin": "Zurück zur Anmeldung"
+    },
+    "privacyPolicy": {
+      "prefix": "Indem Sie fortfahren, stimmen Sie unseren",
+      "terms": "Nutzungsbedingungen",
+      "policy": "Datenschutzrichtlinie"
+    }
+  },
+  "footer": {
+    "terms": "Bedingungen",
+    "privacy": "Datenschutz",
+    "copyright": "© 2025 Zispr, Inc."
   }
 }

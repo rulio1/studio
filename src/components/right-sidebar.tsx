@@ -120,7 +120,7 @@ export default function RightSidebar() {
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
-                        placeholder="Buscar"
+                        placeholder={t('rightSidebar.searchPlaceholder')}
                         className="w-full rounded-full bg-muted pl-10"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -148,7 +148,7 @@ export default function RightSidebar() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Quem seguir</CardTitle>
+                        <CardTitle>{t('rightSidebar.whoToFollow.title')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {isLoading ? (
@@ -195,19 +195,19 @@ export default function RightSidebar() {
                                                 <p className="text-sm text-muted-foreground truncate">{user.handle}</p>
                                             </div>
                                             <Button variant={isFollowing ? 'secondary' : 'default'} size="sm" className="rounded-full" onClick={() => handleFollow(user.uid)}>
-                                                {isFollowing ? 'Seguindo' : 'Seguir'}
+                                                {isFollowing ? t('profile.buttons.following') : t('profile.buttons.follow')}
                                             </Button>
                                         </li>
                                     )
                                 })}
                             </ul>
                         )}
-                         <Button variant="link" className="p-0 h-auto mt-4" onClick={() => router.push('/search')}>Mostrar mais</Button>
+                         <Button variant="link" className="p-0 h-auto mt-4" onClick={() => router.push('/search')}>{t('rightSidebar.whoToFollow.showMore')}</Button>
                     </CardContent>
                 </Card>
                  <footer className="text-xs text-muted-foreground space-x-2">
-                    <a href="#" className="hover:underline">Termos de Serviço</a>
-                    <a href="/privacy" className="hover:underline">Política de Privacidade</a>
+                    <a href="#" className="hover:underline">{t('footer.terms')}</a>
+                    <a href="/privacy" className="hover:underline">{t('footer.privacy')}</a>
                     <span>&copy; 2025 Zispr, Inc.</span>
                 </footer>
             </div>
