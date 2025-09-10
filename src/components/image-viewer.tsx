@@ -102,12 +102,14 @@ export default function ImageViewer({ post, onOpenChange }: ImageViewerProps) {
   useEffect(() => {
     if (!post) return;
 
-    const commentsQuery = query(collection(db, "comments"), where("postId", "==", post.id), orderBy("createdAt", "desc"));
+    const commentsQuery = query(collection(db, "comments"), where("postId", "==", post.id));
     const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
       const commentsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       } as Comment));
+      // Sort client-side
+      commentsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
       setComments(commentsData);
     });
 

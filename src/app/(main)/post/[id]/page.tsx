@@ -412,7 +412,7 @@ export default function PostDetailPage() {
                 setIsLoading(false);
             });
 
-            const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId), orderBy("createdAt", "desc"));
+            const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId));
             const unsubscribeComments = onSnapshot(commentsQuery, (snapshot) => {
                 const commentsData = snapshot.docs.map(doc => {
                      const data = doc.data();
@@ -428,6 +428,8 @@ export default function PostDetailPage() {
                         isRetweeted: Array.isArray(data.retweets) ? data.retweets.includes(user.uid || '') : false,
                     } as Comment;
                 });
+                // Sort client-side
+                commentsData.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
                 setComments(commentsData);
             });
 
