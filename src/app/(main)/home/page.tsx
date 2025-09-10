@@ -521,16 +521,16 @@ useEffect(() => {
         if (tab === 'following') {
             return (
                 <div className="p-8 text-center text-muted-foreground border-t">
-                    <h3 className="text-xl font-bold text-foreground">Sua timeline está um pouco vazia...</h3>
-                    <p className="mt-2 mb-4">Encontre pessoas para seguir e veja os posts delas aqui!</p>
-                    <Button onClick={() => router.push('/search?tab=new-users')}>Encontrar Pessoas</Button>
+                    <h3 className="text-xl font-bold text-foreground">{t('home.postList.emptyFollowing.title')}</h3>
+                    <p className="mt-2 mb-4">{t('home.postList.emptyFollowing.description')}</p>
+                    <Button onClick={() => router.push('/search?tab=new-users')}>{t('home.postList.emptyFollowing.button')}</Button>
                 </div>
             )
         }
         return (
              <div className="p-8 text-center text-muted-foreground border-t">
-                <h3 className="text-xl font-bold text-foreground">Nada para ver aqui... ainda</h3>
-                <p className="mt-2">Quando posts forem feitos, eles aparecerão aqui.</p>
+                <h3 className="text-xl font-bold text-foreground">{t('home.postList.empty.title')}</h3>
+                <p className="mt-2">{t('home.postList.empty.description')}</p>
             </div>
         )
     }
@@ -586,12 +586,12 @@ useEffect(() => {
     const zisprUserBadgeColor = zisprUser.badgeTier ? badgeColors[zisprUser.badgeTier] : 'text-primary';
 
     const navItems = [
-        { href: '/home', icon: Home, label: 'Início' },
-        { href: '/notifications', icon: Bell, label: 'Notificações' },
-        { href: '/messages', icon: Mail, label: 'Mensagens' },
-        { href: '/news', icon: Radio, label: 'Notícias' },
-        { href: '/saved', icon: Bookmark, label: 'Salvos' },
-        { href: `/profile/${zisprUser.uid}`, icon: User, label: 'Perfil' },
+        { href: '/home', icon: Home, label: t('sidebar.home') },
+        { href: '/notifications', icon: Bell, label: t('sidebar.notifications') },
+        { href: '/messages', icon: Mail, label: t('sidebar.messages') },
+        { href: '/news', icon: Radio, label: t('sidebar.news') },
+        { href: '/saved', icon: Bookmark, label: t('sidebar.saved') },
+        { href: `/profile/${zisprUser.uid}`, icon: User, label: t('sidebar.profile') },
     ];
 
 

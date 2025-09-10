@@ -207,7 +207,7 @@ export default function DesktopSidebar() {
                              <DropdownMenuSub>
                                 <DropdownMenuSubTrigger>
                                     <Languages className="mr-2 h-4 w-4" />
-                                    <span>Idioma</span>
+                                    <span>{t('language.title')}</span>
                                 </DropdownMenuSubTrigger>
                                 <DropdownMenuPortal>
                                 <DropdownMenuSubContent>

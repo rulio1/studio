@@ -17,25 +17,25 @@ export default function SettingsLayout({
     const [pageTitle, setPageTitle] = useState('Configurações');
     const { t } = useTranslation();
     
-    const titleMap: Record<string, string> = {
-        'settings': t('settings.layout.title.settings'),
-        'account': t('settings.layout.title.account'),
-        'change-password': t('settings.layout.title.changePassword'),
-        'deactivate': t('settings.layout.title.deactivate'),
-        'delete': t('settings.layout.title.delete'),
-        'privacy': t('settings.layout.title.privacy'),
-        'notifications': t('settings.layout.title.notifications'),
-        'language': t('settings.layout.title.language'),
-        'blocked': 'Contas Bloqueadas',
-        'collections': 'Gerenciar Coleções',
-    };
-
     useEffect(() => {
+        const titleMap: Record<string, string> = {
+            'settings': t('settings.layout.title.settings'),
+            'account': t('settings.layout.title.account'),
+            'change-password': t('settings.layout.title.changePassword'),
+            'deactivate': t('settings.layout.title.deactivate'),
+            'delete': t('settings.layout.title.delete'),
+            'privacy': t('settings.layout.title.privacy'),
+            'notifications': t('settings.layout.title.notifications'),
+            'language': t('settings.layout.title.language'),
+            'blocked': 'Contas Bloqueadas',
+            'collections': 'Gerenciar Coleções',
+        };
+
         const pathSegments = pathname.split('/');
         const lastSegment = pathSegments[pathSegments.length - 1];
         const title = titleMap[lastSegment] || t('settings.layout.title.settings');
         setPageTitle(title);
-    }, [pathname, t, titleMap]);
+    }, [pathname, t]);
     
     return (
         <div className="flex flex-col bg-background">
