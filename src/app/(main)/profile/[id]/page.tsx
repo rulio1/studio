@@ -286,24 +286,6 @@ const PostItem = React.memo(function PostItem({ post, user, zisprUser, onAction,
                     <span>{post.repostedBy.handle === zisprUser?.handle ? t('post.you') : post.repostedBy.name} {t('post.reposted')}</span>
                 </div>
             )}
-             {post.isPinned && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-12">
-                    <Pin className="h-4 w-4" />
-                    <span>{t('post.pinned')}</span>
-                </div>
-            )}
-             {post.isFirstPost && (
-                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-12">
-                    <Star className="h-4 w-4" />
-                    <span>{t('post.firstPost')}</span>
-                </div>
-            )}
-             {post.isUpdate && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-12">
-                    <Bird className="h-4 w-4 text-primary" />
-                    <span>{t('post.update')}</span>
-                </div>
-            )}
             <div className="flex gap-4">
                  <Avatar className="cursor-pointer" onClick={(e) => {e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
                     {isZisprAccount ? (
@@ -892,7 +874,7 @@ export default function ProfilePage() {
                     participants: [currentUser.uid, profileUser.uid],
                     unreadCounts: { [currentUser.uid]: 0, [profileUser.uid]: 0 },
                     lastMessage: {
-                        text: `Iniciou uma conversa`,
+                        text: `_CONVERSATION_STARTED_`,
                         senderId: null,
                         timestamp: serverTimestamp()
                     },
@@ -903,8 +885,8 @@ export default function ProfilePage() {
         } catch (error) {
             console.error("Erro ao iniciar a conversa:", error);
             toast({
-                title: "Erro",
-                description: "Não foi possível iniciar a conversa.",
+                title: t('messages.toasts.startError.title'),
+                description: t('messages.toasts.startError.description'),
                 variant: "destructive",
             });
         }
@@ -1140,28 +1122,22 @@ export default function ProfilePage() {
         return (
             <ul className="divide-y divide-border">
                 {showPinnedPost && pinnedPost && (
-                     <div className="relative">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground pt-3 pl-12">
-                            <Pin className="h-4 w-4" />
-                            <span>{t('post.pinned')}</span>
-                        </div>
-                        <PostItem 
-                            key={`${pinnedPost.id}-pinned`}
-                            post={pinnedPost}
-                            user={currentUser}
-                            zisprUser={zisprUser}
-                            onAction={handlePostAction}
-                            onDelete={setPostToDelete}
-                            onEdit={handleEditClick}
-                            onSave={() => setPostToSave(pinnedPost.id)}
-                            onPin={() => handleTogglePinPost(pinnedPost)}
-                            onVote={handleVote}
-                            toast={toast}
-                            onQuote={handleQuoteClick}
-                            onImageClick={setPostToView}
-                            onAnalyticsClick={setAnalyticsPost}
-                        />
-                    </div>
+                     <PostItem 
+                        key={`${pinnedPost.id}-pinned`}
+                        post={{ ...pinnedPost, isPinned: true }}
+                        user={currentUser}
+                        zisprUser={zisprUser}
+                        onAction={handlePostAction}
+                        onDelete={setPostToDelete}
+                        onEdit={handleEditClick}
+                        onSave={() => setPostToSave(pinnedPost.id)}
+                        onPin={() => handleTogglePinPost(pinnedPost)}
+                        onVote={handleVote}
+                        toast={toast}
+                        onQuote={handleQuoteClick}
+                        onImageClick={setPostToView}
+                        onAnalyticsClick={setAnalyticsPost}
+                    />
                 )}
                 {displayPosts.map((post) => (
                     <PostItem 

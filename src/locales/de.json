@@ -342,5 +342,75 @@
         "communityNote": "Diese Funktion wird bald hinzugefügt."
       }
     }
+  },
+  "messages": {
+    "searchPlaceholder": "Nachrichten suchen",
+    "you": "Du",
+    "conversationStarted": "Hat ein Gespräch begonnen",
+    "actions": {
+      "pin": "Anheften",
+      "archive": "Archivieren",
+      "delete": "Löschen"
+    },
+    "toasts": {
+      "deleteSuccess": {
+        "title": "Gespräch gelöscht",
+        "description": "Das Gespräch wurde aus Ihrer Liste entfernt."
+      },
+      "deleteError": {
+        "title": "Fehler",
+        "description": "Das Gespräch konnte nicht gelöscht werden."
+      },
+      "comingSoon": "Die Funktion {action} wird in Kürze implementiert.",
+      "sendError": {
+        "title": "Fehler",
+        "description": "Die Nachricht konnte nicht gesendet werden."
+      },
+      "reactError": {
+        "title": "Fehler",
+        "description": "Ihre Reaktion konnte nicht hinzugefügt werden."
+      },
+      "startError": {
+        "title": "Fehler",
+        "description": "Das Gespräch konnte nicht gestartet werden."
+      },
+      "userBlocked": {
+        "title": "Blockiert",
+        "description": "Sie haben {handle} blockiert."
+      },
+      "blockError": {
+        "title": "Fehler",
+        "description": "{handle} konnte nicht blockiert werden."
+      }
+    },
+    "emptyState": {
+      "search": {
+        "title": "Keine Ergebnisse gefunden",
+        "description": "Versuchen Sie einen anderen Suchbegriff."
+      },
+      "noMessages": {
+        "title": "Noch keine Nachrichten",
+        "description": "Wenn Sie neue Gespräche haben, werden sie hier angezeigt.",
+        "button": "Leute finden"
+      }
+    },
+    "newMessageModal": {
+      "title": "Neue Nachricht",
+      "searchPlaceholder": "Leute suchen",
+      "noResults": "Keine Benutzer gefunden."
+    },
+    "loading": "Wird geladen",
+    "notFound": {
+      "title": "Gespräch nicht gefunden",
+      "description": "Die Gesprächsdetails konnten nicht geladen werden. Der Benutzer existiert möglicherweise nicht oder Sie haben keine Berechtigung, es zu sehen."
+    },
+    "blockUser": "{handle} blockieren",
+    "read": "Gelesen",
+    "disabledPlaceholder": "Nachrichten können nicht gesendet werden",
+    "newMessagePlaceholder": "Neue Nachricht beginnen",
+    "blockDialog": {
+      "title": "{handle} blockieren?",
+      "description": "Er kann Ihnen nicht mehr folgen oder Nachrichten senden, und Sie sehen keine Benachrichtigungen von ihm. Er wird nicht benachrichtigt, dass er blockiert wurde."
+    }
   }
 }

@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import GifPicker from '@/components/gif-picker';
 import Image from 'next/image';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 interface ZisprUser {
@@ -82,6 +83,7 @@ export default function ConversationPage() {
     const router = useRouter();
     const params = useParams();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const conversationId = params.id as string;
     
     const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -258,8 +260,8 @@ export default function ConversationPage() {
         } catch (error) {
             console.error("Error sending message:", error);
             toast({
-                title: "Error",
-                description: "Não foi possível enviar a mensagem.",
+                title: t('messages.toasts.sendError.title'),
+                description: t('messages.toasts.sendError.description'),
                 variant: "destructive"
             });
         } finally {
@@ -299,8 +301,8 @@ export default function ConversationPage() {
         } catch (error) {
             console.error("Erro ao reagir à mensagem:", error);
             toast({
-                title: "Erro",
-                description: "Não foi possível adicionar sua reação.",
+                title: t('messages.toasts.reactError.title'),
+                description: t('messages.toasts.reactError.description'),
                 variant: "destructive"
             });
         }
@@ -325,16 +327,16 @@ export default function ConversationPage() {
         try {
             await batch.commit();
             toast({
-                title: `Bloqueado`,
-                description: `Você bloqueou ${otherUser.handle}.`,
+                title: t('messages.toasts.userBlocked.title'),
+                description: t('messages.toasts.userBlocked.description', { handle: otherUser.handle }),
             });
             setIsBlockAlertOpen(false);
             router.push('/messages');
         } catch(error) {
             console.error("Error blocking user:", error);
             toast({
-                title: "Erro",
-                description: `Não foi possível bloquear ${otherUser.handle}.`,
+                title: t('messages.toasts.blockError.title'),
+                description: t('messages.toasts.blockError.description', { handle: otherUser.handle }),
                 variant: "destructive"
             });
         }
@@ -350,7 +352,7 @@ export default function ConversationPage() {
                         </Button>
                         <div className="flex items-center gap-2">
                              <Loader2 className="h-6 w-6 animate-spin" />
-                             <h1 className="text-lg font-bold">Carregando...</h1>
+                             <h1 className="text-lg font-bold">{t('messages.loading')}...</h1>
                         </div>
                     </div>
                 </header>
@@ -369,11 +371,11 @@ export default function ConversationPage() {
                         <Button variant="ghost" size="icon" onClick={() => router.back()}>
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
-                         <h1 className="text-lg font-bold">Conversa não encontrada</h1>
+                         <h1 className="text-lg font-bold">{t('messages.notFound.title')}</h1>
                     </div>
                 </header>
                  <div className="flex-1 flex items-center justify-center text-center p-4">
-                    <p className="text-muted-foreground">Não foi possível carregar os detalhes da conversa. O usuário pode não existir ou você não tem permissão para vê-la.</p>
+                    <p className="text-muted-foreground">{t('messages.notFound.description')}</p>
                 </div>
             </div>
         );
@@ -425,7 +427,7 @@ export default function ConversationPage() {
                 <DropdownMenuContent>
                     <DropdownMenuItem onClick={() => setIsBlockAlertOpen(true)} className="text-destructive">
                         <UserX className="mr-2 h-4 w-4" />
-                        Bloquear {otherUser.handle}
+                        {t('messages.blockUser', { handle: otherUser.handle })}
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -506,7 +508,7 @@ export default function ConversationPage() {
                             </div>
                             {isRead && (
                                 <div className="text-right text-xs text-muted-foreground mt-1 pr-2">
-                                    Lida
+                                    {t('messages.read')}
                                 </div>
                             )}
                         </div>
@@ -542,7 +544,7 @@ export default function ConversationPage() {
                     </PopoverContent>
                 </Popover>
                  <Input 
-                     placeholder={isConversationDisabled ? "Não é possível enviar mensagens" : "Inicie uma nova mensagem"}
+                     placeholder={isConversationDisabled ? t('messages.disabledPlaceholder') : t('messages.newMessagePlaceholder')}
                      value={newMessage}
                      onChange={(e) => setNewMessage(e.target.value)}
                      onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -563,15 +565,15 @@ export default function ConversationPage() {
      <AlertDialog open={isBlockAlertOpen} onOpenChange={setIsBlockAlertOpen}>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Bloquear {otherUser.handle}?</AlertDialogTitle>
+                <AlertDialogTitle>{t('messages.blockDialog.title', { handle: otherUser.handle })}</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Eles não poderão seguir ou enviar mensagens para você, e você não verá notificações deles. Eles não serão notificados que foram bloqueados.
+                     {t('messages.blockDialog.description')}
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel>{t('profile.dialogs.cancel')}</AlertDialogCancel>
                 <AlertDialogAction onClick={handleBlockUser} className="bg-destructive hover:bg-destructive/90">
-                    Bloquear
+                    {t('profile.dialogs.block.confirm')}
                 </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>

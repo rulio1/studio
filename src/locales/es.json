@@ -342,5 +342,75 @@
         "communityNote": "Esta función se añadirá pronto."
       }
     }
+  },
+  "messages": {
+    "searchPlaceholder": "Buscar Mensajes",
+    "you": "Tú",
+    "conversationStarted": "Inició una conversación",
+    "actions": {
+      "pin": "Fijar",
+      "archive": "Archivar",
+      "delete": "Eliminar"
+    },
+    "toasts": {
+      "deleteSuccess": {
+        "title": "Conversación eliminada",
+        "description": "La conversación ha sido eliminada de tu lista."
+      },
+      "deleteError": {
+        "title": "Error",
+        "description": "No se pudo eliminar la conversación."
+      },
+      "comingSoon": "La función de {action} se implementará pronto.",
+      "sendError": {
+        "title": "Error",
+        "description": "No se pudo enviar el mensaje."
+      },
+      "reactError": {
+        "title": "Error",
+        "description": "No se pudo añadir tu reacción."
+      },
+      "startError": {
+        "title": "Error",
+        "description": "No se pudo iniciar la conversación."
+      },
+      "userBlocked": {
+        "title": "Bloqueado",
+        "description": "Has bloqueado a {handle}."
+      },
+      "blockError": {
+        "title": "Error",
+        "description": "No se pudo bloquear a {handle}."
+      }
+    },
+    "emptyState": {
+      "search": {
+        "title": "No se encontraron resultados",
+        "description": "Prueba con otro término de búsqueda."
+      },
+      "noMessages": {
+        "title": "Aún no hay mensajes",
+        "description": "Cuando tengas nuevas conversaciones, aparecerán aquí.",
+        "button": "Encontrar gente"
+      }
+    },
+    "newMessageModal": {
+      "title": "Nuevo Mensaje",
+      "searchPlaceholder": "Buscar personas",
+      "noResults": "No se encontraron usuarios."
+    },
+    "loading": "Cargando",
+    "notFound": {
+      "title": "Conversación no encontrada",
+      "description": "No se pudieron cargar los detalles de la conversación. Es posible que el usuario no exista o que no tengas permiso para verla."
+    },
+    "blockUser": "Bloquear a {handle}",
+    "read": "Leído",
+    "disabledPlaceholder": "No se pueden enviar mensajes",
+    "newMessagePlaceholder": "Iniciar un nuevo mensaje",
+    "blockDialog": {
+      "title": "¿Bloquear a {handle}?",
+      "description": "No podrá seguirte ni enviarte mensajes, y no verás notificaciones de él. No se le notificará que ha sido bloqueado."
+    }
   }
 }

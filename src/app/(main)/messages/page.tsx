@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -16,6 +15,7 @@ import NewMessageModal from '@/components/new-message-modal';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface ZisprUser {
     uid: string;
@@ -55,6 +55,7 @@ const badgeColors = {
 const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conversation; currentUserId: string | null; onActionClick: (convoId: string, action: 'pin' | 'archive' | 'delete') => void; }) => {
     const router = useRouter();
     const [time, setTime] = useState('');
+    const { t } = useTranslation();
     
     useEffect(() => {
         if (convo.lastMessage?.timestamp) {
@@ -68,12 +69,13 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
 
 
     const isMyMessage = convo.lastMessage.senderId === currentUserId;
-    const isUnread = convo.unreadCount > 0;
-    const messagePreview = `${isMyMessage ? 'Você: ' : ''}${convo.lastMessage.gifUrl ? 'GIF' : convo.lastMessage.text}`;
+    const messagePreviewText = convo.lastMessage.text === '_CONVERSATION_STARTED_' ? t('messages.conversationStarted') : convo.lastMessage.text;
+    const messagePreview = `${isMyMessage ? t('messages.you') + ': ' : ''}${convo.lastMessage.gifUrl ? 'GIF' : messagePreviewText}`;
     const isZisprAccount = convo.otherUser.handle === '@Zispr' || convo.otherUser.handle === '@ZisprUSA';
     const isRulio = convo.otherUser.handle === '@Rulio';
     const isVerified = convo.otherUser.isVerified || isRulio;
     const badgeColor = convo.otherUser.badgeTier ? badgeColors[convo.otherUser.badgeTier] : 'text-primary';
+    const isUnread = convo.unreadCount > 0;
 
     return (
          <div
@@ -121,15 +123,15 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
                 <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
                     <DropdownMenuItem onClick={() => onActionClick(convo.id, 'pin')}>
                         <Pin className="mr-2 h-4 w-4"/>
-                        Fixar
+                        {t('messages.actions.pin')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onActionClick(convo.id, 'archive')}>
                         <Archive className="mr-2 h-4 w-4"/>
-                        Arquivar
+                        {t('messages.actions.archive')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onActionClick(convo.id, 'delete')} className="text-destructive">
                         <Trash2 className="mr-2 h-4 w-4"/>
-                        Apagar
+                        {t('messages.actions.delete')}
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -141,6 +143,7 @@ const ConversationItem = ({ convo, currentUserId, onActionClick }: { convo: Conv
 export default function MessagesPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -257,20 +260,20 @@ export default function MessagesPage() {
                     deletedFor: arrayUnion(user.uid)
                 });
                 toast({
-                    title: "Conversa apagada",
-                    description: "A conversa foi removida da sua lista.",
+                    title: t('messages.toasts.deleteSuccess.title'),
+                    description: t('messages.toasts.deleteSuccess.description'),
                 });
             } catch (error) {
                  toast({
-                    title: "Erro",
-                    description: "Não foi possível apagar a conversa.",
+                    title: t('messages.toasts.deleteError.title'),
+                    description: t('messages.toasts.deleteError.description'),
                     variant: 'destructive'
                 });
             }
         } else {
              toast({
-                title: "Função em breve",
-                description: `A função de ${action === 'pin' ? 'fixar' : 'arquivar'} será implementada em breve.`,
+                title: t('post.menu.comingSoon.title'),
+                description: t('messages.toasts.comingSoon', { action: t(`messages.actions.${action}`) }),
             });
         }
     };
@@ -297,7 +300,7 @@ export default function MessagesPage() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input 
-                placeholder="Buscar Mensagens" 
+                placeholder={t('messages.searchPlaceholder')}
                 className="w-full rounded-full bg-muted pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -322,9 +325,9 @@ export default function MessagesPage() {
         ) : filteredConversations.length === 0 ? (
              <div className="text-center p-8 mt-16">
                 <MessageSquare className="mx-auto h-16 w-16 text-muted-foreground" />
-                <h2 className="mt-4 text-2xl font-bold">{searchTerm ? 'Nenhum resultado encontrado' : 'Sem mensagens ainda'}</h2>
-                <p className="mt-2 text-muted-foreground">{searchTerm ? 'Tente um termo de busca diferente.' : 'Quando você tiver novas conversas, elas aparecerão aqui.'}</p>
-                 <Button className="mt-4" onClick={() => setIsNewMessageModalOpen(true)}>Encontrar pessoas</Button>
+                <h2 className="mt-4 text-2xl font-bold">{searchTerm ? t('messages.emptyState.search.title') : t('messages.emptyState.noMessages.title')}</h2>
+                <p className="mt-2 text-muted-foreground">{searchTerm ? t('messages.emptyState.search.description') : t('messages.emptyState.noMessages.description')}</p>
+                 <Button className="mt-4" onClick={() => setIsNewMessageModalOpen(true)}>{t('messages.emptyState.noMessages.button')}</Button>
             </div>
         ) : (
              <Card className="m-2 md:m-4 border-0 md:border">
@@ -351,6 +354,3 @@ export default function MessagesPage() {
     </>
   );
 }
-
-
-    

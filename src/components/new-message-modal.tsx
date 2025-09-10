@@ -13,6 +13,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, setDoc, getDoc, serverTimestamp, limit } from 'firebase/firestore';
 import { User as FirebaseUser } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface NewMessageModalProps {
     open: boolean;
@@ -37,6 +38,7 @@ const badgeColors = {
 
 export default function NewMessageModal({ open, onOpenChange, currentUser }: NewMessageModalProps) {
     const router = useRouter();
+    const { t } = useTranslation();
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
     const [results, setResults] = useState<UserSearchResult[]>([]);
@@ -84,7 +86,7 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                     participants: [currentUser.uid, targetUser.uid],
                     unreadCounts: { [currentUser.uid]: 0, [targetUser.uid]: 0 },
                     lastMessage: {
-                        text: `Iniciou uma conversa`,
+                        text: `_CONVERSATION_STARTED_`,
                         senderId: null,
                         timestamp: serverTimestamp()
                     },
@@ -104,12 +106,12 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md bg-background/80 backdrop-blur-lg rounded-2xl">
                 <DialogHeader>
-                    <DialogTitle>Nova Mensagem</DialogTitle>
+                    <DialogTitle>{t('messages.newMessageModal.title')}</DialogTitle>
                 </DialogHeader>
                 <div className="relative mt-4">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input 
-                        placeholder="Buscar pessoas"
+                        placeholder={t('messages.newMessageModal.searchPlaceholder')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10"
@@ -152,7 +154,7 @@ export default function NewMessageModal({ open, onOpenChange, currentUser }: New
                             })}
                         </ul>
                     ) : (
-                        debouncedSearchTerm && <p className="text-center text-muted-foreground pt-8">Nenhum usuário encontrado.</p>
+                        debouncedSearchTerm && <p className="text-center text-muted-foreground pt-8">{t('messages.newMessageModal.noResults')}</p>
                     )}
                 </div>
             </DialogContent>

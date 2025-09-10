@@ -342,5 +342,75 @@
         "communityNote": "This feature will be added soon."
       }
     }
+  },
+  "messages": {
+    "searchPlaceholder": "Search Messages",
+    "you": "You",
+    "conversationStarted": "Started a conversation",
+    "actions": {
+      "pin": "Pin",
+      "archive": "Archive",
+      "delete": "Delete"
+    },
+    "toasts": {
+      "deleteSuccess": {
+        "title": "Conversation deleted",
+        "description": "The conversation has been removed from your list."
+      },
+      "deleteError": {
+        "title": "Error",
+        "description": "Could not delete the conversation."
+      },
+      "comingSoon": "The {action} feature will be implemented soon.",
+      "sendError": {
+        "title": "Error",
+        "description": "Could not send the message."
+      },
+      "reactError": {
+        "title": "Error",
+        "description": "Could not add your reaction."
+      },
+      "startError": {
+        "title": "Error",
+        "description": "Could not start the conversation."
+      },
+      "userBlocked": {
+        "title": "Blocked",
+        "description": "You have blocked {handle}."
+      },
+      "blockError": {
+        "title": "Error",
+        "description": "Could not block {handle}."
+      }
+    },
+    "emptyState": {
+      "search": {
+        "title": "No results found",
+        "description": "Try a different search term."
+      },
+      "noMessages": {
+        "title": "No messages yet",
+        "description": "When you have new conversations, they will appear here.",
+        "button": "Find people"
+      }
+    },
+    "newMessageModal": {
+      "title": "New Message",
+      "searchPlaceholder": "Search people",
+      "noResults": "No users found."
+    },
+    "loading": "Loading",
+    "notFound": {
+      "title": "Conversation not found",
+      "description": "Could not load conversation details. The user may not exist or you don't have permission to see it."
+    },
+    "blockUser": "Block {handle}",
+    "read": "Read",
+    "disabledPlaceholder": "Cannot send messages",
+    "newMessagePlaceholder": "Start a new message",
+    "blockDialog": {
+      "title": "Block {handle}?",
+      "description": "They will not be able to follow or message you, and you will not see notifications from them. They will not be notified that they have been blocked."
+    }
   }
 }
