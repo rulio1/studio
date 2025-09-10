@@ -1,3 +1,4 @@
+
 {
   "language": {
     "title": "Idioma",
@@ -58,7 +59,7 @@
       },
       "notifications": {
         "title": "Notificações",
-        "description": "Selecione os tipos de notificações que você recebe sobre suas atividades, interesses e recomendações.",
+        "description": "Selecione os tipos de notificações que você recebe sobre suas atividades, interesses и recomendações.",
         "item": {
           "title": "Preferências",
           "description": "Gerencie suas preferências de notificação."
@@ -302,6 +303,43 @@
         "zoom": "Zoom",
         "cancel": "Cancelar",
         "save": "Salvar"
+      }
+    }
+  },
+  "post": {
+    "pinned": "Post fixado",
+    "firstPost": "Primeiro post",
+    "update": "Atualização",
+    "reposted": "repostou",
+    "you": "Você",
+    "edited": "editado",
+    "menu": {
+      "viewEngagements": "Ver interações",
+      "delete": "Apagar",
+      "edit": "Editar",
+      "pin": "Fixar no seu perfil",
+      "unpin": "Desafixar do seu perfil",
+      "addHighlights": "Adicionar aos Destaques",
+      "save": "Salvar em Coleção",
+      "removeFromSaved": "Remover dos Salvos",
+      "notInterested": "Não tenho interesse",
+      "report": "Denunciar post",
+      "communityNote": "Adicionar nota da comunidade",
+      "goToProfile": "Ir para o perfil de {handle}",
+      "repost": "Repostar",
+      "undoRepost": "Desfazer Repost",
+      "quote": "Quotar Post",
+      "pinnedSuccess": "Post fixado no seu perfil!",
+      "unpinnedSuccess": "Post desafixado do seu perfil!",
+      "pinError": "Erro ao fixar post",
+      "comingSoon": {
+        "title": "Em breve!",
+        "description": "Esta funcionalidade será adicionada em breve.",
+        "highlights": "A capacidade de adicionar posts aos destaques será adicionada em breve.",
+        "notInterested": "Esta funcionalidade será adicionada em breve.",
+        "report": "Esta funcionalidade será adicionada em breve.",
+        "viewEngagements": "Esta funcionalidade será adicionada em breve.",
+        "communityNote": "Esta funcionalidade será adicionada em breve."
       }
     }
   }

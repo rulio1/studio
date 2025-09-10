@@ -1,3 +1,4 @@
+
 {
   "language": {
     "title": "Language",
@@ -302,6 +303,43 @@
         "zoom": "Zoom",
         "cancel": "Cancel",
         "save": "Save"
+      }
+    }
+  },
+  "post": {
+    "pinned": "Pinned post",
+    "firstPost": "First post",
+    "update": "Update",
+    "reposted": "reposted",
+    "you": "You",
+    "edited": "edited",
+    "menu": {
+      "viewEngagements": "View engagements",
+      "delete": "Delete",
+      "edit": "Edit",
+      "pin": "Pin to your profile",
+      "unpin": "Unpin from your profile",
+      "addHighlights": "Add to Highlights",
+      "save": "Save to Collection",
+      "removeFromSaved": "Remove from Saved",
+      "notInterested": "Not interested",
+      "report": "Report post",
+      "communityNote": "Add community note",
+      "goToProfile": "Go to {handle}'s profile",
+      "repost": "Repost",
+      "undoRepost": "Undo Repost",
+      "quote": "Quote Post",
+      "pinnedSuccess": "Post pinned to your profile!",
+      "unpinnedSuccess": "Post unpinned from your profile!",
+      "pinError": "Error pinning post",
+      "comingSoon": {
+        "title": "Coming soon!",
+        "description": "This feature will be added soon.",
+        "highlights": "The ability to add posts to highlights will be added soon.",
+        "notInterested": "This feature will be added soon.",
+        "report": "This feature will be added soon.",
+        "viewEngagements": "This feature will be added soon.",
+        "communityNote": "This feature will be added soon."
       }
     }
   }

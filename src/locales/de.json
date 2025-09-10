@@ -1,3 +1,4 @@
+
 {
   "language": {
     "title": "Sprache",
@@ -302,6 +303,43 @@
         "zoom": "Zoom",
         "cancel": "Abbrechen",
         "save": "Speichern"
+      }
+    }
+  },
+  "post": {
+    "pinned": "Gepinnter Beitrag",
+    "firstPost": "Erster Beitrag",
+    "update": "Update",
+    "reposted": "hat retweetet",
+    "you": "Du",
+    "edited": "bearbeitet",
+    "menu": {
+      "viewEngagements": "Interaktionen anzeigen",
+      "delete": "Löschen",
+      "edit": "Bearbeiten",
+      "pin": "An dein Profil anpinnen",
+      "unpin": "Von deinem Profil lösen",
+      "addHighlights": "Zu den Highlights hinzufügen",
+      "save": "In Sammlung speichern",
+      "removeFromSaved": "Aus Gespeichert entfernen",
+      "notInterested": "Nicht interessiert",
+      "report": "Beitrag melden",
+      "communityNote": "Community-Notiz hinzufügen",
+      "goToProfile": "Zum Profil von {handle} gehen",
+      "repost": "Retweeten",
+      "undoRepost": "Retweet rückgängig machen",
+      "quote": "Beitrag zitieren",
+      "pinnedSuccess": "Beitrag an dein Profil angepinnt!",
+      "unpinnedSuccess": "Beitrag von deinem Profil gelöst!",
+      "pinError": "Fehler beim Anpinnen des Beitrags",
+      "comingSoon": {
+        "title": "Bald verfügbar!",
+        "description": "Diese Funktion wird bald hinzugefügt.",
+        "highlights": "Die Möglichkeit, Beiträge zu Highlights hinzuzufügen, wird bald hinzugefügt.",
+        "notInterested": "Diese Funktion wird bald hinzugefügt.",
+        "report": "Diese Funktion wird bald hinzugefügt.",
+        "viewEngagements": "Diese Funktion wird bald hinzugefügt.",
+        "communityNote": "Diese Funktion wird bald hinzugefügt."
       }
     }
   }

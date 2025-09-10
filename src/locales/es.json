@@ -1,3 +1,4 @@
+
 {
   "language": {
     "title": "Idioma",
@@ -302,6 +303,43 @@
         "zoom": "Zoom",
         "cancel": "Cancelar",
         "save": "Guardar"
+      }
+    }
+  },
+  "post": {
+    "pinned": "Publicación fijada",
+    "firstPost": "Primera publicación",
+    "update": "Actualización",
+    "reposted": "republicó",
+    "you": "Tú",
+    "edited": "editado",
+    "menu": {
+      "viewEngagements": "Ver interacciones",
+      "delete": "Eliminar",
+      "edit": "Editar",
+      "pin": "Fijar en tu perfil",
+      "unpin": "Desfijar de tu perfil",
+      "addHighlights": "Añadir a Destacados",
+      "save": "Guardar en Colección",
+      "removeFromSaved": "Quitar de Guardados",
+      "notInterested": "No me interesa",
+      "report": "Denunciar publicación",
+      "communityNote": "Añadir nota de la comunidad",
+      "goToProfile": "Ir al perfil de {handle}",
+      "repost": "Republicar",
+      "undoRepost": "Deshacer Republicación",
+      "quote": "Citar Publicación",
+      "pinnedSuccess": "¡Publicación fijada en tu perfil!",
+      "unpinnedSuccess": "¡Publicación desfijada de tu perfil!",
+      "pinError": "Error al fijar la publicación",
+      "comingSoon": {
+        "title": "¡Próximamente!",
+        "description": "Esta función se añadirá pronto.",
+        "highlights": "La capacidad de añadir publicaciones a destacados se añadirá pronto.",
+        "notInterested": "Esta función se añadirá pronto.",
+        "report": "Esta función se añadirá pronto.",
+        "viewEngagements": "Esta función se añadirá pronto.",
+        "communityNote": "Esta función se añadirá pronto."
       }
     }
   }

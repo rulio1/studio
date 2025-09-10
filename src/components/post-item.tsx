@@ -173,6 +173,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
 }) {
     const router = useRouter();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const [time, setTime] = useState('');
     
     useEffect(() => {
@@ -227,19 +228,19 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
              {post.repostedBy && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-6">
                     <Repeat className="h-4 w-4" />
-                    <span>{post.repostedBy.handle === zisprUser?.handle ? 'Você' : post.repostedBy.name} repostou</span>
+                    <span>{post.repostedBy.handle === zisprUser?.handle ? t('post.you') : post.repostedBy.name} {t('post.reposted')}</span>
                 </div>
             )}
             {post.isFirstPost && (
                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-12">
                     <Star className="h-4 w-4" />
-                    <span>Primeiro post</span>
+                    <span>{t('post.firstPost')}</span>
                 </div>
             )}
              {post.isUpdate && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 pl-12">
                     <Bird className="h-4 w-4 text-primary" />
-                    <span>Atualização</span>
+                    <span>{t('post.update')}</span>
                 </div>
             )}
             <div className="flex gap-4">
@@ -272,7 +273,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                         </p>
                         <p className="text-muted-foreground">{post.handle} · {time}</p>
                         
-                        {post.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
+                        {post.editedAt && <p className="text-xs text-muted-foreground">({t('post.edited')})</p>}
                     </div>
                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -285,53 +286,53 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                                 <>
                                     <DropdownMenuItem onClick={() => onAnalyticsClick(post)}>
                                         <BarChart3 className="mr-2 h-4 w-4"/>
-                                        Ver interações
+                                        {t('post.menu.viewEngagements')}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleDeleteClick(post.id)} className="text-destructive">
                                         <Trash2 className="mr-2 h-4 w-4"/>
-                                        Apagar
+                                        {t('post.menu.delete')}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleEditClick(post)} disabled={!isEditable}>
                                         <Edit className="mr-2 h-4 w-4"/>
-                                        Editar
+                                        {t('post.menu.edit')}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => handleTogglePinPost(post.id)}>
                                         <Pin className="mr-2 h-4 w-4"/>
-                                        {zisprUser?.pinnedPostId === post.id ? 'Desafixar do perfil' : 'Fixar no seu perfil'}
+                                        {zisprUser?.pinnedPostId === post.id ? t('post.menu.unpin') : t('post.menu.pin')}
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'A capacidade de adicionar posts aos destaques será adicionada em breve.'})}>
+                                    <DropdownMenuItem onClick={() => toast({ title: t('post.menu.comingSoon.title'), description: t('post.menu.comingSoon.highlights')})}>
                                         <Sparkles className="mr-2 h-4 w-4"/>
-                                        Adicionar aos Destaques
+                                        {t('post.menu.addHighlights')}
                                     </DropdownMenuItem>
                                 </>
                             ) : (
                                 <>
                                     <DropdownMenuItem onClick={() => onSaveClick(post.id)}>
                                         <Save className="mr-2 h-4 w-4"/>
-                                        {isSaved ? 'Remover dos Salvos' : 'Salvar em Coleção'}
+                                        {isSaved ? t('post.menu.removeFromSaved') : t('post.menu.save')}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                    <DropdownMenuItem onClick={() => toast({ title: t('post.menu.comingSoon.title'), description: t('post.menu.comingSoon.notInterested')})}>
                                         <Frown className="mr-2 h-4 w-4"/>
-                                        Não tenho interesse
+                                        {t('post.menu.notInterested')}
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                    <DropdownMenuItem onClick={() => toast({ title: t('post.menu.comingSoon.title'), description: t('post.menu.comingSoon.report')})}>
                                         <Flag className="mr-2 h-4 w-4"/>
-                                        Denunciar post
+                                        {t('post.menu.report')}
                                     </DropdownMenuItem>
                                      <DropdownMenuItem onClick={() => onAnalyticsClick(post)}>
                                         <BarChart3 className="mr-2 h-4 w-4"/>
-                                        Ver interações
+                                        {t('post.menu.viewEngagements')}
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => toast({ title: 'Em breve!', description: 'Esta funcionalidade será adicionada em breve.'})}>
+                                    <DropdownMenuItem onClick={() => toast({ title: t('post.menu.comingSoon.title'), description: t('post.menu.comingSoon.communityNote')})}>
                                         <Megaphone className="mr-2 h-4 w-4"/>
-                                        Nota da comunidade
+                                        {t('post.menu.communityNote')}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => router.push(`/profile/${post.authorId}`)}>
                                         <UserRound className="mr-2 h-4 w-4"/>
-                                        Ir para perfil de {post.handle}
+                                        {t('post.menu.goToProfile', { handle: post.handle })}
                                     </DropdownMenuItem>
                                 </>
                             )}
@@ -386,7 +387,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                                     onClick={(e) => { e.stopPropagation(); handlePostAction(post.id, 'retweet', post.authorId); }}
                                 >
                                     <Repeat className="mr-2 h-4 w-4" />
-                                    {Array.isArray(post.retweets) && post.retweets.includes(user?.uid || '') ? 'Desfazer Repost' : 'Repostar'}
+                                    {Array.isArray(post.retweets) && post.retweets.includes(user?.uid || '') ? t('post.menu.undoRepost') : t('post.menu.repost')}
                                 </Button>
                                 <Button
                                     variant="ghost"
@@ -394,7 +395,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                                     onClick={(e) => { e.stopPropagation(); handleQuoteClick(post); }}
                                 >
                                     <PenSquare className="mr-2 h-4 w-4" />
-                                    Quotar Post
+                                    {t('post.menu.quote')}
                                 </Button>
                             </div>
                         </PopoverContent>
