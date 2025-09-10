@@ -27,6 +27,7 @@ export default function SettingsLayout({
         'notifications': t('settings.layout.title.notifications'),
         'language': t('settings.layout.title.language'),
         'blocked': 'Contas Bloqueadas',
+        'collections': 'Gerenciar Coleções',
     };
 
     useEffect(() => {

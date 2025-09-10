@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, User, Bell, Lock, ChevronRight, Languages } from 'lucide-react';
+import { ArrowLeft, User, Bell, Lock, ChevronRight, Languages, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -74,10 +74,16 @@ export default function SettingsPage() {
 
                 <Card className="mt-6">
                     <CardHeader>
-                        <CardTitle>Acessibilidade, Exibição e Idiomas</CardTitle>
-                        <CardDescription>Gerencie como o conteúdo do Zispr é exibido para você.</CardDescription>
+                        <CardTitle>Conteúdo e Exibição</CardTitle>
+                        <CardDescription>Gerencie suas coleções, acessibilidade, exibição e idiomas.</CardDescription>
                     </CardHeader>
                     <CardContent>
+                          <SettingsItem 
+                            icon={Library}
+                            title="Coleções"
+                            description="Gerencie suas coleções de posts salvos."
+                            onClick={() => router.push('/settings/collections')}
+                          />
                           <SettingsItem 
                             icon={Languages} 
                             title="Idioma" 
