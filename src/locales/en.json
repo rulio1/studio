@@ -1,4 +1,3 @@
-
 {
   "language": {
     "title": "Language",
@@ -267,6 +266,43 @@
       "blocked": "You have blocked",
       "error": "Error",
       "actionFailed": "Could not complete the action."
+    },
+    "edit": {
+      "title": "Edit profile",
+      "saveButton": "Save",
+      "fields": {
+        "name": "Name",
+        "username": "Username",
+        "bio": "Bio",
+        "location": "Location",
+        "website": "Website",
+        "websitePlaceholder": "e.g., yourdomain.com"
+      },
+      "toasts": {
+        "loadError": "Error loading profile.",
+        "imageSize": {
+          "title": "Image too large",
+          "description": "Please select an image smaller than 10MB."
+        },
+        "fileReadError": {
+          "title": "Error reading file",
+          "description": "Could not load the image."
+        },
+        "saveSuccess": {
+          "title": "Profile Saved!",
+          "description": "Your changes have been saved successfully."
+        },
+        "saveError": {
+          "title": "Failed to Save",
+          "description": "Could not save your profile changes. Please try again."
+        }
+      },
+      "cropper": {
+        "title": "Crop Image",
+        "zoom": "Zoom",
+        "cancel": "Cancel",
+        "save": "Save"
+      }
     }
   }
 }

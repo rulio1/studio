@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback } from 'react';
@@ -7,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Slider } from './ui/slider';
 import { getCroppedImg } from '@/lib/crop-image';
+import { useTranslation } from '@/hooks/use-translation';
 
 export interface ImageCropperData {
   image: string;
@@ -20,6 +20,7 @@ interface ImageCropperProps {
 }
 
 export default function ImageCropper({ data, onComplete, onCancel }: ImageCropperProps) {
+  const { t } = useTranslation();
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -45,7 +46,7 @@ export default function ImageCropper({ data, onComplete, onCancel }: ImageCroppe
     <Dialog open={true} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <DialogContent className="max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl xl:max-w-3xl p-0 gap-0">
         <DialogHeader className="p-4 border-b">
-          <DialogTitle>Cortar Imagem</DialogTitle>
+          <DialogTitle>{t('profile.edit.cropper.title')}</DialogTitle>
         </DialogHeader>
         <div className="relative w-full h-96 bg-background">
           <Cropper
@@ -62,7 +63,7 @@ export default function ImageCropper({ data, onComplete, onCancel }: ImageCroppe
         </div>
         <div className="p-4 space-y-4">
             <div className="flex items-center gap-4">
-                <span className="text-sm">Zoom</span>
+                <span className="text-sm">{t('profile.edit.cropper.zoom')}</span>
                 <Slider
                     value={[zoom]}
                     min={1}
@@ -73,8 +74,8 @@ export default function ImageCropper({ data, onComplete, onCancel }: ImageCroppe
             </div>
         </div>
         <DialogFooter className="p-4 border-t">
-          <Button variant="outline" onClick={onCancel}>Cancelar</Button>
-          <Button onClick={handleSave}>Salvar</Button>
+          <Button variant="outline" onClick={onCancel}>{t('profile.edit.cropper.cancel')}</Button>
+          <Button onClick={handleSave}>{t('profile.edit.cropper.save')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

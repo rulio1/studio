@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,6 +16,7 @@ import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 import { fileToDataUri } from '@/lib/utils';
+import { useTranslation } from '@/hooks/use-translation';
 
 
 interface UserProfileData {
@@ -32,6 +32,7 @@ interface UserProfileData {
 export default function EditProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -74,7 +75,7 @@ export default function EditProfilePage() {
                         setProfileData(initialData);
                     }
                 } catch (error) {
-                     toast({ title: "Erro ao carregar perfil.", variant: "destructive" });
+                     toast({ title: t('profile.edit.toasts.loadError'), variant: "destructive" });
                 } finally {
                     setIsLoading(false);
                 }
@@ -83,7 +84,7 @@ export default function EditProfilePage() {
             }
         });
         return () => unsubscribe();
-    }, [router, toast]);
+    }, [router, toast, t]);
 
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
@@ -92,8 +93,8 @@ export default function EditProfilePage() {
 
         if (file.size > 10 * 1024 * 1024) { // 10MB limit
             toast({
-                title: 'Imagem muito grande',
-                description: 'Por favor, selecione uma imagem menor que 10MB.',
+                title: t('profile.edit.toasts.imageSize.title'),
+                description: t('profile.edit.toasts.imageSize.description'),
                 variant: 'destructive',
             });
             return;
@@ -106,7 +107,7 @@ export default function EditProfilePage() {
                 type: type,
             });
         } catch (error) {
-            toast({ title: "Erro ao ler arquivo", description: "Não foi possível carregar a imagem.", variant: "destructive" });
+            toast({ title: t('profile.edit.toasts.fileReadError.title'), description: t('profile.edit.toasts.fileReadError.description'), variant: "destructive" });
         }
         e.target.value = '';
     };
@@ -139,8 +140,8 @@ export default function EditProfilePage() {
             await updateDoc(userRef, firestoreUpdateData);
     
             toast({
-                title: 'Perfil Salvo!',
-                description: 'Suas alterações foram salvas com sucesso.',
+                title: t('profile.edit.toasts.saveSuccess.title'),
+                description: t('profile.edit.toasts.saveSuccess.description'),
             });
             
             router.push(`/profile/${user.uid}`);
@@ -148,8 +149,8 @@ export default function EditProfilePage() {
         } catch (error: any) {
             console.error('Erro ao salvar perfil: ', error);
             toast({
-                title: 'Falha ao Salvar',
-                description: error.message || 'Não foi possível salvar as alterações do seu perfil. Por favor, tente novamente.',
+                title: t('profile.edit.toasts.saveError.title'),
+                description: error.message || t('profile.edit.toasts.saveError.description'),
                 variant: 'destructive',
             });
         } finally {
@@ -180,10 +181,10 @@ export default function EditProfilePage() {
             <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.back()} disabled={isSaving}>
                 <X className="h-5 w-5" />
             </Button>
-            <h1 className="font-bold text-lg">Editar perfil</h1>
+            <h1 className="font-bold text-lg">{t('profile.edit.title')}</h1>
             <Button variant="default" className="rounded-full font-bold px-4 bg-foreground text-background hover:bg-foreground/80" onClick={handleSave} disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Salvar
+                {t('profile.edit.saveButton')}
             </Button>
         </div>
       </header>
@@ -235,7 +236,7 @@ export default function EditProfilePage() {
 
         <div className="p-4 mt-4 space-y-8">
             <div className="grid gap-1.5">
-                <Label htmlFor="displayName">Nome</Label>
+                <Label htmlFor="displayName">{t('profile.edit.fields.name')}</Label>
                 <Input 
                     id="displayName" 
                     value={profileData.displayName} 
@@ -245,7 +246,7 @@ export default function EditProfilePage() {
                 />
             </div>
              <div className="grid gap-1.5">
-                <Label htmlFor="handle">Nome de usuário</Label>
+                <Label htmlFor="handle">{t('profile.edit.fields.username')}</Label>
                 <Input 
                     id="handle" 
                     value={profileData.handle} 
@@ -255,7 +256,7 @@ export default function EditProfilePage() {
                 />
             </div>
              <div className="grid gap-1.5">
-                <Label htmlFor="bio">Bio</Label>
+                <Label htmlFor="bio">{t('profile.edit.fields.bio')}</Label>
                 <Textarea 
                     id="bio" 
                     value={profileData.bio} 
@@ -266,7 +267,7 @@ export default function EditProfilePage() {
                 />
             </div>
              <div className="grid gap-1.5">
-                <Label htmlFor="location">Localização</Label>
+                <Label htmlFor="location">{t('profile.edit.fields.location')}</Label>
                 <Input 
                     id="location" 
                     value={profileData.location}
@@ -276,14 +277,14 @@ export default function EditProfilePage() {
                 />
             </div>
              <div className="grid gap-1.5">
-                <Label htmlFor="website">Site</Label>
+                <Label htmlFor="website">{t('profile.edit.fields.website')}</Label>
                 <Input 
                     id="website" 
                     value={profileData.website}
                     onChange={handleFormChange}
                      className="text-lg"
                      disabled={isSaving}
-                     placeholder='ex: seudominio.com'
+                     placeholder={t('profile.edit.fields.websitePlaceholder')}
                 />
             </div>
         </div>

@@ -1,4 +1,3 @@
-
 {
   "language": {
     "title": "Idioma",
@@ -267,6 +266,43 @@
       "blocked": "Você bloqueou",
       "error": "Erro",
       "actionFailed": "Não foi possível completar a ação."
+    },
+    "edit": {
+      "title": "Editar perfil",
+      "saveButton": "Salvar",
+      "fields": {
+        "name": "Nome",
+        "username": "Nome de usuário",
+        "bio": "Bio",
+        "location": "Localização",
+        "website": "Site",
+        "websitePlaceholder": "ex: seudominio.com"
+      },
+      "toasts": {
+        "loadError": "Erro ao carregar perfil.",
+        "imageSize": {
+          "title": "Imagem muito grande",
+          "description": "Por favor, selecione uma imagem menor que 10MB."
+        },
+        "fileReadError": {
+          "title": "Erro ao ler arquivo",
+          "description": "Não foi possível carregar a imagem."
+        },
+        "saveSuccess": {
+          "title": "Perfil Salvo!",
+          "description": "Suas alterações foram salvas com sucesso."
+        },
+        "saveError": {
+          "title": "Falha ao Salvar",
+          "description": "Não foi possível salvar as alterações do seu perfil. Por favor, tente novamente."
+        }
+      },
+      "cropper": {
+        "title": "Cortar Imagem",
+        "zoom": "Zoom",
+        "cancel": "Cancelar",
+        "save": "Salvar"
+      }
     }
   }
 }

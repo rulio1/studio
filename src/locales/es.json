@@ -1,4 +1,3 @@
-
 {
   "language": {
     "title": "Idioma",
@@ -267,6 +266,43 @@
       "blocked": "Has bloqueado a",
       "error": "Error",
       "actionFailed": "No se pudo completar la acción."
+    },
+    "edit": {
+      "title": "Editar perfil",
+      "saveButton": "Guardar",
+      "fields": {
+        "name": "Nombre",
+        "username": "Nombre de usuario",
+        "bio": "Biografía",
+        "location": "Ubicación",
+        "website": "Sitio web",
+        "websitePlaceholder": "p. ej., tudominio.com"
+      },
+      "toasts": {
+        "loadError": "Error al cargar el perfil.",
+        "imageSize": {
+          "title": "Imagen demasiado grande",
+          "description": "Por favor, selecciona una imagen de menos de 10MB."
+        },
+        "fileReadError": {
+          "title": "Error al leer el archivo",
+          "description": "No se pudo cargar la imagen."
+        },
+        "saveSuccess": {
+          "title": "¡Perfil guardado!",
+          "description": "Tus cambios se han guardado correctamente."
+        },
+        "saveError": {
+          "title": "Error al guardar",
+          "description": "No se pudieron guardar los cambios de tu perfil. Por favor, inténtalo de nuevo."
+        }
+      },
+      "cropper": {
+        "title": "Recortar imagen",
+        "zoom": "Zoom",
+        "cancel": "Cancelar",
+        "save": "Guardar"
+      }
     }
   }
 }

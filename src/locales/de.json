@@ -1,4 +1,3 @@
-
 {
   "language": {
     "title": "Sprache",
@@ -267,6 +266,43 @@
       "blocked": "Sie haben",
       "error": "Fehler",
       "actionFailed": "Aktion konnte nicht abgeschlossen werden."
+    },
+    "edit": {
+      "title": "Profil bearbeiten",
+      "saveButton": "Speichern",
+      "fields": {
+        "name": "Name",
+        "username": "Benutzername",
+        "bio": "Bio",
+        "location": "Standort",
+        "website": "Webseite",
+        "websitePlaceholder": "z.B. deinedomain.de"
+      },
+      "toasts": {
+        "loadError": "Fehler beim Laden des Profils.",
+        "imageSize": {
+          "title": "Bild zu groß",
+          "description": "Bitte wählen Sie ein Bild, das kleiner als 10MB ist."
+        },
+        "fileReadError": {
+          "title": "Fehler beim Lesen der Datei",
+          "description": "Das Bild konnte nicht geladen werden."
+        },
+        "saveSuccess": {
+          "title": "Profil gespeichert!",
+          "description": "Ihre Änderungen wurden erfolgreich gespeichert."
+        },
+        "saveError": {
+          "title": "Speichern fehlgeschlagen",
+          "description": "Ihre Profiländerungen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut."
+        }
+      },
+      "cropper": {
+        "title": "Bild zuschneiden",
+        "zoom": "Zoom",
+        "cancel": "Abbrechen",
+        "save": "Speichern"
+      }
     }
   }
 }
