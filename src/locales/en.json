@@ -37,6 +37,44 @@
               "notifications": "Notifications",
               "language": "Language"
           }
+      },
+      "sections": {
+        "yourAccount": {
+            "title": "Your Account",
+            "description": "Manage your account information, like password and profile details.",
+            "item": {
+                "title": "Your Account",
+                "description": "View your account information and manage your settings."
+            }
+        },
+        "privacyAndSafety": {
+            "title": "Privacy and Safety",
+            "description": "Control how Zispr uses your information and who can see your content.",
+            "item": {
+                "title": "Privacy and safety",
+                "description": "Manage your privacy and safety settings."
+            }
+        },
+        "notifications": {
+            "title": "Notifications",
+            "description": "Select the kinds of notifications you get about your activities, interests, and recommendations.",
+            "item": {
+                "title": "Preferences",
+                "description": "Manage your notification preferences."
+            }
+        },
+        "contentAndDisplay": {
+            "title": "Content and Display",
+            "description": "Manage your collections, accessibility, display, and languages.",
+            "collections": {
+                "title": "Collections",
+                "description": "Manage your collections of saved posts."
+            },
+            "language": {
+                "title": "Language",
+                "description": "Choose which language to use in Zispr."
+            }
+        }
       }
   },
   "home": {
