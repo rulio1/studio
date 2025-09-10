@@ -13,7 +13,7 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, updateDoc, arrayUnion, arrayRemove, onSnapshot, DocumentData, QuerySnapshot, writeBatch, serverTimestamp, deleteDoc, setDoc, documentId, addDoc, runTransaction, increment } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS, es, de } from 'date-fns/locale';
 import PostSkeleton from '@/components/post-skeleton';
 import {
   DropdownMenu,
@@ -45,6 +45,7 @@ import SpotifyEmbed from '@/components/spotify-embed';
 import { motion } from 'framer-motion';
 import React from 'react';
 import { useUserStore } from '@/store/user-store';
+import { useTranslation } from '@/hooks/use-translation';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
@@ -523,6 +524,7 @@ export default function ProfilePage() {
     const searchParams = useSearchParams();
     const profileId = params.id as string;
     const { toast } = useToast();
+    const { t, language } = useTranslation();
 
     const { user: currentUser, zisprUser, setUser: setCurrentZisprUser } = useUserStore();
     const [profileUser, setProfileUser] = useState<ZisprUser | null>(null);
@@ -559,6 +561,8 @@ export default function ProfilePage() {
     const isOwnProfile = currentUser?.uid === profileId;
     const isBlockedByYou = zisprUser?.blocked?.includes(profileId);
     const hasBlockedYou = zisprUser?.blockedBy?.includes(profileId);
+    
+    const dateLocale = { pt: ptBR, en: enUS, es, de }[language];
 
     useEffect(() => {
         if (searchParams.get('payment_success') === 'true') {
@@ -1197,14 +1201,14 @@ export default function ProfilePage() {
     
     const showFollowers = () => {
         if (!profileUser) return;
-        setFollowListTitle('Seguidores');
+        setFollowListTitle(t('profile.followersDialogTitle'));
         setFollowListUserIds(profileUser.followers);
         setIsFollowListOpen(true);
     }
     
     const showFollowing = () => {
         if (!profileUser) return;
-        setFollowListTitle('Seguindo');
+        setFollowListTitle(t('profile.followingDialogTitle'));
         setFollowListUserIds(profileUser.following);
         setIsFollowListOpen(true);
     }
@@ -1222,7 +1226,7 @@ export default function ProfilePage() {
             // Unblock
             batch.update(currentUserRef, { blocked: arrayRemove(profileId) });
             batch.update(profileUserRef, { blockedBy: arrayRemove(currentUser.uid) });
-            toast({ title: `Você desbloqueou ${profileUser.handle}.` });
+            toast({ title: `${t('profile.alerts.unblocked')} ${profileUser.handle}.` });
         } else {
             // Block
              batch.update(currentUserRef, { 
@@ -1233,14 +1237,14 @@ export default function ProfilePage() {
                 followers: arrayRemove(currentUser.uid),
                 blockedBy: arrayUnion(currentUser.uid)
             });
-            toast({ title: `Você bloqueou ${profileUser.handle}.` });
+            toast({ title: `${t('profile.alerts.blocked')} ${profileUser.handle}.` });
         }
         
         try {
             await batch.commit();
         } catch (error) {
             console.error("Error blocking/unblocking user:", error);
-            toast({ title: "Erro", description: "Não foi possível completar a ação.", variant: "destructive" });
+            toast({ title: t('profile.alerts.error'), description: t('profile.alerts.actionFailed'), variant: "destructive" });
         } finally {
             setIsBlockAlertOpen(false);
         }
@@ -1275,7 +1279,7 @@ export default function ProfilePage() {
                         {profileUser.displayName}
                         {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isProfileVerified && <BadgeCheck className={`h-6 w-6 ${isRulioAccount ? 'text-white fill-primary' : badgeColor}`} />)}
                     </h1>
-                    <p className="text-sm text-muted-foreground">{userPosts.length + (pinnedPost ? 1 : 0)} posts</p>
+                    <p className="text-sm text-muted-foreground">{userPosts.length + (pinnedPost ? 1 : 0)} {t('profile.header.posts')}</p>
                 </div>
             </header>
             <main className="flex-1">
@@ -1312,7 +1316,7 @@ export default function ProfilePage() {
                     </div>
                     {isOwnProfile ? (
                         <Button variant="outline" className="rounded-full mt-4 font-bold" asChild>
-                          <Link href="/profile/edit">Editar perfil</Link>
+                          <Link href="/profile/edit">{t('profile.buttons.editProfile')}</Link>
                         </Button>
                     ) : (
                         <div className='flex items-center gap-2 mt-4'>
@@ -1323,14 +1327,14 @@ export default function ProfilePage() {
                                  <DropdownMenuContent>
                                      <DropdownMenuItem onClick={() => setIsBlockAlertOpen(true)} className="text-destructive">
                                          <UserX className="mr-2 h-4 w-4" />
-                                         {isBlockedByYou ? 'Desbloquear' : 'Bloquear'} {profileUser.handle}
+                                         {isBlockedByYou ? t('profile.userActions.unblock', { handle: profileUser.handle }) : t('profile.userActions.block', { handle: profileUser.handle })}
                                      </DropdownMenuItem>
                                  </DropdownMenuContent>
                             </DropdownMenu>
                             <Button variant="ghost" size="icon" className="border rounded-full" onClick={handleStartConversation} disabled={isBlockedByYou || hasBlockedYou}><Mail /></Button>
                             <Button variant="ghost" size="icon" className="border rounded-full" disabled={isBlockedByYou || hasBlockedYou}><Bell /></Button>
                             <Button variant={isFollowing ? 'secondary' : 'default'} className="rounded-full font-bold" onClick={handleToggleFollow} disabled={isBlockedByYou || hasBlockedYou}>
-                                {isBlockedByYou ? 'Bloqueado' : isFollowing ? 'Seguindo' : 'Seguir'}
+                                {isBlockedByYou ? t('profile.buttons.blocked') : isFollowing ? t('profile.buttons.following') : t('profile.buttons.follow')}
                             </Button>
                         </div>
                     )}
@@ -1344,12 +1348,12 @@ export default function ProfilePage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <p className="text-muted-foreground">{profileUser.handle}</p>
-                      {isFollowedBy && !isOwnProfile && <Badge variant="secondary">Segue você</Badge>}
+                      {isFollowedBy && !isOwnProfile && <Badge variant="secondary">{t('profile.followsYou')}</Badge>}
                     </div>
                     {hasBlockedYou ? (
                          <div className="mt-2 text-muted-foreground italic flex items-center gap-2">
                             <Lock className="h-4 w-4" />
-                            <span>Você foi bloqueado por este usuário.</span>
+                            <span>{t('profile.block.hasBlockedYou')}</span>
                          </div>
                     ) : (
                         <p className="mt-2 whitespace-pre-wrap">{profileUser.bio}</p>
@@ -1359,10 +1363,10 @@ export default function ProfilePage() {
                     <Card className="mt-4 border-primary/50">
                         <CardHeader className="flex-row items-center gap-3 space-y-0 p-3">
                             <Info className="h-4 w-4 text-primary" />
-                            <CardTitle className="text-sm">Conta Oficial</CardTitle>
+                            <CardTitle className="text-sm">{t('profile.cards.official.title')}</CardTitle>
                         </CardHeader>
                         <CardContent className="p-3 pt-0">
-                            <p className="text-xs text-muted-foreground">Esta é a conta oficial do Zispr. Fique de olho para anúncios, dicas e atualizações importantes da plataforma.</p>
+                            <p className="text-xs text-muted-foreground">{t('profile.cards.official.description')}</p>
                         </CardContent>
                     </Card>
                 )}
@@ -1370,10 +1374,10 @@ export default function ProfilePage() {
                     <Card className="mt-4 border-primary/50">
                         <CardHeader className="flex-row items-center gap-3 space-y-0 p-3">
                             <Info className="h-4 w-4 text-primary" />
-                            <CardTitle className="text-sm">Official Account</CardTitle>
+                            <CardTitle className="text-sm">{t('profile.cards.official_en.title')}</CardTitle>
                         </CardHeader>
                         <CardContent className="p-3 pt-0">
-                            <p className="text-xs text-muted-foreground">This is the official Zispr account for the United States. Keep an eye out for announcements, tips, and important platform updates.</p>
+                            <p className="text-xs text-muted-foreground">{t('profile.cards.official_en.description')}</p>
                         </CardContent>
                     </Card>
                 )}
@@ -1381,10 +1385,10 @@ export default function ProfilePage() {
                     <Card className="mt-4 border-primary/50">
                         <CardHeader className="flex-row items-center gap-3 space-y-0 p-3">
                             <Info className="h-4 w-4 text-primary" />
-                            <CardTitle className="text-sm">Fundador e CEO do Zispr</CardTitle>
+                            <CardTitle className="text-sm">{t('profile.cards.founder.title')}</CardTitle>
                         </CardHeader>
                         <CardContent className="p-3 pt-0">
-                            <p className="text-xs text-muted-foreground">Esta é a conta do fundador do Zispr. Siga para atualizações sobre o desenvolvimento e o futuro da plataforma.</p>
+                            <p className="text-xs text-muted-foreground">{t('profile.cards.founder.description')}</p>
                         </CardContent>
                     </Card>
                 )}
@@ -1398,7 +1402,7 @@ export default function ProfilePage() {
                             
                         </CardHeader>
                         <CardContent className="p-3 pt-0">
-                            <p className="text-xs text-muted-foreground">Este usuário apoia o Zispr e ajuda a manter a plataforma funcionando. Obrigado!</p>
+                            <p className="text-xs text-muted-foreground">{t('profile.cards.supporter.description')}</p>
                         </CardContent>
                     </Card>
                 )}
@@ -1414,32 +1418,32 @@ export default function ProfilePage() {
                         <div className="flex items-center gap-2">
                             <Gift className="h-4 w-4" />
                             <span>
-                                {format(profileUser.birthDate.toDate(), "dd 'de' MMMM", { locale: ptBR })}
+                                {format(profileUser.birthDate.toDate(), "dd 'de' MMMM", { locale: dateLocale })}
                             </span>
                         </div>
                     )}
-                    {profileUser.createdAt && <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /><span>Ingressou em {format(profileUser.createdAt.toDate(), 'MMMM yyyy', { locale: ptBR })}</span></div>}
+                    {profileUser.createdAt && <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /><span>{t('profile.info.joined')} {format(profileUser.createdAt.toDate(), 'MMMM yyyy', { locale: dateLocale })}</span></div>}
                 </div>
                  <div className="flex gap-4 mt-4 text-sm">
-                    <button onClick={showFollowing} className="hover:underline"><span className="font-bold text-foreground">{profileUser.following?.length || 0}</span> Seguindo</button>
-                    <button onClick={showFollowers} className="hover:underline"><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> Seguidores</button>
+                    <button onClick={showFollowing} className="hover:underline"><span className="font-bold text-foreground">{profileUser.following?.length || 0}</span> {t('profile.stats.following')}</button>
+                    <button onClick={showFollowers} className="hover:underline"><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> {t('profile.stats.followers')}</button>
                 </div>
             </div>
             
             {hasBlockedYou ? (
                  <EmptyState 
-                    title={"@"+profileUser.handle + " está bloqueado"}
-                    description={"Você não pode ver os posts ou seguir @"+profileUser.handle}
+                    title={t('profile.block.isBlockedTitle', { handle: profileUser.handle })}
+                    description={t('profile.block.isBlockedDescription', { handle: profileUser.handle })}
                     icon={UserX}
                  />
             ) : (
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <div className="w-full justify-center p-2 border-b">
                         <TabsList className="relative grid w-full grid-cols-4 p-1 bg-muted/50 rounded-full h-11">
-                            <TabsTrigger value="posts" className="relative z-10 rounded-full text-base">Posts</TabsTrigger>
-                            <TabsTrigger value="replies" className="relative z-10 rounded-full text-base">Respostas</TabsTrigger>
-                            <TabsTrigger value="media" className="relative z-10 rounded-full text-base">Mídia</TabsTrigger>
-                            <TabsTrigger value="likes" className="relative z-10 rounded-full text-base">Curtidas</TabsTrigger>
+                            <TabsTrigger value="posts" className="relative z-10 rounded-full text-base">{t('profile.tabs.posts')}</TabsTrigger>
+                            <TabsTrigger value="replies" className="relative z-10 rounded-full text-base">{t('profile.tabs.replies')}</TabsTrigger>
+                            <TabsTrigger value="media" className="relative z-10 rounded-full text-base">{t('profile.tabs.media')}</TabsTrigger>
+                            <TabsTrigger value="likes" className="relative z-10 rounded-full text-base">{t('profile.tabs.likes')}</TabsTrigger>
                             <motion.div
                                 layoutId="profile-tab-indicator"
                                 className="absolute inset-0 h-full p-1"
@@ -1458,8 +1462,8 @@ export default function ProfilePage() {
                         <PostList 
                             posts={userPosts} 
                             loading={isLoadingPosts} 
-                            emptyTitle="Nenhum post ainda" 
-                            emptyDescription="Quando este usuário postar, os posts aparecerão aqui."
+                            emptyTitle={t('profile.emptyStates.posts.title')} 
+                            emptyDescription={t('profile.emptyStates.posts.description')}
                             showPinnedPost={true}
                         />
                     </TabsContent>
@@ -1467,16 +1471,16 @@ export default function ProfilePage() {
                         <ReplyList 
                             replies={userReplies} 
                             loading={isLoadingReplies} 
-                            emptyTitle="Nenhuma resposta ainda" 
-                            emptyDescription="Quando este usuário responder a outros, suas respostas aparecerão aqui."
+                            emptyTitle={t('profile.emptyStates.replies.title')} 
+                            emptyDescription={t('profile.emptyStates.replies.description')}
                         />
                     </TabsContent>
                     <TabsContent value="media" className="mt-0">
                         <PostList 
                             posts={mediaPosts} 
                             loading={isLoadingMedia}
-                            emptyTitle="Nenhuma mídia ainda" 
-                            emptyDescription="Quando este usuário postar fotos ou vídeos, eles aparecerão aqui."
+                            emptyTitle={t('profile.emptyStates.media.title')} 
+                            emptyDescription={t('profile.emptyStates.media.description')}
                         />
                     </TabsContent>
                     <TabsContent value="likes" className="mt-0">
@@ -1484,13 +1488,13 @@ export default function ProfilePage() {
                             <PostList 
                                 posts={likedPosts} 
                                 loading={isLoadingLikes}
-                                emptyTitle="Nenhum post curtido" 
-                                emptyDescription="Quando este usuário curtir posts, eles aparecerão aqui."
+                                emptyTitle={t('profile.emptyStates.likes.title')} 
+                                emptyDescription={t('profile.emptyStates.likes.description')}
                             />
                         ) : (
                             <EmptyState 
-                                title="As curtidas são privadas"
-                                description={`@${profileUser.handle} optou por manter suas curtidas privadas.`}
+                                title={t('profile.emptyStates.privateLikes.title')}
+                                description={t('profile.emptyStates.privateLikes.description', { handle: profileUser.handle })}
                                 icon={Lock}
                             />
                         )}
@@ -1501,22 +1505,21 @@ export default function ProfilePage() {
             <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                    <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                    <AlertDialogTitle>{t('profile.dialogs.deletePost.title')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Essa ação não pode ser desfeita. Isso excluirá permanentemente
-                        o seu post de nossos servidores.
+                        {t('profile.dialogs.deletePost.description')}
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setPostToDelete(null)}>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeletePost} className="bg-destructive hover:bg-destructive/90">Continuar</AlertDialogAction>
+                    <AlertDialogCancel onClick={() => setPostToDelete(null)}>{t('profile.dialogs.cancel')}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeletePost} className="bg-destructive hover:bg-destructive/90">{t('profile.dialogs.deletePost.confirm')}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
             <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
                 <DialogContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
                     <DialogHeader>
-                        <DialogTitle>Editar Post</DialogTitle>
+                        <DialogTitle>{t('profile.dialogs.editPost.title')}</DialogTitle>
                     </DialogHeader>
                     <Textarea 
                         value={editedContent}
@@ -1526,24 +1529,24 @@ export default function ProfilePage() {
                     />
                     <Button onClick={handleUpdatePost} disabled={isUpdating}>
                         {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Salvar Alterações
+                        {t('profile.dialogs.editPost.save')}
                     </Button>
                 </DialogContent>
             </Dialog>
              <AlertDialog open={isBlockAlertOpen} onOpenChange={setIsBlockAlertOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>{isBlockedByYou ? 'Desbloquear' : 'Bloquear'} {profileUser.handle}?</AlertDialogTitle>
+                        <AlertDialogTitle>{isBlockedByYou ? t('profile.dialogs.unblock.title', { handle: profileUser.handle }) : t('profile.dialogs.block.title', { handle: profileUser.handle })}</AlertDialogTitle>
                         <AlertDialogDescription>
                             {isBlockedByYou
-                                ? `Eles poderão seguir você e ver seus posts.`
-                                : `Eles não poderão seguir ou enviar mensagens para você, e você não verá notificações deles.`}
+                                ? t('profile.dialogs.unblock.description')
+                                : t('profile.dialogs.block.description')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel>{t('profile.dialogs.cancel')}</AlertDialogCancel>
                         <AlertDialogAction onClick={handleBlockUser} className={isBlockedByYou ? '' : 'bg-destructive hover:bg-destructive/90'}>
-                            {isBlockedByYou ? 'Desbloquear' : 'Bloquear'}
+                            {isBlockedByYou ? t('profile.dialogs.unblock.confirm') : t('profile.dialogs.block.confirm')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

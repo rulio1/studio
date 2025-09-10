@@ -164,5 +164,109 @@
         }
       }
     }
+  },
+  "profile": {
+    "header": {
+      "posts": "publicaciones"
+    },
+    "buttons": {
+      "editProfile": "Editar perfil",
+      "following": "Siguiendo",
+      "follow": "Seguir",
+      "blocked": "Bloqueado"
+    },
+    "userActions": {
+      "block": "Bloquear a {handle}",
+      "unblock": "Desbloquear a {handle}"
+    },
+    "followsYou": "Te sigue",
+    "cards": {
+      "founder": {
+        "title": "Fundador y CEO de Zispr",
+        "description": "Esta es la cuenta del fundador de Zispr. Sigue para actualizaciones sobre el desarrollo y el futuro de la plataforma."
+      },
+      "official": {
+        "title": "Cuenta Oficial",
+        "description": "Esta es la cuenta oficial de Zispr. Mantente atento a anuncios, consejos y actualizaciones importantes de la plataforma."
+      },
+      "official_en": {
+        "title": "Official Account",
+        "description": "This is the official Zispr account for the United States. Keep an eye out for announcements, tips, and important platform updates."
+      },
+      "supporter": {
+        "title": "Patrocinador",
+        "description": "Este usuario apoya a Zispr y ayuda a mantener la plataforma en funcionamiento. ¡Gracias!"
+      }
+    },
+    "info": {
+      "joined": "Se unió en"
+    },
+    "stats": {
+      "following": "Siguiendo",
+      "followers": "Seguidores"
+    },
+    "block": {
+      "hasBlockedYou": "Has sido bloqueado por este usuario.",
+      "isBlockedTitle": "@{handle} está bloqueado",
+      "isBlockedDescription": "No puedes ver ni seguir las publicaciones de @{handle}"
+    },
+    "tabs": {
+      "posts": "Publicaciones",
+      "replies": "Respuestas",
+      "media": "Multimedia",
+      "likes": "Me gusta"
+    },
+    "emptyStates": {
+      "posts": {
+        "title": "Aún no hay publicaciones",
+        "description": "Cuando este usuario publique, sus publicaciones aparecerán aquí."
+      },
+      "replies": {
+        "title": "Aún no hay respuestas",
+        "description": "Cuando este usuario responda a otros, sus respuestas aparecerán aquí."
+      },
+      "media": {
+        "title": "Aún no hay multimedia",
+        "description": "Cuando este usuario publique fotos o videos, aparecerán aquí."
+      },
+      "likes": {
+        "title": "Aún no hay publicaciones que le gusten",
+        "description": "Cuando a este usuario le gusten publicaciones, aparecerán aquí."
+      },
+      "privateLikes": {
+        "title": "Los 'Me gusta' son privados",
+        "description": "{handle} ha elegido mantener sus 'Me gusta' en privado."
+      }
+    },
+    "dialogs": {
+      "cancel": "Cancelar",
+      "deletePost": {
+        "title": "¿Estás completamente seguro?",
+        "description": "Esta acción no se puede deshacer. Esto eliminará permanentemente tu publicación de nuestros servidores.",
+        "confirm": "Continuar"
+      },
+      "editPost": {
+        "title": "Editar Publicación",
+        "save": "Guardar Cambios"
+      },
+      "block": {
+        "title": "¿Bloquear a {handle}?",
+        "description": "No podrá seguirte ni enviarte mensajes, y no verás notificaciones de él.",
+        "confirm": "Bloquear"
+      },
+      "unblock": {
+        "title": "¿Desbloquear a {handle}?",
+        "description": "Podrá seguirte y ver tus publicaciones.",
+        "confirm": "Desbloquear"
+      }
+    },
+    "followersDialogTitle": "Seguidores",
+    "followingDialogTitle": "Siguiendo",
+    "alerts": {
+      "unblocked": "Has desbloqueado a",
+      "blocked": "Has bloqueado a",
+      "error": "Error",
+      "actionFailed": "No se pudo completar la acción."
+    }
   }
 }

@@ -164,5 +164,109 @@
         }
       }
     }
+  },
+  "profile": {
+    "header": {
+      "posts": "Beiträge"
+    },
+    "buttons": {
+      "editProfile": "Profil bearbeiten",
+      "following": "Gefolgt",
+      "follow": "Folgen",
+      "blocked": "Blockiert"
+    },
+    "userActions": {
+      "block": "{handle} blockieren",
+      "unblock": "{handle} entblocken"
+    },
+    "followsYou": "Folgt dir",
+    "cards": {
+      "founder": {
+        "title": "Gründer und CEO von Zispr",
+        "description": "Dies ist das Konto des Gründers von Zispr. Folgen Sie für Updates zur Entwicklung und Zukunft der Plattform."
+      },
+      "official": {
+        "title": "Offizielles Konto",
+        "description": "Dies ist das offizielle Konto von Zispr. Halten Sie Ausschau nach Ankündigungen, Tipps und wichtigen Plattform-Updates."
+      },
+      "official_en": {
+        "title": "Official Account",
+        "description": "This is the official Zispr account for the United States. Keep an eye out for announcements, tips, and important platform updates."
+      },
+      "supporter": {
+        "title": "Unterstützer",
+        "description": "Dieser Benutzer unterstützt Zispr und hilft, die Plattform am Laufen zu halten. Danke!"
+      }
+    },
+    "info": {
+      "joined": "Beigetreten im"
+    },
+    "stats": {
+      "following": "Folge ich",
+      "followers": "Follower"
+    },
+    "block": {
+      "hasBlockedYou": "Sie wurden von diesem Benutzer blockiert.",
+      "isBlockedTitle": "@{handle} ist blockiert",
+      "isBlockedDescription": "Sie können die Beiträge von @{handle} nicht sehen oder ihm folgen"
+    },
+    "tabs": {
+      "posts": "Beiträge",
+      "replies": "Antworten",
+      "media": "Medien",
+      "likes": "Gefällt mir"
+    },
+    "emptyStates": {
+      "posts": {
+        "title": "Noch keine Beiträge",
+        "description": "Wenn dieser Benutzer Beiträge veröffentlicht, werden sie hier angezeigt."
+      },
+      "replies": {
+        "title": "Noch keine Antworten",
+        "description": "Wenn dieser Benutzer auf andere antwortet, werden seine Antworten hier angezeigt."
+      },
+      "media": {
+        "title": "Noch keine Medien",
+        "description": "Wenn dieser Benutzer Fotos oder Videos veröffentlicht, werden sie hier angezeigt."
+      },
+      "likes": {
+        "title": "Noch keine „Gefällt mir“-Angaben",
+        "description": "Wenn diesem Benutzer Beiträge gefallen, werden sie hier angezeigt."
+      },
+      "privateLikes": {
+        "title": "„Gefällt mir“-Angaben sind privat",
+        "description": "{handle} hat sich entschieden, seine „Gefällt mir“-Angaben privat zu halten."
+      }
+    },
+    "dialogs": {
+      "cancel": "Abbrechen",
+      "deletePost": {
+        "title": "Sind Sie sich absolut sicher?",
+        "description": "Diese Aktion kann nicht rückgängig gemacht werden. Dadurch wird Ihr Beitrag dauerhaft von unseren Servern gelöscht.",
+        "confirm": "Fortfahren"
+      },
+      "editPost": {
+        "title": "Beitrag bearbeiten",
+        "save": "Änderungen speichern"
+      },
+      "block": {
+        "title": "{handle} blockieren?",
+        "description": "Er kann Ihnen nicht mehr folgen oder Nachrichten senden, und Sie sehen keine Benachrichtigungen von ihm.",
+        "confirm": "Blockieren"
+      },
+      "unblock": {
+        "title": "{handle} entblocken?",
+        "description": "Er kann Ihnen wieder folgen und Ihre Beiträge sehen.",
+        "confirm": "Entblocken"
+      }
+    },
+    "followersDialogTitle": "Follower",
+    "followingDialogTitle": "Folge ich",
+    "alerts": {
+      "unblocked": "Sie haben",
+      "blocked": "Sie haben",
+      "error": "Fehler",
+      "actionFailed": "Aktion konnte nicht abgeschlossen werden."
+    }
   }
 }

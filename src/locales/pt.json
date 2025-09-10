@@ -164,5 +164,109 @@
         }
       }
     }
+  },
+  "profile": {
+    "header": {
+      "posts": "posts"
+    },
+    "buttons": {
+      "editProfile": "Editar perfil",
+      "following": "Seguindo",
+      "follow": "Seguir",
+      "blocked": "Bloqueado"
+    },
+    "userActions": {
+      "block": "Bloquear {handle}",
+      "unblock": "Desbloquear {handle}"
+    },
+    "followsYou": "Segue você",
+    "cards": {
+      "founder": {
+        "title": "Fundador e CEO do Zispr",
+        "description": "Esta é a conta do fundador do Zispr. Siga para atualizações sobre o desenvolvimento e o futuro da plataforma."
+      },
+      "official": {
+        "title": "Conta Oficial",
+        "description": "Esta é a conta oficial do Zispr. Fique de olho para anúncios, dicas e atualizações importantes da plataforma."
+      },
+      "official_en": {
+        "title": "Official Account",
+        "description": "This is the official Zispr account for the United States. Keep an eye out for announcements, tips, and important platform updates."
+      },
+      "supporter": {
+        "title": "Apoiador",
+        "description": "Este usuário apoia o Zispr e ajuda a manter a plataforma funcionando. Obrigado!"
+      }
+    },
+    "info": {
+      "joined": "Ingressou em"
+    },
+    "stats": {
+      "following": "Seguindo",
+      "followers": "Seguidores"
+    },
+    "block": {
+      "hasBlockedYou": "Você foi bloqueado por este usuário.",
+      "isBlockedTitle": "@{handle} está bloqueado",
+      "isBlockedDescription": "Você não pode ver os posts ou seguir @{handle}"
+    },
+    "tabs": {
+      "posts": "Posts",
+      "replies": "Respostas",
+      "media": "Mídia",
+      "likes": "Curtidas"
+    },
+    "emptyStates": {
+      "posts": {
+        "title": "Nenhum post ainda",
+        "description": "Quando este usuário postar, os posts aparecerão aqui."
+      },
+      "replies": {
+        "title": "Nenhuma resposta ainda",
+        "description": "Quando este usuário responder a outros, suas respostas aparecerão aqui."
+      },
+      "media": {
+        "title": "Nenhuma mídia ainda",
+        "description": "Quando este usuário postar fotos ou vídeos, eles aparecerão aqui."
+      },
+      "likes": {
+        "title": "Nenhum post curtido",
+        "description": "Quando este usuário curtir posts, eles aparecerão aqui."
+      },
+      "privateLikes": {
+        "title": "As curtidas são privadas",
+        "description": "{handle} optou por manter suas curtidas privadas."
+      }
+    },
+    "dialogs": {
+      "cancel": "Cancelar",
+      "deletePost": {
+        "title": "Você tem certeza absoluta?",
+        "description": "Essa ação não pode ser desfeita. Isso excluirá permanentemente o seu post de nossos servidores.",
+        "confirm": "Continuar"
+      },
+      "editPost": {
+        "title": "Editar Post",
+        "save": "Salvar Alterações"
+      },
+      "block": {
+        "title": "Bloquear {handle}?",
+        "description": "Eles não poderão seguir ou enviar mensagens para você, e você não verá notificações deles.",
+        "confirm": "Bloquear"
+      },
+      "unblock": {
+        "title": "Desbloquear {handle}?",
+        "description": "Eles poderão seguir você e ver seus posts.",
+        "confirm": "Desbloquear"
+      }
+    },
+    "followersDialogTitle": "Seguidores",
+    "followingDialogTitle": "Seguindo",
+    "alerts": {
+      "unblocked": "Você desbloqueou",
+      "blocked": "Você bloqueou",
+      "error": "Erro",
+      "actionFailed": "Não foi possível completar a ação."
+    }
   }
 }

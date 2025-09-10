@@ -164,5 +164,109 @@
         }
       }
     }
+  },
+  "profile": {
+    "header": {
+      "posts": "posts"
+    },
+    "buttons": {
+      "editProfile": "Edit profile",
+      "following": "Following",
+      "follow": "Follow",
+      "blocked": "Blocked"
+    },
+    "userActions": {
+      "block": "Block {handle}",
+      "unblock": "Unblock {handle}"
+    },
+    "followsYou": "Follows you",
+    "cards": {
+      "founder": {
+        "title": "Founder and CEO of Zispr",
+        "description": "This is the account of the founder of Zispr. Follow for updates on the development and future of the platform."
+      },
+      "official": {
+        "title": "Official Account",
+        "description": "This is the official account of Zispr. Keep an eye out for announcements, tips, and important platform updates."
+      },
+      "official_en": {
+        "title": "Official Account",
+        "description": "This is the official Zispr account for the United States. Keep an eye out for announcements, tips, and important platform updates."
+      },
+      "supporter": {
+        "title": "Supporter",
+        "description": "This user supports Zispr and helps keep the platform running. Thank you!"
+      }
+    },
+    "info": {
+      "joined": "Joined"
+    },
+    "stats": {
+      "following": "Following",
+      "followers": "Followers"
+    },
+    "block": {
+      "hasBlockedYou": "You have been blocked by this user.",
+      "isBlockedTitle": "@{handle} is blocked",
+      "isBlockedDescription": "You can't see or follow @{handle}'s posts"
+    },
+    "tabs": {
+      "posts": "Posts",
+      "replies": "Replies",
+      "media": "Media",
+      "likes": "Likes"
+    },
+    "emptyStates": {
+      "posts": {
+        "title": "No posts yet",
+        "description": "When this user posts, their posts will appear here."
+      },
+      "replies": {
+        "title": "No replies yet",
+        "description": "When this user replies to others, their replies will appear here."
+      },
+      "media": {
+        "title": "No media yet",
+        "description": "When this user posts photos or videos, they will appear here."
+      },
+      "likes": {
+        "title": "No liked posts yet",
+        "description": "When this user likes posts, they will appear here."
+      },
+      "privateLikes": {
+        "title": "Likes are private",
+        "description": "{handle} has chosen to keep their likes private."
+      }
+    },
+    "dialogs": {
+      "cancel": "Cancel",
+      "deletePost": {
+        "title": "Are you absolutely sure?",
+        "description": "This action cannot be undone. This will permanently delete your post from our servers.",
+        "confirm": "Continue"
+      },
+      "editPost": {
+        "title": "Edit Post",
+        "save": "Save Changes"
+      },
+      "block": {
+        "title": "Block {handle}?",
+        "description": "They will not be able to follow or message you, and you will not see notifications from them.",
+        "confirm": "Block"
+      },
+      "unblock": {
+        "title": "Unblock {handle}?",
+        "description": "They will be able to follow you and see your posts.",
+        "confirm": "Unblock"
+      }
+    },
+    "followersDialogTitle": "Followers",
+    "followingDialogTitle": "Following",
+    "alerts": {
+      "unblocked": "You have unblocked",
+      "blocked": "You have blocked",
+      "error": "Error",
+      "actionFailed": "Could not complete the action."
+    }
   }
 }
