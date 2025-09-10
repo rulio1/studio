@@ -430,7 +430,7 @@ useEffect(() => {
                             isVerified: zisprUser?.isVerified || false,
                         },
                         type: 'mention',
-                        text: 'notifications.mention',
+                        text: `notifications.mention`,
                         postContent: editedContent.substring(0, 50),
                         postId: editingPost.id,
                         createdAt: serverTimestamp(),
@@ -655,8 +655,8 @@ useEffect(() => {
                               <p className="text-sm text-muted-foreground">{zisprUser.handle}</p>
                           </Link>
                           <div className="flex gap-4 mt-2 text-sm">
-                              <p><span className="font-bold">{zisprUser.following?.length || 0}</span> <span className="text-muted-foreground">Seguindo</span></p>
-                              <p><span className="font-bold">{zisprUser.followers?.length || 0}</span> <span className="text-muted-foreground">Seguidores</span></p>
+                              <p><span className="font-bold">{zisprUser.following?.length || 0}</span> <span className="text-muted-foreground">{t('profile.stats.following')}</span></p>
+                              <p><span className="font-bold">{zisprUser.followers?.length || 0}</span> <span className="text-muted-foreground">{t('profile.stats.followers')}</span></p>
                           </div>
                       </div>
                        <nav className="flex-1 flex flex-col gap-2 p-4">
@@ -681,7 +681,7 @@ useEffect(() => {
                           </SheetClose>
                           <SheetClose asChild>
                              <Link href="/settings" className="flex items-center gap-4 py-2 font-semibold rounded-md">
-                              <Settings className="h-6 w-6" /> Configurações e privacidade
+                              <Settings className="h-6 w-6" /> {t('sidebar.settings')}
                             </Link>
                           </SheetClose>
                           <SheetClose asChild>

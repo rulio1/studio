@@ -246,7 +246,7 @@ function SearchPageClient() {
                         badgeTier: zisprUser.badgeTier || null
                     },
                     type: 'follow',
-                    text: 'seguiu você',
+                    text: 'notifications.follow',
                     createdAt: serverTimestamp(),
                     read: false,
                 });
