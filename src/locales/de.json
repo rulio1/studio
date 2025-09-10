@@ -114,5 +114,20 @@
   },
   "newsCard": {
     "title": "Was passiert"
+  },
+  "postAnalytics": {
+    "title": "Beitragsaktivität",
+    "impressions": {
+      "label": "Impressionen",
+      "tooltip": "Die Anzahl der Aufrufe dieses Beitrags."
+    },
+    "engagements": {
+      "label": "Interaktionen",
+      "tooltip": "Gesamtzahl der Interaktionen von Benutzern mit diesem Beitrag (Likes, Kommentare, Retweets)."
+    },
+    "profileVisits": {
+      "label": "Profilbesuche",
+      "tooltip": "Die Anzahl der Besuche Ihres Profils von diesem Beitrag aus."
+    }
   }
 }

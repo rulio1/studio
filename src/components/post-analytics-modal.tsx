@@ -7,6 +7,7 @@ import { X, Heart, Repeat, MessageCircle, BarChart2, Users, Info, BadgeCheck, Bi
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface Post {
     id: string;
@@ -58,6 +59,7 @@ const StatItem = ({ value, label, tooltip }: { value: number; label: string; too
 );
 
 export default function PostAnalyticsModal({ post, onOpenChange }: PostAnalyticsModalProps) {
+  const { t } = useTranslation();
   if (!post) return null;
 
   const interactions = post.likes.length + post.comments + post.retweets.length;
@@ -70,7 +72,7 @@ export default function PostAnalyticsModal({ post, onOpenChange }: PostAnalytics
     <Dialog open={!!post} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 gap-0 rounded-2xl bg-background sm:max-w-lg flex flex-col max-h-[80svh]">
         <DialogHeader className="p-4 flex flex-row items-center justify-between border-b">
-          <DialogTitle className="text-xl font-bold">Atividade do Post</DialogTitle>
+          <DialogTitle className="text-xl font-bold">{t('postAnalytics.title')}</DialogTitle>
         </DialogHeader>
 
         <main className="px-6 pt-6 pb-6 flex-1 flex flex-col gap-4 overflow-y-auto">
@@ -108,18 +110,18 @@ export default function PostAnalyticsModal({ post, onOpenChange }: PostAnalytics
             <div className="grid grid-cols-2 gap-y-6">
                 <StatItem 
                     value={post.views} 
-                    label="Impressões"
-                    tooltip="O número de vezes que este post foi visto."
+                    label={t('postAnalytics.impressions.label')}
+                    tooltip={t('postAnalytics.impressions.tooltip')}
                 />
                  <StatItem 
                     value={interactions}
-                    label="Interações"
-                    tooltip="O número total de vezes que os usuários interagiram com este post (curtidas, comentários, reposts)."
+                    label={t('postAnalytics.engagements.label')}
+                    tooltip={t('postAnalytics.engagements.tooltip')}
                 />
                  <StatItem 
                     value={post.profileVisits || 0}
-                    label="Visitas ao perfil"
-                    tooltip="O número de vezes que o seu perfil foi visitado a partir deste post."
+                    label={t('postAnalytics.profileVisits.label')}
+                    tooltip={t('postAnalytics.profileVisits.tooltip')}
                 />
             </div>
         </main>

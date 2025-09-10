@@ -114,5 +114,20 @@
   },
   "newsCard": {
     "title": "Qué está pasando"
+  },
+  "postAnalytics": {
+    "title": "Actividad de la Publicación",
+    "impressions": {
+      "label": "Impresiones",
+      "tooltip": "El número de veces que se ha visto esta publicación."
+    },
+    "engagements": {
+      "label": "Interacciones",
+      "tooltip": "Número total de veces que los usuarios han interactuado con esta publicación (me gusta, comentarios, republicaciones)."
+    },
+    "profileVisits": {
+      "label": "Visitas al perfil",
+      "tooltip": "El número de veces que se ha visitado tu perfil desde esta publicación."
+    }
   }
 }

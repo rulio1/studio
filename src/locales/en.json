@@ -114,5 +114,20 @@
   },
   "newsCard": {
     "title": "What's happening"
+  },
+  "postAnalytics": {
+    "title": "Post Activity",
+    "impressions": {
+      "label": "Impressions",
+      "tooltip": "The number of times this post was seen."
+    },
+    "engagements": {
+      "label": "Engagements",
+      "tooltip": "Total number of times users have interacted with this post (likes, comments, retweets)."
+    },
+    "profileVisits": {
+      "label": "Profile visits",
+      "tooltip": "The number of times your profile was visited from this post."
+    }
   }
 }
