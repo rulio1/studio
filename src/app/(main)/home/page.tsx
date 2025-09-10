@@ -328,7 +328,7 @@ useEffect(() => {
                                     isVerified: zisprUser.isVerified || false,
                                 },
                                 type: action,
-                                text: `notifications.${action}`,
+                                text: `curtiu seu post`,
                                 postContent: post.content.substring(0, 50),
                                 postId: post.id,
                                 createdAt: serverTimestamp(),
@@ -430,7 +430,7 @@ useEffect(() => {
                             isVerified: zisprUser?.isVerified || false,
                         },
                         type: 'mention',
-                        text: `notifications.mention`,
+                        text: `mencionou você em um post:`,
                         postContent: editedContent.substring(0, 50),
                         postId: editingPost.id,
                         createdAt: serverTimestamp(),
@@ -650,7 +650,7 @@ useEffect(() => {
                            <Link href={`/profile/${zisprUser.uid}`} className="cursor-pointer">
                               <div className="flex items-center gap-1 font-bold text-lg">
                                   {zisprUser.displayName}
-                                  {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className={`h-6 w-6 ${isRulioAccount ? 'text-white fill-primary' : zisprUserBadgeColor}`} />)}
+                                  {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className={'h-6 w-6 ' + (isRulioAccount ? 'text-white fill-primary' : zisprUserBadgeColor)} />)}
                               </div>
                               <p className="text-sm text-muted-foreground">{zisprUser.handle}</p>
                           </Link>
@@ -717,10 +717,10 @@ useEffect(() => {
               </div>
           </header>
 
-          <TabsContent value="for-you" forceMount={true} className={`mt-0 ${activeTab !== 'for-you' ? 'hidden' : ''}`}>
+          <TabsContent value="for-you" forceMount={true} className={'mt-0 ' + (activeTab !== 'for-you' ? 'hidden' : '')}>
               <PostList posts={allPosts} loading={isLoading} tab="for-you" />
           </TabsContent>
-          <TabsContent value="following" forceMount={true} className={`mt-0 ${activeTab !== 'following' ? 'hidden' : ''}`}>
+          <TabsContent value="following" forceMount={true} className={'mt-0 ' + (activeTab !== 'following' ? 'hidden' : '')}>
               <PostList posts={followingPosts} loading={isLoadingFollowing} tab="following" />
           </TabsContent>
       </Tabs>
@@ -763,7 +763,7 @@ useEffect(() => {
                 onOpenChange={setIsQuoteModalOpen}
                 quotedPost={postToQuote}
             />}
-            {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} comments={allPosts.find(p => p.id === postToView.id)?.comments || 0} />}
+            {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
             {analyticsPost && <PostAnalyticsModal post={analyticsPost} onOpenChange={() => setAnalyticsPost(null)} />}
              {postToSave && user && (
                 <SaveToCollectionModal
@@ -777,7 +777,3 @@ useEffect(() => {
     </>
   );
 }
-
-    
-
-    

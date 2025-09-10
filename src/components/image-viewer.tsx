@@ -52,7 +52,6 @@ interface PostForViewer {
 
 interface ImageViewerProps {
   post: PostForViewer | null;
-  comments?: Comment[];
   onOpenChange: (open: boolean) => void;
 }
 
@@ -91,13 +90,29 @@ const CommentItem = ({ comment }: { comment: Comment }) => {
     )
 };
 
-export default function ImageViewer({ post, comments, onOpenChange }: ImageViewerProps) {
+export default function ImageViewer({ post, onOpenChange }: ImageViewerProps) {
   const router = useRouter();
   const handleClose = () => onOpenChange(false);
   const src = post?.image || post?.gifUrl;
   const { zisprUser } = useUserStore();
   const [newComment, setNewComment] = useState('');
   const [isReplying, setIsReplying] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+
+  useEffect(() => {
+    if (!post) return;
+
+    const commentsQuery = query(collection(db, "comments"), where("postId", "==", post.id), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
+      const commentsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Comment));
+      setComments(commentsData);
+    });
+
+    return () => unsubscribe();
+  }, [post]);
 
   const isZisprAccount = post?.handle === '@Zispr';
   const isRulio = post?.handle === '@Rulio';
@@ -190,7 +205,7 @@ export default function ImageViewer({ post, comments, onOpenChange }: ImageViewe
                             <div>
                                 <p className="font-bold flex items-center gap-1">
                                     {post.author}
-                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={`h-6 w-6 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
+                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={'h-6 w-6 ' + (isRulio ? 'text-white fill-primary' : badgeColor)} />)}
                                 </p>
                                 <p className="text-sm text-muted-foreground">{post.handle}</p>
                             </div>
@@ -216,7 +231,7 @@ export default function ImageViewer({ post, comments, onOpenChange }: ImageViewe
                             <Separator />
                         </div>
                         <div className="space-y-1">
-                            {comments?.map(comment => <CommentItem key={comment.id} comment={comment} />)}
+                            {comments.map(comment => <CommentItem key={comment.id} comment={comment} />)}
                         </div>
                     </main>
                     <footer className="p-2 border-t">

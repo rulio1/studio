@@ -213,7 +213,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
                 </Avatar>
                  <span className="font-bold flex items-center gap-1">
                     {post.author}
-                    {(post.isVerified || isRulio) && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />}
+                    {(post.isVerified || isRulio) && <BadgeCheck className={'h-4 w-4 ' + (isRulio ? 'text-white fill-primary' : badgeColor)} />}
                 </span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>
@@ -285,7 +285,7 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment, onReply }
                     <div className="flex items-center gap-2 text-sm cursor-pointer" onClick={() => router.push(`/profile/${comment.authorId}`)}>
                         <p className="font-bold flex items-center gap-1">
                             {comment.author} 
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={`h-6 w-6 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isVerified && <BadgeCheck className={'h-6 w-6 ' + (isRulio ? 'text-white fill-primary' : badgeColor)} />)}
                         </p>
                         <p className="text-muted-foreground">{comment.handle} · {time}</p>
                          {comment.editedAt && <p className="text-xs text-muted-foreground">(editado)</p>}
@@ -329,12 +329,12 @@ const CommentItem = ({ comment, user, onEdit, onDelete, isLastComment, onReply }
                         <MessageCircle className="h-5 w-5" />
                         <span>{comment.comments}</span>
                     </button>
-                    <button onClick={() => handleCommentAction('retweet')} className={`flex items-center gap-1 hover:text-green-500 transition-colors ${comment.isRetweeted ? 'text-green-500' : ''}`}>
+                    <button onClick={() => handleCommentAction('retweet')} className={'flex items-center gap-1 hover:text-green-500 transition-colors ' + (comment.isRetweeted ? 'text-green-500' : '')}>
                         <Repeat className="h-5 w-5" />
                         <span>{Array.isArray(comment.retweets) ? comment.retweets.length : 0}</span>
                     </button>
-                    <button onClick={() => handleCommentAction('like')} className={`flex items-center gap-1 hover:text-red-500 transition-colors ${comment.isLiked ? 'text-red-500' : ''}`}>
-                        <Heart className={`h-5 w-5 ${comment.isLiked ? 'fill-current' : ''}`} />
+                    <button onClick={() => handleCommentAction('like')} className={'flex items-center gap-1 hover:text-red-500 transition-colors ' + (comment.isLiked ? 'text-red-500' : '')}>
+                        <Heart className={'h-5 w-5 ' + (comment.isLiked ? 'fill-current' : '')} />
                         <span>{Array.isArray(comment.likes) ? comment.likes.length : 0}</span>
                     </button>
                     <div className="flex items-center gap-1">
@@ -412,7 +412,7 @@ export default function PostDetailPage() {
                 setIsLoading(false);
             });
 
-            const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId));
+            const commentsQuery = query(collection(db, "comments"), where("postId", "==", postId), orderBy("createdAt", "desc"));
             const unsubscribeComments = onSnapshot(commentsQuery, (snapshot) => {
                 const commentsData = snapshot.docs.map(doc => {
                      const data = doc.data();
@@ -427,11 +427,6 @@ export default function PostDetailPage() {
                         isLiked: Array.isArray(data.likes) ? data.likes.includes(user.uid || '') : false,
                         isRetweeted: Array.isArray(data.retweets) ? data.retweets.includes(user.uid || '') : false,
                     } as Comment;
-                });
-                commentsData.sort((a, b) => {
-                    const timeA = a.createdAt?.toMillis() || 0;
-                    const timeB = b.createdAt?.toMillis() || 0;
-                    return timeB - timeA;
                 });
                 setComments(commentsData);
             });
@@ -553,7 +548,7 @@ export default function PostDetailPage() {
                                 isVerified: zisprUser.isVerified || false,
                             },
                             type: 'mention',
-                            text: 'notifications.mention',
+                            text: 'mencionou você em um post:',
                             postContent: newComment.substring(0, 50),
                             postId: post.id,
                             createdAt: serverTimestamp(),
@@ -584,7 +579,7 @@ export default function PostDetailPage() {
                                 isVerified: zisprUser.isVerified || false,
                             },
                             type: 'reply',
-                            text: 'notifications.reply',
+                            text: 'respondeu ao seu post:',
                             postContent: post.content.substring(0, 50),
                             postId: post.id,
                             createdAt: serverTimestamp(),
@@ -666,7 +661,7 @@ export default function PostDetailPage() {
                                     isVerified: zisprUser.isVerified || false,
                                 },
                                 type: action,
-                                text: `notifications.${action}`,
+                                text: `curtiu seu post`,
                                 postContent: post.content.substring(0, 50),
                                 postId: post.id,
                                 createdAt: serverTimestamp(),
@@ -862,7 +857,7 @@ export default function PostDetailPage() {
                             <div>
                                 <p className="font-bold flex items-center gap-1">
                                     {post.author} 
-                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={`h-6 w-6 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
+                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={'h-6 w-6 ' + (isRulio ? 'text-white fill-primary' : badgeColor)} />)}
                                 </p>
                                 <p className="text-sm text-muted-foreground">{post.handle}</p>
                             </div>
@@ -980,7 +975,7 @@ export default function PostDetailPage() {
                         </button>
                         <Popover>
                             <PopoverTrigger asChild>
-                                <button onClick={(e) => e.stopPropagation()} className={`flex items-center gap-2 hover:text-green-500 transition-colors ${post.isRetweeted ? 'text-green-500' : ''}`}>
+                                <button onClick={(e) => e.stopPropagation()} className={'flex items-center gap-2 hover:text-green-500 transition-colors ' + (post.isRetweeted ? 'text-green-500' : '')}>
                                     <Repeat className="h-5 w-5" />
                                     <span>{Array.isArray(post.retweets) ? post.retweets.length : 0}</span>
                                 </button>
@@ -1006,8 +1001,8 @@ export default function PostDetailPage() {
                                 </div>
                             </PopoverContent>
                         </Popover>
-                        <button onClick={() => handlePostAction('like')} className={`flex items-center gap-2 ${post.isLiked ? 'text-red-500' : ''}`}>
-                                <Heart className={`h-5 w-5 hover:text-red-500 transition-colors ${post.isLiked ? 'fill-current' : ''}`} />
+                        <button onClick={() => handlePostAction('like')} className={'flex items-center gap-2 ' + (post.isLiked ? 'text-red-500' : '')}>
+                                <Heart className={'h-5 w-5 hover:text-red-500 transition-colors ' + (post.isLiked ? 'fill-current' : '')} />
                             <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
                         </button>
                         <button
@@ -1107,7 +1102,7 @@ export default function PostDetailPage() {
                     onOpenChange={setIsQuoteModalOpen}
                     quotedPost={post}
                 />}
-                 {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} comments={comments} />}
+                 {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
                  {analyticsPost && <PostAnalyticsModal post={analyticsPost} onOpenChange={() => setAnalyticsPost(null)} />}
                  {postToSave && user && (
                     <SaveToCollectionModal
@@ -1154,5 +1149,3 @@ export default function PostDetailPage() {
         </div>
     );
 }
-
-    
