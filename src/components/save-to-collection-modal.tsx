@@ -10,6 +10,7 @@ import { auth, db } from '@/lib/firebase';
 import { doc, onSnapshot, runTransaction } from 'firebase/firestore';
 import { User as FirebaseUser } from 'firebase/auth';
 import { v4 as uuidv4 } from 'uuid';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface Collection {
     id: string;
@@ -30,6 +31,7 @@ interface SaveToCollectionModalProps {
 
 export default function SaveToCollectionModal({ open, onOpenChange, postId, currentUser }: SaveToCollectionModalProps) {
     const { toast } = useToast();
+    const { t } = useTranslation();
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -53,6 +55,8 @@ export default function SaveToCollectionModal({ open, onOpenChange, postId, curr
     const handleToggleSave = async (collectionId: string) => {
         setIsSaving(true);
         const userRef = doc(db, 'users', currentUser.uid);
+        const collection = zisprUser?.collections?.find(c => c.id === collectionId);
+        const isCurrentlySaved = collection?.postIds.includes(postId);
         
         try {
             await runTransaction(db, async (transaction) => {
@@ -77,13 +81,13 @@ export default function SaveToCollectionModal({ open, onOpenChange, postId, curr
             });
             
              toast({
-                title: 'Sucesso!',
-                description: `Post ${zisprUser?.collections?.find(c => c.id === collectionId)?.postIds.includes(postId) ? 'removido da' : 'adicionado à'} coleção.`,
+                title: t('collections.toasts.saveSuccess.title'),
+                description: isCurrentlySaved ? t('collections.toasts.saveSuccess.removed') : t('collections.toasts.saveSuccess.added'),
             });
 
         } catch (error) {
             console.error("Erro ao salvar post:", error);
-            toast({ title: "Erro", description: "Não foi possível salvar o post.", variant: "destructive" });
+            toast({ title: t('collections.toasts.saveError.title'), description: t('collections.toasts.saveError.description'), variant: "destructive" });
         } finally {
             setIsSaving(false);
         }
@@ -113,8 +117,8 @@ export default function SaveToCollectionModal({ open, onOpenChange, postId, curr
             });
             
             toast({
-                title: "Coleção Criada!",
-                description: `Post salvo em "${newCollectionName}".`,
+                title: t('collections.createModal.success.title'),
+                description: t('collections.createModal.success.descriptionWithSave', { name: newCollectionName }),
             });
             setIsCreateModalOpen(false);
             setNewCollectionName('');
@@ -147,7 +151,7 @@ export default function SaveToCollectionModal({ open, onOpenChange, postId, curr
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md bg-background/80 backdrop-blur-lg rounded-2xl">
                 <DialogHeader>
-                    <DialogTitle>Salvar em...</DialogTitle>
+                    <DialogTitle>{t('collections.saveModal.title')}</DialogTitle>
                 </DialogHeader>
                 {isLoading ? (
                     <div className="flex justify-center items-center h-48">
@@ -157,6 +161,7 @@ export default function SaveToCollectionModal({ open, onOpenChange, postId, curr
                     <div className="max-h-80 overflow-y-auto space-y-2 pr-2">
                         {sortedCollections.map(collection => {
                              const isSavedInThisCollection = collection.postIds.includes(postId);
+                             const collectionName = collection.id === 'all_saved' ? t('collections.allSaved') : collection.name;
                              return (
                                 <button
                                     key={collection.id}
@@ -169,8 +174,8 @@ export default function SaveToCollectionModal({ open, onOpenChange, postId, curr
                                             <Bookmark className={`h-6 w-6 ${isSavedInThisCollection ? 'text-primary fill-current' : 'text-muted-foreground'}`} />
                                         </div>
                                         <div>
-                                            <p className="font-semibold">{collection.name}</p>
-                                            <p className="text-sm text-muted-foreground">{collection.postIds?.length || 0} posts</p>
+                                            <p className="font-semibold">{collectionName}</p>
+                                            <p className="text-sm text-muted-foreground">{collection.postIds?.length || 0} {t('collections.postsCount')}</p>
                                         </div>
                                     </div>
                                     {isSavedInThisCollection && <Check className="h-5 w-5 text-primary" />}
@@ -189,7 +194,7 @@ export default function SaveToCollectionModal({ open, onOpenChange, postId, curr
                         }}
                     >
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        Criar nova coleção
+                        {t('collections.saveModal.newCollectionButton')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -198,19 +203,19 @@ export default function SaveToCollectionModal({ open, onOpenChange, postId, curr
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
              <DialogContent>
                  <DialogHeader>
-                    <DialogTitle>Criar nova coleção e salvar</DialogTitle>
+                    <DialogTitle>{t('collections.createAndSaveModal.title')}</DialogTitle>
                  </DialogHeader>
                  <input
-                    placeholder="Nome da coleção"
+                    placeholder={t('collections.createAndSaveModal.placeholder')}
                     value={newCollectionName}
                     onChange={(e) => setNewCollectionName(e.target.value)}
                     className="w-full p-2 border rounded-md"
                  />
                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancelar</Button>
+                    <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>{t('profile.dialogs.cancel')}</Button>
                     <Button onClick={handleCreateAndAdd} disabled={isSaving || !newCollectionName.trim()}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Criar e Salvar
+                        {t('collections.createAndSaveModal.saveButton')}
                     </Button>
                  </DialogFooter>
              </DialogContent>

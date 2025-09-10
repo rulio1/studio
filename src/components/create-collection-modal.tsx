@@ -11,6 +11,7 @@ import { doc, runTransaction } from 'firebase/firestore';
 import { User as FirebaseUser } from 'firebase/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { Input } from './ui/input';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface Collection {
     id: string;
@@ -26,12 +27,13 @@ interface CreateCollectionModalProps {
 
 export default function CreateCollectionModal({ open, onOpenChange, currentUser }: CreateCollectionModalProps) {
     const { toast } = useToast();
+    const { t } = useTranslation();
     const [isSaving, setIsSaving] = useState(false);
     const [name, setName] = useState('');
 
     const handleCreate = async () => {
         if (!name.trim()) {
-            toast({ title: "Nome da coleção não pode ser vazio.", variant: "destructive" });
+            toast({ title: t('collections.createModal.validation.emptyName'), variant: "destructive" });
             return;
         }
         setIsSaving(true);
@@ -45,7 +47,7 @@ export default function CreateCollectionModal({ open, onOpenChange, currentUser 
                 const collections = (userDoc.data().collections || []) as Collection[];
                 
                 if (collections.some(c => c.name.toLowerCase() === name.trim().toLowerCase())) {
-                    throw new Error("Uma coleção com este nome já existe.");
+                    throw new Error(t('collections.createModal.validation.duplicateName'));
                 }
 
                 const newCollection: Collection = {
@@ -59,8 +61,8 @@ export default function CreateCollectionModal({ open, onOpenChange, currentUser 
             });
             
             toast({
-                title: "Coleção Criada!",
-                description: `A coleção "${name.trim()}" foi criada com sucesso.`,
+                title: t('collections.createModal.success.title'),
+                description: t('collections.createModal.success.description', { name: name.trim() }),
             });
             setName('');
             onOpenChange(false);
@@ -77,11 +79,11 @@ export default function CreateCollectionModal({ open, onOpenChange, currentUser 
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Criar Nova Coleção</DialogTitle>
+                    <DialogTitle>{t('collections.createModal.title')}</DialogTitle>
                 </DialogHeader>
                 <div className="py-4">
                     <Input 
-                        placeholder="Nome da sua coleção"
+                        placeholder={t('collections.createModal.placeholder')}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         disabled={isSaving}
@@ -89,11 +91,11 @@ export default function CreateCollectionModal({ open, onOpenChange, currentUser 
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button variant="outline" disabled={isSaving}>Cancelar</Button>
+                        <Button variant="outline" disabled={isSaving}>{t('profile.dialogs.cancel')}</Button>
                     </DialogClose>
                     <Button onClick={handleCreate} disabled={isSaving || !name.trim()}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Criar
+                        {t('collections.createModal.createButton')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

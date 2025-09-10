@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUserStore } from '@/store/user-store';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface BlockedUser {
     uid: string;
@@ -32,6 +33,7 @@ const badgeColors = {
 export default function BlockedAccountsPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const { user: currentUser, zisprUser } = useUserStore();
     const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -56,11 +58,11 @@ export default function BlockedAccountsPage() {
             setBlockedUsers(usersData);
         } catch (error) {
             console.error("Error fetching blocked users:", error);
-            toast({ title: "Erro ao buscar contas bloqueadas.", variant: "destructive" });
+            toast({ title: t('blocked.toasts.fetchError'), variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
-    }, [zisprUser, toast]);
+    }, [zisprUser, toast, t]);
 
     useEffect(() => {
         if (zisprUser) {
@@ -83,12 +85,12 @@ export default function BlockedAccountsPage() {
             await batch.commit();
 
             toast({
-                title: `${targetUser.handle} desbloqueado.`,
+                title: t('blocked.toasts.unblockSuccess', { handle: targetUser.handle }),
             });
             // The onSnapshot listener will update the UI automatically.
         } catch (error) {
             console.error("Error unblocking user:", error);
-            toast({ title: "Erro ao desbloquear usuário.", variant: "destructive" });
+            toast({ title: t('blocked.toasts.unblockError'), variant: "destructive" });
         } finally {
             setUnblockingId(null);
         }
@@ -98,9 +100,9 @@ export default function BlockedAccountsPage() {
         <main className="flex-1 overflow-y-auto p-4">
              <Card>
                 <CardHeader>
-                    <CardTitle>Contas Bloqueadas</CardTitle>
+                    <CardTitle>{t('blocked.title')}</CardTitle>
                     <CardDescription>
-                        As contas que você bloqueou aparecerão aqui. Elas não poderão seguir ou enviar mensagens para você, e você não verá notificações delas.
+                        {t('blocked.description')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -111,8 +113,8 @@ export default function BlockedAccountsPage() {
                     ) : blockedUsers.length === 0 ? (
                         <div className="text-center p-8 text-muted-foreground">
                             <UserX className="mx-auto h-12 w-12 mb-4" />
-                            <h3 className="font-bold text-lg text-foreground">Você não bloqueou ninguém</h3>
-                            <p className="text-sm">Quando você bloquear alguém, essa pessoa aparecerá aqui.</p>
+                            <h3 className="font-bold text-lg text-foreground">{t('blocked.empty.title')}</h3>
+                            <p className="text-sm">{t('blocked.empty.description')}</p>
                         </div>
                     ) : (
                         <div className="divide-y divide-border">
@@ -141,7 +143,7 @@ export default function BlockedAccountsPage() {
                                             disabled={unblockingId === user.uid}
                                         >
                                             {unblockingId === user.uid && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Desbloquear
+                                            {t('blocked.unblockButton')}
                                         </Button>
                                     </div>
                                 )

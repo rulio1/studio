@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent as EditDialogContent, DialogHeader as EditDialogHeader, DialogTitle as EditDialogTitle, DialogFooter as EditDialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface Collection {
     id: string;
@@ -24,6 +25,7 @@ interface Collection {
 export default function CollectionsSettingsPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { t } = useTranslation();
     const { user: currentUser, zisprUser } = useUserStore();
     const [collections, setCollections] = useState<Collection[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -54,7 +56,7 @@ export default function CollectionsSettingsPage() {
 
     const handleDeleteCollection = async (collectionId: string) => {
         if (!currentUser || collectionId === 'all_saved') {
-            toast({ title: "Não é possível excluir a coleção padrão.", variant: "destructive" });
+            toast({ title: t('collections.toasts.deleteDefaultError'), variant: "destructive" });
             return;
         }
 
@@ -68,10 +70,10 @@ export default function CollectionsSettingsPage() {
                 const updatedCollections = currentCollections.filter(c => c.id !== collectionId);
                 transaction.update(userRef, { collections: updatedCollections });
             });
-            toast({ title: "Coleção excluída com sucesso." });
+            toast({ title: t('collections.toasts.deleteSuccess') });
         } catch (error) {
             console.error("Error deleting collection:", error);
-            toast({ title: "Erro ao excluir coleção.", variant: "destructive" });
+            toast({ title: t('collections.toasts.deleteError'), variant: "destructive" });
         }
     };
 
@@ -99,12 +101,12 @@ export default function CollectionsSettingsPage() {
                 currentCollections[collectionIndex].name = newCollectionName.trim();
                 transaction.update(userRef, { collections: currentCollections });
             });
-            toast({ title: "Coleção renomeada com sucesso." });
+            toast({ title: t('collections.toasts.renameSuccess') });
             setEditingCollection(null);
             setNewCollectionName('');
         } catch (error) {
             console.error("Error renaming collection:", error);
-            toast({ title: "Erro ao renomear coleção.", variant: "destructive" });
+            toast({ title: t('collections.toasts.renameError'), variant: "destructive" });
         } finally {
             setIsSaving(false);
         }
@@ -116,9 +118,9 @@ export default function CollectionsSettingsPage() {
             <main className="flex-1 overflow-y-auto p-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Gerenciar Coleções</CardTitle>
+                        <CardTitle>{t('collections.title')}</CardTitle>
                         <CardDescription>
-                            Edite ou exclua suas coleções de posts salvos.
+                            {t('collections.description')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -129,61 +131,64 @@ export default function CollectionsSettingsPage() {
                         ) : collections.length === 0 ? (
                             <div className="text-center p-8 text-muted-foreground">
                                 <Library className="mx-auto h-12 w-12 mb-4" />
-                                <h3 className="font-bold text-lg text-foreground">Nenhuma coleção encontrada</h3>
-                                <p className="text-sm">Quando você criar coleções, elas aparecerão aqui.</p>
+                                <h3 className="font-bold text-lg text-foreground">{t('collections.empty.title')}</h3>
+                                <p className="text-sm">{t('collections.empty.description')}</p>
                             </div>
                         ) : (
                             <div className="divide-y divide-border">
-                                {collections.map(collection => (
-                                    <div key={collection.id} className="flex items-center justify-between p-4 group">
-                                        <div className="flex items-center gap-4 cursor-pointer" onClick={() => router.push(`/collections/${collection.id}`)}>
-                                            <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
-                                                <Library className="h-6 w-6 text-muted-foreground" />
+                                {collections.map(collection => {
+                                    const collectionName = collection.id === 'all_saved' ? t('collections.allSaved') : collection.name;
+                                    return (
+                                        <div key={collection.id} className="flex items-center justify-between p-4 group">
+                                            <div className="flex items-center gap-4 cursor-pointer" onClick={() => router.push(`/collections/${collection.id}`)}>
+                                                <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
+                                                    <Library className="h-6 w-6 text-muted-foreground" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold group-hover:underline">{collectionName}</p>
+                                                    <p className="text-sm text-muted-foreground">{collection.postIds?.length || 0} {t('collections.postsCount')}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-bold group-hover:underline">{collection.name}</p>
-                                                <p className="text-sm text-muted-foreground">{collection.postIds?.length || 0} posts</p>
-                                            </div>
-                                        </div>
-                                        {collection.id !== 'all_saved' && (
-                                            <AlertDialog>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon">
-                                                            <MoreHorizontal className="h-5 w-5" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent>
-                                                        <DropdownMenuItem onClick={() => openEditDialog(collection)}>
-                                                            <Edit className="mr-2 h-4 w-4" />
-                                                            Renomear
-                                                        </DropdownMenuItem>
-                                                        <AlertDialogTrigger asChild>
-                                                            <DropdownMenuItem className="text-destructive">
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                Excluir
+                                            {collection.id !== 'all_saved' && (
+                                                <AlertDialog>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon">
+                                                                <MoreHorizontal className="h-5 w-5" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent>
+                                                            <DropdownMenuItem onClick={() => openEditDialog(collection)}>
+                                                                <Edit className="mr-2 h-4 w-4" />
+                                                                {t('collections.actions.rename')}
                                                             </DropdownMenuItem>
-                                                        </AlertDialogTrigger>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Excluir &quot;{collection.name}&quot;?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Isso não excluirá os posts salvos. Eles permanecerão disponíveis em &quot;Todos os posts salvos&quot;. Essa ação não pode ser desfeita.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDeleteCollection(collection.id)} className="bg-destructive hover:bg-destructive/90">
-                                                            Excluir
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        )}
-                                    </div>
-                                ))}
+                                                            <AlertDialogTrigger asChild>
+                                                                <DropdownMenuItem className="text-destructive">
+                                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                                    {t('collections.actions.delete')}
+                                                                </DropdownMenuItem>
+                                                            </AlertDialogTrigger>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>{t('collections.deleteDialog.title', { name: collection.name })}</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                {t('collections.deleteDialog.description')}
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>{t('profile.dialogs.cancel')}</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDeleteCollection(collection.id)} className="bg-destructive hover:bg-destructive/90">
+                                                                {t('collections.actions.delete')}
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            )}
+                                        </div>
+                                    )
+                                })}
                             </div>
                         )}
                     </CardContent>
@@ -193,21 +198,21 @@ export default function CollectionsSettingsPage() {
             <Dialog open={!!editingCollection} onOpenChange={(open) => !open && setEditingCollection(null)}>
                 <EditDialogContent>
                     <EditDialogHeader>
-                        <EditDialogTitle>Renomear Coleção</EditDialogTitle>
+                        <EditDialogTitle>{t('collections.renameDialog.title')}</EditDialogTitle>
                     </EditDialogHeader>
                     <div className="py-4">
                          <Input 
                             value={newCollectionName}
                             onChange={(e) => setNewCollectionName(e.target.value)}
-                            placeholder="Novo nome da coleção"
+                            placeholder={t('collections.renameDialog.placeholder')}
                             disabled={isSaving}
                         />
                     </div>
                     <EditDialogFooter>
-                        <Button variant="outline" onClick={() => setEditingCollection(null)} disabled={isSaving}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => setEditingCollection(null)} disabled={isSaving}>{t('profile.dialogs.cancel')}</Button>
                         <Button onClick={handleRenameCollection} disabled={isSaving || !newCollectionName.trim() || newCollectionName.trim() === editingCollection?.name}>
                             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Salvar
+                            {t('profile.edit.saveButton')}
                         </Button>
                     </EditDialogFooter>
                 </EditDialogContent>
