@@ -634,7 +634,7 @@ useEffect(() => {
                       </div>
                        <nav className="flex-1 flex flex-col gap-2 p-4">
                           {navItems.map((item) => (
-                              <SheetClose asChild key={item.label}>
+                              <SheetClose asChild key={item.href}>
                                   <Link href={item.href} className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                                       <item.icon className="h-6 w-6" /> {item.label}
                                   </Link>
@@ -642,7 +642,7 @@ useEffect(() => {
                           ))}
                           <SheetClose asChild>
                               <Link href="/supporter" className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
-                                  <HandHeart className="h-6 w-6" /> Seja um Apoiador
+                                  <HandHeart className="h-6 w-6" /> {t('supporter.title')}
                               </Link>
                           </SheetClose>
                         </nav>
@@ -736,7 +736,7 @@ useEffect(() => {
                 onOpenChange={setIsQuoteModalOpen}
                 quotedPost={postToQuote}
             />}
-            {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} />}
+            {postToView && <ImageViewer post={postToView} onOpenChange={() => setPostToView(null)} comments={allPosts.find(p => p.id === postToView.id)?.comments || 0} />}
             {analyticsPost && <PostAnalyticsModal post={analyticsPost} onOpenChange={() => setAnalyticsPost(null)} />}
              {postToSave && user && (
                 <SaveToCollectionModal
@@ -750,3 +750,5 @@ useEffect(() => {
     </>
   );
 }
+
+    

@@ -129,5 +129,14 @@
       "label": "Profilbesuche",
       "tooltip": "Die Anzahl der Besuche Ihres Profils von diesem Beitrag aus."
     }
+  },
+  "supporter": {
+    "title": "Werde Unterstützer",
+    "description": "Unterstütze Zispr, um exklusive Vorteile zu erhalten und der Plattform beim Wachsen zu helfen!",
+    "button": "Pläne anzeigen",
+    "pageTitle": "Unterstützerpläne folgen in Kürze",
+    "pageDescription": "Wir arbeiten an den letzten Details, damit du Zispr unterstützen kannst! Dein Beitrag wird entscheidend sein, um die Plattform am Laufen zu halten und wachsen zu lassen."
   }
 }
+
+    

@@ -129,5 +129,14 @@
       "label": "Visitas ao perfil",
       "tooltip": "O número de vezes que o seu perfil foi visitado a partir deste post."
     }
+  },
+  "supporter": {
+    "title": "Seja um Apoiador",
+    "description": "Apoie o Zispr para obter benefícios exclusivos e ajudar a plataforma a crescer!",
+    "button": "Ver Planos",
+    "pageTitle": "Planos de Apoio em Breve",
+    "pageDescription": "Estamos finalizando os detalhes para que você possa apoiar o Zispr! Sua contribuição será fundamental para manter a plataforma funcionando e crescendo."
   }
 }
+
+    

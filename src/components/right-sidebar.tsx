@@ -14,6 +14,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Search, Loader2, MoreHorizontal, BadgeCheck, Bird, HandHeart } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import NewsCard from './news-card';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface UserToFollow {
     uid: string;
@@ -37,6 +38,7 @@ const badgeColors = {
 
 export default function RightSidebar() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
     const [usersToFollow, setUsersToFollow] = useState<UserToFollow[]>([]);
@@ -129,15 +131,15 @@ export default function RightSidebar() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <HandHeart className="text-primary"/>
-                            Seja um Apoiador
+                            {t('supporter.title')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground mb-4">
-                            Apoie o Zispr para obter benefícios exclusivos e ajudar a plataforma a crescer!
+                            {t('supporter.description')}
                         </p>
                          <Button className="w-full rounded-full font-bold" onClick={() => router.push('/supporter')}>
-                           Ver Planos
+                           {t('supporter.button')}
                         </Button>
                     </CardContent>
                 </Card>
@@ -212,3 +214,5 @@ export default function RightSidebar() {
         </aside>
     );
 }
+
+    

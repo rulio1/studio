@@ -129,5 +129,14 @@
       "label": "Profile visits",
       "tooltip": "The number of times your profile was visited from this post."
     }
+  },
+  "supporter": {
+    "title": "Become a Supporter",
+    "description": "Support Zispr to get exclusive benefits and help the platform grow!",
+    "button": "View Plans",
+    "pageTitle": "Supporter Plans Coming Soon",
+    "pageDescription": "We are finalizing the details for you to support Zispr! Your contribution will be fundamental to keep the platform running and growing."
   }
 }
+
+    

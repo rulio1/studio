@@ -129,5 +129,14 @@
       "label": "Visitas al perfil",
       "tooltip": "El número de veces que se ha visitado tu perfil desde esta publicación."
     }
+  },
+  "supporter": {
+    "title": "Conviértete en Patrocinador",
+    "description": "¡Apoya a Zispr para obtener beneficios exclusivos y ayudar a la plataforma a crecer!",
+    "button": "Ver Planes",
+    "pageTitle": "Planes de Patrocinador Próximamente",
+    "pageDescription": "¡Estamos finalizando los detalles para que puedas apoyar a Zispr! Tu contribución será fundamental para mantener la plataforma funcionando y creciendo."
   }
 }
+
+    

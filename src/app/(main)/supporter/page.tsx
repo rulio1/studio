@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { HandHeart, ArrowLeft, BadgeCheck, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/hooks/use-translation";
 
 const tiers = [
   {
@@ -42,6 +43,7 @@ const tiers = [
 
 export default function SupporterPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   
   return (
     <>
@@ -50,15 +52,15 @@ export default function SupporterPage() {
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
                 <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-xl font-bold">Seja um Apoiador</h1>
+            <h1 className="text-xl font-bold">{t('supporter.title')}</h1>
         </div>
       </header>
       <div className="flex flex-col items-center p-4 md:p-8 animate-fade-in bg-background">
         <div className="text-center mb-8">
           <HandHeart className="mx-auto h-16 w-16 text-primary mb-4" />
-          <h1 className="text-4xl font-bold tracking-tight">Planos de Apoio em Breve</h1>
+          <h1 className="text-4xl font-bold tracking-tight">{t('supporter.pageTitle')}</h1>
           <p className="mt-2 text-lg text-muted-foreground max-w-2xl">
-            Estamos finalizando os detalhes para que você possa apoiar o Zispr! Sua contribuição será fundamental para manter a plataforma funcionando e crescendo.
+            {t('supporter.pageDescription')}
           </p>
         </div>
 
@@ -91,3 +93,5 @@ export default function SupporterPage() {
     </>
   );
 }
+
+    
