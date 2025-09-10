@@ -26,6 +26,7 @@ export default function SettingsLayout({
         'privacy': t('settings.layout.title.privacy'),
         'notifications': t('settings.layout.title.notifications'),
         'language': t('settings.layout.title.language'),
+        'blocked': 'Contas Bloqueadas',
     };
 
     useEffect(() => {

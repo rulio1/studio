@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
-import { Loader2, Heart, Lock } from 'lucide-react';
+import { Loader2, Heart, Lock, UserX, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -16,6 +15,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface ZisprUser {
     likesArePrivate?: boolean;
+}
+
+const SettingsItem = ({ icon, title, description, onClick, isDestructive = false, disabled = false }: { icon: React.ElementType, title: string, description: string, onClick?: () => void, isDestructive?: boolean, disabled?: boolean }) => {
+    const Icon = icon;
+    return (
+        <div className={`flex items-center p-4 rounded-lg ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted/50 cursor-pointer'} ${isDestructive ? 'text-destructive hover:bg-destructive/10' : ''}`} onClick={disabled ? undefined : onClick}>
+            <Icon className={`h-6 w-6 mr-4 ${isDestructive ? 'text-destructive' : 'text-muted-foreground'}`} />
+            <div className="flex-1">
+                <p className="font-semibold">{title}</p>
+                <p className={`text-sm ${isDestructive ? 'text-destructive/80' : 'text-muted-foreground'}`}>{description}</p>
+            </div>
+            {!disabled && <ChevronRight className="h-5 w-5 text-muted-foreground" />}
+        </div>
+    )
 }
 
 export default function PrivacySettingsPage() {
@@ -126,6 +139,21 @@ export default function PrivacySettingsPage() {
                             />
                          )}
                     </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Gerenciamento</CardTitle>
+                    <CardDescription>Gerencie as contas que você bloqueou.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <SettingsItem 
+                        icon={UserX} 
+                        title="Contas bloqueadas" 
+                        description="Gerencie a lista de contas que você bloqueou."
+                        onClick={() => router.push('/settings/privacy/blocked')}
+                    />
                 </CardContent>
             </Card>
         </main>
