@@ -25,9 +25,6 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (!user || isLoading) return;
-
-        // Request notification permission on load
-        requestNotificationPermission(user.uid);
     
         const notificationsQuery = query(
             collection(db, "notifications"), 
