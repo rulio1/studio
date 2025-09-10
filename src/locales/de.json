@@ -412,5 +412,36 @@
       "title": "{handle} blockieren?",
       "description": "Er kann Ihnen nicht mehr folgen oder Nachrichten senden, und Sie sehen keine Benachrichtigungen von ihm. Er wird nicht benachrichtigt, dass er blockiert wurde."
     }
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "followBack": "Zurückfolgen",
+    "following": "Gefolgt",
+    "tabs": {
+      "all": "Alle",
+      "verified": "Verifiziert",
+      "mentions": "Erwähnungen"
+    },
+    "emptyStates": {
+      "all": {
+        "title": "Noch keine Benachrichtigungen",
+        "description": "Wenn Sie neue Benachrichtigungen haben, werden sie hier angezeigt."
+      },
+      "verified": {
+        "title": "Hier gibt es noch nichts zu sehen",
+        "description": "Likes, Erwähnungen, Retweets und mehr – wenn es von einem verifizierten Konto kommt, finden Sie es hier."
+      },
+      "mentions": {
+        "title": "Hier gibt es noch nichts zu sehen",
+        "description": "Wenn Sie jemand erwähnt, finden Sie es hier."
+      }
+    },
+    "like": "hat deinen Beitrag geliked",
+    "follow": "hat begonnen, dir zu folgen",
+    "retweet": "hat deinen Beitrag retweetet",
+    "mention": "hat dich in einem Beitrag erwähnt",
+    "reply": "hat auf deinen Beitrag geantwortet"
   }
 }
+
+    

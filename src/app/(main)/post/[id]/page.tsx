@@ -553,7 +553,7 @@ export default function PostDetailPage() {
                                 isVerified: zisprUser.isVerified || false,
                             },
                             type: 'mention',
-                            text: 'mencionou você em uma resposta',
+                            text: 'notifications.mention',
                             postContent: newComment.substring(0, 50),
                             postId: post.id,
                             createdAt: serverTimestamp(),
@@ -584,7 +584,7 @@ export default function PostDetailPage() {
                                 isVerified: zisprUser.isVerified || false,
                             },
                             type: 'reply',
-                            text: 'respondeu ao seu post',
+                            text: 'notifications.reply',
                             postContent: post.content.substring(0, 50),
                             postId: post.id,
                             createdAt: serverTimestamp(),
@@ -666,7 +666,7 @@ export default function PostDetailPage() {
                                     isVerified: zisprUser.isVerified || false,
                                 },
                                 type: action,
-                                text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
+                                text: `notifications.${action}`,
                                 postContent: post.content.substring(0, 50),
                                 postId: post.id,
                                 createdAt: serverTimestamp(),
@@ -1154,3 +1154,5 @@ export default function PostDetailPage() {
         </div>
     );
 }
+
+    

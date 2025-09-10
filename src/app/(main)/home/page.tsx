@@ -275,21 +275,21 @@ useEffect(() => {
 
     const handlePostAction = useCallback(async (postId: string, action: 'like' | 'retweet', authorId: string) => {
         if (!user || !zisprUser) return;
-    
+
         const postRef = doc(db, 'posts', postId);
         const post = allPosts.find(p => p.id === postId) || followingPosts.find(p => p.id === postId);
         if (!post) return;
-    
+
         const isActioned = action === 'like' ? post.isLiked : post.retweets.includes(user.uid);
-    
+
         // Firebase update
         try {
             const batch = writeBatch(db);
-    
+
             if (isActioned) {
                 const field = action === 'like' ? 'likes' : 'retweets';
                 batch.update(postRef, { [field]: arrayRemove(user.uid) });
-    
+
                 if (action === 'retweet') {
                     const repostQuery = query(collection(db, 'reposts'), where('userId', '==', user.uid), where('postId', '==', postId));
                     const repostSnapshot = await getDocs(repostQuery);
@@ -298,7 +298,7 @@ useEffect(() => {
             } else {
                 const field = action === 'like' ? 'likes' : 'retweets';
                 batch.update(postRef, { [field]: arrayUnion(user.uid) });
-    
+
                 if (action === 'retweet') {
                     const repostRef = doc(collection(db, 'reposts'));
                     batch.set(repostRef, {
@@ -308,8 +308,35 @@ useEffect(() => {
                         repostedAt: serverTimestamp()
                     });
                 }
-    
-                // A lógica de notificação foi removida daqui e será centralizada em uma API
+
+                if (user.uid !== authorId) {
+                    const authorDoc = await getDoc(doc(db, 'users', authorId));
+                    if (authorDoc.exists()) {
+                        const authorData = authorDoc.data();
+                        const prefs = authorData.notificationPreferences;
+                        const canSendNotification = !prefs || prefs[action] !== false;
+
+                        if (canSendNotification) {
+                            const notificationRef = doc(collection(db, 'notifications'));
+                            batch.set(notificationRef, {
+                                toUserId: authorId,
+                                fromUserId: user.uid,
+                                fromUser: {
+                                    name: zisprUser.displayName,
+                                    handle: zisprUser.handle,
+                                    avatar: zisprUser.avatar,
+                                    isVerified: zisprUser.isVerified || false,
+                                },
+                                type: action,
+                                text: `notifications.${action}`,
+                                postContent: post.content.substring(0, 50),
+                                postId: post.id,
+                                createdAt: serverTimestamp(),
+                                read: false,
+                            });
+                        }
+                    }
+                }
             }
             await batch.commit();
         } catch (error) {
@@ -403,7 +430,7 @@ useEffect(() => {
                             isVerified: zisprUser?.isVerified || false,
                         },
                         type: 'mention',
-                        text: 'mencionou você em um post',
+                        text: 'notifications.mention',
                         postContent: editedContent.substring(0, 50),
                         postId: editingPost.id,
                         createdAt: serverTimestamp(),
@@ -455,7 +482,7 @@ useEffect(() => {
         setAuthUser(null, null);
         window.location.href = '/login';
     } catch (error) {
-        toast({ title: 'Erro ao sair', variant: 'destructive' });
+        toast({ title: t('toasts.signOutError.title'), variant: 'destructive' });
     }
   };
     
@@ -634,7 +661,7 @@ useEffect(() => {
                       </div>
                        <nav className="flex-1 flex flex-col gap-2 p-4">
                           {navItems.map((item) => (
-                              <SheetClose asChild key={item.href}>
+                              <SheetClose asChild key={item.label}>
                                   <Link href={item.href} className="flex items-center gap-4 py-2 text-xl font-bold rounded-md">
                                       <item.icon className="h-6 w-6" /> {item.label}
                                   </Link>
@@ -750,5 +777,7 @@ useEffect(() => {
     </>
   );
 }
+
+    
 
     

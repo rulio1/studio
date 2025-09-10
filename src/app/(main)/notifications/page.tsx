@@ -13,6 +13,7 @@ import { collection, query, where, onSnapshot, orderBy, writeBatch, getDocs, doc
 import { formatTimeAgo } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface ZisprUser {
     uid: string;
@@ -56,6 +57,7 @@ const badgeColors = {
 
 const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notification: Notification, zisprUser: ZisprUser | null, handleFollowBack: (userId: string) => Promise<void> }) => {
     const router = useRouter();
+    const { t } = useTranslation();
     const { icon: Icon, color } = iconMap[notification.type] || iconMap.post;
     const [time, setTime] = useState('');
     const [isFollowing, setIsFollowing] = useState(false);
@@ -98,6 +100,7 @@ const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notif
     const isVerified = notification.fromUser.isVerified || isRulio;
     const badgeColor = notification.fromUser.badgeTier ? badgeColors[notification.fromUser.badgeTier] : 'text-primary';
 
+    const notificationText = t(notification.text as any);
 
     return (
         <li className={`p-4 flex gap-4 hover:bg-muted/50 cursor-pointer ${!notification.read ? 'bg-primary/5' : ''}`} onClick={handleItemClick}>
@@ -114,16 +117,16 @@ const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notif
                 <p>
                     <span className="font-bold">{notification.fromUser.name}</span>
                     {isZisprAccount ? <Bird className="inline-block h-4 w-4 text-primary ml-1" /> : (isVerified && <BadgeCheck className={`inline-block h-6 w-6 ${isRulio ? 'text-white fill-primary' : badgeColor} ml-1`} />)}
-                    <span className="font-normal text-muted-foreground"> {notification.text}</span>
+                    <span className="font-normal text-muted-foreground"> {notificationText}</span>
                 </p>
                 {notification.postContent && <p className="text-muted-foreground mt-1">{notification.postContent}</p>}
                 <p className="text-sm text-muted-foreground mt-1">{time}</p>
             </div>
             {notification.type === 'follow' && !isFollowing && (
-                 <Button onClick={onFollowBackClick}>Seguir de volta</Button>
+                 <Button onClick={onFollowBackClick}>{t('notifications.followBack')}</Button>
             )}
              {notification.type === 'follow' && isFollowing && (
-                 <Button variant="secondary" disabled>Seguindo</Button>
+                 <Button variant="secondary" disabled>{t('notifications.following')}</Button>
             )}
         </li>
     );
@@ -132,6 +135,7 @@ const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notif
 
 export default function NotificationsPage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [user, setUser] = useState<FirebaseUser | null>(null);
     const [zisprUser, setZisprUser] = useState<ZisprUser | null>(null);
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -245,15 +249,15 @@ export default function NotificationsPage() {
         <div className="flex items-center justify-between px-4 py-2 gap-4">
           <div className="w-6"></div>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-center">Notificações</h1>
+            <h1 className="text-xl font-bold text-center">{t('notifications.title')}</h1>
           </div>
            <div className="w-6"></div>
         </div>
         <div className="w-full flex justify-center p-2">
             <TabsList className="relative grid w-full grid-cols-3 p-1 bg-muted/50 rounded-full h-11">
-                <TabsTrigger value="all" className="relative z-10 rounded-full text-base">Todas</TabsTrigger>
-                <TabsTrigger value="verified" className="relative z-10 rounded-full text-base">Verificados</TabsTrigger>
-                <TabsTrigger value="mentions" className="relative z-10 rounded-full text-base">Menções</TabsTrigger>
+                <TabsTrigger value="all" className="relative z-10 rounded-full text-base">{t('notifications.tabs.all')}</TabsTrigger>
+                <TabsTrigger value="verified" className="relative z-10 rounded-full text-base">{t('notifications.tabs.verified')}</TabsTrigger>
+                <TabsTrigger value="mentions" className="relative z-10 rounded-full text-base">{t('notifications.tabs.mentions')}</TabsTrigger>
                  <motion.div
                     layoutId="notification-tab-indicator"
                     className="absolute inset-0 h-full p-1"
@@ -276,8 +280,8 @@ export default function NotificationsPage() {
                 ) : notifications.length === 0 ? (
                      <div className="p-8 text-center text-muted-foreground">
                         <Bell className="mx-auto h-16 w-16 mb-4" />
-                        <h3 className="font-bold text-2xl text-foreground">Nenhuma notificação ainda</h3>
-                        <p>Quando você tiver novas notificações, elas aparecerão aqui.</p>
+                        <h3 className="font-bold text-2xl text-foreground">{t('notifications.emptyStates.all.title')}</h3>
+                        <p>{t('notifications.emptyStates.all.description')}</p>
                     </div>
                 ) : (
                     <ul className="divide-y divide-border">
@@ -292,8 +296,8 @@ export default function NotificationsPage() {
                     <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
                 ) : verifiedNotifications.length === 0 ? (
                      <div className="p-8 text-center text-muted-foreground">
-                        <h3 className="font-bold text-2xl text-foreground">Nada para ver aqui — ainda</h3>
-                        <p>Curtidas, menções, repostagens e muito mais — quando vier de uma conta verificada, você encontrará aqui.</p>
+                        <h3 className="font-bold text-2xl text-foreground">{t('notifications.emptyStates.verified.title')}</h3>
+                        <p>{t('notifications.emptyStates.verified.description')}</p>
                     </div>
                 ) : (
                     <ul className="divide-y divide-border">
@@ -308,8 +312,8 @@ export default function NotificationsPage() {
                     <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
                 ) : mentions.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground">
-                        <h3 className="font-bold text-2xl text-foreground">Nada para ver aqui — ainda</h3>
-                        <p>Quando alguém mencionar você, você encontrará aqui.</p>
+                        <h3 className="font-bold text-2xl text-foreground">{t('notifications.emptyStates.mentions.title')}</h3>
+                        <p>{t('notifications.emptyStates.mentions.description')}</p>
                     </div>
                 ) : (
                      <ul className="divide-y divide-border">
@@ -323,5 +327,7 @@ export default function NotificationsPage() {
     </Tabs>
   );
 }
+
+    
 
     

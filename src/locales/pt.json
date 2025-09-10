@@ -412,5 +412,36 @@
       "title": "Bloquear {handle}?",
       "description": "Eles não poderão seguir ou enviar mensagens para você, e você não verá notificações deles. Eles não serão notificados que foram bloqueados."
     }
+  },
+  "notifications": {
+    "title": "Notificações",
+    "followBack": "Seguir de volta",
+    "following": "Seguindo",
+    "tabs": {
+      "all": "Todas",
+      "verified": "Verificados",
+      "mentions": "Menções"
+    },
+    "emptyStates": {
+      "all": {
+        "title": "Nenhuma notificação ainda",
+        "description": "Quando você tiver novas notificações, elas aparecerão aqui."
+      },
+      "verified": {
+        "title": "Nada para ver aqui — ainda",
+        "description": "Curtidas, menções, reposts e muito mais — quando vier de uma conta verificada, você encontrará aqui."
+      },
+      "mentions": {
+        "title": "Nada para ver aqui — ainda",
+        "description": "Quando alguém mencionar você, você encontrará aqui."
+      }
+    },
+    "like": "curtiu seu post",
+    "follow": "seguiu você",
+    "retweet": "repostou seu post",
+    "mention": "mencionou você em um post",
+    "reply": "respondeu ao seu post"
   }
 }
+
+    

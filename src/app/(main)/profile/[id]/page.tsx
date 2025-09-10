@@ -844,7 +844,7 @@ export default function ProfilePage() {
                         badgeTier: zisprUser.badgeTier || null
                     },
                     type: 'follow',
-                    text: 'seguiu você',
+                    text: 'notifications.follow',
                     createdAt: serverTimestamp(),
                     read: false,
                 });
@@ -1020,7 +1020,7 @@ export default function ProfilePage() {
                                 isVerified: zisprUser.isVerified || false,
                             },
                             type: action,
-                            text: action === 'like' ? 'curtiu seu post' : 'repostou seu post',
+                            text: `notifications.${action}`,
                             postContent: post.content.substring(0, 50),
                             postId: post.id,
                             createdAt: serverTimestamp(),
@@ -1103,7 +1103,7 @@ export default function ProfilePage() {
         setIsQuoteModalOpen(true);
     };
 
-    const PostList = ({ posts, loading, emptyTitle, emptyDescription, showPinnedPost = false, emptyIcon }: { posts: Post[], loading: boolean, emptyTitle: string, emptyDescription: string, showPinnedPost?: boolean, emptyIcon?: React.ElementType }) => {
+    const PostList = ({ posts, loading, emptyTitle, emptyDescription, emptyIcon }: { posts: Post[], loading: boolean, emptyTitle: string, emptyDescription: string, emptyIcon?: React.ElementType }) => {
         if (loading) {
             return (
                 <ul>
@@ -1113,33 +1113,13 @@ export default function ProfilePage() {
             );
         }
     
-        const displayPosts = showPinnedPost ? posts : posts.filter(p => !p.isPinned);
-    
-        if (displayPosts.length === 0 && (!showPinnedPost || !pinnedPost)) {
+        if (posts.length === 0) {
             return <EmptyState title={emptyTitle} description={emptyDescription} icon={emptyIcon} />;
         }
     
         return (
             <ul className="divide-y divide-border">
-                {showPinnedPost && pinnedPost && (
-                     <PostItem 
-                        key={`${pinnedPost.id}-pinned`}
-                        post={{ ...pinnedPost, isPinned: true }}
-                        user={currentUser}
-                        zisprUser={zisprUser}
-                        onAction={handlePostAction}
-                        onDelete={setPostToDelete}
-                        onEdit={handleEditClick}
-                        onSave={() => setPostToSave(pinnedPost.id)}
-                        onPin={() => handleTogglePinPost(pinnedPost)}
-                        onVote={handleVote}
-                        toast={toast}
-                        onQuote={handleQuoteClick}
-                        onImageClick={setPostToView}
-                        onAnalyticsClick={setAnalyticsPost}
-                    />
-                )}
-                {displayPosts.map((post) => (
+                {posts.map((post) => (
                     <PostItem 
                         key={`${post.id}-${post.repostedAt?.toMillis() || ''}`}
                         post={post}
@@ -1250,6 +1230,8 @@ export default function ProfilePage() {
         media: 2,
         likes: 3,
     };
+    
+    const combinedPosts = [...(pinnedPost ? [pinnedPost] : []), ...userPosts];
 
     return (
         <div className="animate-fade-in">
@@ -1411,6 +1393,19 @@ export default function ProfilePage() {
                     <button onClick={showFollowing} className="hover:underline"><span className="font-bold text-foreground">{profileUser.following?.length || 0}</span> {t('profile.stats.following')}</button>
                     <button onClick={showFollowers} className="hover:underline"><span className="font-bold text-foreground">{profileUser.followers?.length || 0}</span> {t('profile.stats.followers')}</button>
                 </div>
+                 {pinnedPost && (
+                    <div className="mt-4">
+                        <div className="text-sm text-muted-foreground font-semibold flex items-center gap-2 mb-2 px-4">
+                            <Pin className="h-4 w-4" /> {t('post.pinned')}
+                        </div>
+                         <PostList 
+                            posts={[pinnedPost]}
+                            loading={false}
+                            emptyTitle=""
+                            emptyDescription=""
+                        />
+                    </div>
+                )}
             </div>
             
             {hasBlockedYou ? (
@@ -1447,7 +1442,6 @@ export default function ProfilePage() {
                             loading={isLoadingPosts} 
                             emptyTitle={t('profile.emptyStates.posts.title')} 
                             emptyDescription={t('profile.emptyStates.posts.description')}
-                            showPinnedPost={true}
                         />
                     </TabsContent>
                     <TabsContent value="replies" className="mt-0">
@@ -1579,3 +1573,5 @@ export default function ProfilePage() {
         </div>
     );
 }
+
+    
