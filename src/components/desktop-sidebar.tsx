@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { signOut, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot, collection, query, where } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
+import { useTheme } from 'next-themes';
 
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,7 +22,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
-import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck, Bot, Library, Radio, Languages, Check } from 'lucide-react';
+import { Bird, Home, Bell, Mail, User, Bookmark, MoreHorizontal, Feather, LogOut, Settings, BadgeCheck, Bot, Library, Radio, Languages, Check, Moon, Sun, Laptop } from 'lucide-react';
 import CreatePostModal from './create-post-modal';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
@@ -44,6 +45,7 @@ export default function DesktopSidebar() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [notificationCount, setNotificationCount] = useState(0);
     const [messageCount, setMessageCount] = useState(0);
+    const { setTheme } = useTheme();
 
     const navItems = [
         { href: '/home', icon: Home, label: t('sidebar.home'), count: 0 },
@@ -228,6 +230,28 @@ export default function DesktopSidebar() {
                                         Deutsch
                                     </DropdownMenuItem>
                                 </DropdownMenuSubContent>
+                                </DropdownMenuPortal>
+                            </DropdownMenuSub>
+                            <DropdownMenuSub>
+                                <DropdownMenuSubTrigger>
+                                    <Sun className="mr-2 h-4 w-4" />
+                                    <span>Tema</span>
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuPortal>
+                                    <DropdownMenuSubContent>
+                                        <DropdownMenuItem onClick={() => setTheme("light")}>
+                                            <Sun className="mr-2 h-4 w-4" />
+                                            <span>Claro</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setTheme("dark")}>
+                                            <Moon className="mr-2 h-4 w-4" />
+                                            <span>Escuro</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setTheme("system")}>
+                                            <Laptop className="mr-2 h-4 w-4" />
+                                            <span>Sistema</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuSubContent>
                                 </DropdownMenuPortal>
                             </DropdownMenuSub>
                             <DropdownMenuItem onClick={() => router.push('/settings')}>
