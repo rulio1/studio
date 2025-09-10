@@ -121,7 +121,7 @@ export default function DesktopSidebar() {
         return item.href;
     };
     
-    const handleLanguageChange = (lang: 'pt' | 'en') => {
+    const handleLanguageChange = (lang: 'pt' | 'en' | 'es' | 'de') => {
         setLanguage(lang);
     };
 
@@ -135,7 +135,7 @@ export default function DesktopSidebar() {
                 <nav className="w-full">
                     <ul className="space-y-1">
                         {navItems.map((item) => (
-                             <li key={item.label} className="relative">
+                             <li key={item.href} className="relative">
                                 <div className="relative">
                                     <Link href={getNavItemHref(item)} passHref>
                                         <Button variant="ghost" className={`w-full justify-start text-xl p-6 ${getIsActive(getNavItemHref(item)) ? 'font-bold' : ''}`}>
@@ -218,6 +218,14 @@ export default function DesktopSidebar() {
                                     <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
                                         {language === 'en' && <Check className="mr-2 h-4 w-4" />}
                                         English
+                                    </DropdownMenuItem>
+                                     <DropdownMenuItem onClick={() => handleLanguageChange('es')}>
+                                        {language === 'es' && <Check className="mr-2 h-4 w-4" />}
+                                        Español
+                                    </DropdownMenuItem>
+                                     <DropdownMenuItem onClick={() => handleLanguageChange('de')}>
+                                        {language === 'de' && <Check className="mr-2 h-4 w-4" />}
+                                        Deutsch
                                     </DropdownMenuItem>
                                 </DropdownMenuSubContent>
                                 </DropdownMenuPortal>
