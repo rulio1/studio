@@ -441,5 +441,20 @@
     "retweet": "repostou seu post",
     "mention": "mencionou você em um post",
     "reply": "respondeu ao seu post"
+  },
+  "search": {
+    "placeholder": "Buscar no Zispr",
+    "noResults": "Nenhum resultado para {term}",
+    "postBy": "Post por",
+    "trendingTopic": "Tópico em alta",
+    "tabs": {
+      "top": "Principais",
+      "people": "Pessoas",
+      "posts": "Posts",
+      "trending": "Tendências",
+      "newUsers": "Novos Usuários"
+    }
   }
 }
+
+    

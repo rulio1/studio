@@ -441,5 +441,20 @@
     "retweet": "hat deinen Beitrag retweetet",
     "mention": "hat dich in einem Beitrag erwähnt",
     "reply": "hat auf deinen Beitrag geantwortet"
+  },
+  "search": {
+    "placeholder": "In Zispr suchen",
+    "noResults": "Keine Ergebnisse für {term}",
+    "postBy": "Beitrag von",
+    "trendingTopic": "Trendthema",
+    "tabs": {
+      "top": "Top",
+      "people": "Personen",
+      "posts": "Beiträge",
+      "trending": "Trends",
+      "newUsers": "Neue Benutzer"
+    }
   }
 }
+
+    

@@ -441,5 +441,20 @@
     "retweet": "republicó tu publicación",
     "mention": "te mencionó en una publicación",
     "reply": "respondió a tu publicación"
+  },
+  "search": {
+    "placeholder": "Buscar en Zispr",
+    "noResults": "No hay resultados para {term}",
+    "postBy": "Publicación de",
+    "trendingTopic": "Tema en tendencia",
+    "tabs": {
+      "top": "Principales",
+      "people": "Gente",
+      "posts": "Publicaciones",
+      "trending": "Tendencias",
+      "newUsers": "Nuevos Usuarios"
+    }
   }
 }
+
+    
