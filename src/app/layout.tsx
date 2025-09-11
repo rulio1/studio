@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   icons: {
     icon: '/icon.svg',
-    apple: '/icons/icon-192x192.png', // Adiciona o ícone para iOS
+    apple: '/icon.svg',
   },
 };
 
