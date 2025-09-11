@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
-import { getFirestore, Firestore, initializeFirestore, enableIndexedDbPersistence, memoryLocalCache } from "firebase/firestore";
+import { getFirestore, Firestore, initializeFirestore, memoryLocalCache } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
 import { getMessaging, getToken, isSupported } from "firebase/messaging";
 
@@ -19,25 +19,15 @@ let db: Firestore;
 
 if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
+    // Firestore is initialized with memory cache as a fallback.
+    // IndexedDB persistence is enabled by default in supported browsers.
     db = initializeFirestore(app, {
-        localCache: memoryLocalCache(), // Fallback for environments without IndexedDB support
+        localCache: memoryLocalCache(),
     });
 } else {
     app = getApp();
     db = getFirestore(app);
 }
-
-// Enable offline persistence
-try {
-    enableIndexedDbPersistence(db);
-} catch (err: any) {
-    if (err.code === 'failed-precondition') {
-        console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
-    } else if (err.code === 'unimplemented') {
-        console.warn('The current browser does not support all of the features required to enable persistence.');
-    }
-}
-
 
 const auth: Auth = getAuth(app);
 const storage: FirebaseStorage = getStorage(app);

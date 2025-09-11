@@ -58,7 +58,7 @@ const NewsItem = ({ title, url, source, image, publishedAt }: NewsArticle) => {
                 </div>
                 {image && (
                     <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0">
-                         <Image src={image} alt={title} layout="fill" objectFit="cover" />
+                         <Image src={image} alt={title} fill className="object-cover" />
                     </div>
                 )}
             </div>

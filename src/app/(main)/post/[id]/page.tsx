@@ -220,7 +220,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
             <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
             {post.image && (
                 <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
-                    <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+                    <Image src={post.image} fill className="object-cover" alt="Quoted post image" />
                 </div>
             )}
         </div>
@@ -933,12 +933,12 @@ export default function PostDetailPage() {
                     {post.spotifyUrl && <SpotifyEmbed url={post.spotifyUrl} />}
                     { post.image && (
                         <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); setPostToView(post); }}>
-                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
+                            <Image src={post.image} alt="Imagem do post" fill className="object-cover" data-ai-hint={post.imageHint} />
                         </div>
                     )}
                     { post.gifUrl && (
                         <div className="mt-4 aspect-video relative w-full overflow-hidden rounded-2xl border" onClick={(e) => { e.stopPropagation(); setPostToView(post); }}>
-                            <Image src={post.gifUrl} alt="Post GIF" layout="fill" objectFit="contain" unoptimized />
+                            <Image src={post.gifUrl} alt="Post GIF" fill className="object-contain" unoptimized />
                         </div>
                     )}
                     {post.poll && user && (

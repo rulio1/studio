@@ -31,9 +31,8 @@ const NewsArticleCard = ({ article }: { article: NewsArticle }) => (
                 <Image
                     src={article.image}
                     alt={article.title}
-                    layout="fill"
-                    objectFit="cover"
-                    className="bg-muted"
+                    fill
+                    className="object-cover bg-muted"
                 />
             </div>
         )}

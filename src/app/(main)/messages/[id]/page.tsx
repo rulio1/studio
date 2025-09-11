@@ -477,9 +477,8 @@ export default function ConversationPage() {
                                             <Image 
                                                 src={message.gifUrl} 
                                                 alt="GIF" 
-                                                layout="fill" 
-                                                objectFit="cover" 
-                                                className="rounded-lg" 
+                                                fill
+                                                className="object-cover rounded-lg" 
                                                 unoptimized
                                             />
                                         </div>

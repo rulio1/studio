@@ -245,7 +245,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
             <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
             {post.image && (
                 <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
-                    <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+                    <Image src={post.image} fill className="object-cover" alt="Quoted post image" />
                 </div>
             )}
         </div>
@@ -393,7 +393,7 @@ const PostItem = React.memo(function PostItem({ post, user, zisprUser, onAction,
                     )}
                      {post.image && (
                         <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); onImageClick(post); }}>
-                            <Image src={post.image} alt="Imagem do post" layout="fill" objectFit="cover" data-ai-hint={post.imageHint} />
+                            <Image src={post.image} alt="Imagem do post" fill className="object-cover" data-ai-hint={post.imageHint} />
                         </div>
                     )}
                     <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
@@ -1257,8 +1257,8 @@ export default function ProfilePage() {
                     profileUser.banner && <Image
                         src={profileUser.banner}
                         alt="Banner"
-                        layout="fill"
-                        objectFit="cover"
+                        fill
+                        className="object-cover"
                         data-ai-hint="profile banner"
                     />
                 )}
@@ -1573,5 +1573,3 @@ export default function ProfilePage() {
         </div>
     );
 }
-
-    

@@ -215,7 +215,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                 <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
                 {post.image && (
                     <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
-                        <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+                        <Image src={post.image} fill className="object-cover" alt="Quoted post image" />
                     </div>
                 )}
             </div>
@@ -362,7 +362,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                 )}
                 {post.gifUrl && (
                      <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border" onClick={(e) => e.stopPropagation()}>
-                        <Image src={post.gifUrl} alt="Post GIF" layout="fill" objectFit="contain" unoptimized />
+                        <Image src={post.gifUrl} alt="Post GIF" fill className="object-contain" unoptimized />
                     </div>
                 )}
                 <div className="mt-2 flex justify-around items-center text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
