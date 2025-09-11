@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
@@ -131,8 +132,6 @@ export default function HomePage() {
   // State for pull-to-refresh
   const [isRefreshing, setIsRefreshing] = useState(false);
   const y = useMotionValue(0);
-  const opacity = useTransform(y, [0, 100], [0, 1]);
-  const scale = useTransform(y, [0, 100], [0, 1]);
 
  const fetchAllPosts = useCallback((currentUser: FirebaseUser) => {
     setIsLoading(true);
@@ -713,7 +712,7 @@ useEffect(() => {
                     </SheetContent>
                   </Sheet>
                   <div className="flex-1 flex justify-center">
-                      <Bird className="h-6 w-6 text-primary" />
+                      <Bird className={`h-6 w-6 text-primary transition-transform duration-500 ${isRefreshing ? 'animate-spin' : ''}`} />
                   </div>
                   <div className="md:hidden">
                     <ThemeToggle />
@@ -740,36 +739,16 @@ useEffect(() => {
           </header>
           <motion.div
             drag="y"
-            dragConstraints={{ top: 0, bottom: 0 }}
+            dragConstraints={{ top: 0, bottom: 100 }}
             onDragEnd={() => {
-                if (y.get() > 120) {
+                if (y.get() > 80) {
                     handleRefresh();
                 }
+                y.set(0);
             }}
             style={{ y }}
-            className="relative"
+            className="relative bg-background"
            >
-            <div className="absolute top-0 left-0 right-0 flex justify-center items-center -z-10 pt-4">
-              <AnimatePresence>
-                {isRefreshing ? (
-                    <motion.div
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                    >
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        style={{ opacity, scale }}
-                        className="p-2 bg-muted rounded-full"
-                    >
-                        <Bird className="h-6 w-6 text-primary" />
-                    </motion.div>
-                )}
-               </AnimatePresence>
-            </div>
-            
             <TabsContent value="for-you" forceMount={true} className={'mt-0 ' + (activeTab !== 'for-you' ? 'hidden' : '')}>
                 <PostList posts={allPosts} loading={isLoading} tab="for-you" />
             </TabsContent>
