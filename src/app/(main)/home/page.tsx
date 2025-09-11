@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
@@ -26,7 +25,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle as EditDialogTitle, DialogTitle as OtherDialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 import { useUserStore } from '@/store/user-store';
 import { useTranslation } from '@/hooks/use-translation';
 import PostItem from '@/components/post-item';
@@ -129,6 +128,11 @@ export default function HomePage() {
   const router = useRouter();
   const { t } = useTranslation();
   
+  // State for pull-to-refresh
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const y = useMotionValue(0);
+  const opacity = useTransform(y, [0, 100], [0, 1]);
+  const scale = useTransform(y, [0, 100], [0, 1]);
 
  const fetchAllPosts = useCallback((currentUser: FirebaseUser) => {
     setIsLoading(true);
@@ -535,9 +539,23 @@ useEffect(() => {
         }
     }, [user, toast]);
 
+    const handleRefresh = useCallback(async () => {
+      setIsRefreshing(true);
+      // Simulate fetching new data
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (user) {
+          if (activeTab === 'for-you') {
+              fetchAllPosts(user);
+          } else if (zisprUser) {
+              fetchFollowingPosts(user, zisprUser);
+          }
+      }
+      setIsRefreshing(false);
+  }, [user, zisprUser, activeTab, fetchAllPosts, fetchFollowingPosts]);
+
   
   const PostList = ({ posts, loading, tab }: { posts: Post[], loading: boolean, tab: 'for-you' | 'following' }) => {
-    if (loading) {
+    if (loading && !isRefreshing) {
         return (
             <ul className="divide-y divide-border">
                 {[...Array(5)].map((_, i) => <li key={i} className="p-4"><PostSkeleton /></li>)}
@@ -720,13 +738,45 @@ useEffect(() => {
                   </TabsList>
               </div>
           </header>
-
-          <TabsContent value="for-you" forceMount={true} className={'mt-0 ' + (activeTab !== 'for-you' ? 'hidden' : '')}>
-              <PostList posts={allPosts} loading={isLoading} tab="for-you" />
-          </TabsContent>
-          <TabsContent value="following" forceMount={true} className={'mt-0 ' + (activeTab !== 'following' ? 'hidden' : '')}>
-              <PostList posts={followingPosts} loading={isLoadingFollowing} tab="following" />
-          </TabsContent>
+          <motion.div
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            onDragEnd={() => {
+                if (y.get() > 120) {
+                    handleRefresh();
+                }
+            }}
+            style={{ y }}
+            className="relative"
+           >
+            <div className="absolute top-0 left-0 right-0 flex justify-center items-center -z-10 pt-4">
+              <AnimatePresence>
+                {isRefreshing ? (
+                    <motion.div
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                    >
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        style={{ opacity, scale }}
+                        className="p-2 bg-muted rounded-full"
+                    >
+                        <Bird className="h-6 w-6 text-primary" />
+                    </motion.div>
+                )}
+               </AnimatePresence>
+            </div>
+            
+            <TabsContent value="for-you" forceMount={true} className={'mt-0 ' + (activeTab !== 'for-you' ? 'hidden' : '')}>
+                <PostList posts={allPosts} loading={isLoading} tab="for-you" />
+            </TabsContent>
+            <TabsContent value="following" forceMount={true} className={'mt-0 ' + (activeTab !== 'following' ? 'hidden' : '')}>
+                <PostList posts={followingPosts} loading={isLoadingFollowing} tab="following" />
+            </TabsContent>
+          </motion.div>
       </Tabs>
 
       <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
