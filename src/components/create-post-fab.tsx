@@ -32,9 +32,9 @@ export default function CreatePostFAB() {
                     <Button
                         onClick={handleNewMessage}
                         aria-label={t('createPostFab.newMessage')}
-                        className="h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90 flex items-center justify-center text-primary-foreground"
+                        className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 flex items-center justify-center text-primary-foreground"
                     >
-                        <MailPlus className="h-8 w-8" />
+                        <MailPlus className="h-7 w-7" />
                     </Button>
                 </div>
                  {isNewMessageModalOpen && user && (
@@ -53,10 +53,10 @@ export default function CreatePostFAB() {
             <div className="fixed bottom-24 right-4 z-50">
                 <Button
                     onClick={openModal}
-                    className="h-16 w-16 rounded-full shadow-lg bg-primary hover:bg-primary/90"
+                    className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90"
                     aria-label={t('createPostFab.createPost')}
                 >
-                   <Feather className="h-8 w-8" />
+                   <Feather className="h-7 w-7" />
                 </Button>
             </div>
             
