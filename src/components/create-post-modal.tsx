@@ -24,6 +24,7 @@ import { generatePost } from '@/ai/flows/post-generator-flow';
 import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 import { useTranslation } from '@/hooks/use-translation';
 import GifPicker from './gif-picker';
+import { uploadImageAndGetURL } from '@/actions/storage';
 
 
 interface Post {
@@ -328,7 +329,10 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         setIsPosting(true);
 
         try {
-            let imageUrl: string | null = postImageDataUri;
+            let imageUrl: string | null = null;
+            if (postImageDataUri) {
+                imageUrl = await uploadImageAndGetURL(postImageDataUri, user.uid);
+            }
 
             const hashtags = extractHashtags(newPostContent);
             const mentionedHandles = extractMentions(newPostContent);
