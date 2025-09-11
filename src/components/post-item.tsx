@@ -10,7 +10,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { formatTimeAgo } from '@/lib/utils';
 import { User as FirebaseUser } from 'firebase/auth';
 import { db } from '@/lib/firebase';
-import { doc, getDocs, collection, query, where } from 'firebase/firestore';
+import { doc, getDocs, collection, query, where, updateDoc } from 'firebase/firestore';
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ import Poll from '@/components/poll';
 
 import { 
     Repeat, Heart, BarChart2, MessageCircle, MoreHorizontal, PenSquare, Trash2, Edit, Pin, Sparkles, Frown, 
-    Flag, BarChart3, Megaphone, UserRound, Star, Bird, BadgeCheck, Languages, Save
+    Flag, BarChart3, Megaphone, UserRound, Star, Bird, BadgeCheck, Languages, Save, Loader2
 } from 'lucide-react';
 import { translateText } from '@/ai/flows/translation-flow';
 
@@ -72,6 +72,7 @@ interface Post {
     quotedPostId?: string;
     quotedPost?: Omit<Post, 'quotedPost' | 'quotedPostId'>;
     spotifyUrl?: string;
+    translations?: Record<string, string>; // Campo para a extensão
 }
 
 interface ZisprUser {
@@ -173,8 +174,11 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
 }) {
     const router = useRouter();
     const { toast } = useToast();
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const [time, setTime] = useState('');
+
+    const [translatedContent, setTranslatedContent] = useState<string | null>(null);
+    const [isTranslating, setIsTranslating] = useState(false);
     
     useEffect(() => {
       const timestamp = post.repostedAt || post.createdAt;
@@ -188,6 +192,37 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
       }
     }, [post.createdAt, post.repostedAt]);
     
+    const handleTranslate = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsTranslating(true);
+        try {
+            // 1. Check if translation exists from the extension
+            if (post.translations && post.translations[language]) {
+                setTranslatedContent(post.translations[language]);
+                return;
+            }
+
+            // 2. If not, use the Genkit flow to translate on-demand
+            const targetLanguageMap = { 'pt': 'Portuguese', 'en': 'English', 'es': 'Spanish', 'de': 'German' };
+            const targetLanguageName = targetLanguageMap[language];
+            const translation = await translateText(post.content, targetLanguageName);
+            setTranslatedContent(translation);
+
+            // 3. (Optional but good practice) Save the new translation back to Firestore
+            const postRef = doc(db, 'posts', post.id);
+            await updateDoc(postRef, {
+                [`translations.${language}`]: translation
+            });
+
+        } catch (error) {
+            console.error("Translation error:", error);
+            toast({ title: "Erro de Tradução", description: "Não foi possível traduzir o post.", variant: "destructive" });
+        } finally {
+            setIsTranslating(false);
+        }
+    };
+
+
     const isZisprAccount = post.handle === '@Zispr' || post.handle === '@ZisprUSA';
     const isRulio = post.handle === '@Rulio';
     const isVerified = post.isVerified || isRulio;
@@ -340,7 +375,11 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                     </DropdownMenu>
                 </div>
                 <div className="mb-2 whitespace-pre-wrap">
-                    <PostContent content={post.content} spotifyUrl={post.spotifyUrl} />
+                    {translatedContent ? (
+                        <p className="italic text-muted-foreground p-2 border-l-2 border-primary/50 bg-muted/20 rounded-r-md">{translatedContent}</p>
+                    ) : (
+                        <PostContent content={post.content} spotifyUrl={post.spotifyUrl} />
+                    )}
                 </div>
                 {post.quotedPost && <QuotedPostPreview post={post.quotedPost} />}
                 {post.spotifyUrl && <SpotifyEmbed url={post.spotifyUrl} />}
@@ -366,11 +405,13 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                         <Image src={post.gifUrl} alt="Post GIF" layout="fill" objectFit="contain" unoptimized />
                     </div>
                 )}
-                <div className="mt-2 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={(e) => { e.stopPropagation(); router.push(`/post/${post.id}`)}} className="flex items-center gap-1 hover:text-primary transition-colors">
-                        <MessageCircle className="h-5 w-5" />
-                        <span>{post.comments}</span>
-                    </button>
+                <div className="mt-2 flex justify-between items-center text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1">
+                        <button onClick={(e) => { e.stopPropagation(); router.push(`/post/${post.id}`)}} className="flex items-center gap-1 hover:text-primary transition-colors">
+                            <MessageCircle className="h-5 w-5" />
+                            <span>{post.comments}</span>
+                        </button>
+                    </div>
                     
                     <Popover>
                         <PopoverTrigger asChild>
@@ -418,6 +459,16 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                         <BarChart2 className="h-5 w-5" />
                         <span>{post.views}</span>
                     </button>
+                    
+                    <div className="flex items-center">
+                        {isTranslating ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : translatedContent ? (
+                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setTranslatedContent(null) }}>Ver Original</Button>
+                        ) : (
+                            <Button variant="ghost" size="sm" onClick={handleTranslate}>Traduzir</Button>
+                        )}
+                    </div>
                 </div>
                 </div>
             </div>
