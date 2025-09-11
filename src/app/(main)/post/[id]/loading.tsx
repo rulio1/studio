@@ -1,11 +1,10 @@
 
-
-import IconZispr from '@/components/icon-zispr';
+import { Bird } from 'lucide-react';
 
 export default function PostLoading() {
     return (
         <div className="flex h-screen flex-col items-center justify-center bg-background">
-            <IconZispr className="h-16 w-16 animate-pulse text-primary" />
+            <Bird className="h-16 w-16 animate-pulse text-primary" />
         </div>
     );
 }
