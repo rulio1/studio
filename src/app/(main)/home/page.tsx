@@ -129,9 +129,7 @@ export default function HomePage() {
   const router = useRouter();
   const { t } = useTranslation();
   
-  // State for pull-to-refresh
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const y = useMotionValue(0);
 
  const fetchAllPosts = useCallback((currentUser: FirebaseUser) => {
     setIsLoading(true);
@@ -538,20 +536,6 @@ useEffect(() => {
         }
     }, [user, toast]);
 
-    const handleRefresh = useCallback(async () => {
-      setIsRefreshing(true);
-      // Simulate fetching new data
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      if (user) {
-          if (activeTab === 'for-you') {
-              fetchAllPosts(user);
-          } else if (zisprUser) {
-              fetchFollowingPosts(user, zisprUser);
-          }
-      }
-      setIsRefreshing(false);
-  }, [user, zisprUser, activeTab, fetchAllPosts, fetchFollowingPosts]);
-
   
   const PostList = ({ posts, loading, tab }: { posts: Post[], loading: boolean, tab: 'for-you' | 'following' }) => {
     if (loading && !isRefreshing) {
@@ -737,25 +721,12 @@ useEffect(() => {
                   </TabsList>
               </div>
           </header>
-          <motion.div
-            drag="y"
-            dragConstraints={{ top: 0, bottom: 100 }}
-            onDragEnd={() => {
-                if (y.get() > 80) {
-                    handleRefresh();
-                }
-                y.set(0);
-            }}
-            style={{ y }}
-            className="relative bg-background"
-           >
             <TabsContent value="for-you" forceMount={true} className={'mt-0 ' + (activeTab !== 'for-you' ? 'hidden' : '')}>
                 <PostList posts={allPosts} loading={isLoading} tab="for-you" />
             </TabsContent>
             <TabsContent value="following" forceMount={true} className={'mt-0 ' + (activeTab !== 'following' ? 'hidden' : '')}>
                 <PostList posts={followingPosts} loading={isLoadingFollowing} tab="following" />
             </TabsContent>
-          </motion.div>
       </Tabs>
 
       <AlertDialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
