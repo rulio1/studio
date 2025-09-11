@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Bird } from 'lucide-react';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -35,8 +35,8 @@ export default function LandingPage() {
 
   if (isLoadingAuth || !isClient) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-svh p-4">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <div className="flex flex-col items-center justify-center min-h-svh p-4 bg-background">
+            <Bird className="h-16 w-16 animate-pulse text-primary" />
         </div>
     );
   }
