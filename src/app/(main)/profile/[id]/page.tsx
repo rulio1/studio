@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -805,7 +804,7 @@ export default function ProfilePage() {
         return () => unsubscribeProfile();
     }, [profileId, currentUser, zisprUser, fetchUserPosts, fetchUserReplies, fetchLikedPosts, toast]);
     
-    const handleToggleFollow = async () => {
+    const handleToggleFollow = useCallback(async () => {
         if (!currentUser || !profileUser || !zisprUser) return;
     
         const wasFollowing = isFollowing;
@@ -858,9 +857,9 @@ export default function ProfilePage() {
             console.error("Error toggling follow:", error);
             toast({ title: 'Erro ao seguir usuário.', variant: 'destructive' });
         }
-    };
+    }, [currentUser, profileUser, zisprUser, isFollowing, toast]);
 
-    const handleStartConversation = async () => {
+    const handleStartConversation = useCallback(async () => {
         if (!currentUser || !profileUser || currentUser.uid === profileUser.uid) return;
 
         const conversationId = [currentUser.uid, profileUser.uid].sort().join('_');
@@ -890,9 +889,9 @@ export default function ProfilePage() {
                 variant: "destructive",
             });
         }
-    };
+    }, [currentUser, profileUser, router, t, toast]);
 
-    const handleDeletePost = async () => {
+    const handleDeletePost = useCallback(async () => {
         if (!postToDelete || !currentUser || !profileUser) return;
         try {
             await deleteDoc(doc(db, "posts", postToDelete));
@@ -911,12 +910,12 @@ export default function ProfilePage() {
             setPostToDelete(null);
             await fetchUserPosts(currentUser, profileUser);
         }
-    };
+    }, [postToDelete, currentUser, profileUser, fetchUserPosts, toast]);
     
-    const handleEditClick = (post: Post) => {
+    const handleEditClick = useCallback((post: Post) => {
         setEditingPost(post);
         setEditedContent(post.content);
-    };
+    }, []);
 
     const extractHashtags = (content: string) => {
         const regex = /#([a-zA-Z0-9_]+)/g;
@@ -927,7 +926,7 @@ export default function ProfilePage() {
         return [...new Set(matches.map(tag => tag.substring(1).toLowerCase()))];
     };
 
-    const handleUpdatePost = async () => {
+    const handleUpdatePost = useCallback(async () => {
         if (!editingPost || !editedContent.trim() || !currentUser || !profileUser) return;
         setIsUpdating(true);
         const hashtags = extractHashtags(editedContent);
@@ -955,9 +954,9 @@ export default function ProfilePage() {
             setIsUpdating(false);
              await fetchUserPosts(currentUser, profileUser);
         }
-    };
+    }, [editingPost, editedContent, currentUser, profileUser, fetchUserPosts, toast]);
 
-    const handlePostAction = async (postId: string, action: 'like' | 'retweet', authorId: string) => {
+    const handlePostAction = useCallback(async (postId: string, action: 'like' | 'retweet', authorId: string) => {
         if (!currentUser || !zisprUser) return;
     
         const postRef = doc(db, 'posts', postId);
@@ -1031,9 +1030,9 @@ export default function ProfilePage() {
             }
         }
         await batch.commit();
-    };
+    }, [currentUser, zisprUser, userPosts, likedPosts, mediaPosts, pinnedPost]);
     
-    const handleVote = async (postId: string, optionIndex: number) => {
+    const handleVote = useCallback(async (postId: string, optionIndex: number) => {
         if (!currentUser) return;
         const postRef = doc(db, 'posts', postId);
     
@@ -1077,10 +1076,10 @@ export default function ProfilePage() {
                 variant: "destructive",
             });
         }
-    };
+    }, [currentUser, toast]);
 
 
-    const handleTogglePinPost = async (post: Post) => {
+    const handleTogglePinPost = useCallback(async (post: Post) => {
         if (!currentUser || !profileUser) return;
         const userRef = doc(db, 'users', currentUser.uid);
         const isCurrentlyPinned = profileUser?.pinnedPostId === post.id;
@@ -1096,12 +1095,12 @@ export default function ProfilePage() {
             console.error("Error pinning/unpinning post: ", error);
             toast({ title: t('post.menu.pinError'), variant: 'destructive' });
         }
-    };
+    }, [currentUser, profileUser, t, toast]);
     
-    const handleQuoteClick = (postToQuote: Post) => {
+    const handleQuoteClick = useCallback((postToQuote: Post) => {
         setPostToQuote(postToQuote);
         setIsQuoteModalOpen(true);
-    };
+    }, []);
 
     const PostList = ({ posts, loading, emptyTitle, emptyDescription, emptyIcon }: { posts: Post[], loading: boolean, emptyTitle: string, emptyDescription: string, emptyIcon?: React.ElementType }) => {
         if (loading) {
@@ -1162,21 +1161,21 @@ export default function ProfilePage() {
         );
     };
     
-    const showFollowers = () => {
+    const showFollowers = useCallback(() => {
         if (!profileUser) return;
         setFollowListTitle(t('profile.followersDialogTitle'));
         setFollowListUserIds(profileUser.followers);
         setIsFollowListOpen(true);
-    }
+    }, [profileUser, t]);
     
-    const showFollowing = () => {
+    const showFollowing = useCallback(() => {
         if (!profileUser) return;
         setFollowListTitle(t('profile.followingDialogTitle'));
         setFollowListUserIds(profileUser.following);
         setIsFollowListOpen(true);
-    }
+    }, [profileUser, t]);
 
-    const handleBlockUser = async () => {
+    const handleBlockUser = useCallback(async () => {
         if (!currentUser || !zisprUser || !profileUser) return;
 
         const isCurrentlyBlocked = isBlockedByYou;
@@ -1211,7 +1210,7 @@ export default function ProfilePage() {
         } finally {
             setIsBlockAlertOpen(false);
         }
-    };
+    }, [currentUser, zisprUser, profileUser, isBlockedByYou, profileId, t, toast]);
 
 
     if (isLoading || !profileUser) {

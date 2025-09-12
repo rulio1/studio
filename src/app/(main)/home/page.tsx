@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
@@ -284,7 +283,6 @@ useEffect(() => {
 
         const isActioned = action === 'like' ? post.isLiked : post.retweets.includes(user.uid);
 
-        // Firebase update
         try {
             const batch = writeBatch(db);
 
@@ -475,7 +473,7 @@ useEffect(() => {
         console.error("Error pinning post:", error);
         toast({ title: 'Erro ao fixar post', variant: 'destructive' });
     }
-  }, [user, zisprUser, toast]);
+  }, [user, zisprUser?.pinnedPostId, toast]);
 
 
   const handleSignOut = async () => {
