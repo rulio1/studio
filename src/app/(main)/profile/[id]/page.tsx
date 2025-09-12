@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -69,6 +70,7 @@ interface Post {
     time: string;
     content: string;
     image?: string;
+    gifUrl?: string;
     imageHint?: string;
     location?: string;
     comments: number;
@@ -213,9 +215,7 @@ const PostContent = ({ content, spotifyUrl }: { content: string, spotifyUrl?: st
                 }
                 if (part.includes('spotify.com')) {
                     return spotifyUrl ? null : (
-                         <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-                            {part}
-                        </a>
+                         <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>{part}</a>
                     );
                 }
                 return part;
@@ -393,6 +393,11 @@ const PostItem = React.memo(function PostItem({ post, user, zisprUser, onAction,
                      {post.image && (
                         <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border cursor-pointer" onClick={(e) => { e.stopPropagation(); onImageClick(post); }}>
                             <Image src={post.image} alt="Imagem do post" fill className="object-cover" data-ai-hint={post.imageHint} />
+                        </div>
+                    )}
+                     {post.gifUrl && (
+                        <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-2xl border" onClick={(e) => e.stopPropagation()}>
+                            <Image src={post.gifUrl} alt="Post GIF" fill className="object-contain" unoptimized />
                         </div>
                     )}
                     <div className="mt-4 flex justify-between text-muted-foreground pr-4" onClick={(e) => e.stopPropagation()}>
@@ -643,7 +648,7 @@ export default function ProfilePage() {
     
         setIsLoadingMedia(true);
         const allPostsForMedia = [...(pinnedPost ? [pinnedPost] : []), ...finalPosts];
-        setMediaPosts(allPostsForMedia.filter(p => p.image));
+        setMediaPosts(allPostsForMedia.filter(p => p.image || p.gifUrl));
         setIsLoadingMedia(false);
     
     }, []);
