@@ -10,7 +10,7 @@ import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
@@ -35,6 +35,7 @@ export default function EditProfilePage() {
     const { toast } = useToast();
     const { t } = useTranslation();
     const [user, setUser] = useState<FirebaseUser | null>(null);
+    const [originalHandle, setOriginalHandle] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     
@@ -74,6 +75,7 @@ export default function EditProfilePage() {
                             banner: userData.banner || '',
                         };
                         setProfileData(initialData);
+                        setOriginalHandle(userData.handle || '');
                     }
                 } catch (error) {
                      toast({ title: t('profile.edit.toasts.loadError'), variant: "destructive" });
@@ -122,6 +124,24 @@ export default function EditProfilePage() {
         setIsSaving(true);
     
         try {
+            const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
+
+            // Check if handle has changed and if the new one is unique
+            if (handleWithAt !== originalHandle) {
+                const usersRef = collection(db, "users");
+                const q = query(usersRef, where("handle", "==", handleWithAt));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    toast({
+                        title: "Nome de usuário já existe",
+                        description: "Este @handle já está em uso. Por favor, escolha outro.",
+                        variant: "destructive",
+                    });
+                    setIsSaving(false);
+                    return;
+                }
+            }
+            
             let avatarUrl = profileData.avatar;
             if (newAvatarDataUri) {
                 avatarUrl = await uploadImageAndGetURL(newAvatarDataUri, user.uid);
@@ -132,11 +152,11 @@ export default function EditProfilePage() {
                 bannerUrl = await uploadImageAndGetURL(newBannerDataUri, user.uid);
             }
             
-            const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
-            
             const firestoreUpdateData = {
                 displayName: profileData.displayName,
+                searchableDisplayName: profileData.displayName.toLowerCase(),
                 handle: handleWithAt,
+                searchableHandle: handleWithAt.replace('@', '').toLowerCase(),
                 bio: profileData.bio,
                 location: profileData.location,
                 website: profileData.website,
