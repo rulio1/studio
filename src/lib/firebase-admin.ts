@@ -22,7 +22,8 @@ const initializeFirebaseAdmin = () => {
     return admin;
 };
 
-export const adminApp = initializeFirebaseAdmin();
+const adminApp = initializeFirebaseAdmin();
 export const adminAuth = adminApp.auth();
 export const adminDb = adminApp.firestore();
-export const adminStorage = adminApp.storage();
+// A exportação do storage admin não é mais necessária para o upload do cliente.
+// export const adminStorage = adminApp.storage();

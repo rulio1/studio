@@ -1,8 +1,11 @@
 
 'use server';
 
-import { adminStorage } from '@/lib/firebase-admin';
+import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from 'uuid';
+import { app } from "@/lib/firebase";
+
+const storage = getStorage(app);
 
 export async function uploadImageAndGetURL(imageDataUri: string, userId: string): Promise<string> {
     if (!imageDataUri.startsWith('data:image')) {
@@ -10,27 +13,16 @@ export async function uploadImageAndGetURL(imageDataUri: string, userId: string)
     }
 
     try {
-        const bucket = adminStorage.bucket();
         const fileType = imageDataUri.split(';')[0].split('/')[1] || 'png';
-        const mimeType = imageDataUri.split(';')[0].split(':')[1] || 'image/png';
         const fileName = `${userId}/${uuidv4()}.${fileType}`;
-        
-        // Remove the data URI prefix to get the pure base64 string
-        const base64EncodedImageString = imageDataUri.split(',')[1];
-        const imageBuffer = Buffer.from(base64EncodedImageString, 'base64');
-        
-        const file = bucket.file(fileName);
+        const storageRef = ref(storage, fileName);
 
-        await file.save(imageBuffer, {
-            metadata: {
-                contentType: mimeType,
-            },
-        });
-
-        // Make the file public and get the URL
-        await file.makePublic();
+        // O 'uploadString' com 'data_url' é a forma correta de fazer upload de um data URI.
+        const snapshot = await uploadString(storageRef, imageDataUri, 'data_url');
         
-        return file.publicUrl();
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        
+        return downloadURL;
 
     } catch (error) {
         console.error("Error uploading image: ", error);
