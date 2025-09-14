@@ -91,24 +91,20 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
         );
     }
     
-    const hideSidebars = [
-        '/profile/edit',
-    ].some(path => pathname.startsWith(path));
+    const hideSidebarsForEdit = pathname.startsWith('/profile/edit');
 
-    if (hideSidebars) {
-         return (
-            <div className="flex h-screen justify-center">
-                <main className="flex-1 min-w-0 max-w-2xl md:border-x">
-                    <div className="animate-fade-in animate-slide-in-from-bottom">
-                        {children}
-                    </div>
+    if (hideSidebarsForEdit) {
+        return (
+            <div className="flex justify-center">
+                <DesktopSidebar />
+                <main className="flex-1 min-w-0 max-w-2xl border-x">
+                    {children}
                 </main>
-                <div className="md:hidden">
-                    <BottomNavBar />
-                </div>
+                <RightSidebar />
             </div>
         );
     }
+
 
     return (
         <div className="flex h-screen justify-center">
