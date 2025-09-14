@@ -17,6 +17,7 @@ import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 import { fileToDataUri } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
+import { uploadImageAndGetURL } from '@/actions/storage';
 
 
 interface UserProfileData {
@@ -121,8 +122,15 @@ export default function EditProfilePage() {
         setIsSaving(true);
     
         try {
-            let avatarUrl = newAvatarDataUri || profileData.avatar;
-            let bannerUrl = newBannerDataUri || profileData.banner;
+            let avatarUrl = profileData.avatar;
+            if (newAvatarDataUri) {
+                avatarUrl = await uploadImageAndGetURL(newAvatarDataUri, user.uid);
+            }
+
+            let bannerUrl = profileData.banner;
+            if (newBannerDataUri) {
+                bannerUrl = await uploadImageAndGetURL(newBannerDataUri, user.uid);
+            }
             
             const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
             
