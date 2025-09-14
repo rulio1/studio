@@ -1316,8 +1316,9 @@ export default function ProfilePage() {
                         </h1>
                     </div>
                     <div className="flex items-center gap-2">
-                      <p className="text-muted-foreground">{profileUser.handle}</p>
-                      {isFollowedBy && !isOwnProfile && <Badge variant="secondary">{t('profile.followsYou')}</Badge>}
+                        <p className="text-muted-foreground">{profileUser.handle}</p>
+                        {isRulioAccount && <Badge variant="secondary">{t('profile.cards.founder.title')}</Badge>}
+                        {isFollowedBy && !isOwnProfile && <Badge variant="secondary">{t('profile.followsYou')}</Badge>}
                     </div>
                     {hasBlockedYou ? (
                          <div className="mt-2 text-muted-foreground italic flex items-center gap-2">
@@ -1347,17 +1348,6 @@ export default function ProfilePage() {
                         </CardHeader>
                         <CardContent className="p-3 pt-0">
                             <p className="text-xs text-muted-foreground">{t('profile.cards.official_en.description')}</p>
-                        </CardContent>
-                    </Card>
-                )}
-                {isRulioAccount && (
-                    <Card className="mt-4 border-primary/50">
-                        <CardHeader className="flex-row items-center gap-3 space-y-0 p-3">
-                            <Info className="h-4 w-4 text-primary" />
-                            <CardTitle className="text-sm">{t('profile.cards.founder.title')}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-3 pt-0">
-                            <p className="text-xs text-muted-foreground">{t('profile.cards.founder.description')}</p>
                         </CardContent>
                     </Card>
                 )}
