@@ -106,7 +106,7 @@ export default function EditProfilePage() {
     
         try {
             const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
-
+            
             // Check if handle has changed and if the new one is unique
             if (handleWithAt !== zisprUser.handle) {
                 const usersRef = collection(db, "users");
@@ -123,12 +123,12 @@ export default function EditProfilePage() {
                 }
             }
             
-            let avatarUrl = profileData.avatar;
+            let avatarUrl = zisprUser.avatar;
             if (newAvatarDataUri) {
                 avatarUrl = await uploadImageAndGetURL(newAvatarDataUri, user.uid);
             }
 
-            let bannerUrl = profileData.banner;
+            let bannerUrl = zisprUser.banner;
             if (newBannerDataUri) {
                 bannerUrl = await uploadImageAndGetURL(newBannerDataUri, user.uid);
             }
@@ -309,3 +309,5 @@ export default function EditProfilePage() {
     </>
   );
 }
+
+    
