@@ -219,7 +219,7 @@ export default function EditProfilePage() {
         </div>
         <div className="px-4">
             <div className="-mt-16 relative w-32">
-                <Avatar className="h-32 w-32 border-4 border-background">
+                <Avatar className="h-32 w-32 border-4 border-background bg-muted">
                      <AvatarImage src={profileData.avatar} alt={profileData.displayName} />
                      <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>
                 </Avatar>
