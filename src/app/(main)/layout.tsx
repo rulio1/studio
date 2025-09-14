@@ -99,7 +99,7 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
          return (
             <div className="flex h-screen justify-center">
                 <main className="flex-1 min-w-0 max-w-2xl md:border-x">
-                    <div className="animate-fade-in animate-slide-in-from-bottom h-full">
+                    <div className="animate-fade-in animate-slide-in-from-bottom">
                         {children}
                     </div>
                 </main>

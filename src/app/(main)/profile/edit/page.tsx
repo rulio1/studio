@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -8,9 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
@@ -18,7 +18,8 @@ import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 import { fileToDataUri } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
 import { uploadImageAndGetURL } from '@/actions/storage';
-
+import { useUserStore } from '@/store/user-store';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface UserProfileData {
     displayName: string;
@@ -34,9 +35,8 @@ export default function EditProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
     const { t } = useTranslation();
-    const [user, setUser] = useState<FirebaseUser | null>(null);
-    const [originalHandle, setOriginalHandle] = useState('');
-    const [isLoading, setIsLoading] = useState(true);
+    const { user, zisprUser, isLoading: isUserLoading } = useUserStore();
+    
     const [isSaving, setIsSaving] = useState(false);
     
     const [profileData, setProfileData] = useState<UserProfileData>({
@@ -57,37 +57,18 @@ export default function EditProfilePage() {
     const bannerInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            if (currentUser) {
-                setUser(currentUser);
-                try {
-                    const userDocRef = doc(db, 'users', currentUser.uid);
-                    const userDoc = await getDoc(userDocRef);
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
-                        const initialData: UserProfileData = {
-                            displayName: userData.displayName || '',
-                            handle: userData.handle || '',
-                            bio: userData.bio || '',
-                            location: userData.location || '',
-                            website: userData.website || '',
-                            avatar: userData.avatar || '',
-                            banner: userData.banner || '',
-                        };
-                        setProfileData(initialData);
-                        setOriginalHandle(userData.handle || '');
-                    }
-                } catch (error) {
-                     toast({ title: t('profile.edit.toasts.loadError'), variant: "destructive" });
-                } finally {
-                    setIsLoading(false);
-                }
-            } else {
-                router.push('/login');
-            }
-        });
-        return () => unsubscribe();
-    }, [router, toast, t]);
+        if (zisprUser) {
+            setProfileData({
+                displayName: zisprUser.displayName || '',
+                handle: zisprUser.handle || '',
+                bio: zisprUser.bio || '',
+                location: zisprUser.location || '',
+                website: zisprUser.website || '',
+                avatar: zisprUser.avatar || '',
+                banner: zisprUser.banner || '',
+            });
+        }
+    }, [zisprUser]);
 
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
@@ -120,14 +101,14 @@ export default function EditProfilePage() {
     };
     
     const handleSave = async () => {
-        if (!user) return;
+        if (!user || !zisprUser) return;
         setIsSaving(true);
     
         try {
             const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
 
             // Check if handle has changed and if the new one is unique
-            if (handleWithAt !== originalHandle) {
+            if (handleWithAt !== zisprUser.handle) {
                 const usersRef = collection(db, "users");
                 const q = query(usersRef, where("handle", "==", handleWithAt));
                 const querySnapshot = await getDocs(q);
@@ -197,7 +178,7 @@ export default function EditProfilePage() {
         setCropperData(null);
     };
 
-    if (isLoading) {
+    if (isUserLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
@@ -217,9 +198,9 @@ export default function EditProfilePage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto">
+      <ScrollArea className="flex-1">
         <div className="relative h-48 bg-muted">
-             <Image src={profileData.banner || 'https://placehold.co/600x200.png'} alt="Banner" layout="fill" objectFit="cover" />
+             <Image src={profileData.banner || 'https://placehold.co/600x200.png'} alt="Banner" fill className="object-cover" />
              <Button 
                 variant="ghost" 
                 className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity w-full h-full p-0"
@@ -316,7 +297,7 @@ export default function EditProfilePage() {
                 />
             </div>
         </div>
-      </main>
+      </ScrollArea>
     </div>
     {cropperData && (
         <ImageCropper
