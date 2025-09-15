@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -125,9 +124,6 @@ export default function EditProfilePage() {
             
             let avatarUrl = zisprUser.avatar;
             if (newAvatarDataUri) {
-                if (!newAvatarDataUri.startsWith('data:image')) {
-                    throw new Error('Invalid avatar data URI');
-                }
                 const fileType = newAvatarDataUri.split(';')[0].split('/')[1] || 'jpeg';
                 const fileName = `${user.uid}/avatar-${uuidv4()}.${fileType}`;
                 const imageRef = storageRef(storage, fileName);
@@ -137,9 +133,6 @@ export default function EditProfilePage() {
 
             let bannerUrl = zisprUser.banner;
             if (newBannerDataUri) {
-                 if (!newBannerDataUri.startsWith('data:image')) {
-                    throw new Error('Invalid banner data URI');
-                }
                 const fileType = newBannerDataUri.split(';')[0].split('/')[1] || 'jpeg';
                 const fileName = `${user.uid}/banner-${uuidv4()}.${fileType}`;
                 const imageRef = storageRef(storage, fileName);
