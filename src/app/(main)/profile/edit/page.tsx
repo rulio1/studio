@@ -138,7 +138,7 @@ export default function EditProfilePage() {
                         variant: "destructive",
                     });
                     setIsSaving(false);
-                    return;
+                    return; // THIS WAS THE MISSING PIECE.
                 }
             }
     
