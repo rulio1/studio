@@ -9,17 +9,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
 import { fileToDataUri } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
-import { uploadImageAndGetURL } from '@/actions/storage';
 import { useUserStore } from '@/store/user-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { v4 as uuidv4 } from 'uuid';
 
 interface UserProfileData {
     displayName: string;
@@ -124,12 +125,26 @@ export default function EditProfilePage() {
             
             let avatarUrl = zisprUser.avatar;
             if (newAvatarDataUri) {
-                avatarUrl = await uploadImageAndGetURL(newAvatarDataUri, user.uid);
+                if (!newAvatarDataUri.startsWith('data:image')) {
+                    throw new Error('Invalid avatar data URI');
+                }
+                const fileType = newAvatarDataUri.split(';')[0].split('/')[1] || 'jpeg';
+                const fileName = `${user.uid}/avatar-${uuidv4()}.${fileType}`;
+                const imageRef = storageRef(storage, fileName);
+                const uploadTask = await uploadString(imageRef, newAvatarDataUri, 'data_url');
+                avatarUrl = await getDownloadURL(uploadTask.ref);
             }
 
             let bannerUrl = zisprUser.banner;
             if (newBannerDataUri) {
-                bannerUrl = await uploadImageAndGetURL(newBannerDataUri, user.uid);
+                 if (!newBannerDataUri.startsWith('data:image')) {
+                    throw new Error('Invalid banner data URI');
+                }
+                const fileType = newBannerDataUri.split(';')[0].split('/')[1] || 'jpeg';
+                const fileName = `${user.uid}/banner-${uuidv4()}.${fileType}`;
+                const imageRef = storageRef(storage, fileName);
+                const uploadTask = await uploadString(imageRef, newBannerDataUri, 'data_url');
+                bannerUrl = await getDownloadURL(uploadTask.ref);
             }
             
             const firestoreUpdateData = {
