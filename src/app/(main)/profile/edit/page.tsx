@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,7 +11,7 @@ import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { db, storage } from '@/lib/firebase';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
+import { ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
@@ -20,6 +21,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useUserStore } from '@/store/user-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { v4 as uuidv4 } from 'uuid';
+import type { ZisprUser } from '@/types/zispr';
 
 interface UserProfileData {
     displayName: string;
@@ -105,8 +107,26 @@ export default function EditProfilePage() {
         setIsSaving(true);
     
         try {
+            let avatarUrl = zisprUser.avatar;
+            if (newAvatarDataUri) {
+                const fileType = newAvatarDataUri.split(';')[0].split('/')[1] || 'jpeg';
+                const fileName = `${user.uid}/avatar-${uuidv4()}.${fileType}`;
+                const imageRef = storageRef(storage, fileName);
+                const uploadTask = await uploadString(imageRef, newAvatarDataUri, 'data_url');
+                avatarUrl = await getDownloadURL(uploadTask.ref);
+            }
+    
+            let bannerUrl = zisprUser.banner;
+            if (newBannerDataUri) {
+                const fileType = newBannerDataUri.split(';')[0].split('/')[1] || 'jpeg';
+                const fileName = `${user.uid}/banner-${uuidv4()}.${fileType}`;
+                const imageRef = storageRef(storage, fileName);
+                const uploadTask = await uploadString(imageRef, newBannerDataUri, 'data_url');
+                bannerUrl = await getDownloadURL(uploadTask.ref);
+            }
+    
             const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
-            
+    
             if (handleWithAt !== zisprUser.handle) {
                 const usersRef = collection(db, "users");
                 const q = query(usersRef, where("handle", "==", handleWithAt));
@@ -121,25 +141,7 @@ export default function EditProfilePage() {
                     return;
                 }
             }
-            
-            let avatarUrl = zisprUser.avatar;
-            if (newAvatarDataUri) {
-                const fileType = newAvatarDataUri.split(';')[0].split('/')[1] || 'jpeg';
-                const fileName = `${user.uid}/avatar-${uuidv4()}.${fileType}`;
-                const imageRef = storageRef(storage, fileName);
-                const uploadTask = await uploadString(imageRef, newAvatarDataUri, 'data_url');
-                avatarUrl = await getDownloadURL(uploadTask.ref);
-            }
-
-            let bannerUrl = zisprUser.banner;
-            if (newBannerDataUri) {
-                const fileType = newBannerDataUri.split(';')[0].split('/')[1] || 'jpeg';
-                const fileName = `${user.uid}/banner-${uuidv4()}.${fileType}`;
-                const imageRef = storageRef(storage, fileName);
-                const uploadTask = await uploadString(imageRef, newBannerDataUri, 'data_url');
-                bannerUrl = await getDownloadURL(uploadTask.ref);
-            }
-            
+    
             const firestoreUpdateData = {
                 displayName: profileData.displayName,
                 searchableDisplayName: profileData.displayName.toLowerCase(),
@@ -151,7 +153,7 @@ export default function EditProfilePage() {
                 avatar: avatarUrl,
                 banner: bannerUrl,
             };
-            
+    
             const userRef = doc(db, 'users', user.uid);
             await updateDoc(userRef, firestoreUpdateData);
     
@@ -159,7 +161,7 @@ export default function EditProfilePage() {
                 title: t('profile.edit.toasts.saveSuccess.title'),
                 description: t('profile.edit.toasts.saveSuccess.description'),
             });
-            
+    
             router.push(`/profile/${user.uid}`);
     
         } catch (error: any) {
