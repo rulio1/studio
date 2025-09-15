@@ -107,7 +107,6 @@ export default function EditProfilePage() {
         try {
             const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
             
-            // Check if handle has changed and if the new one is unique
             if (handleWithAt !== zisprUser.handle) {
                 const usersRef = collection(db, "users");
                 const q = query(usersRef, where("handle", "==", handleWithAt));
@@ -309,5 +308,3 @@ export default function EditProfilePage() {
     </>
   );
 }
-
-    

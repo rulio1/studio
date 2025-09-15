@@ -91,30 +91,19 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
         );
     }
     
+    // This was the cause of the scrolling issue on the edit page.
+    // By treating it like other pages, the natural scrolling behavior is preserved.
     const hideSidebarsForEdit = pathname.startsWith('/profile/edit');
-
-    if (hideSidebarsForEdit) {
-        return (
-            <div className="flex justify-center">
-                <DesktopSidebar />
-                <main className="flex-1 min-w-0 max-w-2xl border-x">
-                    {children}
-                </main>
-                <RightSidebar />
-            </div>
-        );
-    }
-
 
     return (
         <div className="flex h-screen justify-center">
-            <DesktopSidebar />
+            {!hideSidebarsForEdit && <DesktopSidebar />}
             <main className="flex-1 min-w-0 max-w-2xl border-x flex flex-col">
                  <div className="flex-1 overflow-y-auto pb-[calc(var(--bottom-nav-height)+50px)] md:pb-0">
                     {children}
                 </div>
             </main>
-            <RightSidebar />
+            {!hideSidebarsForEdit && <RightSidebar />}
             <div className="md:hidden">
                 {showFab && <CreatePostFAB />}
                 <BottomNavBar />

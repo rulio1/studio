@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
@@ -17,7 +16,6 @@ export async function uploadImageAndGetURL(imageDataUri: string, userId: string)
         const fileName = `${userId}/${uuidv4()}.${fileType}`;
         const storageRef = ref(storage, fileName);
 
-        // O 'uploadString' com 'data_url' é a forma correta de fazer upload de um data URI.
         const snapshot = await uploadString(storageRef, imageDataUri, 'data_url');
         
         const downloadURL = await getDownloadURL(snapshot.ref);
