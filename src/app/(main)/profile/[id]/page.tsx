@@ -563,94 +563,93 @@ export default function ProfilePage() {
         }
     }, [searchParams, toast, profileId, router]);
 
-    const fetchUserPosts = useCallback(async (userToFetch: FirebaseUser, profileData: ZisprUser) => {
-        if (!userToFetch || !profileData) return;
+    const fetchUserPosts = useCallback((userToFetch: FirebaseUser, profileData: ZisprUser) => {
+        if (!userToFetch || !profileData) return () => {};
+
         setIsLoadingPosts(true);
         setPinnedPost(null);
 
-        // Fetch Pinned Post
-        if (profileData.pinnedPostId) {
-            const postDoc = await getDoc(doc(db, 'posts', profileData.pinnedPostId));
-            if (postDoc.exists()) {
-                const data = postDoc.data();
-                if (data.handle === '@stefanysouza') {
-                    data.isVerified = true;
-                    data.badgeTier = 'silver';
-                }
-                setPinnedPost({
-                    id: postDoc.id,
-                    ...data,
-                    isLiked: (Array.isArray(data.likes) ? data.likes : []).includes(userToFetch.uid || ''),
-                    isRetweeted: (Array.isArray(data.retweets) ? data.retweets : []).includes(userToFetch.uid || ''),
-                    isPinned: true
-                } as Post);
-            }
-        }
-    
         const postsQuery = query(collection(db, "posts"), where("authorId", "==", profileData.uid));
         const repostsQuery = query(collection(db, "reposts"), where("userId", "==", profileData.uid));
 
-        const [postsSnapshot, repostsSnapshot] = await Promise.all([getDocs(postsQuery), getDocs(repostsQuery)]);
-
-        const originalPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
-        
-        const repostsData = repostsSnapshot.docs.map(doc => doc.data());
-        const repostedPostIds = repostsData.map(repost => repost.postId);
-        
-        let repostedPosts: Post[] = [];
-        if (repostedPostIds.length > 0) {
-            const chunks = [];
-            for (let i = 0; i < repostedPostIds.length; i += 30) {
-                chunks.push(repostedPostIds.slice(i, i + 30));
+        const processSnapshots = async (postsSnapshot: QuerySnapshot<DocumentData>, repostsSnapshot: QuerySnapshot<DocumentData>) => {
+            // Pinned Post Logic
+            if (profileData.pinnedPostId) {
+                const postDoc = await getDoc(doc(db, 'posts', profileData.pinnedPostId));
+                if (postDoc.exists()) {
+                    const data = postDoc.data();
+                    setPinnedPost({
+                        id: postDoc.id,
+                        ...data,
+                        isLiked: (Array.isArray(data.likes) ? data.likes : []).includes(userToFetch.uid || ''),
+                        isRetweeted: (Array.isArray(data.retweets) ? data.retweets : []).includes(userToFetch.uid || ''),
+                        isPinned: true
+                    } as Post);
+                }
+            } else {
+                setPinnedPost(null);
             }
             
-            const repostedPostsSnapshots = await Promise.all(chunks.map(chunk => getDocs(query(collection(db, "posts"), where(documentId(), "in", chunk)))));
-            const postsMap = new Map<string, Post>();
-            repostedPostsSnapshots.forEach(snapshot => {
-                snapshot.docs.forEach(doc => postsMap.set(doc.id, { id: doc.id, ...doc.data() } as Post));
+            const originalPosts = postsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
+            
+            const repostsData = repostsSnapshot.docs.map(doc => doc.data());
+            const repostedPostIds = repostsData.map(repost => repost.postId);
+            
+            let repostedPosts: Post[] = [];
+            if (repostedPostIds.length > 0) {
+                 const chunks = [];
+                 for (let i = 0; i < repostedPostIds.length; i += 30) {
+                     chunks.push(repostedPostIds.slice(i, i + 30));
+                 }
+                 const repostedPostsSnapshots = await Promise.all(chunks.map(chunk => getDocs(query(collection(db, "posts"), where(documentId(), "in", chunk)))));
+                 const postsMap = new Map<string, Post>();
+                 repostedPostsSnapshots.forEach(snapshot => {
+                     snapshot.docs.forEach(doc => postsMap.set(doc.id, { id: doc.id, ...doc.data() } as Post));
+                 });
+                 repostedPosts = repostsData.map(repost => {
+                     const postData = postsMap.get(repost.postId);
+                     if (!postData) return null;
+                     return { ...postData, repostedAt: repost.repostedAt, repostedBy: { name: profileData.displayName, handle: profileData.handle } };
+                 }).filter(p => p !== null) as Post[];
+            }
+        
+            const allPosts = [...originalPosts, ...repostedPosts].filter(p => p.id !== profileData.pinnedPostId);
+            allPosts.sort((a, b) => {
+                const timeA = a.repostedAt?.toMillis() || a.createdAt?.toMillis() || 0;
+                const timeB = b.repostedAt?.toMillis() || b.createdAt?.toMillis() || 0;
+                return timeB - timeA;
             });
             
-            repostedPosts = repostsData.map(repost => {
-                const postData = postsMap.get(repost.postId);
-                if (!postData) return null;
-                return {
-                    ...postData,
-                    repostedAt: repost.repostedAt,
-                    repostedBy: {
-                        name: profileData.displayName,
-                        handle: profileData.handle
-                    },
-                };
-            }).filter(p => p !== null) as Post[];
-        }
-    
-        const allPosts = [...originalPosts, ...repostedPosts].filter(p => p.id !== profileData.pinnedPostId);
-        allPosts.sort((a, b) => {
-            const timeA = a.repostedAt?.toMillis() || a.createdAt?.toMillis() || 0;
-            const timeB = b.repostedAt?.toMillis() || b.createdAt?.toMillis() || 0;
-            return timeB - timeA;
-        });
-        
-        const finalPosts = allPosts.map(post => {
-            if (post.handle === '@stefanysouza') {
-                post.isVerified = true;
-                post.badgeTier = 'silver';
-            }
-            return {
+            const finalPosts = allPosts.map(post => ({
                 ...post,
                 isLiked: (Array.isArray(post.likes) ? post.likes : []).includes(userToFetch.uid || ''),
                 isRetweeted: (Array.isArray(post.retweets) ? post.retweets : []).includes(userToFetch.uid || ''),
-            }
+            }));
+        
+            setUserPosts(finalPosts);
+            setIsLoadingPosts(false);
+        
+            setIsLoadingMedia(true);
+            const allPostsForMedia = [...(pinnedPost ? [pinnedPost] : []), ...finalPosts];
+            setMediaPosts(allPostsForMedia.filter(p => p.image || p.gifUrl));
+            setIsLoadingMedia(false);
+        };
+        
+        const unsubPosts = onSnapshot(postsQuery, async (postsSnapshot) => {
+            const repostsSnapshot = await getDocs(repostsQuery);
+            processSnapshots(postsSnapshot, repostsSnapshot);
         });
-    
-        setUserPosts(finalPosts);
-        setIsLoadingPosts(false);
-    
-        setIsLoadingMedia(true);
-        const allPostsForMedia = [...(pinnedPost ? [pinnedPost] : []), ...finalPosts];
-        setMediaPosts(allPostsForMedia.filter(p => p.image || p.gifUrl));
-        setIsLoadingMedia(false);
-    
+
+        const unsubReposts = onSnapshot(repostsQuery, async (repostsSnapshot) => {
+            const postsSnapshot = await getDocs(postsQuery);
+            processSnapshots(postsSnapshot, repostsSnapshot);
+        });
+
+        return () => {
+            unsubPosts();
+            unsubReposts();
+        };
+
     }, []);
 
     const fetchUserReplies = useCallback(async () => {
@@ -785,7 +784,7 @@ export default function ProfilePage() {
             setIsFollowedBy(zisprUser?.followers?.includes(profileId) || false);
 
             if (!profileData.blockedBy?.includes(currentUser.uid)) {
-                await fetchUserPosts(currentUser, profileData);
+                // Fetching posts is now handled by its own effect with onSnapshot
                 await fetchUserReplies();
                 await fetchLikedPosts(currentUser, profileData);
             } else {
@@ -807,8 +806,17 @@ export default function ProfilePage() {
         });
 
         return () => unsubscribeProfile();
-    }, [profileId, currentUser, zisprUser, fetchUserPosts, fetchUserReplies, fetchLikedPosts, toast]);
+    }, [profileId, currentUser, zisprUser, fetchUserReplies, fetchLikedPosts, toast]);
     
+    // New useEffect specifically for posts to handle real-time updates
+    useEffect(() => {
+        if (currentUser && profileUser && !hasBlockedYou) {
+            const unsubscribe = fetchUserPosts(currentUser, profileUser);
+            return () => unsubscribe();
+        }
+    }, [currentUser, profileUser, hasBlockedYou, fetchUserPosts]);
+
+
     const handleToggleFollow = useCallback(async () => {
         if (!currentUser || !profileUser || !zisprUser) return;
     
@@ -913,9 +921,9 @@ export default function ProfilePage() {
             });
         } finally {
             setPostToDelete(null);
-            await fetchUserPosts(currentUser, profileUser);
+            // No need to manually fetch, onSnapshot will handle it.
         }
-    }, [postToDelete, currentUser, profileUser, fetchUserPosts, toast]);
+    }, [postToDelete, currentUser, profileUser, toast]);
     
     const handleEditClick = useCallback((post: Post) => {
         setEditingPost(post);
@@ -957,9 +965,9 @@ export default function ProfilePage() {
             });
         } finally {
             setIsUpdating(false);
-             await fetchUserPosts(currentUser, profileUser);
+             // No need to manually fetch, onSnapshot will handle it.
         }
-    }, [editingPost, editedContent, currentUser, profileUser, fetchUserPosts, toast]);
+    }, [editingPost, editedContent, currentUser, profileUser, toast]);
 
     const handlePostAction = useCallback(async (postId: string, action: 'like' | 'retweet', authorId: string) => {
         if (!currentUser || !zisprUser) return;
