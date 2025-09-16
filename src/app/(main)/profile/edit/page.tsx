@@ -138,7 +138,7 @@ export default function EditProfilePage() {
                         variant: "destructive",
                     });
                     setIsSaving(false);
-                    return; // THIS WAS THE MISSING PIECE.
+                    return; 
                 }
             }
     
@@ -318,3 +318,5 @@ export default function EditProfilePage() {
     </>
   );
 }
+
+    
