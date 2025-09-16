@@ -17,9 +17,10 @@ import { fileToDataUri } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
 import { useUserStore } from '@/store/user-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { uploadImageAndGetURL } from '@/actions/storage';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
 import type { ZisprUser } from '@/types/zispr';
 
 interface UserProfileData {
@@ -108,6 +109,7 @@ export default function EditProfilePage() {
         try {
             const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
     
+            // Check if handle is being changed and if the new one is already taken
             if (handleWithAt !== zisprUser.handle) {
                 const usersRef = collection(db, "users");
                 const q = query(usersRef, where("handle", "==", handleWithAt));
@@ -122,15 +124,19 @@ export default function EditProfilePage() {
                     return; 
                 }
             }
-
+    
             let avatarUrl = zisprUser.avatar;
             if (newAvatarDataUri) {
-                avatarUrl = await uploadImageAndGetURL(newAvatarDataUri, user.uid, 'avatar');
+                const storageRef = ref(storage, `users/${user.uid}/avatar/${uuidv4()}`);
+                const uploadResult = await uploadString(storageRef, newAvatarDataUri, 'data_url');
+                avatarUrl = await getDownloadURL(uploadResult.ref);
             }
     
             let bannerUrl = zisprUser.banner;
             if (newBannerDataUri) {
-                bannerUrl = await uploadImageAndGetURL(newBannerDataUri, user.uid, 'banner');
+                const storageRef = ref(storage, `users/${user.uid}/banner/${uuidv4()}`);
+                const uploadResult = await uploadString(storageRef, newBannerDataUri, 'data_url');
+                bannerUrl = await getDownloadURL(uploadResult.ref);
             }
     
             const firestoreUpdateData = {

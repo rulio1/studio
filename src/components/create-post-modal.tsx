@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch, addDoc, query, where, limit, getDocs } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird, Sparkles } from 'lucide-react';
@@ -24,7 +25,7 @@ import { generatePost } from '@/ai/flows/post-generator-flow';
 import { generateImageFromPrompt } from '@/ai/flows/image-generator-flow';
 import { useTranslation } from '@/hooks/use-translation';
 import GifPicker from './gif-picker';
-import { uploadImageAndGetURL } from '@/actions/storage';
+import { v4 as uuidv4 } from 'uuid';
 
 interface Post {
     id: string;
@@ -330,7 +331,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         try {
             let imageUrl: string | null = null;
             if (postImageDataUri) {
-                imageUrl = await uploadImageAndGetURL(postImageDataUri, user.uid, 'post');
+                const storageRef = ref(storage, `users/${user.uid}/post/${uuidv4()}`);
+                const uploadResult = await uploadString(storageRef, postImageDataUri, 'data_url');
+                imageUrl = await getDownloadURL(uploadResult.ref);
             }
 
             const hashtags = extractHashtags(newPostContent);
