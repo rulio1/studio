@@ -109,7 +109,6 @@ export default function EditProfilePage() {
         try {
             const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
     
-            // Check if handle is being changed and if the new one is already taken
             if (handleWithAt !== zisprUser.handle) {
                 const usersRef = collection(db, "users");
                 const q = query(usersRef, where("handle", "==", handleWithAt));
@@ -120,7 +119,7 @@ export default function EditProfilePage() {
                         description: "Este @handle já está em uso. Por favor, escolha outro.",
                         variant: "destructive",
                     });
-                    setIsSaving(false);
+                    setIsSaving(false); // Make sure to stop loading
                     return; 
                 }
             }
