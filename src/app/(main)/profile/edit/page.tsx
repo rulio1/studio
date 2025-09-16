@@ -9,9 +9,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { db, storage } from '@/lib/firebase';
-import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
@@ -20,7 +17,9 @@ import { fileToDataUri } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
 import { useUserStore } from '@/store/user-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { v4 as uuidv4 } from 'uuid';
+import { uploadImageAndGetURL } from '@/actions/storage';
+import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import type { ZisprUser } from '@/types/zispr';
 
 interface UserProfileData {
@@ -109,20 +108,12 @@ export default function EditProfilePage() {
         try {
             let avatarUrl = zisprUser.avatar;
             if (newAvatarDataUri) {
-                const fileType = newAvatarDataUri.split(';')[0].split('/')[1] || 'jpeg';
-                const fileName = `${user.uid}/avatar-${uuidv4()}.${fileType}`;
-                const imageRef = storageRef(storage, fileName);
-                const uploadTask = await uploadString(imageRef, newAvatarDataUri, 'data_url');
-                avatarUrl = await getDownloadURL(uploadTask.ref);
+                avatarUrl = await uploadImageAndGetURL(newAvatarDataUri, user.uid, 'avatar');
             }
     
             let bannerUrl = zisprUser.banner;
             if (newBannerDataUri) {
-                const fileType = newBannerDataUri.split(';')[0].split('/')[1] || 'jpeg';
-                const fileName = `${user.uid}/banner-${uuidv4()}.${fileType}`;
-                const imageRef = storageRef(storage, fileName);
-                const uploadTask = await uploadString(imageRef, newBannerDataUri, 'data_url');
-                bannerUrl = await getDownloadURL(uploadTask.ref);
+                bannerUrl = await uploadImageAndGetURL(newBannerDataUri, user.uid, 'banner');
             }
     
             const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
@@ -318,5 +309,3 @@ export default function EditProfilePage() {
     </>
   );
 }
-
-    
