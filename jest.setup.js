@@ -1,2 +1,1 @@
-
-import '@testing-library/jest-dom';
+// This file is intentionally left blank as testing configurations have been removed.

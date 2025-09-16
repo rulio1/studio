@@ -1,9 +1,2 @@
-
-'use server';
-/**
- * @fileOverview An AI flow to translate text.
- *
- * - translateText - A function that translates text to a target language.
- */
-
-// This file is intentionally left blank to remove the translation feature.
+// This file is intentionally left blank.
+// The translation flow was removed as it is no longer used.
