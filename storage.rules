@@ -1,11 +1,16 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permite que qualquer usuário autenticado leia e escreva em seu próprio diretório
+    // Regra geral: permite leitura pública para qualquer arquivo
+    match /{allPaths=**} {
+      allow read;
+    }
+
+    // Regra específica para o diretório de usuários
     match /users/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Permite que um usuário autenticado leia e escreva em seu próprio diretório
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

@@ -12,13 +12,14 @@ import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
-import { fileToDataUri } from '@/lib/utils';
+import { fileToDataUri, dataURItoFile } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
 import { useUserStore } from '@/store/user-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { uploadImage } from '@/actions/storage';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
 import type { ZisprUser } from '@/types/zispr';
 
 interface UserProfileData {
@@ -107,7 +108,6 @@ export default function EditProfilePage() {
         try {
             const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
     
-            // Check if handle is taken by another user
             if (handleWithAt !== zisprUser.handle) {
                 const usersRef = collection(db, "users");
                 const q = query(usersRef, where("handle", "==", handleWithAt));
@@ -125,12 +125,16 @@ export default function EditProfilePage() {
     
             let avatarUrl = zisprUser.avatar;
             if (newAvatarDataUri) {
-                avatarUrl = await uploadImage(newAvatarDataUri, `users/${user.uid}/avatar`);
+                const storageRef = ref(storage, `users/${user.uid}/avatar/${uuidv4()}`);
+                const uploadTask = await uploadString(storageRef, newAvatarDataUri, 'data_url');
+                avatarUrl = await getDownloadURL(uploadTask.ref);
             }
     
             let bannerUrl = zisprUser.banner;
             if (newBannerDataUri) {
-                bannerUrl = await uploadImage(newBannerDataUri, `users/${user.uid}/banner`);
+                const storageRef = ref(storage, `users/${user.uid}/banner/${uuidv4()}`);
+                const uploadTask = await uploadString(storageRef, newBannerDataUri, 'data_url');
+                bannerUrl = await getDownloadURL(uploadTask.ref);
             }
     
             const firestoreUpdateData = {
