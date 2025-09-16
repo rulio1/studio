@@ -16,10 +16,11 @@ import { fileToDataUri } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
 import { useUserStore } from '@/store/user-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { uploadImage } from '@/actions/storage';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import type { ZisprUser } from '@/types/zispr';
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
+import { v4 as uuidv4 } from 'uuid';
 
 interface UserProfileData {
     displayName: string;
@@ -124,12 +125,18 @@ export default function EditProfilePage() {
     
             let avatarUrl = zisprUser.avatar;
             if (newAvatarDataUri) {
-                avatarUrl = await uploadImage(newAvatarDataUri, `users/${user.uid}/avatar`);
+                const avatarPath = `users/${user.uid}/avatar/${uuidv4()}`;
+                const imageRef = storageRef(storage, avatarPath);
+                await uploadString(imageRef, newAvatarDataUri, 'data_url');
+                avatarUrl = await getDownloadURL(imageRef);
             }
     
             let bannerUrl = zisprUser.banner;
             if (newBannerDataUri) {
-                bannerUrl = await uploadImage(newBannerDataUri, `users/${user.uid}/banner`);
+                const bannerPath = `users/${user.uid}/banner/${uuidv4()}`;
+                const imageRef = storageRef(storage, bannerPath);
+                await uploadString(imageRef, newBannerDataUri, 'data_url');
+                bannerUrl = await getDownloadURL(imageRef);
             }
     
             const firestoreUpdateData = {
