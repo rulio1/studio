@@ -122,20 +122,13 @@ const PostContent = React.memo(function PostContent({ content, spotifyUrl }: { c
                     );
                 }
                  if (part.startsWith('@')) {
-                    const handle = part.substring(1);
                     return (
                         <a 
                             key={index} 
                             className="text-primary hover:underline"
-                            onClick={async (e) => {
+                            onClick={(e) => {
                                 e.stopPropagation();
-                                const usersRef = collection(db, "users");
-                                const q = query(usersRef, where("handle", "==", part));
-                                const querySnapshot = await getDocs(q);
-                                if (!querySnapshot.empty) {
-                                    const userDoc = querySnapshot.docs[0];
-                                    router.push(`/profile/${userDoc.id}`);
-                                }
+                                router.push(`/${part.substring(1)}`);
                             }}
                         >
                             {part}
@@ -245,12 +238,12 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
             <div className="flex gap-4">
                 <div className="flex flex-col items-center flex-shrink-0">
                     {post.repostedBy ? (
-                        <Avatar className="h-6 w-6 mb-1 z-10 cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.repostedBy!.handle.replace('@', '')}`)}}>
+                        <Avatar className="h-6 w-6 mb-1 z-10 cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/${post.repostedBy!.handle.replace('@', '')}`)}}>
                             <AvatarImage src={post.repostedBy.avatar} />
                             <AvatarFallback>{post.repostedBy.name[0]}</AvatarFallback>
                         </Avatar>
                     ) : null}
-                    <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/profile/${post.authorId}`)}}>
+                    <Avatar className="cursor-pointer" onClick={(e) => { e.stopPropagation(); router.push(`/${post.handle.substring(1)}`)}}>
                         {isZisprAccount ? (
                             <div className="w-full h-full flex items-center justify-center bg-primary/10 rounded-full">
                                 <Bird className="h-5 w-5 text-primary" />
@@ -329,7 +322,7 @@ const PostItem = React.memo(function PostItem({ post, zisprUser, user, handlePos
                                         {t('post.menu.communityNote')}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => router.push(`/profile/${post.authorId}`)}>
+                                    <DropdownMenuItem onClick={() => router.push(`/${post.handle.substring(1)}`)}>
                                         <UserRound className="mr-2 h-4 w-4"/>
                                         {t('post.menu.goToProfile', { handle: post.handle })}
                                     </DropdownMenuItem>

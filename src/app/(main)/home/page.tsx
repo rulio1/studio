@@ -618,7 +618,7 @@ useEffect(() => {
         { href: '/messages', icon: Mail, label: t('sidebar.messages') },
         { href: '/news', icon: Radio, label: t('sidebar.news') },
         { href: '/saved', icon: Bookmark, label: t('sidebar.saved') },
-        { href: `/profile/${zisprUser.uid}`, icon: User, label: t('sidebar.profile') },
+        { href: `/${zisprUser.handle.substring(1)}`, icon: User, label: t('sidebar.profile') },
     ];
 
 
@@ -642,12 +642,12 @@ useEffect(() => {
                        </SheetClose>
                        <div className="p-4 border-b">
                           <div className="flex justify-between items-center mb-4">
-                               <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/profile/${zisprUser.uid}`)}>
+                               <Avatar className="h-10 w-10 cursor-pointer" onClick={() => router.push(`/${zisprUser.handle.substring(1)}`)}>
                                   <AvatarImage src={zisprUser.avatar} alt={zisprUser.handle} />
                                   <AvatarFallback>{zisprUser.displayName[0]}</AvatarFallback>
                               </Avatar>
                           </div>
-                           <Link href={`/profile/${zisprUser.uid}`} className="cursor-pointer">
+                           <Link href={`/${zisprUser.handle.substring(1)}`} className="cursor-pointer">
                               <div className="flex items-center gap-1 font-bold text-lg">
                                   {zisprUser.displayName}
                                   {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className={'h-6 w-6 ' + (isRulioAccount ? 'text-white fill-primary' : zisprUserBadgeColor)} />)}

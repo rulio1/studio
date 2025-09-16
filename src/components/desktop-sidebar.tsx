@@ -53,7 +53,7 @@ export default function DesktopSidebar() {
         { href: '/messages', icon: Mail, label: t('sidebar.messages'), count: messageCount },
         { href: '/news', icon: Radio, label: t('sidebar.news'), count: 0 },
         { href: '/saved', icon: Bookmark, label: t('sidebar.saved'), count: 0 },
-        { href: zisprUser ? `/${zisprUser.handle.substring(1)}` : '/profile', icon: User, label: t('sidebar.profile'), count: 0 },
+        { href: zisprUser ? `/${zisprUser.handle.substring(1)}` : '#', icon: User, label: t('sidebar.profile'), count: 0 },
     ];
 
     useEffect(() => {
@@ -105,8 +105,8 @@ export default function DesktopSidebar() {
     
     const getIsActive = (href: string) => {
         if (href === '/home') return pathname === href;
-        if (href.startsWith(`/${zisprUser?.handle.substring(1)}`)) {
-            return pathname === href;
+        if (zisprUser && href.startsWith(`/${zisprUser.handle.substring(1)}`)) {
+             return pathname === href;
         }
         return pathname.startsWith(href);
     };
