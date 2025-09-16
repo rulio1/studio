@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,10 +16,9 @@ import { fileToDataUri } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
 import { useUserStore } from '@/store/user-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { uploadImage } from '@/actions/storage';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db, storage } from '@/lib/firebase';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { v4 as uuidv4 } from 'uuid';
+import { db } from '@/lib/firebase';
 import type { ZisprUser } from '@/types/zispr';
 
 interface UserProfileData {
@@ -119,23 +117,19 @@ export default function EditProfilePage() {
                         description: "Este @handle já está em uso. Por favor, escolha outro.",
                         variant: "destructive",
                     });
-                    setIsSaving(false); // Make sure to stop loading
+                    setIsSaving(false);
                     return; 
                 }
             }
     
             let avatarUrl = zisprUser.avatar;
             if (newAvatarDataUri) {
-                const storageRef = ref(storage, `users/${user.uid}/avatar/${uuidv4()}`);
-                const uploadResult = await uploadString(storageRef, newAvatarDataUri, 'data_url');
-                avatarUrl = await getDownloadURL(uploadResult.ref);
+                avatarUrl = await uploadImage(newAvatarDataUri, `users/${user.uid}/avatar`);
             }
     
             let bannerUrl = zisprUser.banner;
             if (newBannerDataUri) {
-                const storageRef = ref(storage, `users/${user.uid}/banner/${uuidv4()}`);
-                const uploadResult = await uploadString(storageRef, newBannerDataUri, 'data_url');
-                bannerUrl = await getDownloadURL(uploadResult.ref);
+                bannerUrl = await uploadImage(newBannerDataUri, `users/${user.uid}/banner`);
             }
     
             const firestoreUpdateData = {
