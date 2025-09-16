@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,15 +12,11 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import React from 'react';
 import Image from 'next/image';
-import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
-import { fileToDataUri, dataURItoFile } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
 import { useUserStore } from '@/store/user-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db, storage } from '@/lib/firebase';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { v4 as uuidv4 } from 'uuid';
+import { db } from '@/lib/firebase';
 import type { ZisprUser } from '@/types/zispr';
 
 interface UserProfileData {
@@ -50,13 +47,6 @@ export default function EditProfilePage() {
         banner: '',
     });
     
-    const [newAvatarDataUri, setNewAvatarDataUri] = useState<string | null>(null);
-    const [newBannerDataUri, setNewBannerDataUri] = useState<string | null>(null);
-
-    const [cropperData, setCropperData] = useState<ImageCropperData | null>(null);
-    const avatarInputRef = useRef<HTMLInputElement>(null);
-    const bannerInputRef = useRef<HTMLInputElement>(null);
-
     useEffect(() => {
         if (zisprUser) {
             setProfileData({
@@ -70,32 +60,6 @@ export default function EditProfilePage() {
             });
         }
     }, [zisprUser]);
-
-
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        if (file.size > 10 * 1024 * 1024) { // 10MB limit
-            toast({
-                title: t('profile.edit.toasts.imageSize.title'),
-                description: t('profile.edit.toasts.imageSize.description'),
-                variant: 'destructive',
-            });
-            return;
-        }
-
-        try {
-            const dataUri = await fileToDataUri(file);
-            setCropperData({
-                image: dataUri,
-                type: type,
-            });
-        } catch (error) {
-            toast({ title: t('profile.edit.toasts.fileReadError.title'), description: t('profile.edit.toasts.fileReadError.description'), variant: "destructive" });
-        }
-        e.target.value = '';
-    };
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setProfileData({ ...profileData, [e.target.id]: e.target.value });
@@ -123,20 +87,6 @@ export default function EditProfilePage() {
                 }
             }
     
-            let avatarUrl = zisprUser.avatar;
-            if (newAvatarDataUri) {
-                const storageRef = ref(storage, `users/${user.uid}/avatar/${uuidv4()}`);
-                const uploadTask = await uploadString(storageRef, newAvatarDataUri, 'data_url');
-                avatarUrl = await getDownloadURL(uploadTask.ref);
-            }
-    
-            let bannerUrl = zisprUser.banner;
-            if (newBannerDataUri) {
-                const storageRef = ref(storage, `users/${user.uid}/banner/${uuidv4()}`);
-                const uploadTask = await uploadString(storageRef, newBannerDataUri, 'data_url');
-                bannerUrl = await getDownloadURL(uploadTask.ref);
-            }
-    
             const firestoreUpdateData = {
                 displayName: profileData.displayName,
                 searchableDisplayName: profileData.displayName.toLowerCase(),
@@ -145,8 +95,6 @@ export default function EditProfilePage() {
                 bio: profileData.bio,
                 location: profileData.location,
                 website: profileData.website,
-                avatar: avatarUrl,
-                banner: bannerUrl,
             };
     
             const userRef = doc(db, 'users', user.uid);
@@ -169,17 +117,6 @@ export default function EditProfilePage() {
         } finally {
             setIsSaving(false);
         }
-    };
-    
-    const handleCropComplete = (croppedImageUri: string) => {
-        if (cropperData?.type === 'avatar') {
-            setNewAvatarDataUri(croppedImageUri);
-            setProfileData(prev => ({...prev, avatar: croppedImageUri}));
-        } else if (cropperData?.type === 'banner') {
-            setNewBannerDataUri(croppedImageUri);
-             setProfileData(prev => ({...prev, banner: croppedImageUri}));
-        }
-        setCropperData(null);
     };
 
     if (isUserLoading) {
@@ -205,21 +142,6 @@ export default function EditProfilePage() {
       <ScrollArea className="flex-1">
         <div className="relative h-48 bg-muted">
              <Image src={profileData.banner || 'https://placehold.co/600x200.png'} alt="Banner" fill className="object-cover" />
-             <Button 
-                variant="ghost" 
-                className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity w-full h-full p-0"
-                onClick={() => bannerInputRef.current?.click()}
-                disabled={isSaving}>
-                <Upload className="h-8 w-8 text-white" />
-            </Button>
-            <Input 
-                type="file" 
-                ref={bannerInputRef} 
-                className="hidden" 
-                accept="image/png, image/jpeg, image/gif"
-                onChange={(e) => handleFileChange(e, 'banner')}
-                disabled={isSaving}
-            />
         </div>
         <div className="px-4">
             <div className="-mt-16 relative w-32">
@@ -227,23 +149,6 @@ export default function EditProfilePage() {
                      <AvatarImage src={profileData.avatar} alt={profileData.displayName} />
                      <AvatarFallback className="text-4xl">{profileData.displayName?.[0]}</AvatarFallback>
                 </Avatar>
-                
-                <Button 
-                    variant="ghost" 
-                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity rounded-full h-full w-full p-0"
-                    onClick={() => avatarInputRef.current?.click()}
-                    disabled={isSaving}>
-                    <Upload className="h-8 w-8 text-white" />
-                </Button>
-
-                <Input 
-                    type="file" 
-                    ref={avatarInputRef} 
-                    className="hidden" 
-                    accept="image/png, image/jpeg, image/gif"
-                    onChange={(e) => handleFileChange(e, 'avatar')}
-                    disabled={isSaving}
-                />
             </div>
         </div>
 
@@ -303,13 +208,6 @@ export default function EditProfilePage() {
         </div>
       </ScrollArea>
     </div>
-    {cropperData && (
-        <ImageCropper
-            data={cropperData}
-            onComplete={handleCropComplete}
-            onCancel={() => setCropperData(null)}
-        />
-    )}
     </>
   );
 }
