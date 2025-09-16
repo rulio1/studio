@@ -8,7 +8,9 @@ const initializeFirebaseAdmin = () => {
             // Este método usa as Credenciais Padrão do Aplicativo (Application Default Credentials),
             // que é o método preferido para ambientes de produção. Ele buscará automaticamente
             // as credenciais e configurações do projeto do ambiente.
-            admin.initializeApp();
+             admin.initializeApp({
+                storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+            });
         } catch (error: any) {
             console.error('Firebase admin initialization error', error.stack);
             // Lançar o erro pode ajudar a depurar problemas durante a implantação
