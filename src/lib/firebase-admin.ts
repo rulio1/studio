@@ -1,4 +1,3 @@
-
 // src/lib/firebase-admin.ts
 import * as admin from 'firebase-admin';
 
@@ -25,5 +24,4 @@ const initializeFirebaseAdmin = () => {
 const adminApp = initializeFirebaseAdmin();
 export const adminAuth = adminApp.auth();
 export const adminDb = adminApp.firestore();
-// A exportação do storage admin não é mais necessária para o upload do cliente.
-// export const adminStorage = adminApp.storage();
+export const adminStorage = adminApp.storage();

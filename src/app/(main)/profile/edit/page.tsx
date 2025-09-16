@@ -106,16 +106,6 @@ export default function EditProfilePage() {
         setIsSaving(true);
     
         try {
-            let avatarUrl = zisprUser.avatar;
-            if (newAvatarDataUri) {
-                avatarUrl = await uploadImageAndGetURL(newAvatarDataUri, user.uid, 'avatar');
-            }
-    
-            let bannerUrl = zisprUser.banner;
-            if (newBannerDataUri) {
-                bannerUrl = await uploadImageAndGetURL(newBannerDataUri, user.uid, 'banner');
-            }
-    
             const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
     
             if (handleWithAt !== zisprUser.handle) {
@@ -131,6 +121,16 @@ export default function EditProfilePage() {
                     setIsSaving(false);
                     return; 
                 }
+            }
+
+            let avatarUrl = zisprUser.avatar;
+            if (newAvatarDataUri) {
+                avatarUrl = await uploadImageAndGetURL(newAvatarDataUri, user.uid, 'avatar');
+            }
+    
+            let bannerUrl = zisprUser.banner;
+            if (newBannerDataUri) {
+                bannerUrl = await uploadImageAndGetURL(newBannerDataUri, user.uid, 'banner');
             }
     
             const firestoreUpdateData = {
