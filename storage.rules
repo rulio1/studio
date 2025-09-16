@@ -1,9 +1,10 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow authenticated users to read and write to their own directories
-    match /{userId}/{allPaths=**} {
+    // Permite que qualquer usuário autenticado leia e escreva em seu próprio diretório
+    match /users/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
