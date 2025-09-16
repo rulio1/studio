@@ -1,3 +1,4 @@
+
 // src/lib/firebase-admin.ts
 import * as admin from 'firebase-admin';
 
@@ -6,12 +7,9 @@ const initializeFirebaseAdmin = () => {
     if (admin.apps.length === 0) {
         try {
             // Este método usa as Credenciais Padrão do Aplicativo (Application Default Credentials),
-            // que é o método preferido para ambientes de produção como o Vercel.
-            // Ele buscará automaticamente as credenciais das variáveis de ambiente
-            // configuradas pela integração Vercel-Firebase ou `GOOGLE_APPLICATION_CREDENTIALS`.
-            admin.initializeApp({
-                storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-            });
+            // que é o método preferido para ambientes de produção. Ele buscará automaticamente
+            // as credenciais e configurações do projeto do ambiente.
+            admin.initializeApp();
         } catch (error: any) {
             console.error('Firebase admin initialization error', error.stack);
             // Lançar o erro pode ajudar a depurar problemas durante a implantação
