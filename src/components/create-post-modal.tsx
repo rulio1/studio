@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -495,7 +496,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                     </Avatar>
                     <span className="font-bold flex items-center gap-1">
                         {post.author}
-                         {isVerified && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-primary fill-primary' : badgeColor}`} />}
+                         {isVerified && <BadgeCheck className={'h-4 w-4 ' + (isRulio ? 'text-primary fill-primary' : badgeColor)} />}
                     </span>
                     <span className="text-muted-foreground">{post.handle}</span>
                 </div>
