@@ -21,7 +21,7 @@ const SettingsItem = ({ icon, title, description, onClick, isDestructive = false
 
 export default function AccountSettingsPage() {
     const router = useRouter();
-    const { user } = useUserStore();
+    const { zisprUser } = useUserStore();
 
     return (
         <main className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -29,7 +29,7 @@ export default function AccountSettingsPage() {
                 icon={User} 
                 title="Informações da conta" 
                 description="Veja as informações da sua conta e edite seu perfil."
-                onClick={() => user && router.push(`/profile/edit`)}
+                onClick={() => zisprUser && router.push(`/${zisprUser.handle.substring(1)}/edit`)}
             />
              <SettingsItem 
                 icon={Lock} 

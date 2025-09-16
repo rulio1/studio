@@ -29,7 +29,7 @@ export default function BottomNavBar() {
     const navItems = [
         { href: '/home', icon: Home, label: 'Início' },
         { href: '/search', icon: Search, label: 'Busca' },
-        { href: zisprUser ? `/profile/${zisprUser.uid}` : '#', icon: Avatar, label: 'Perfil' },
+        { href: zisprUser ? `/${zisprUser.handle.substring(1)}` : '#', icon: Avatar, label: 'Perfil' },
         { href: '/notifications', icon: Bell, label: 'Notificações' },
         { href: '/messages', icon: Mail, label: 'Mensagens' },
     ];
@@ -79,8 +79,8 @@ export default function BottomNavBar() {
     }
     
     const getIsActive = (href: string, label: string) => {
-        if (label === 'Perfil') {
-            return pathname.startsWith('/profile/');
+        if (label === 'Perfil' && zisprUser) {
+            return pathname === `/${zisprUser.handle.substring(1)}`;
         }
         return pathname === href;
     };

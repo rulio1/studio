@@ -53,7 +53,7 @@ export default function DesktopSidebar() {
         { href: '/messages', icon: Mail, label: t('sidebar.messages'), count: messageCount },
         { href: '/news', icon: Radio, label: t('sidebar.news'), count: 0 },
         { href: '/saved', icon: Bookmark, label: t('sidebar.saved'), count: 0 },
-        { href: '/profile/edit', icon: User, label: t('sidebar.profile'), count: 0 },
+        { href: zisprUser ? `/${zisprUser.handle.substring(1)}` : '/profile', icon: User, label: t('sidebar.profile'), count: 0 },
     ];
 
     useEffect(() => {
@@ -105,8 +105,8 @@ export default function DesktopSidebar() {
     
     const getIsActive = (href: string) => {
         if (href === '/home') return pathname === href;
-        if (href === '/profile/edit' && zisprUser) {
-            return pathname === `/profile/${zisprUser.uid}`;
+        if (href.startsWith(`/${zisprUser?.handle.substring(1)}`)) {
+            return pathname === href;
         }
         return pathname.startsWith(href);
     };
@@ -115,13 +115,6 @@ export default function DesktopSidebar() {
     const isRulioAccount = zisprUser?.handle === '@Rulio';
     const isUserVerified = zisprUser?.isVerified || isRulioAccount;
     const badgeColor = zisprUser?.badgeTier ? badgeColors[zisprUser.badgeTier] : 'text-primary';
-
-    const getNavItemHref = (item: any) => {
-        if (item.label === t('sidebar.profile') && zisprUser) {
-            return `/profile/${zisprUser.uid}`;
-        }
-        return item.href;
-    };
     
     const handleLanguageChange = (lang: 'pt' | 'en' | 'es' | 'de') => {
         setLanguage(lang);
@@ -139,8 +132,8 @@ export default function DesktopSidebar() {
                         {navItems.map((item) => (
                              <li key={item.href} className="relative">
                                 <div className="relative">
-                                    <Link href={getNavItemHref(item)} passHref>
-                                        <Button variant="ghost" className={`w-full justify-start text-xl p-6 ${getIsActive(getNavItemHref(item)) ? 'font-bold' : ''}`}>
+                                    <Link href={item.href} passHref>
+                                        <Button variant="ghost" className={`w-full justify-start text-xl p-6 ${getIsActive(item.href) ? 'font-bold' : ''}`}>
                                             <item.icon className="h-7 w-7 mr-4" />
                                             <span>{item.label}</span>
                                         </Button>

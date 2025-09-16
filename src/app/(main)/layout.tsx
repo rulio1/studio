@@ -49,7 +49,7 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
                                 if (notification.postId) {
                                     router.push(`/post/${notification.postId}`);
                                 } else if (notification.fromUserId) {
-                                    router.push(`/profile/${notification.fromUserId}`);
+                                    router.push(`/${notification.fromUser.handle.substring(1)}`);
                                 }
                             }
                         });
@@ -63,11 +63,12 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
 
     const fabBlacklist = [
         '/messages/',
-        '/profile/edit',
+        '/edit',
         '/privacy',
         '/chat'
     ];
-    const showFab = !fabBlacklist.some(path => pathname.startsWith(path) && pathname !== '/messages');
+
+    const isBlacklisted = fabBlacklist.some(path => pathname.includes(path) && pathname !== '/messages');
     
     // Specific logic for chat and conversation pages
     const isChatPage = pathname.startsWith('/chat');
@@ -91,9 +92,7 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
         );
     }
     
-    // This was the cause of the scrolling issue on the edit page.
-    // By treating it like other pages, the natural scrolling behavior is preserved.
-    const hideSidebarsForEdit = pathname.startsWith('/profile/edit');
+    const hideSidebarsForEdit = pathname.endsWith('/edit');
 
     return (
         <div className="flex h-screen justify-center">
@@ -105,7 +104,7 @@ function MainLayoutClient({ children }: { children: React.ReactNode }) {
             </main>
             {!hideSidebarsForEdit && <RightSidebar />}
             <div className="md:hidden">
-                {showFab && <CreatePostFAB />}
+                {!isBlacklisted && <CreatePostFAB />}
                 <BottomNavBar />
             </div>
         </div>
