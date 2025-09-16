@@ -1,5 +1,3 @@
-
 // This file is intentionally left blank.
-// The server-side upload logic was causing persistent issues and has been removed.
-// Image uploads are now handled directly on the client-side using the Firebase JS SDK,
-// which is a more robust and standard approach for this type of application.
+// The server-side upload logic for Firebase Storage was causing persistent issues.
+// Image uploads are now handled by a dedicated API route proxying to ImgBB.

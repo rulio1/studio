@@ -6,10 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch, addDoc, query, where, limit, getDocs } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird, Sparkles } from 'lucide-react';
@@ -289,6 +288,31 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
     }, [open, resetModalState]);
 
+    const uploadImage = async (dataUri: string): Promise<string | null> => {
+        try {
+            const response = await fetch('/api/upload-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: dataUri }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Falha no upload da imagem.');
+            }
+
+            const result = await response.json();
+            return result.imageUrl;
+        } catch (error: any) {
+            toast({
+                title: "Erro no Upload",
+                description: error.message,
+                variant: "destructive",
+            });
+            return null;
+        }
+    };
+
 
      const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -332,9 +356,11 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         try {
             let imageUrl: string | null = null;
             if (postImageDataUri) {
-                const storageRef = ref(storage, `users/${user.uid}/posts/${uuidv4()}`);
-                const uploadTask = await uploadString(storageRef, postImageDataUri, 'data_url');
-                imageUrl = await getDownloadURL(uploadTask.ref);
+                imageUrl = await uploadImage(postImageDataUri);
+                 if (!imageUrl) {
+                    setIsPosting(false);
+                    return;
+                }
             }
 
             const hashtags = extractHashtags(newPostContent);
