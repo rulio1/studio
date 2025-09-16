@@ -109,6 +109,7 @@ export default function EditProfilePage() {
         try {
             const handleWithAt = profileData.handle.startsWith('@') ? profileData.handle : `@${profileData.handle}`;
     
+            // Check if handle is taken by another user
             if (handleWithAt !== zisprUser.handle) {
                 const usersRef = collection(db, "users");
                 const q = query(usersRef, where("handle", "==", handleWithAt));
