@@ -16,9 +16,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useUserStore } from '@/store/user-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db, storage } from '@/lib/firebase';
-import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
-import { v4 as uuidv4 } from 'uuid';
+import { db } from '@/lib/firebase';
 import type { ZisprUser } from '@/types/zispr';
 import { fileToDataUri } from '@/lib/utils';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
@@ -113,20 +111,26 @@ export default function EditProfilePage() {
         setCropperData(null);
     };
 
-    const uploadImage = async (dataUri: string, userId: string): Promise<string | null> => {
+    const uploadImage = async (dataUri: string): Promise<string | null> => {
         if (!dataUri.startsWith('data:image')) return dataUri; // It's already an URL
         try {
-            const imageId = uuidv4();
-            const imagePath = `images/${userId}/${imageId}`;
-            const imageRef = storageRef(storage, imagePath);
-            await uploadString(imageRef, dataUri, 'data_url');
-            const downloadURL = await getDownloadURL(imageRef);
-            return downloadURL;
+            const response = await fetch('/api/upload-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: dataUri }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Falha no upload da imagem.');
+            }
+
+            const result = await response.json();
+            return result.imageUrl;
         } catch (error: any) {
-            console.error("Firebase Storage upload error:", error);
             toast({
                 title: "Erro no Upload",
-                description: "Falha no upload da imagem para o Firebase Storage.",
+                description: error.message,
                 variant: "destructive",
             });
             return null;
@@ -152,7 +156,7 @@ export default function EditProfilePage() {
             
             let avatarUrl = profileData.avatar;
             if (avatarDataUri) {
-                const uploadedUrl = await uploadImage(avatarDataUri, user.uid);
+                const uploadedUrl = await uploadImage(avatarDataUri);
                 if (!uploadedUrl) {
                     setIsSaving(false);
                     return;
@@ -162,7 +166,7 @@ export default function EditProfilePage() {
 
             let bannerUrl = profileData.banner;
             if (bannerDataUri) {
-                const uploadedUrl = await uploadImage(bannerDataUri, user.uid);
+                const uploadedUrl = await uploadImage(bannerDataUri);
                 if (!uploadedUrl) {
                     setIsSaving(false);
                     return;
