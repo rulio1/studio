@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -5,11 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db, storage } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch, addDoc, query, where, limit, getDocs } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
-import { v4 as uuidv4 } from 'uuid';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
@@ -330,9 +329,19 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         try {
             let imageUrl: string | null = null;
             if (postImageDataUri) {
-                const storageRef = ref(storage, `images/${user.uid}/post-${uuidv4()}`);
-                const uploadResult = await uploadString(storageRef, postImageDataUri, 'data_url');
-                imageUrl = await getDownloadURL(uploadResult.ref);
+                const response = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: postImageDataUri }),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Falha no upload da imagem.');
+                }
+
+                const result = await response.json();
+                imageUrl = result.imageUrl;
             }
 
             const hashtags = extractHashtags(newPostContent);

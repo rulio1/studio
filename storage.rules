@@ -1,15 +1,16 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permite leitura pública de todas as imagens
-    match /images/{allPaths=**} {
-      allow read: if true;
+    // Permite leitura pública de todos os arquivos.
+    match /{allPaths=**} {
+      allow read;
     }
 
-    // Permite escrita na pasta 'images' apenas para usuários autenticados
+    // Permite escrita na pasta 'images' apenas para usuários autenticados.
     match /images/{userId}/{allPaths=**} {
-       allow write: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
