@@ -2,7 +2,7 @@
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { BadgeCheck, Bird, MoreHorizontal } from 'lucide-react';
+import { BadgeCheck, Bird } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -23,9 +23,9 @@ interface Post {
 }
 
 const badgeColors = {
-    bronze: 'fill-amber-600 text-white',
-    silver: 'fill-slate-400 text-white',
-    gold: 'fill-yellow-400 text-white'
+    bronze: '#a16207', // amber-600
+    silver: '#71717a', // slate-400
+    gold: '#facc15'    // yellow-400
 };
 
 export default function PostShareCard({ post }: { post: Post }) {
@@ -34,34 +34,52 @@ export default function PostShareCard({ post }: { post: Post }) {
     const isZisprAccount = post.handle === '@Zispr';
     const isRulio = post.handle === '@Rulio';
     const isPostVerified = post.isVerified || isRulio;
-    const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'fill-primary text-white';
+    
+    let badgeColor = '#0ea5e9'; // primary
+    if(isRulio) badgeColor = '#0ea5e9';
+    else if(post.badgeTier) badgeColor = badgeColors[post.badgeTier];
+
 
     const formattedDate = post.createdAt?.toDate ? format(post.createdAt.toDate(), "h:mm a · dd 'de' MMM 'de' yy", { locale: ptBR }) : '';
 
     return (
-        <div className="w-[380px] p-4 font-body" style={{ backgroundColor: 'white', color: 'black' }}>
-            <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                        <AvatarImage src={post.avatar} />
-                        <AvatarFallback>{post.avatarFallback}</AvatarFallback>
-                    </Avatar>
+        <div style={{ 
+            width: '400px', 
+            padding: '24px', 
+            fontFamily: 'Inter, sans-serif', 
+            backgroundColor: 'white', 
+            color: 'black',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <img 
+                        src={post.avatar} 
+                        style={{ width: '48px', height: '48px', borderRadius: '50%' }} 
+                        alt={post.author}
+                    />
                     <div>
-                        <p className="font-bold text-base flex items-center gap-1">
+                        <p style={{ fontWeight: 'bold', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '4px', margin: 0 }}>
                             {post.author}
-                            {isZisprAccount ? <Bird className="h-5 w-5 text-blue-400 fill-blue-400" /> : (isPostVerified && <BadgeCheck className={`h-5 w-5 ${isRulio ? 'fill-blue-500 text-white' : badgeColor}`} />)}
+                            {isZisprAccount ? (
+                                <Bird style={{ height: '18px', width: '18px', color: '#0ea5e9', fill: '#0ea5e9' }} />
+                            ) : (isPostVerified && (
+                                <BadgeCheck style={{ height: '18px', width: '18px', color: 'white', fill: badgeColor }} />
+                            ))}
                         </p>
-                        <p className="text-sm text-gray-500">{post.handle}</p>
+                        <p style={{ fontSize: '14px', color: '#71717a', margin: 0 }}>{post.handle}</p>
                     </div>
                 </div>
-                <MoreHorizontal className="h-5 w-5 text-gray-500" />
+                 <Bird style={{ height: '24px', width: '24px', color: '#0ea5e9' }} />
             </div>
 
-            <p className="text-xl whitespace-pre-wrap mb-4">
+            <p style={{ fontSize: '18px', whiteSpace: 'pre-wrap', margin: 0, lineHeight: '1.5' }}>
                 {post.content}
             </p>
 
-            <p className="text-sm text-gray-500">
+            <p style={{ fontSize: '14px', color: '#71717a', margin: 0 }}>
                 {formattedDate}
             </p>
         </div>
