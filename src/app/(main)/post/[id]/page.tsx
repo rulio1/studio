@@ -39,9 +39,6 @@ import { runTransaction } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import SpotifyEmbed from '@/components/spotify-embed';
 import { useUserStore } from '@/store/user-store';
-import PostShareCard from '@/components/post-share-card';
-import * as htmlToImage from 'html-to-image';
-
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
@@ -356,7 +353,7 @@ export default function PostDetailPage() {
     const { user, zisprUser, isLoading: isUserLoading } = useUserStore();
     const [postToView, setPostToView] = useState<Post | null>(null);
     const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
-    const shareCardRef = useRef<HTMLDivElement>(null);
+    const [isSharing, setIsSharing] = useState(false);
 
     // State for post actions
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -366,7 +363,6 @@ export default function PostDetailPage() {
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
     const [analyticsPost, setAnalyticsPost] = useState<Post | null>(null);
     const [postToSave, setPostToSave] = useState<string | null>(null);
-    const [isSharing, setIsSharing] = useState(false);
 
 
     // State for comment actions
@@ -374,9 +370,6 @@ export default function PostDetailPage() {
     const [editingComment, setEditingComment] = useState<Comment | null>(null);
     const [editedCommentContent, setEditedCommentContent] = useState('');
     const [isUpdatingComment, setIsUpdatingComment] = useState(false);
-
-    // State to manage avatar data URI for sharing card
-    const [shareAvatarDataUri, setShareAvatarDataUri] = useState<string>('');
 
     useEffect(() => {
         if (id && user) {
@@ -797,82 +790,37 @@ export default function PostDetailPage() {
     };
 
     const handleShare = async () => {
-        if (!post || !shareCardRef.current || isSharing) return;
+        if (!post) return;
         setIsSharing(true);
 
+        const shareData = {
+            title: `Post de ${post.author}`,
+            text: `${post.content.substring(0, 100)}...`,
+            url: window.location.href,
+        };
+
         try {
-            const dataUrl = await htmlToImage.toPng(shareCardRef.current, {
-                quality: 0.95,
-                backgroundColor: '#ffffff',
-                pixelRatio: 2,
-            });
-
-            const blob = await (await fetch(dataUrl)).blob();
-            const file = new File([blob], "zispr-post.png", { type: "image/png" });
-
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: `Post de ${post.author}`,
-                    text: post.content.substring(0, 100) + '...',
-                });
+            if (navigator.share) {
+                await navigator.share(shareData);
             } else {
+                // Fallback for browsers that don't support navigator.share
+                await navigator.clipboard.writeText(shareData.url);
                 toast({
-                    title: "Compartilhamento não suportado",
-                    description: "Seu navegador não suporta o compartilhamento de imagens.",
-                    variant: "destructive",
+                    title: "Link copiado!",
+                    description: "O link para o post foi copiado para sua área de transferência.",
                 });
             }
         } catch (error) {
-            console.error('Oops, algo deu errado!', error);
+            console.error('Error sharing', error);
             toast({
                 title: "Erro ao compartilhar",
-                description: "Não foi possível gerar a imagem para compartilhamento.",
+                description: "Não foi possível compartilhar este post.",
                 variant: "destructive",
             });
         } finally {
             setIsSharing(false);
-            setShareAvatarDataUri('');
         }
     };
-
-    const triggerShare = async () => {
-        if (isSharing || !post) return;
-        setIsSharing(true);
-    
-        try {
-            const response = await fetch(post.avatar);
-            const blob = await response.blob();
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setShareAvatarDataUri(reader.result as string);
-                // Now that the state is set, the effect will trigger the share
-            };
-            reader.onerror = () => {
-                throw new Error("Não foi possível ler a imagem do avatar.");
-            };
-            reader.readAsDataURL(blob);
-        } catch (e) {
-            console.error("Erro ao preparar o avatar para compartilhamento:", e);
-            toast({
-                title: "Erro ao carregar avatar",
-                description: "Não foi possível carregar a imagem do perfil para o compartilhamento.",
-                variant: "destructive",
-            });
-            setIsSharing(false);
-        }
-    };
-    
-    // Trigger actual sharing once the avatar data URI is ready
-    useEffect(() => {
-        if (isSharing && shareAvatarDataUri && shareCardRef.current) {
-            // Use a small timeout to ensure the DOM has updated with the new avatar URI
-            setTimeout(() => {
-                handleShare();
-            }, 50);
-        }
-    }, [isSharing, shareAvatarDataUri]);
-
 
     if (isLoading || isUserLoading) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -1085,7 +1033,7 @@ export default function PostDetailPage() {
                                 <Heart className={'h-5 w-5 hover:text-red-500 transition-colors ' + (post.isLiked ? 'fill-current' : '')} />
                             <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
                         </button>
-                         <button onClick={triggerShare} disabled={isSharing} className="flex items-center gap-2 hover:text-primary transition-colors">
+                         <button onClick={handleShare} disabled={isSharing} className="flex items-center gap-2 hover:text-primary transition-colors">
                             {isSharing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Share2 className="h-5 w-5" />}
                         </button>
                     </div>
@@ -1132,25 +1080,6 @@ export default function PostDetailPage() {
                 </div>
             </footer>
             
-            {/* Hidden div for rendering the share card */}
-            <div style={{ position: 'fixed', top: '-200vh', left: 0, zIndex: -100, pointerEvents: 'none', opacity: 0 }}>
-                 {isSharing && shareAvatarDataUri && (
-                    <div ref={shareCardRef}>
-                        <PostShareCard 
-                            post={{
-                                author: post.author,
-                                handle: post.handle,
-                                content: post.content,
-                                date: post.time,
-                                isVerified: post.isVerified,
-                                badgeTier: post.badgeTier,
-                            }}
-                            avatarDataUri={shareAvatarDataUri}
-                        />
-                    </div>
-                )}
-            </div>
-
             {/* Post Modals */}
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
                 <AlertDialogContent>
