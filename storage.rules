@@ -1,14 +1,13 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permite leitura pública de todos os arquivos.
-    match /{allPaths=**} {
+    // Permite que qualquer pessoa leia as imagens (necessário para exibi-las no app)
+    match /images/{allPaths=**} {
       allow read;
     }
 
-    // Permite escrita na pasta 'images' apenas para usuários autenticados.
+    // Permite que apenas usuários autenticados façam upload de imagens
     match /images/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }

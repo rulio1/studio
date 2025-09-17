@@ -6,9 +6,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch, addDoc, query, where, limit, getDocs } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
+import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
@@ -329,19 +331,11 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         try {
             let imageUrl: string | null = null;
             if (postImageDataUri) {
-                const response = await fetch('/api/upload-image', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: postImageDataUri }),
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Falha no upload da imagem.');
-                }
-
-                const result = await response.json();
-                imageUrl = result.imageUrl;
+                const imageId = uuidv4();
+                const imagePath = `images/${user.uid}/${imageId}`;
+                const imageRef = storageRef(storage, imagePath);
+                await uploadString(imageRef, postImageDataUri, 'data_url');
+                imageUrl = await getDownloadURL(imageRef);
             }
 
             const hashtags = extractHashtags(newPostContent);
@@ -509,7 +503,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
                 <p className="text-sm mt-1 text-muted-foreground line-clamp-3">{post.content}</p>
                 {post.image && (
                     <div className="mt-2 aspect-video relative w-full overflow-hidden rounded-lg">
-                        <Image src={post.image} layout="fill" objectFit="cover" alt="Quoted post image" />
+                        <Image src={post.image} fill className="object-cover" alt="Quoted post image" />
                     </div>
                 )}
             </div>
