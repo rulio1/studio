@@ -39,18 +39,20 @@ import { formatTimeAgo } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Poll from '@/components/poll';
 import { Badge } from '@/components/ui/badge';
-import FollowListDialog from '@/components/follow-list-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import SpotifyEmbed from '@/components/spotify-embed';
 import { motion } from 'framer-motion';
 import React from 'react';
 import { useUserStore } from '@/store/user-store';
 import { useTranslation } from '@/hooks/use-translation';
+import dynamic from 'next/dynamic';
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
 const PostAnalyticsModal = lazy(() => import('@/components/post-analytics-modal'));
 const SaveToCollectionModal = lazy(() => import('@/components/save-to-collection-modal'));
+const FollowListDialog = dynamic(() => import('@/components/follow-list-dialog'));
+
 
 const EmptyState = ({ title, description, icon: Icon }: { title: string, description: string, icon?: React.ElementType }) => (
     <div className="text-center p-8 mt-4">
@@ -1575,3 +1577,4 @@ export default function ProfilePage() {
         </div>
     );
 }
+
