@@ -796,18 +796,17 @@ export default function PostDetailPage() {
         setNewComment(prev => `${handle} ${prev}`);
     };
 
-     const handleShare = async () => {
-        if (!post || !shareCardRef.current) return;
+    const handleShare = async () => {
+        if (!post || !shareCardRef.current || isSharing) return;
+        setIsSharing(true);
 
         try {
-             const dataUrl = await htmlToImage.toPng(shareCardRef.current, {
+            const dataUrl = await htmlToImage.toPng(shareCardRef.current, {
                 quality: 0.95,
                 backgroundColor: '#ffffff',
                 pixelRatio: 2,
-                embedImages: true,
-                skipFonts: true,
             });
-    
+
             const blob = await (await fetch(dataUrl)).blob();
             const file = new File([blob], "zispr-post.png", { type: "image/png" });
 
@@ -833,35 +832,44 @@ export default function PostDetailPage() {
             });
         } finally {
             setIsSharing(false);
-            setShareAvatarDataUri(''); // Limpa o estado
+            setShareAvatarDataUri('');
         }
     };
-    
+
     const triggerShare = async () => {
         if (isSharing || !post) return;
         setIsSharing(true);
-        // Step 1: Fetch avatar and convert to data URI
+    
         try {
             const response = await fetch(post.avatar);
             const blob = await response.blob();
             const reader = new FileReader();
             reader.onloadend = () => {
                 setShareAvatarDataUri(reader.result as string);
-                // Step 2 (in useEffect) will handle the rest
+                // Now that the state is set, the effect will trigger the share
             };
-            reader.onerror = (e) => { throw new Error("Could not read avatar blob"); };
+            reader.onerror = () => {
+                throw new Error("Não foi possível ler a imagem do avatar.");
+            };
             reader.readAsDataURL(blob);
-        } catch(e) {
-            console.error("Error preparing avatar for sharing:", e);
-            // Fallback to sharing without avatar if fetch fails
-            setShareAvatarDataUri('placeholder');
+        } catch (e) {
+            console.error("Erro ao preparar o avatar para compartilhamento:", e);
+            toast({
+                title: "Erro ao carregar avatar",
+                description: "Não foi possível carregar a imagem do perfil para o compartilhamento.",
+                variant: "destructive",
+            });
+            setIsSharing(false);
         }
     };
     
     // Trigger actual sharing once the avatar data URI is ready
     useEffect(() => {
         if (isSharing && shareAvatarDataUri && shareCardRef.current) {
-            handleShare();
+            // Use a small timeout to ensure the DOM has updated with the new avatar URI
+            setTimeout(() => {
+                handleShare();
+            }, 50);
         }
     }, [isSharing, shareAvatarDataUri]);
 
