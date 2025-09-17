@@ -198,7 +198,7 @@ export default function ImageViewer({ post, onOpenChange }: ImageViewerProps) {
 
                 {/* Details Column */}
                 <div className="hidden md:flex flex-col w-full max-w-sm h-full bg-background">
-                    <header className="p-4 border-b">
+                    <header className="p-4 border-b flex items-center justify-between">
                         <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push(`/profile/${post.authorId}`)}>
                             <Avatar className="h-10 w-10">
                                 <AvatarImage src={post.avatar} alt={post.author} />
@@ -212,6 +212,9 @@ export default function ImageViewer({ post, onOpenChange }: ImageViewerProps) {
                                 <p className="text-sm text-muted-foreground">{post.handle}</p>
                             </div>
                         </div>
+                        <Button variant="ghost" size="icon" onClick={handleClose} className="rounded-full">
+                          <X className="h-5 w-5" />
+                        </Button>
                     </header>
                     <main className="flex-1 overflow-y-auto">
                         <div className="p-4 space-y-4">
