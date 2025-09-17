@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert, X } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Send, Loader2, BadgeCheck, Bird, Smile, UserX, ShieldAlert, X, ImageIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -28,6 +28,7 @@ import {
 import GifPicker from '@/components/gif-picker';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/use-translation';
+import { fileToDataUri } from '@/lib/utils';
 
 
 interface ZisprUser {
@@ -65,6 +66,7 @@ interface Conversation {
     lastMessage?: {
         text?: string;
         gifUrl?: string;
+        imageUrl?: string;
         senderId: string;
         timestamp: any;
     };
@@ -93,10 +95,13 @@ export default function ConversationPage() {
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [newMessage, setNewMessage] = useState('');
     const [selectedGif, setSelectedGif] = useState<string | null>(null);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [selectedImageDataUri, setSelectedImageDataUri] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSending, setIsSending] = useState(false);
     const [isBlockAlertOpen, setIsBlockAlertOpen] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
      useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -204,15 +209,62 @@ export default function ConversationPage() {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
-    
+
+    const uploadImage = async (dataUri: string): Promise<string | null> => {
+        try {
+            const response = await fetch('/api/upload-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: dataUri }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Falha no upload da imagem.');
+            }
+
+            const result = await response.json();
+            return result.imageUrl;
+        } catch (error: any) {
+            toast({
+                title: "Erro no Upload",
+                description: error.message,
+                variant: "destructive",
+            });
+            return null;
+        }
+    };
+
+    const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+            toast({ title: 'Imagem muito grande', description: 'Por favor, selecione uma imagem menor que 10MB.', variant: 'destructive'});
+            return;
+        }
+        setSelectedGif(null);
+        const dataUri = await fileToDataUri(file);
+        setSelectedImage(URL.createObjectURL(file));
+        setSelectedImageDataUri(dataUri);
+    };
+
     const handleSendMessage = async () => {
-        if ((!newMessage.trim() && !selectedGif) || !user || isSending || !otherUser) return;
+        if ((!newMessage.trim() && !selectedGif && !selectedImageDataUri) || !user || isSending || !otherUser) return;
     
         setIsSending(true);
         const conversationRef = doc(db, 'conversations', conversationId);
         const messagesCollectionRef = collection(db, 'conversations', conversationId, 'messages');
     
         try {
+             let imageUrl: string | null = null;
+            if (selectedImageDataUri) {
+                imageUrl = await uploadImage(selectedImageDataUri);
+                if (!imageUrl) {
+                    setIsSending(false);
+                    return;
+                }
+            }
+
             await runTransaction(db, async (transaction) => {
                 const conversationDoc = await transaction.get(conversationRef);
                 if (!conversationDoc.exists()) {
@@ -234,13 +286,14 @@ export default function ConversationPage() {
     
                 if (newMessage.trim()) messagePayload.text = newMessage.trim();
                 if (selectedGif) messagePayload.gifUrl = selectedGif;
+                if (imageUrl) messagePayload.imageUrl = imageUrl;
     
                 transaction.set(newMessageDocRef, messagePayload);
     
                 let lastMessageText = newMessage.trim();
-                if (!lastMessageText && selectedGif) {
-                    lastMessageText = 'GIF';
-                }
+                if (!lastMessageText && selectedGif) lastMessageText = 'GIF';
+                if (!lastMessageText && imageUrl) lastMessageText = '[Imagem]';
+                
     
                 const updateData: any = {
                     lastMessage: {
@@ -257,6 +310,8 @@ export default function ConversationPage() {
             });
             setNewMessage('');
             setSelectedGif(null);
+            setSelectedImage(null);
+            setSelectedImageDataUri(null);
         } catch (error) {
             console.error("Error sending message:", error);
             toast({
@@ -484,7 +539,14 @@ export default function ConversationPage() {
                                         </div>
                                     )}
                                      {message.imageUrl && (
-                                        <p className="text-sm italic text-muted-foreground">[Imagem não pode ser exibida]</p>
+                                        <div className="w-48 h-auto aspect-video relative">
+                                            <Image 
+                                                src={message.imageUrl} 
+                                                alt="Imagem" 
+                                                fill
+                                                className="object-cover rounded-lg"
+                                            />
+                                        </div>
                                      )}
                                      {message.text && (
                                         <p className="text-sm whitespace-pre-wrap">{message.text}</p>
@@ -516,6 +578,19 @@ export default function ConversationPage() {
             </div>
         </ScrollArea>
         <footer className="p-4 pt-2 border-t bg-background space-y-2">
+             {selectedImage && (
+                <div className="relative w-32 h-auto mb-2">
+                    <Image src={selectedImage} alt="Imagem selecionada" width={128} height={128} className="rounded-lg" />
+                    <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                        onClick={() => { setSelectedImage(null); setSelectedImageDataUri(null); }}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
              {selectedGif && (
                 <div className="relative w-32 h-auto mb-2">
                     <Image src={selectedGif} alt="GIF selecionado" width={128} height={128} unoptimized className="rounded-lg" />
@@ -530,9 +605,13 @@ export default function ConversationPage() {
                 </div>
             )}
              <div className="relative flex items-center rounded-2xl border bg-background p-2">
+                 <input type="file" ref={imageInputRef} onChange={handleImageFileChange} className="hidden" accept="image/*" />
+                 <Button variant="ghost" size="icon" onClick={() => imageInputRef.current?.click()} disabled={isSending || isConversationDisabled || !!selectedGif}>
+                    <ImageIcon className="h-5 w-5 text-primary" />
+                 </Button>
                  <Popover>
                     <PopoverTrigger asChild>
-                         <Button variant="ghost" size="icon" disabled={isSending || isConversationDisabled}>
+                         <Button variant="ghost" size="icon" disabled={isSending || isConversationDisabled || !!selectedImage}>
                             <div className="text-primary border-primary border-2 rounded-md h-5 w-5 flex items-center justify-center font-bold text-xs">
                                 GIF
                             </div>
@@ -551,7 +630,7 @@ export default function ConversationPage() {
                      className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
                  />
 
-                 {(newMessage.trim() || selectedGif) && (
+                 {(newMessage.trim() || selectedGif || selectedImage) && (
                     <Button onClick={handleSendMessage} disabled={isSending} size="icon" className="rounded-full">
                        {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                     </Button>
@@ -580,3 +659,5 @@ export default function ConversationPage() {
     </>
   );
 }
+
+    
