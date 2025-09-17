@@ -40,7 +40,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import SpotifyEmbed from '@/components/spotify-embed';
 import { useUserStore } from '@/store/user-store';
 import PostShareCard from '@/components/post-share-card';
-import * as htmlToImage from 'html-to-image';
 
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
@@ -356,7 +355,6 @@ export default function PostDetailPage() {
     const { user, zisprUser, isLoading: isUserLoading } = useUserStore();
     const [postToView, setPostToView] = useState<Post | null>(null);
     const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
-    const shareCardRef = useRef<HTMLDivElement>(null);
 
     // State for post actions
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -794,42 +792,138 @@ export default function PostDetailPage() {
     };
 
      const handleShare = async () => {
-        if (!shareCardRef.current || !post) return;
-
+        if (!post) return;
         setIsSharing(true);
-
+    
         try {
-            const dataUrl = await htmlToImage.toPng(shareCardRef.current, {
-                quality: 0.95,
-                backgroundColor: '#ffffff',
-                pixelRatio: 2,
-                skipFonts: true,
+            // Fetch avatar as a data URI
+            const avatarRes = await fetch(post.avatar);
+            const avatarBlob = await avatarRes.blob();
+            const avatarDataUri = await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(avatarBlob);
             });
-            
-            const blob = await (await fetch(dataUrl)).blob();
-            const file = new File([blob], "zispr-post.png", { type: "image/png" });
-            
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: `Post de ${post.author}`,
-                    text: post.content.substring(0, 100) + '...',
-                });
-            } else {
-                 toast({
-                    title: "Compartilhamento não suportado",
-                    description: "Seu navegador não suporta o compartilhamento de imagens.",
-                    variant: "destructive",
-                });
+    
+            // Function to wrap text
+            const wrapText = (text: string, maxWidth: number, ctx: CanvasRenderingContext2D) => {
+                const words = text.split(' ');
+                let lines: string[] = [];
+                let currentLine = words[0];
+    
+                for (let i = 1; i < words.length; i++) {
+                    const word = words[i];
+                    const width = ctx.measureText(currentLine + " " + word).width;
+                    if (width < maxWidth) {
+                        currentLine += " " + word;
+                    } else {
+                        lines.push(currentLine);
+                        currentLine = word;
+                    }
+                }
+                lines.push(currentLine);
+                return lines;
+            }
+    
+            const formattedDate = post.createdAt?.toDate ? format(post.createdAt.toDate(), "h:mm a · dd 'de' MMM 'de' yy", { locale: ptBR }) : '';
+    
+            // Create SVG string
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d')!;
+            ctx.font = '18px Inter, sans-serif';
+            const wrappedLines = wrapText(post.content, 350); // width - padding * 2
+            const textHeight = wrappedLines.length * 24; // 24px line-height
+    
+            const svgWidth = 400;
+            const svgHeight = 150 + textHeight;
+    
+            const svg = `
+                <svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                    <foreignObject width="${svgWidth}" height="${svgHeight}">
+                        <div xmlns="http://www.w3.org/1999/xhtml">
+                            <style>
+                                .container {
+                                    width: ${svgWidth}px;
+                                    height: ${svgHeight}px;
+                                    padding: 24px;
+                                    font-family: 'Inter', sans-serif;
+                                    background-color: white;
+                                    color: black;
+                                    display: flex;
+                                    flex-direction: column;
+                                    gap: 16px;
+                                    box-sizing: border-box;
+                                }
+                                .header { display: flex; align-items: center; justify-content: space-between; }
+                                .author { display: flex; align-items: center; gap: 12px; }
+                                .avatar { width: 48px; height: 48px; border-radius: 50%; }
+                                .name { font-weight: bold; font-size: 16px; margin: 0; }
+                                .handle { font-size: 14px; color: #71717a; margin: 0; }
+                                .content { font-size: 18px; white-space: pre-wrap; margin: 0; line-height: 1.5; }
+                                .date { font-size: 14px; color: #71717a; margin: 0; }
+                                .zispr-logo { height: 24px; width: 24px; color: #0ea5e9; }
+                            </style>
+                            <div class="container">
+                                <div class="header">
+                                    <div class="author">
+                                        <img src="${avatarDataUri}" class="avatar"/>
+                                        <div>
+                                            <p class="name">${post.author}</p>
+                                            <p class="handle">${post.handle}</p>
+                                        </div>
+                                    </div>
+                                    <svg class="zispr-logo" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 17H5M19 17a2 2 0 100-4h-3a2 2 0 100 4h3zM5 17a2 2 0 100-4H2a2 2 0 100 4h3zM12 13a2 2 0 100-4 2 2 0 000 4z"></path></svg>
+                                </div>
+                                <p class="content">${post.content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+                                <p class="date">${formattedDate}</p>
+                            </div>
+                        </div>
+                    </foreignObject>
+                </svg>
+            `;
+    
+            // Create data URL from SVG
+            const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+    
+            const img = new window.Image();
+            img.src = dataUrl;
+            img.onload = async () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = svgWidth;
+                canvas.height = svgHeight;
+                const ctx = canvas.getContext('2d')!;
+                ctx.drawImage(img, 0, 0);
+                const pngUrl = canvas.toDataURL('image/png');
+    
+                const blob = await (await fetch(pngUrl)).blob();
+                const file = new File([blob], "zispr-post.png", { type: "image/png" });
+    
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: `Post de ${post.author}`,
+                        text: post.content.substring(0, 100) + '...',
+                    });
+                } else {
+                    toast({
+                        title: "Compartilhamento não suportado",
+                        description: "Seu navegador não suporta o compartilhamento de imagens.",
+                        variant: "destructive",
+                    });
+                }
+                setIsSharing(false);
+            };
+            img.onerror = () => {
+                toast({ title: "Erro ao gerar imagem", variant: "destructive" });
+                setIsSharing(false);
             }
         } catch (error) {
             console.error('Oops, algo deu errado!', error);
-             toast({
+            toast({
                 title: "Erro ao compartilhar",
                 description: "Não foi possível gerar a imagem para compartilhamento.",
                 variant: "destructive",
             });
-        } finally {
             setIsSharing(false);
         }
     };
@@ -869,9 +963,6 @@ export default function PostDetailPage() {
 
     return (
         <div className="bg-background flex flex-col h-screen">
-             <div ref={shareCardRef} className="fixed -left-[9999px] top-0 p-0">
-                {post && <PostShareCard post={post} />}
-            </div>
              <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b">
                 <div className="flex items-center gap-4 px-4 py-2">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
