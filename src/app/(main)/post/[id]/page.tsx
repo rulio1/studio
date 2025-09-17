@@ -802,6 +802,13 @@ export default function PostDetailPage() {
                 quality: 0.95,
                 backgroundColor: '#171717',
                 pixelRatio: 2,
+                // Embed images and fonts
+                imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+                fontEmbedCSS: await (async () => {
+                    const fontUrl = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap';
+                    const fontCss = await (await fetch(fontUrl)).text();
+                    return fontCss;
+                })(),
             });
             
             const blob = await (await fetch(dataUrl)).blob();
