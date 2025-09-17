@@ -802,6 +802,7 @@ export default function PostDetailPage() {
                 quality: 0.95,
                 backgroundColor: '#000000',
                 pixelRatio: 2,
+                skipFonts: true,
             });
             
             const blob = await (await fetch(dataUrl)).blob();
