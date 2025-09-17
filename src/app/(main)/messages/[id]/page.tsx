@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,9 @@ import GifPicker from '@/components/gif-picker';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/use-translation';
 import { fileToDataUri } from '@/lib/utils';
+import { format } from 'date-fns';
+
+const ImageViewer = lazy(() => import('@/components/image-viewer'));
 
 
 interface ZisprUser {
@@ -55,10 +58,21 @@ interface Message {
 interface PostForViewer {
     id: string;
     image?: string;
+    gifUrl?: string;
     comments: number;
     retweets: string[];
     likes: string[];
     views: number;
+    authorId: string;
+    author: string;
+    avatar: string;
+    avatarFallback: string;
+    handle: string;
+    isVerified?: boolean;
+    badgeTier?: 'bronze' | 'silver' | 'gold';
+    createdAt: any;
+    content: string;
+    location?: string;
 }
 
 interface Conversation {
@@ -102,6 +116,7 @@ export default function ConversationPage() {
     const [isBlockAlertOpen, setIsBlockAlertOpen] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const [imageToView, setImageToView] = useState<PostForViewer | null>(null);
 
      useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -451,7 +466,7 @@ export default function ConversationPage() {
                 <Button variant="ghost" size="icon" onClick={() => router.push('/messages')}>
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push(`/${otherUser.handle.substring(1)}`)}>
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push(`/profile/${otherUser.uid}`)}>
                     <Avatar className="h-8 w-8">
                          {isZisprAccount ? (
                             <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
@@ -497,74 +512,105 @@ export default function ConversationPage() {
                     const isRead = isLastMessage && isMyMessage && !!conversation?.lastMessageReadBy?.includes(otherUser.uid);
 
                     const reactionEntries = Object.entries(message.reactions || {}).filter(([, uids]) => uids.length > 0);
+                    
+                    const time = message.createdAt ? format(message.createdAt.toDate(), 'HH:mm') : '';
+
+                    const handleImageClick = () => {
+                         if (!message.imageUrl && !message.gifUrl) return;
+                         const sender = isMyMessage ? zisprUser : otherUser;
+                         if (!sender) return;
+                         
+                         setImageToView({
+                            id: message.id,
+                            image: message.imageUrl,
+                            gifUrl: message.gifUrl,
+                            authorId: sender.uid,
+                            author: sender.displayName,
+                            handle: sender.handle,
+                            avatar: sender.avatar,
+                            avatarFallback: sender.displayName[0],
+                            createdAt: message.createdAt,
+                            content: message.text || '',
+                            isVerified: sender.isVerified,
+                            badgeTier: sender.badgeTier,
+                            // Dummy data for required fields
+                            comments: 0,
+                            retweets: [],
+                            likes: [],
+                            views: 0
+                        });
+                    };
 
                     return (
                         <div key={message.id}>
                              <div className={`group flex items-end gap-2 relative ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="ghost" size="icon" className={`absolute -top-4 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${isMyMessage ? 'left-0' : 'right-0'}`}>
-                                            <Smile className="h-5 w-5 text-muted-foreground" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0 border-none">
-                                        <EmojiPicker onEmojiClick={(emojiData: EmojiClickData) => handleReaction(message.id, emojiData.emoji)} />
-                                    </PopoverContent>
-                                </Popover>
-                                
-                                {!isMyMessage && (
-                                    <Avatar className="h-8 w-8">
-                                        {isZisprAccount ? (
-                                            <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
-                                                <Bird className="h-5 w-5 text-primary" />
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <AvatarImage src={otherUser.avatar} alt={otherUser.displayName} />
-                                                <AvatarFallback>{otherUser.displayName[0]}</AvatarFallback>
-                                            </>
-                                        )}
-                                    </Avatar>
-                                )}
-                                <div className={`relative rounded-2xl px-3 py-2 max-w-[80%] md:max-w-[70%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
-                                    {message.gifUrl && (
-                                        <div className="w-48 h-auto aspect-video relative">
-                                            <Image 
-                                                src={message.gifUrl} 
-                                                alt="GIF" 
-                                                fill
-                                                className="object-cover rounded-lg" 
-                                                unoptimized
-                                            />
-                                        </div>
-                                    )}
-                                     {message.imageUrl && (
-                                        <div className="w-48 h-auto aspect-video relative">
-                                            <Image 
-                                                src={message.imageUrl} 
-                                                alt="Imagem" 
-                                                fill
-                                                className="object-cover rounded-lg"
-                                            />
-                                        </div>
-                                     )}
-                                     {message.text && (
-                                        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                                     )}
-                                    {reactionEntries.length > 0 && (
-                                        <div className={`absolute -bottom-4 flex gap-1 ${isMyMessage ? 'right-0' : 'left-0'}`}>
-                                            {reactionEntries.map(([emoji, uids]) => (
-                                                <div 
-                                                    key={emoji}
-                                                    onClick={() => handleReaction(message.id, emoji)}
-                                                    className={`px-1.5 py-0.5 rounded-full text-xs flex items-center gap-1 cursor-pointer border ${uids.includes(user!.uid) ? 'bg-primary/20 border-primary' : 'bg-muted/80 border-border'}`}
-                                                >
-                                                    <span>{emoji}</span>
-                                                    <span className="font-semibold">{uids.length}</span>
+                                <div className={`flex items-center gap-2 ${isMyMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="ghost" size="icon" className={`h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity`}>
+                                                <Smile className="h-5 w-5 text-muted-foreground" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0 border-none">
+                                            <EmojiPicker onEmojiClick={(emojiData: EmojiClickData) => handleReaction(message.id, emojiData.emoji)} />
+                                        </PopoverContent>
+                                    </Popover>
+                                    
+                                    {!isMyMessage && (
+                                        <Avatar className="h-8 w-8 self-end">
+                                            {isZisprAccount ? (
+                                                <div className="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+                                                    <Bird className="h-5 w-5 text-primary" />
                                                 </div>
-                                            ))}
-                                        </div>
+                                            ) : (
+                                                <>
+                                                    <AvatarImage src={otherUser.avatar} alt={otherUser.displayName} />
+                                                    <AvatarFallback>{otherUser.displayName[0]}</AvatarFallback>
+                                                </>
+                                            )}
+                                        </Avatar>
                                     )}
+                                    <div className={`relative rounded-2xl px-3 py-2 max-w-[80%] md:max-w-[70%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
+                                        {message.gifUrl && (
+                                            <div className="w-48 h-auto aspect-video relative cursor-pointer" onClick={handleImageClick}>
+                                                <Image 
+                                                    src={message.gifUrl} 
+                                                    alt="GIF" 
+                                                    fill
+                                                    className="object-cover rounded-lg" 
+                                                    unoptimized
+                                                />
+                                            </div>
+                                        )}
+                                         {message.imageUrl && (
+                                            <div className="w-48 h-auto aspect-video relative cursor-pointer" onClick={handleImageClick}>
+                                                <Image 
+                                                    src={message.imageUrl} 
+                                                    alt="Imagem" 
+                                                    fill
+                                                    className="object-cover rounded-lg"
+                                                />
+                                            </div>
+                                         )}
+                                         {message.text && (
+                                            <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                                         )}
+                                        {reactionEntries.length > 0 && (
+                                            <div className={`absolute -bottom-4 flex gap-1 ${isMyMessage ? 'right-0' : 'left-0'}`}>
+                                                {reactionEntries.map(([emoji, uids]) => (
+                                                    <div 
+                                                        key={emoji}
+                                                        onClick={() => handleReaction(message.id, emoji)}
+                                                        className={`px-1.5 py-0.5 rounded-full text-xs flex items-center gap-1 cursor-pointer border ${uids.includes(user!.uid) ? 'bg-primary/20 border-primary' : 'bg-muted/80 border-border'}`}
+                                                    >
+                                                        <span>{emoji}</span>
+                                                        <span className="font-semibold">{uids.length}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">{time}</span>
                                 </div>
                             </div>
                             {isRead && (
@@ -656,8 +702,9 @@ export default function ConversationPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
+    <Suspense>
+        {imageToView && <ImageViewer post={imageToView} onOpenChange={() => setImageToView(null)} />}
+    </Suspense>
     </>
   );
 }
-
-    
