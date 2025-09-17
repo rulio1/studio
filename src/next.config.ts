@@ -5,14 +5,26 @@ import withPWAInit from "@ducanh2912/next-pwa";
 const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
-  // add your own strategies to the existing ones
-  // cacheOnFrontEndNav: true,
-  // aggressiveFrontEndNavCaching: true,
-  // reloadOnOnline: true,
-  // swcMinify: true,
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  reloadOnOnline: true,
+  swcMinify: true,
   workboxOptions: {
-    // Importa o script do service worker do Firebase
     importScripts: ["/firebase-messaging-sw.js"],
+    runtimeCaching: [
+      ...require("@ducanh2912/next-pwa").cache,
+      {
+        urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
+        handler: "CacheFirst",
+        options: {
+          cacheName: "google-fonts",
+          expiration: {
+            maxEntries: 4,
+            maxAgeSeconds: 365 * 24 * 60 * 60, // 365 dias
+          },
+        },
+      },
+    ],
   },
 });
 
