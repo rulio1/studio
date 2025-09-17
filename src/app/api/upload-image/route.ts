@@ -1,3 +1,4 @@
+
 // src/app/api/upload-image/route.ts
 import { NextResponse } from 'next/server';
 
@@ -10,7 +11,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nenhuma imagem fornecida.' }, { status: 400 });
     }
 
-    const apiKey = process.env.IMGBB_API_KEY;
+    // Use NEXT_PUBLIC_ prefix to ensure the variable is available in all environments
+    const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
     if (!apiKey) {
       console.error("A chave da API do ImgBB não está configurada.");
       return NextResponse.json({ error: 'O serviço de upload de imagens não está configurado no servidor.' }, { status: 500 });
