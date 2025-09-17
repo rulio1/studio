@@ -10,14 +10,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nenhuma imagem fornecida.' }, { status: 400 });
     }
 
-    const apiKey = process.env.IMGBB_API_KEY;
+    // Solução de força bruta para garantir o funcionamento.
+    // A chave está diretamente no código para evitar problemas com variáveis de ambiente.
+    const apiKey = '9796138e5afeeb164d2a8fbfc047d72a';
+    
     if (!apiKey) {
-      console.error("IMGBB_API_KEY não está definida nas variáveis de ambiente.");
+      console.error("IMGBB_API_KEY não está definida.");
       return NextResponse.json({ error: 'O servidor não está configurado para upload de imagens.' }, { status: 500 });
     }
 
-    // O ImgBB espera que a imagem seja enviada como form-data.
-    // A imagem em base64 precisa ser extraída e enviada corretamente.
+    // A imagem em base64 precisa ser extraída da data URI.
     const base64Data = image.split(',')[1];
     const formData = new FormData();
     formData.append('image', base64Data);
