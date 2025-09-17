@@ -793,25 +793,50 @@ export default function PostDetailPage() {
         if (!post) return;
         setIsSharing(true);
 
-        const shareData = {
-            title: `Post de ${post.author}`,
-            text: `${post.content.substring(0, 100)}...`,
-            url: window.location.href,
+        const postData = {
+            author: post.author,
+            handle: post.handle,
+            avatar: post.avatar,
+            content: post.content,
+            isVerified: post.isVerified || post.handle === '@Rulio',
+            badgeTier: post.badgeTier,
+            createdAt: post.createdAt.toDate().toISOString(),
         };
 
         try {
-            if (navigator.share) {
-                await navigator.share(shareData);
+            const response = await fetch('/api/generate-share-image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(postData),
+            });
+
+            if (!response.ok) {
+                throw new Error('Falha ao gerar imagem do post');
+            }
+
+            const { dataUrl } = await response.json();
+            
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File([blob], "zispr-post.png", { type: "image/png" });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: `Post de ${post.author}`,
+                    text: post.content.substring(0, 100),
+                });
             } else {
-                // Fallback for browsers that don't support navigator.share
-                await navigator.clipboard.writeText(shareData.url);
+                // Fallback for browsers that don't support sharing files
+                await navigator.clipboard.writeText(window.location.href);
                 toast({
                     title: "Link copiado!",
                     description: "O link para o post foi copiado para sua área de transferência.",
                 });
             }
         } catch (error) {
-            console.error('Error sharing', error);
+            console.error('Erro ao compartilhar', error);
             toast({
                 title: "Erro ao compartilhar",
                 description: "Não foi possível compartilhar este post.",
@@ -821,6 +846,7 @@ export default function PostDetailPage() {
             setIsSharing(false);
         }
     };
+
 
     if (isLoading || isUserLoading) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
