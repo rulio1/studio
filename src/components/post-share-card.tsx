@@ -18,6 +18,7 @@ interface Post {
     badgeTier?: 'bronze' | 'silver' | 'gold';
     likes: string[];
     comments: number;
+    retweets: string[];
 }
 
 const badgeColors = {
@@ -37,7 +38,7 @@ export default function PostShareCard({ post }: { post: Post }) {
     const formattedDate = post.createdAt?.toDate ? format(post.createdAt.toDate(), "h:mm a · dd 'de' MMM 'de' yy", { locale: ptBR }) : '';
 
     return (
-        <div className="w-[380px] bg-black text-white p-6 rounded-2xl border border-gray-800 font-body">
+        <div className="w-[380px] text-white p-6 rounded-2xl font-body">
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
