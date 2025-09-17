@@ -186,7 +186,7 @@ export default function EditProfilePage() {
             await updateDoc(doc(db, 'users', user.uid), firestoreUpdateData);
     
             toast({ title: t('profile.edit.toasts.saveSuccess.title') });
-            router.push(`/profile/${user.uid}`);
+            router.push(`/${handleWithAt.substring(1)}`);
     
         } catch (error: any) {
             console.error('Erro ao salvar perfil: ', error);
@@ -303,3 +303,5 @@ export default function EditProfilePage() {
     </>
   );
 }
+
+    

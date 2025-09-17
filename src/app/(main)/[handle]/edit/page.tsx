@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,9 +16,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useUserStore } from '@/store/user-store';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db, storage } from '@/lib/firebase';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { v4 as uuidv4 } from 'uuid';
+import { db } from '@/lib/firebase';
 import type { ZisprUser } from '@/types/zispr';
 import { fileToDataUri } from '@/lib/utils';
 import ImageCropper, { ImageCropperData } from '@/components/image-cropper';
@@ -112,6 +111,31 @@ export default function EditProfilePage() {
         setCropperData(null);
     };
 
+    const uploadImage = async (dataUri: string): Promise<string | null> => {
+        try {
+            const response = await fetch('/api/upload-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: dataUri }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Falha no upload da imagem.');
+            }
+
+            const result = await response.json();
+            return result.imageUrl;
+        } catch (error: any) {
+            toast({
+                title: "Erro no Upload",
+                description: error.message,
+                variant: "destructive",
+            });
+            return null;
+        }
+    };
+
     const handleSave = async () => {
         if (!user || !zisprUser) return;
         setIsSaving(true);
@@ -131,16 +155,22 @@ export default function EditProfilePage() {
             
             let avatarUrl = profileData.avatar;
             if (avatarDataUri) {
-                const storageRef = ref(storage, `images/${user.uid}/avatar-${uuidv4()}`);
-                const uploadResult = await uploadString(storageRef, avatarDataUri, 'data_url');
-                avatarUrl = await getDownloadURL(uploadResult.ref);
+                const uploadedUrl = await uploadImage(avatarDataUri);
+                if (!uploadedUrl) {
+                    setIsSaving(false);
+                    return;
+                }
+                avatarUrl = uploadedUrl;
             }
 
             let bannerUrl = profileData.banner;
             if (bannerDataUri) {
-                const storageRef = ref(storage, `images/${user.uid}/banner-${uuidv4()}`);
-                const uploadResult = await uploadString(storageRef, bannerDataUri, 'data_url');
-                bannerUrl = await getDownloadURL(uploadResult.ref);
+                const uploadedUrl = await uploadImage(bannerDataUri);
+                if (!uploadedUrl) {
+                    setIsSaving(false);
+                    return;
+                }
+                bannerUrl = uploadedUrl;
             }
 
             const firestoreUpdateData = {
@@ -160,7 +190,7 @@ export default function EditProfilePage() {
     
         } catch (error: any) {
             console.error('Erro ao salvar perfil: ', error);
-            toast({ title: t('profile.edit.toasts.saveError.title'), description: error.message, variant: 'destructive' });
+            toast({ title: t('profile.edit.toasts.saveError.title'), variant: 'destructive' });
         } finally {
             setIsSaving(false);
         }
@@ -273,3 +303,5 @@ export default function EditProfilePage() {
     </>
   );
 }
+
+    
