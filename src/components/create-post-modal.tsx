@@ -288,23 +288,6 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
     }, [open, resetModalState]);
 
-    const uploadImageToStorage = async (dataUri: string, userId: string): Promise<string | null> => {
-        try {
-            const storageRef = ref(storage, `images/${userId}/post-${uuidv4()}`);
-            const uploadResult = await uploadString(storageRef, dataUri, 'data_url');
-            return await getDownloadURL(uploadResult.ref);
-        } catch (error) {
-            console.error("Firebase Storage upload error:", error);
-            toast({
-                title: "Erro no Upload",
-                description: "Falha no upload da imagem para o Firebase Storage.",
-                variant: "destructive",
-            });
-            return null;
-        }
-    };
-
-
      const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -347,11 +330,9 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         try {
             let imageUrl: string | null = null;
             if (postImageDataUri) {
-                imageUrl = await uploadImageToStorage(postImageDataUri, user.uid);
-                 if (!imageUrl) {
-                    setIsPosting(false);
-                    return;
-                }
+                const storageRef = ref(storage, `images/${user.uid}/post-${uuidv4()}`);
+                const uploadResult = await uploadString(storageRef, postImageDataUri, 'data_url');
+                imageUrl = await getDownloadURL(uploadResult.ref);
             }
 
             const hashtags = extractHashtags(newPostContent);

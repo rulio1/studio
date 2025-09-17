@@ -112,24 +112,6 @@ export default function EditProfilePage() {
         setCropperData(null);
     };
 
-    const uploadImageToStorage = async (dataUri: string, userId: string, type: 'avatar' | 'banner'): Promise<string | null> => {
-        try {
-            const storageRef = ref(storage, `images/${userId}/${type}-${uuidv4()}`);
-            const uploadResult = await uploadString(storageRef, dataUri, 'data_url');
-            const downloadUrl = await getDownloadURL(uploadResult.ref);
-            return downloadUrl;
-        } catch (error) {
-            console.error("Firebase Storage upload error:", error);
-            toast({
-                title: "Erro no Upload",
-                description: "Falha no upload da imagem para o Firebase Storage.",
-                variant: "destructive",
-            });
-            return null;
-        }
-    };
-
-
     const handleSave = async () => {
         if (!user || !zisprUser) return;
         setIsSaving(true);
@@ -149,22 +131,16 @@ export default function EditProfilePage() {
             
             let avatarUrl = profileData.avatar;
             if (avatarDataUri) {
-                const uploadedUrl = await uploadImageToStorage(avatarDataUri, user.uid, 'avatar');
-                if (!uploadedUrl) {
-                    setIsSaving(false);
-                    return;
-                }
-                avatarUrl = uploadedUrl;
+                const storageRef = ref(storage, `images/${user.uid}/avatar-${uuidv4()}`);
+                const uploadResult = await uploadString(storageRef, avatarDataUri, 'data_url');
+                avatarUrl = await getDownloadURL(uploadResult.ref);
             }
 
             let bannerUrl = profileData.banner;
             if (bannerDataUri) {
-                const uploadedUrl = await uploadImageToStorage(bannerDataUri, user.uid, 'banner');
-                if (!uploadedUrl) {
-                    setIsSaving(false);
-                    return;
-                }
-                bannerUrl = uploadedUrl;
+                const storageRef = ref(storage, `images/${user.uid}/banner-${uuidv4()}`);
+                const uploadResult = await uploadString(storageRef, bannerDataUri, 'data_url');
+                bannerUrl = await getDownloadURL(uploadResult.ref);
             }
 
             const firestoreUpdateData = {
@@ -184,7 +160,7 @@ export default function EditProfilePage() {
     
         } catch (error: any) {
             console.error('Erro ao salvar perfil: ', error);
-            toast({ title: t('profile.edit.toasts.saveError.title'), variant: 'destructive' });
+            toast({ title: t('profile.edit.toasts.saveError.title'), description: error.message, variant: 'destructive' });
         } finally {
             setIsSaving(false);
         }
