@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird, Pin, Sparkles, Frown, Flag, BarChart3, Megaphone, UserRound, MapPin, PenSquare } from 'lucide-react';
+import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird, Pin, Sparkles, Frown, Flag, BarChart3, Megaphone, UserRound, MapPin, PenSquare, Share2 } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -38,6 +38,9 @@ import { runTransaction } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import SpotifyEmbed from '@/components/spotify-embed';
 import { useUserStore } from '@/store/user-store';
+import PostShareCard from '@/components/post-share-card';
+import * as htmlToImage from 'html-to-image';
+
 
 const CreatePostModal = lazy(() => import('@/components/create-post-modal'));
 const ImageViewer = lazy(() => import('@/components/image-viewer'));
@@ -169,9 +172,7 @@ const ContentRenderer = ({ content, spotifyUrl }: { content: string, spotifyUrl?
                 }
                 if (part.includes('spotify.com')) {
                     return spotifyUrl ? null : (
-                         <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-                            {part}
-                        </a>
+                         <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>{part}</a>
                     );
                 }
                 return part;
@@ -354,7 +355,8 @@ export default function PostDetailPage() {
     const { user, zisprUser, isLoading: isUserLoading } = useUserStore();
     const [postToView, setPostToView] = useState<Post | null>(null);
     const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
-    
+    const shareCardRef = useRef<HTMLDivElement>(null);
+
     // State for post actions
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -363,6 +365,8 @@ export default function PostDetailPage() {
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
     const [analyticsPost, setAnalyticsPost] = useState<Post | null>(null);
     const [postToSave, setPostToSave] = useState<string | null>(null);
+    const [isSharing, setIsSharing] = useState(false);
+
 
     // State for comment actions
     const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
@@ -788,6 +792,46 @@ export default function PostDetailPage() {
         setNewComment(prev => `${handle} ${prev}`);
     };
 
+     const handleShare = async () => {
+        if (!shareCardRef.current || !post) return;
+
+        setIsSharing(true);
+
+        try {
+            const dataUrl = await htmlToImage.toPng(shareCardRef.current, {
+                quality: 0.95,
+                backgroundColor: '#171717',
+                pixelRatio: 2,
+            });
+            
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File([blob], "zispr-post.png", { type: "image/png" });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: `Post de ${post.author}`,
+                    text: post.content.substring(0, 100) + '...',
+                });
+            } else {
+                 toast({
+                    title: "Compartilhamento não suportado",
+                    description: "Seu navegador não suporta o compartilhamento de imagens.",
+                    variant: "destructive",
+                });
+            }
+        } catch (error) {
+            console.error('Oops, algo deu errado!', error);
+             toast({
+                title: "Erro ao compartilhar",
+                description: "Não foi possível gerar a imagem para compartilhamento.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
     if (isLoading || isUserLoading) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
@@ -823,6 +867,9 @@ export default function PostDetailPage() {
 
     return (
         <div className="bg-background flex flex-col h-screen">
+             <div ref={shareCardRef} className="fixed -left-[9999px] top-0 p-8 bg-[#171717]">
+                {post && <PostShareCard post={post} />}
+            </div>
              <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b">
                 <div className="flex items-center gap-4 px-4 py-2">
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -999,18 +1046,8 @@ export default function PostDetailPage() {
                                 <Heart className={'h-5 w-5 hover:text-red-500 transition-colors ' + (post.isLiked ? 'fill-current' : '')} />
                             <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
                         </button>
-                        <button
-                            className="flex items-center gap-2 hover:text-primary transition-colors disabled:cursor-not-allowed"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (user?.uid === post.authorId) {
-                                    setAnalyticsPost(post);
-                                }
-                            }}
-                            disabled={user?.uid !== post.authorId}
-                        >
-                            <BarChart2 className="h-5 w-5" />
-                            <span>{post.views}</span>
+                         <button onClick={handleShare} disabled={isSharing} className="flex items-center gap-2 hover:text-primary transition-colors">
+                            {isSharing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Share2 className="h-5 w-5" />}
                         </button>
                     </div>
                 </div>
