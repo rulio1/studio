@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird, Pin, Sparkles, Frown, Flag, BarChart3, Megaphone, UserRound, MapPin, PenSquare, Share2 } from 'lucide-react';
+import { ArrowLeft, BarChart2, MessageCircle, Heart, Repeat, MoreHorizontal, Loader2, Trash2, Edit, Save, BadgeCheck, Bird, Pin, Sparkles, Frown, Flag, BarChart3, Megaphone, UserRound, MapPin, PenSquare } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp, updateDoc, increment, arrayUnion, arrayRemove, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -353,8 +353,7 @@ export default function PostDetailPage() {
     const { user, zisprUser, isLoading: isUserLoading } = useUserStore();
     const [postToView, setPostToView] = useState<Post | null>(null);
     const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
-    const [isSharing, setIsSharing] = useState(false);
-
+    
     // State for post actions
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -788,66 +787,7 @@ export default function PostDetailPage() {
         replyTextareaRef.current?.focus();
         setNewComment(prev => `${handle} ${prev}`);
     };
-
-    const handleShare = async () => {
-        if (!post) return;
-        setIsSharing(true);
-
-        const postData = {
-            author: post.author,
-            handle: post.handle,
-            avatar: post.avatar,
-            content: post.content,
-            isVerified: post.isVerified || post.handle === '@Rulio',
-            badgeTier: post.badgeTier,
-            createdAt: post.createdAt.toDate().toISOString(),
-        };
-
-        try {
-            const response = await fetch('/api/generate-share-image', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(postData),
-            });
-
-            if (!response.ok) {
-                throw new Error('Falha ao gerar imagem do post');
-            }
-
-            const { dataUrl } = await response.json();
-            
-            const blob = await (await fetch(dataUrl)).blob();
-            const file = new File([blob], "zispr-post.png", { type: "image/png" });
-            
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: `Post de ${post.author}`,
-                    text: post.content.substring(0, 100),
-                });
-            } else {
-                // Fallback for browsers that don't support sharing files
-                await navigator.clipboard.writeText(window.location.href);
-                toast({
-                    title: "Link copiado!",
-                    description: "O link para o post foi copiado para sua área de transferência.",
-                });
-            }
-        } catch (error) {
-            console.error('Erro ao compartilhar', error);
-            toast({
-                title: "Erro ao compartilhar",
-                description: "Não foi possível compartilhar este post.",
-                variant: "destructive",
-            });
-        } finally {
-            setIsSharing(false);
-        }
-    };
-
-
+    
     if (isLoading || isUserLoading) {
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
@@ -1059,9 +999,6 @@ export default function PostDetailPage() {
                                 <Heart className={'h-5 w-5 hover:text-red-500 transition-colors ' + (post.isLiked ? 'fill-current' : '')} />
                             <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
                         </button>
-                         <button onClick={handleShare} disabled={isSharing} className="flex items-center gap-2 hover:text-primary transition-colors">
-                            {isSharing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Share2 className="h-5 w-5" />}
-                        </button>
                     </div>
                 </div>
                  <div className="p-4 border-b">
@@ -1192,3 +1129,5 @@ export default function PostDetailPage() {
         </div>
     );
 }
+
+    
