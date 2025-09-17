@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -6,10 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import { collection, doc, onSnapshot, runTransaction, serverTimestamp, writeBatch, addDoc, query, where, limit, getDocs } from 'firebase/firestore';
 import { User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { v4 as uuidv4 } from 'uuid';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 
 import { Loader2, X, ImageIcon, ListOrdered, Smile, MapPin, Globe, Users, AtSign, BadgeCheck, Bird, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
@@ -288,25 +288,16 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         }
     }, [open, resetModalState]);
 
-    const uploadImage = async (dataUri: string): Promise<string | null> => {
+    const uploadImageToStorage = async (dataUri: string, userId: string): Promise<string | null> => {
         try {
-            const response = await fetch('/api/upload-image', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: dataUri }),
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Falha no upload da imagem.');
-            }
-
-            const result = await response.json();
-            return result.imageUrl;
-        } catch (error: any) {
+            const storageRef = ref(storage, `images/${userId}/post-${uuidv4()}`);
+            const uploadResult = await uploadString(storageRef, dataUri, 'data_url');
+            return await getDownloadURL(uploadResult.ref);
+        } catch (error) {
+            console.error("Firebase Storage upload error:", error);
             toast({
                 title: "Erro no Upload",
-                description: error.message,
+                description: "Falha no upload da imagem para o Firebase Storage.",
                 variant: "destructive",
             });
             return null;
@@ -356,7 +347,7 @@ export default function CreatePostModal({ open, onOpenChange, quotedPost }: Crea
         try {
             let imageUrl: string | null = null;
             if (postImageDataUri) {
-                imageUrl = await uploadImage(postImageDataUri);
+                imageUrl = await uploadImageToStorage(postImageDataUri, user.uid);
                  if (!imageUrl) {
                     setIsPosting(false);
                     return;
