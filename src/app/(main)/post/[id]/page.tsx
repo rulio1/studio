@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
@@ -800,7 +801,7 @@ export default function PostDetailPage() {
         try {
             const dataUrl = await htmlToImage.toPng(shareCardRef.current, {
                 quality: 0.95,
-                backgroundColor: '#000000',
+                backgroundColor: '#ffffff',
                 pixelRatio: 2,
                 skipFonts: true,
             });
@@ -868,7 +869,7 @@ export default function PostDetailPage() {
 
     return (
         <div className="bg-background flex flex-col h-screen">
-             <div ref={shareCardRef} className="fixed -left-[9999px] top-0 p-8">
+             <div ref={shareCardRef} className="fixed -left-[9999px] top-0 p-0">
                 {post && <PostShareCard post={post} />}
             </div>
              <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b">

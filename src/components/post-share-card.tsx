@@ -2,7 +2,7 @@
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { BadgeCheck, Bird } from 'lucide-react';
+import { BadgeCheck, Bird, MoreHorizontal } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -23,9 +23,9 @@ interface Post {
 }
 
 const badgeColors = {
-    bronze: 'text-amber-600',
-    silver: 'text-slate-400',
-    gold: 'text-yellow-400'
+    bronze: 'fill-amber-600 text-white',
+    silver: 'fill-slate-400 text-white',
+    gold: 'fill-yellow-400 text-white'
 };
 
 export default function PostShareCard({ post }: { post: Post }) {
@@ -34,13 +34,13 @@ export default function PostShareCard({ post }: { post: Post }) {
     const isZisprAccount = post.handle === '@Zispr';
     const isRulio = post.handle === '@Rulio';
     const isPostVerified = post.isVerified || isRulio;
-    const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'text-primary';
+    const badgeColor = post.badgeTier ? badgeColors[post.badgeTier] : 'fill-primary text-white';
 
     const formattedDate = post.createdAt?.toDate ? format(post.createdAt.toDate(), "h:mm a · dd 'de' MMM 'de' yy", { locale: ptBR }) : '';
 
     return (
-        <div className="w-[380px] p-6 rounded-2xl font-body" style={{ color: 'white' }}>
-            <div className="flex items-start justify-between mb-3">
+        <div className="w-[380px] p-4 font-body" style={{ backgroundColor: 'white', color: 'black' }}>
+            <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
                         <AvatarImage src={post.avatar} />
@@ -49,27 +49,21 @@ export default function PostShareCard({ post }: { post: Post }) {
                     <div>
                         <p className="font-bold text-base flex items-center gap-1">
                             {post.author}
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-blue-400" /> : (isPostVerified && <BadgeCheck className={`h-5 w-5 ${isRulio ? 'text-white fill-blue-500' : badgeColor}`} />)}
+                            {isZisprAccount ? <Bird className="h-5 w-5 text-blue-400 fill-blue-400" /> : (isPostVerified && <BadgeCheck className={`h-5 w-5 ${isRulio ? 'fill-blue-500 text-white' : badgeColor}`} />)}
                         </p>
                         <p className="text-sm text-gray-500">{post.handle}</p>
                     </div>
                 </div>
-                <Bird className="h-7 w-7 text-blue-400" />
+                <MoreHorizontal className="h-5 w-5 text-gray-500" />
             </div>
 
             <p className="text-xl whitespace-pre-wrap mb-4">
                 {post.content}
             </p>
 
-            <p className="text-sm text-gray-500 mb-3">
+            <p className="text-sm text-gray-500">
                 {formattedDate}
             </p>
-
-            <div className="border-t border-b border-gray-800 py-3 flex gap-5">
-                <p><span className="font-bold">{post.retweets?.length || 0}</span> <span className="text-gray-500">Reposts</span></p>
-                <p><span className="font-bold">{post.comments || 0}</span> <span className="text-gray-500">Comentários</span></p>
-                <p><span className="font-bold">{post.likes?.length || 0}</span> <span className="text-gray-500">Curtidas</span></p>
-            </div>
         </div>
     );
 }
