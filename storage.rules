@@ -2,23 +2,14 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Regra geral: permite leitura pública, mas escrita apenas para usuários autenticados.
-    match /{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null;
+    // Permite leitura pública de todas as imagens
+    match /images/{allPaths=**} {
+      allow read: if true;
     }
 
-    // Regras específicas para imagens de usuários
+    // Permite escrita na pasta 'images' apenas para usuários autenticados
     match /images/{userId}/{allPaths=**} {
-      // Permite que um usuário leia e escreva apenas em seu próprio diretório de imagens.
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
-
-      // Validação de Upload: Apenas imagens com menos de 10MB
-      allow create: if request.auth != null 
-                    && request.auth.uid == userId
-                    && request.resource.size < 10 * 1024 * 1024
-                    && request.resource.contentType.matches('image/.*');
+       allow write: if request.auth != null;
     }
   }
 }
