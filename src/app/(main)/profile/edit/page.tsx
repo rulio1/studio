@@ -112,7 +112,7 @@ export default function EditProfilePage() {
     };
 
     const uploadImage = async (dataUri: string): Promise<string | null> => {
-        if (!dataUri.startsWith('data:image')) return dataUri; // It's already an URL
+        if (!dataUri.startsWith('data:image')) return dataUri; // It's already a URL
         try {
             const response = await fetch('/api/upload-image', {
                 method: 'POST',
