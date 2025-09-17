@@ -803,7 +803,7 @@ export default function PostDetailPage() {
                 backgroundColor: '#ffffff',
                 pixelRatio: 2,
                 embedImages: true,
-                skipFonts: false,
+                skipFonts: true,
             });
     
             const blob = await (await fetch(dataUrl)).blob();
