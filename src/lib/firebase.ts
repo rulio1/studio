@@ -13,6 +13,7 @@ const firebaseConfig = {
   "messagingSenderId": "489188047340"
 };
 
+
 let app: FirebaseApp;
 let db: Firestore;
 
@@ -34,8 +35,8 @@ const storage: FirebaseStorage = getStorage(app);
 // Push Notifications (Client-side)
 const requestNotificationPermission = async (userId: string) => {
     const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY; 
-    if (typeof VAPID_KEY !== 'string' || VAPID_KEY.trim() === '' || VAPID_KEY.startsWith('B...')) {
-        console.error('VAPID key is not configured or is a placeholder. Please add NEXT_PUBLIC_FIREBASE_VAPID_KEY to your environment variables.');
+    if (typeof VAPID_KEY !== 'string' || VAPID_KEY.trim() === '') {
+        console.warn('VAPID key is not configured. Please add NEXT_PUBLIC_FIREBASE_VAPID_KEY to your environment variables.');
         return { success: false, message: 'Configuração de notificação incompleta.' };
     }
 
