@@ -375,6 +375,9 @@ export default function PostDetailPage() {
     const [editedCommentContent, setEditedCommentContent] = useState('');
     const [isUpdatingComment, setIsUpdatingComment] = useState(false);
 
+    // State to manage avatar data URI for sharing card
+    const [shareAvatarDataUri, setShareAvatarDataUri] = useState<string>('');
+
     useEffect(() => {
         if (id && user) {
             const postId = id as string;
@@ -795,7 +798,6 @@ export default function PostDetailPage() {
 
      const handleShare = async () => {
         if (!post || !shareCardRef.current) return;
-        setIsSharing(true);
 
         try {
              const dataUrl = await htmlToImage.toPng(shareCardRef.current, {
@@ -831,33 +833,30 @@ export default function PostDetailPage() {
             });
         } finally {
             setIsSharing(false);
+            setShareAvatarDataUri(''); // Limpa o estado
         }
     };
     
-    // State to manage avatar data URI for sharing card
-    const [shareAvatarDataUri, setShareAvatarDataUri] = useState<string>('');
-
-    // Effect to pre-fetch and convert avatar to data URI for the share card
-    useEffect(() => {
-        if (post?.avatar && isSharing) {
-            fetch(post.avatar)
-                .then(response => response.blob())
-                .then(blob => new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                }))
-                .then(dataUrl => {
-                    setShareAvatarDataUri(dataUrl as string);
-                })
-                .catch(e => {
-                    console.error("Error fetching avatar for sharing:", e);
-                    // Use a placeholder if fetch fails
-                    setShareAvatarDataUri('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
-                });
+    const triggerShare = async () => {
+        if (isSharing || !post) return;
+        setIsSharing(true);
+        // Step 1: Fetch avatar and convert to data URI
+        try {
+            const response = await fetch(post.avatar);
+            const blob = await response.blob();
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setShareAvatarDataUri(reader.result as string);
+                // Step 2 (in useEffect) will handle the rest
+            };
+            reader.onerror = (e) => { throw new Error("Could not read avatar blob"); };
+            reader.readAsDataURL(blob);
+        } catch(e) {
+            console.error("Error preparing avatar for sharing:", e);
+            // Fallback to sharing without avatar if fetch fails
+            setShareAvatarDataUri('placeholder');
         }
-    }, [post?.avatar, isSharing]);
+    };
     
     // Trigger actual sharing once the avatar data URI is ready
     useEffect(() => {
@@ -1078,7 +1077,7 @@ export default function PostDetailPage() {
                                 <Heart className={'h-5 w-5 hover:text-red-500 transition-colors ' + (post.isLiked ? 'fill-current' : '')} />
                             <span>{Array.isArray(post.likes) ? post.likes.length : 0}</span>
                         </button>
-                         <button onClick={() => setIsSharing(true)} disabled={isSharing} className="flex items-center gap-2 hover:text-primary transition-colors">
+                         <button onClick={triggerShare} disabled={isSharing} className="flex items-center gap-2 hover:text-primary transition-colors">
                             {isSharing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Share2 className="h-5 w-5" />}
                         </button>
                     </div>
@@ -1126,7 +1125,7 @@ export default function PostDetailPage() {
             </footer>
             
             {/* Hidden div for rendering the share card */}
-            <div style={{ position: 'fixed', top: '-200vh', left: 0 }}>
+            <div style={{ position: 'fixed', top: '-200vh', left: 0, zIndex: -100, pointerEvents: 'none', opacity: 0 }}>
                  {isSharing && shareAvatarDataUri && (
                     <div ref={shareCardRef}>
                         <PostShareCard 
