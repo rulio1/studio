@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -38,7 +39,7 @@ export default function PostShareCard({ post }: { post: Post }) {
     const formattedDate = post.createdAt?.toDate ? format(post.createdAt.toDate(), "h:mm a · dd 'de' MMM 'de' yy", { locale: ptBR }) : '';
 
     return (
-        <div className="w-[380px] text-white p-6 rounded-2xl font-body">
+        <div className="w-[380px] p-6 rounded-2xl font-body" style={{ color: 'white' }}>
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
