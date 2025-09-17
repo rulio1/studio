@@ -11,10 +11,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Nenhuma imagem fornecida.' }, { status: 400 });
     }
 
-    // Use NEXT_PUBLIC_ prefix to ensure the variable is available in all environments
-    const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
+    // API routes run on the server, so we should use server-side environment variables
+    // without the NEXT_PUBLIC_ prefix.
+    const apiKey = process.env.IMGBB_API_KEY;
     if (!apiKey) {
-      console.error("A chave da API do ImgBB não está configurada.");
+      console.error("A chave da API do ImgBB não está configurada no servidor.");
       return NextResponse.json({ error: 'O serviço de upload de imagens não está configurado no servidor.' }, { status: 500 });
     }
 
