@@ -650,7 +650,7 @@ useEffect(() => {
                            <Link href={`/${zisprUser.handle.substring(1)}`} className="cursor-pointer">
                               <div className="flex items-center gap-1 font-bold text-lg">
                                   {zisprUser.displayName}
-                                  {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className={'h-6 w-6 ' + (isRulioAccount ? 'text-white fill-primary' : zisprUserBadgeColor)} />)}
+                                  {isZisprAccount ? <Bird className="h-5 w-5 text-primary" /> : (isZisprUserVerified && <BadgeCheck className={'h-5 w-5 ' + (isRulioAccount ? 'text-white fill-primary' : zisprUserBadgeColor)} />)}
                               </div>
                               <p className="text-sm text-muted-foreground">{zisprUser.handle}</p>
                           </Link>

@@ -191,7 +191,7 @@ export default function DesktopSidebar() {
                                 <div className="ml-3 text-left overflow-hidden">
                                     <p className="font-bold truncate flex items-center gap-1">
                                         {zisprUser.displayName}
-                                        {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isUserVerified && <BadgeCheck className={`h-6 w-6 ${isRulioAccount ? 'text-white fill-primary' : badgeColor}`} />)}
+                                        {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isUserVerified && <BadgeCheck className={`h-5 w-5 ${isRulioAccount ? 'text-white fill-primary' : badgeColor}`} />)}
                                     </p>
                                     <p className="text-sm text-muted-foreground truncate">{zisprUser.handle}</p>
                                 </div>

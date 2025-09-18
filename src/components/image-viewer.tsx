@@ -173,6 +173,10 @@ export default function ImageViewer({ post, onOpenChange }: ImageViewerProps) {
               </DialogHeader>
                 {/* Media Column */}
                 <div className="relative flex-1 w-full h-full flex items-center justify-center p-4 md:p-8" onClick={handleClose}>
+                    <Button variant="ghost" size="icon" onClick={handleClose} className="absolute top-4 right-4 text-white hover:bg-white/20 hover:text-white rounded-full h-10 w-10 hidden md:flex z-50">
+                        <X className="h-6 w-6" />
+                        <span className="sr-only">Fechar</span>
+                    </Button>
                     <motion.div
                         className="relative w-full h-full flex items-center justify-center"
                         drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={0.8}
@@ -207,7 +211,7 @@ export default function ImageViewer({ post, onOpenChange }: ImageViewerProps) {
                             <div>
                                 <p className="font-bold flex items-center gap-1">
                                     {post.author}
-                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={'h-6 w-6 ' + (isRulio ? 'text-white fill-primary' : badgeColor)} />)}
+                                    {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isPostVerified && <BadgeCheck className={`h-5 w-5 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
                                 </p>
                                 <p className="text-sm text-muted-foreground">{post.handle}</p>
                             </div>

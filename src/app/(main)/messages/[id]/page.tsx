@@ -482,7 +482,7 @@ export default function ConversationPage() {
                     <div>
                         <h1 className="text-lg font-bold flex items-center gap-1">
                             {otherUser.displayName}
-                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isOtherUserVerified && <BadgeCheck className={`h-6 w-6 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
+                            {isZisprAccount ? <Bird className="h-4 w-4 text-primary" /> : (isOtherUserVerified && <BadgeCheck className={`h-5 w-5 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />)}
                         </h1>
                         <p className="text-xs text-muted-foreground">{otherUser.handle}</p>
                     </div>
@@ -570,9 +570,28 @@ export default function ConversationPage() {
                                             )}
                                         </Avatar>
                                     )}
-                                    <div className={`relative rounded-2xl px-3 py-2 max-w-[80%] md:max-w-[70%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
-                                        {message.gifUrl && (
-                                            <div className="w-48 h-auto aspect-video relative cursor-pointer" onClick={handleImageClick}>
+                                    <div className="flex flex-col">
+                                        <div className={`relative rounded-2xl px-3 py-2 max-w-[80%] md:max-w-[70%] ${isMyMessage ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none'}`}>
+                                            {message.text && (
+                                                <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                                            )}
+                                            {reactionEntries.length > 0 && (
+                                                <div className={`absolute -bottom-4 flex gap-1 ${isMyMessage ? 'right-0' : 'left-0'}`}>
+                                                    {reactionEntries.map(([emoji, uids]) => (
+                                                        <div 
+                                                            key={emoji}
+                                                            onClick={() => handleReaction(message.id, emoji)}
+                                                            className={`px-1.5 py-0.5 rounded-full text-xs flex items-center gap-1 cursor-pointer border ${uids.includes(user!.uid) ? 'bg-primary/20 border-primary' : 'bg-muted/80 border-border'}`}
+                                                        >
+                                                            <span>{emoji}</span>
+                                                            <span className="font-semibold">{uids.length}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                         {message.gifUrl && (
+                                            <div className="mt-2 w-48 h-auto aspect-video relative cursor-pointer" onClick={handleImageClick}>
                                                 <Image 
                                                     src={message.gifUrl} 
                                                     alt="GIF" 
@@ -583,34 +602,17 @@ export default function ConversationPage() {
                                             </div>
                                         )}
                                          {message.imageUrl && (
-                                            <div className="w-48 h-auto aspect-video relative cursor-pointer" onClick={handleImageClick}>
+                                            <div className="mt-2 aspect-video relative w-full max-w-xs overflow-hidden rounded-2xl border cursor-pointer" onClick={handleImageClick}>
                                                 <Image 
                                                     src={message.imageUrl} 
                                                     alt="Imagem" 
                                                     fill
-                                                    className="object-cover rounded-lg"
+                                                    className="object-cover"
                                                 />
                                             </div>
                                          )}
-                                         {message.text && (
-                                            <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                                         )}
-                                        {reactionEntries.length > 0 && (
-                                            <div className={`absolute -bottom-4 flex gap-1 ${isMyMessage ? 'right-0' : 'left-0'}`}>
-                                                {reactionEntries.map(([emoji, uids]) => (
-                                                    <div 
-                                                        key={emoji}
-                                                        onClick={() => handleReaction(message.id, emoji)}
-                                                        className={`px-1.5 py-0.5 rounded-full text-xs flex items-center gap-1 cursor-pointer border ${uids.includes(user!.uid) ? 'bg-primary/20 border-primary' : 'bg-muted/80 border-border'}`}
-                                                    >
-                                                        <span>{emoji}</span>
-                                                        <span className="font-semibold">{uids.length}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
                                     </div>
-                                    <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">{time}</span>
+                                    <span className="text-xs text-muted-foreground self-end pb-1">{time}</span>
                                 </div>
                             </div>
                             {isRead && (

@@ -116,7 +116,7 @@ const NotificationItem = ({ notification, zisprUser, handleFollowBack }: { notif
                 </div>
                 <p>
                     <span className="font-bold">{notification.fromUser.name}</span>
-                    {isZisprAccount ? <Bird className="inline-block h-4 w-4 text-primary ml-1" /> : (isVerified && <BadgeCheck className={`inline-block h-6 w-6 ${isRulio ? 'text-white fill-primary' : badgeColor} ml-1`} />)}
+                    {isZisprAccount ? <Bird className="inline-block h-4 w-4 text-primary ml-1" /> : (isVerified && <BadgeCheck className={`inline-block h-5 w-5 ${isRulio ? 'text-white fill-primary' : badgeColor} ml-1`} />)}
                     <span className="font-normal text-muted-foreground"> {notificationText}</span>
                 </p>
                 {notification.postContent && <p className="text-muted-foreground mt-1">{notification.postContent}</p>}
@@ -331,3 +331,4 @@ export default function NotificationsPage() {
     
 
     
+
