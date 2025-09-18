@@ -5,26 +5,52 @@ import withPWAInit from "@ducanh2912/next-pwa";
 const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
   swcMinify: true,
   workboxOptions: {
     importScripts: ["/firebase-messaging-sw.js"],
     runtimeCaching: [
-      ...require("@ducanh2912/next-pwa").cache,
-      {
-        urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
-        handler: "CacheFirst",
-        options: {
-          cacheName: "google-fonts",
-          expiration: {
-            maxEntries: 4,
-            maxAgeSeconds: 365 * 24 * 60 * 60, // 365 dias
+        {
+          urlPattern: ({ url }) => {
+            return url.pathname.startsWith("/_next");
+          },
+          handler: "CacheFirst",
+          options: {
+            cacheName: "next-cache",
+            expiration: {
+              maxEntries: 60,
+              maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+            },
           },
         },
-      },
-    ],
+        {
+          urlPattern: ({ url }) => {
+            const isApiRoute = url.pathname.startsWith("/api/");
+            // Exclude font files and other static assets you want to handle differently
+            const isFont = url.href.match(/^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i);
+            return !isApiRoute && !isFont;
+          },
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "app-pages-cache",
+            expiration: {
+              maxEntries: 60,
+              maxAgeSeconds: 30 * 24 * 60 * 60, // 30 dias
+            },
+          },
+        },
+        {
+            urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts",
+              expiration: {
+                maxEntries: 4,
+                maxAgeSeconds: 365 * 24 * 60 * 60, // 365 dias
+              },
+            },
+        },
+      ],
   },
 });
 
