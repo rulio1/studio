@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -230,7 +231,7 @@ const QuotedPostPreview = ({ post }: { post: Omit<Post, 'quotedPost' | 'quotedPo
                 </Avatar>
                 <span className="font-bold flex items-center gap-1">
                     {post.author}
-                    {(post.isVerified || isRulio) && <BadgeCheck className={`h-4 w-4 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />}
+                    {(post.isVerified || isRulio) && <BadgeCheck className={`h-5 w-5 ${isRulio ? 'text-white fill-primary' : badgeColor}`} />}
                 </span>
                 <span className="text-muted-foreground">{post.handle}</span>
             </div>
@@ -744,7 +745,7 @@ export default function ProfilePage() {
                 })
             );
 
-            posts.sort((a, b) => b.createdAt.toMillis() - b.createdAt.toMillis());
+            posts.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
             setLikedPosts(posts);
         } catch (error) {
             console.error("Error fetching liked posts:", error);
@@ -1358,7 +1359,7 @@ export default function ProfilePage() {
                      <Card className={`mt-4 ${supporterCardBorderColor}`}>
                         <CardHeader className="flex-row items-center justify-between gap-3 space-y-0 p-3">
                             <div className="flex items-center gap-3">
-                                <HandHeart className="h-4 w-4 text-primary" />
+                                <HandHeart className="h-5 w-5 text-primary" />
                                 <CardTitle className="text-sm">{profileUser.supporterTier}</CardTitle>
                             </div>
                             
@@ -1570,3 +1571,5 @@ export default function ProfilePage() {
         </div>
     );
 }
+
+    
