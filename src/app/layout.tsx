@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   description: 'O melhor lugar para se conectar com o mundo. Participe da conversa.',
   manifest: '/manifest.json',
   icons: {
-    icon: '/icon-192x192.png',
-    apple: '/icon-192x192.png',
+    icon: 'https://i.ibb.co/3sYjS7K/icon-192x192.png',
+    apple: 'https://i.ibb.co/3sYjS7K/icon-192x192.png',
   },
 };
 
