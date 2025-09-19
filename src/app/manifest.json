@@ -8,23 +8,23 @@
   "theme_color": "#0ea5e9",
   "icons": [
     {
-      "src": "https://zispr.com/icons/icon-192x192.png",
+      "src": "https://i.ibb.co/3kCf5Wd/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://zispr.com/icons/icon-512x512.png",
+      "src": "https://i.ibb.co/fH4B9Yc/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "https://zispr.com/icons/icon-maskable-192x192.png",
+      "src": "https://i.ibb.co/C0bC1xS/icon-maskable-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "https://zispr.com/icons/icon-maskable-512x512.png",
+      "src": "https://i.ibb.co/9vjBqD4/icon-maskable-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
