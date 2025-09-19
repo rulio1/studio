@@ -1,11 +1,17 @@
 {
+  "id": "/?pwa=true",
   "name": "Zispr",
   "short_name": "Zispr",
   "description": "O melhor lugar para se conectar com o mundo. Participe da conversa.",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#000000",
   "theme_color": "#0ea5e9",
+  "categories": [
+    "social",
+    "lifestyle"
+  ],
   "icons": [
     {
       "src": "https://i.ibb.co/3kCf5Wd/icon-192x192.png",
@@ -28,6 +34,29 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://i.ibb.co/yYgL9Fj/screenshot-1.png",
+      "sizes": "1080x2340",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Home Feed"
+    },
+    {
+      "src": "https://i.ibb.co/mB2gqXh/screenshot-2.png",
+      "sizes": "1080x2340",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "User Profile"
+    },
+    {
+      "src": "https://i.ibb.co/dKj4N3F/screenshot-3.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop View"
     }
   ]
 }
