@@ -1185,7 +1185,7 @@ export default function ProfilePage() {
     }, [profileUser, t]);
 
     const handleBlockUser = useCallback(async () => {
-        if (!currentUser || !zisprUser || !profileUser || !profileId) return;
+        if (!currentUser || !zisprUser || !profileUser) return;
 
         const isCurrentlyBlocked = isBlockedByYou;
 
@@ -1571,5 +1571,7 @@ export default function ProfilePage() {
         </div>
     );
 }
+
+    
 
     
